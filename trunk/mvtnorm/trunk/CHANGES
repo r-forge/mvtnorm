@@ -1,5 +1,9 @@
 # $Id$
 
+	0.5-2 (22.03.2002)
+
+	Frank added `tol' argument to MVTDST, now in mvtnorm
+
 	0.5-1 (24.01.2002)
 
 	pmvt(0,1) works now
