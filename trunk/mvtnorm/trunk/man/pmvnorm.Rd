@@ -2,13 +2,15 @@
 \alias{pmvnorm}
 \title{ Multivariate Normal Distribution }
 \description{
+
 Computes the distribution function of the multivariate normal 
 distribution for arbitary limits and correlation matrices 
 based on algorithms by Genz and Bretz.
+
 }
 \usage{
 pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0,
-releps = 0.005)
+releps = 0.001)
 }
 \arguments{
   \item{mean}{ the mean vector.}
@@ -21,7 +23,17 @@ releps = 0.005)
 }
 \details{
 
-Hier kommt die Beschreibung rein.
+This program involves the computation of 
+multivariate normal-probabilities with arbitrary correlation matrices.
+It involves both the computation of singular and nonsingular 
+probabilities. The methodology is described in
+Genz and Bretz (1999) and Genz and Bretz (2000).
+
+Note that both \code{-Inf} and \code{+Inf} may be specified in \code{lower} and
+\code{upper}. For more details see \link{pmvt}. 
+
+Multivariate normal density and random numbers are available using
+\link[e1071]{dmvnorm} and \link[MASS]{mvrnorm}.  
  
 }
 \value{
@@ -30,20 +42,23 @@ A list with the following components:
   \item{error}{estimated absolute error.}
   \item{msg}{status messages.}
 }
-\references{ Und hier die Artikel (max 3) }
+\references{ 
 
-\author{ Fortran Code by Alan Genz <AlanGenz@wsu.edu>, Frank Bretz
+Genz, A. and Bretz, F. (1999), Numerical computation of multivariate
+t-probabilities with application to power calculation of multiple
+contrasts. \emph{Journal of Statistical Computation and Simulation},
+\bold{63}, 361--378.
+
+Genz, A. and Bretz, F. (2001), Methods for the computation of multivariate
+t-probabilities. \emph{(submitted)}
+
+}
+
+\author{ Fortran Code by Alan Genz <AlanGenz@wsu.edu> and Frank Bretz
 <bretz@ifgb.uni-hannover.de>, R port by Torsten Hothorn
 <Torsten.Hothorn@rzmail.uni-erlangen.de> }
 
 \examples{
-
-# ok, first of all a little univariate test: 
-
-prob <- pmvnorm(mean = 3, corr = 1, lower = -Inf, upper = 3)
-print(prob$value - pnorm(3,3))
-
-# now something more meaningful
 
 n <- 5
 mean <- rep(0, 5)
