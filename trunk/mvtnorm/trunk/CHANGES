@@ -1,5 +1,10 @@
 # $Id$
 
+	0.6-2 (25.06.2003)
+
+	Alan's recent changes to `mvt.f' make `g77 -pedantic -Wall'
+	happy
+
 	0.6-1 (18.06.2003)
 
 	pmvt(..., df = 0, ...) will return normal probabilities for both
