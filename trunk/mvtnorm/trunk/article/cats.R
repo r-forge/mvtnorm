@@ -18,7 +18,7 @@ delta <- rep(0,5)
 myfct <- function(q, alpha) {
   lower <- rep(-q, ncol(cv))
   upper <- rep(q, ncol(cv))
-  pmvt(lower, upper, df, cr, delta, abseps=0.001)$value - alpha
+  pmvt(lower=lower, upper=upper, df=df, corr=cr, delta=delta, abseps=0.001) - alpha
 }
 
 uniroot(myfct, lower=1, upper=5, alpha=0.95)

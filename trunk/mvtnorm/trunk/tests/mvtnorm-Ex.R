@@ -23,13 +23,13 @@ corr[upper.tri(corr)] <- 0.5
 prob <- pmvnorm(lower, upper, mean, corr)
 print(prob)
 
-stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, corr=1)$value == pnorm(3))
+stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, sigma=1) == pnorm(3))
 
-a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))$value
+a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5),c(2,4))),16))
 
-a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))$value
+a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5,1),c(2,4,1))),16))
 
@@ -61,10 +61,10 @@ df <- 4
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
 delta <- rep(0, 5)
-prob <- pmvt(lower, upper, df, corr , delta)
+prob <- pmvt(lower=lower, upper=upper, delta=delta,df=df, corr=corr)
 print(prob)
 
-pmvt(-Inf, 3, df = 3, corr = 0)$value == pt(3, 3)
+pmvt(-Inf, 3, df = 3, sigma = 0) == pt(3, 3)
 
 # Example from R News paper (original by Edwards and Berry, 1987)
 
@@ -85,15 +85,15 @@ delta <- rep(0,5)
 myfct <- function(q, alpha) {
   lower <- rep(-q, ncol(cv))
   upper <- rep(q, ncol(cv))
-  pmvt(lower, upper, df, cr, delta, abseps=0.0001)$value - alpha
+  pmvt(lower, upper, delta, df, cr, abseps=0.0001) - alpha
 }
 
 round(uniroot(myfct, lower=1, upper=5, alpha=0.95)$root, 3)
 
 # compare pmvt and pmvnorm for large df:
 
-a <- pmvnorm(rep(-Inf, 5), rep(1, 5), mean=rep(0, 5), corr=diag(5))$value
-b <- pmvt(rep(-Inf, 5), rep(1, 5), df=rep(300,5), corr=diag(5), delta=rep(0, 5))$value
+a <- pmvnorm(rep(-Inf, 5), rep(1, 5), mean=rep(0, 5), corr=diag(5))
+b <- pmvt(rep(-Inf, 5), rep(1, 5), df=rep(300,5), corr=diag(5), delta=rep(0, 5))
 a
 b
 

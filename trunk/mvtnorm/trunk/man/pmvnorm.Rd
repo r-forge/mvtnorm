@@ -9,13 +9,17 @@ based on algorithms by Genz and Bretz.
 
 }
 \usage{
-pmvnorm(lower, upper, mean, corr, maxpts = 25000, abseps =0.001, releps = 0)
+pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
+        corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
+        releps = 0)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
   \item{upper}{ the vector of upper limits of length n.}
   \item{mean}{ the mean vector of length n.}
   \item{corr}{ the correlation matrix of dimension n.}
+  \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
+                \code{sigma} can be specified.}
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
@@ -41,9 +45,8 @@ and \code{\link[MASS]{mvrnorm}}.
  
 }
 \value{
-A list with the following components:
-  \item{value}{estimated integral value.}
-  \item{error}{estimated absolute error.}
+The distribution function is returned with attributes
+  \item{error}{estimated absolute error and}
   \item{msg}{status messages.}
 }
 \references{ 
@@ -73,13 +76,13 @@ corr[upper.tri(corr)] <- 0.5
 prob <- pmvnorm(lower, upper, mean, corr)
 print(prob)
 
-stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, corr=1)$value == pnorm(3))
+stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, sigma=1) == pnorm(3))
 
-a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))$value
+a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5),c(2,4))),16))
 
-a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))$value
+a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5,1),c(2,4,1))),16))
 
@@ -90,7 +93,7 @@ sigma <- diag(3)
 sigma[2,1] <- 3/5
 sigma[3,1] <- 1/3
 sigma[3,2] <- 11/15
-pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), sigma)
+pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), corr=sigma)
 
 }
 
