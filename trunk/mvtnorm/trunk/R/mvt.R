@@ -81,7 +81,7 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
           lower <- (carg$lower - carg$mean)/sqrt(diag(carg$sigma))
           upper <- (carg$upper - carg$mean)/sqrt(diag(carg$sigma))
           mean <- rep(0, length(lower))
-          corr <- t(t(carg$sigma)/diag(carg$sigma))
+          corr <- sig2corr(carg$sigma)
           RET <- mvt(lower=lower, upper=upper, df=0, corr=corr, delta=mean,
                      maxpts=maxpts, abseps=abseps,releps=releps,tol=tol)
       }
@@ -113,7 +113,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
         } else {
             lower <- carg$lower/sqrt(diag(carg$sigma))
             upper <- carg$upper/sqrt(diag(carg$sigma))
-            corr <- t(t(sigma)/diag(carg$sigma))
+            corr <- sig2corr(carg$sigma)
             RET <- mvt(lower=lower, upper=upper, df=df, corr=corr,
                        delta=carg$mean, maxpts=maxpts,
                        abseps=abseps,releps=releps, tol=tol)
