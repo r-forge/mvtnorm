@@ -1,5 +1,9 @@
 # $Id$
 
+	0.7-0 (02.09.2004)
+
+	a coding session with Frank produced `qmv{t,norm}'.
+
 	0.6-8 (03.06.2004)
 
 	EXIT statements are not supported by `f2c', Alan added GOTO

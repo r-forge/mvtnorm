@@ -1,6 +1,6 @@
 
 R : Copyright 2004, The R Foundation for Statistical Computing
-Version 1.9.0  (2004-04-12), ISBN 3-900051-00-3
+Version 1.9.1  (2004-06-21), ISBN 3-900051-00-3
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -207,9 +207,29 @@ attr(,"msg")
 > 
 > ## Keywords: 'distribution'.
 > 
+> ### quantile functions
+> 
+> q1 <- qmvnorm(0.9025, sigma = diag(2))$quantile
+> stopifnot(identical(round(q1, 3), round(qnorm(0.95), 3)))
+> 
+> q1 <- qmvnorm(0.9025, sigma = diag(2), tail = "upper")$quantile
+> stopifnot(identical(round(q1, 3), round(qnorm(1 - 0.95), 3)))
+> 
+> q1 <- qmvnorm(0.9025, sigma = diag(2), tail = "both")$quantile 
+> stopifnot(identical(round(q1, 3), round(qnorm(0.975), 3)))
+> 
+> q2 <- qmvt(0.9025, df = 500, corr = diag(2))$quantile
+> stopifnot(identical(round(q2, 3), round(qt(0.95, df = 500), 3)))
+> 
+> q2 <- qmvt(0.9025, df = 500, corr = diag(2), tail = "upper")$quantile
+> stopifnot(identical(round(q2, 3), round(qt(1 - 0.95, df = 500), 3)))
+> 
+> q2 <- qmvt(0.9025, df = 500, corr = diag(2), tail = "both")$quantile
+> stopifnot(identical(round(q2, 2), round(qt(0.975, df = 500), 2)))
+> 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  2.24 0.01 2.25 0 0 
+Time elapsed:  1.91 0 1.94 0 0 
 > dev.off(); quit('no')
 null device 
           1 

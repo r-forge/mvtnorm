@@ -197,3 +197,89 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
 rmvt <- function(n, sigma=diag(2), df=1) {
   rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
 }
+
+qmvnorm <- function(p, interval = c(-10, 10), 
+                    tail = c("lower.tail", "upper.tail", "both.tails"), 
+                    mean = 0, corr = NULL, sigma = NULL,
+                    maxpts = 25000, abseps = 0.001, releps = 0, ...) {
+
+    if (length(p) != 1 || (p <= 0 || p >= 1)) 
+        stop(sQuote("p"), " is not a double between zero and one")
+
+    tail <- match.arg(tail)
+    dim <- length(mean)
+    if (is.matrix(corr)) dim <- nrow(corr)
+    if (is.matrix(sigma)) dim <- nrow(sigma)
+    lower <- rep(0, dim)
+    upper <- rep(0, dim)
+    args <- checkmvArgs(lower, upper, mean, corr, sigma)
+    dim <- length(args$mean)
+
+    pfct <- function(q) {
+        switch(tail, "both.tails" = {
+                  low <- rep(-abs(q), dim)
+                  upp <- rep( abs(q), dim)
+           }, "upper.tail" = {
+                  low <- rep(      q, dim)
+                  upp <- rep(    Inf, dim)
+           }, "lower.tail" = {
+                  low <- rep(   -Inf, dim)
+                  upp <- rep(      q, dim)
+           },)
+           pmvnorm(lower = low, upper = upp, mean = args$mean,
+                   corr = args$corr, sigma = args$sigma,
+                   abseps = abseps, maxpts = maxpts, releps = releps) - p
+    }
+
+    if (tail == "both.tails") {
+        interval[1] <- 0
+        interval <- abs(interval)
+    }
+
+    qroot <- uniroot(pfct, interval = interval, ...)
+    names(qroot)[1:2] <- c("quantile", "f.quantile")
+    qroot
+}
+
+qmvt <- function(p, interval = c(-10, 10), 
+                 tail = c("lower.tail", "upper.tail", "both.tails"), 
+                 df = 1, delta = 0, corr = NULL, sigma = NULL,
+                 maxpts = 25000, abseps = 0.001, releps = 0, ...) {
+
+    if (length(p) != 1 || (p <= 0 || p >= 1)) 
+        stop(sQuote("p"), " is not a double between zero and one")
+
+    tail <- match.arg(tail)
+    dim <- length(mean)
+    if (is.matrix(corr)) dim <- nrow(corr)
+    if (is.matrix(sigma)) dim <- nrow(sigma)
+    lower <- rep(0, dim)
+    upper <- rep(0, dim)
+    args <- checkmvArgs(lower, upper, delta, corr, sigma)
+    dim <- length(args$mean)
+
+    pfct <- function(q) {
+        switch(tail, "both.tails" = {
+                  low <- rep(-abs(q), dim)
+                  upp <- rep( abs(q), dim)
+           }, "upper.tail" = {
+                  low <- rep(      q, dim)
+                  upp <- rep(    Inf, dim)
+           }, "lower.tail" = {
+                  low <- rep(   -Inf, dim)
+                  upp <- rep(      q, dim)
+           },)
+           pmvt(lower = low, upper = upp, df = df, delta = args$mean,
+                corr = args$corr, sigma = args$sigma,
+                abseps = abseps, maxpts = maxpts, releps = releps) - p
+    }
+
+    if (tail == "both.tails") {
+        interval[1] <- 0
+        interval <- abs(interval)
+    }
+
+    qroot <- uniroot(pfct, interval = interval, ...)
+    names(qroot)[1:2] <- c("quantile", "f.quantile")
+    qroot
+}
