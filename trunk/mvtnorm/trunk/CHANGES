@@ -1,9 +1,10 @@
 # $Id$
 
-	0.5-3 (09.04.2002)
+	0.5-4 (09.04.2002)
 
 	correlation matrices for sigma with unequal variances incorrectly
-	computed, added `sig2corr' for that propose
+	computed, added `sig2corr' for that propose, tol argument removed,
+	fix by Alan to mvt.f
 
 	0.5-2 (22.03.2002)
 
