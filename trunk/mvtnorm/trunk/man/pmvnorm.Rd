@@ -9,8 +9,8 @@ based on algorithms by Genz and Bretz.
 
 }
 \usage{
-pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0.001,
-releps = 0)
+pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0.001, 
+                    releps = 0)
 }
 \arguments{
   \item{mean}{ the mean vector of length n.}
@@ -30,12 +30,12 @@ probabilities. The methodology is described in
 Genz (1992, 1993).
 
 Note that both \code{-Inf} and \code{+Inf} may be specified in \code{lower} and
-\code{upper}. For more details see \link{pmvt}. 
+\code{upper}. For more details see \code{\link{pmvt}}. 
 
-The mvn case is treated as a special case of link{pmvt} with \code{df=0}. 
+The mvn case is treated as a special case of \code{\link{pmvt}} with \code{df=0}. 
 
 Multivariate normal density and random numbers are available using
-\link[e1071]{dmvnorm} and \link[MASS]{mvrnorm}.  
+\code{\link[e1071]{dmvnorm}} and \code{\link[MASS]{mvrnorm}}.  
  
 }
 \value{

@@ -68,10 +68,10 @@ $msg
 > prob <- pmvt(lower, upper, df, corr , delta)
 > print(prob)
 $value
-[1] 0.5066307
+[1] 0.5065944
 
 $error
-[1] 0.0004089173
+[1] 0.0007901544
 
 $msg
 [1] "Normal Completion"
@@ -82,7 +82,7 @@ $msg
 > 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  0.3 0 0.35 0 0 
+Time elapsed:  0.22 0 0.22 0 0 
 > dev.off(); quit('no')
 null device 
           1 
