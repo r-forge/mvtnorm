@@ -1,5 +1,17 @@
 # $Id$
 
+	0.5-13 (30.05.2003)
+
+	the package owns a vignette based on the paper in RNews 1(2)
+
+	0.5-12 (08.05.2003)
+
+	allow df=0 for pmvt
+
+	0.5-11 (29.04.2003)
+	
+	package npmc trys to use 'mvt' which is internal: export it anyway
+
 	0.5-10 (23.04.2003)
 
 	mvtnorm is now in a NAMESPACE

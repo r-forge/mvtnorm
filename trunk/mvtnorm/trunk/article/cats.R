@@ -1,5 +1,7 @@
 
 library(mvtnorm)
+print(package.description("mvtnorm", fields="Version"))
+
 
 n <- c(26, 24, 20, 33, 32)
 V <- diag(1/n)
@@ -22,3 +24,5 @@ myfct <- function(q, alpha) {
 }
 
 uniroot(myfct, lower=1, upper=5, alpha=0.95)
+
+warnings()
