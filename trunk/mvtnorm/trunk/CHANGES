@@ -1,5 +1,10 @@
 # $Id$
 
+	0.5-9 (13.02.2003)
+
+	log argument added to dmvnorm, thanks to 
+        Jerome Asselin <jerome@hivnet.ubc.ca>
+
 	0.5-8 (21.01.2003)
 
 	fixed bugreport PR#2478: sigma for univariate probabilities
