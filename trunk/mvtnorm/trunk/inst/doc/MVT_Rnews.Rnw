@@ -46,14 +46,11 @@
 
 \begin{document}
 
-\title{On Multivariate $t$ and Gau{\ss} Probabilities in R
-\thanks{This document is based
-on an article published in \textsf{R} News}
-}
+\title{On Multivariate $t$ and Gau{\ss} Probabilities in R}
 
 \author{Torsten Hothorn}
-\thanks{The first author gratefully acknowledges support by Deutsche
-Forschungsgemeinschaft, grand SFB 539 / A4}
+\thanks{This document is an updated version of the paper published in
+\textsf{R} News $\mathbf{1}(2)$.}
 \address{Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg \\
 Institut f\"ur Medizininformatik, Biometrie und Epidemiologie \\
 Waldstra{\ss}e 6, D-91054 Erlangen}
@@ -68,6 +65,11 @@ Pullman, WA 99164-3113 USA}
 \email{alangenz@wsu.edu}
 
 \maketitle
+
+<<prelim, echo=FALSE, hide=TRUE>>=
+set.seed(290875)
+options(width=60, prompt="R>")
+@
 
 \section*{Introduction}
 
@@ -121,19 +123,18 @@ vector is passed to {\ttfamily pmvnorm} by the argument {\ttfamily mean}.
 The region of
 integration is given by the vectors {\ttfamily lower} and {\ttfamily upper},
 both can have elements {\ttfamily -Inf} or {\ttfamily +Inf}. The value of {\ttfamily pmvnorm}
-is a list with the following components:
+is the estimated integral value with two attributes 
 \begin{itemize}
-\item {\ttfamily value}: the estimated integral value,
-\item {\ttfamily error}: the estimated absolute error,
+\item {\ttfamily error}: the estimated absolute error and
 \item {\ttfamily msg}: a status message, indicating wheater or not the algorithm
 terminated correctly.
 \end{itemize}
->From the results above it follows that
+From the results above it follows that
 \begin{eqnarray*}
 P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2) \approx
 0.82798
 \end{eqnarray*}
-with an absolute error estimate of $2.7e-07$.
+with an absolute error estimate of $2.0e-06$.
 
 \section{Details \label{details}}
 
@@ -223,7 +224,7 @@ myfct <- function(q, alpha) {
   lower <- rep(-q, ncol(cv))
   upper <- rep(q, ncol(cv))
   pmvt(lower = lower, upper = upper, delta = delta, df = df,
-       corr = cr, abseps=0.001) - alpha
+       corr = cr, abseps=0.0001, maxpts = 100000) - alpha
 }
 uniroot(myfct, lower=1, upper=5, alpha=0.95)
 @
@@ -236,8 +237,8 @@ $ 95\%$ quantile of $ W $. A wrapper function {\ttfamily myfct}
 computes the difference of the multivariate $ t $ probability for
 quantile {\ttfamily q} and {\ttfamily alpha}. The {\ttfamily
 alpha} quantile can now be computed easily using {\ttfamily
-uniroot}. The $95\%$ quantile of $ W $ in this example is $ 2.562
-$, \cite{the-effici:1987} obtained the same result using $ 80.000
+uniroot}. The $95\%$ quantile of $ W $ in this example is $ 2.56 $
+, \cite{the-effici:1987} obtained the same result using $ 80.000
 $ simulation runs. The computation needs $ 8.06 $ seconds total
 time on a Pentium III $450$ MHz with $256$ MB memory.
 
