@@ -170,3 +170,6 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
     return(RET)
 }
 
+rmvt <- function(n, sigma=diag(2), df=1) {
+  rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
+}
