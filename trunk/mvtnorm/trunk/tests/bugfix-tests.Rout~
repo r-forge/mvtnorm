@@ -1,0 +1,36 @@
+
+R : Copyright 2002, The R Development Core Team
+Version 1.5.0 Under development (unstable) (2002-04-08)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type `license()' or `licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type `contributors()' for more information.
+
+Type `demo()' for some demos, `help()' for on-line help, or
+`help.start()' for a HTML browser interface to help.
+Type `q()' to quit R.
+
+R> invisible(options(echo = TRUE))
+R> library(mvtnorm)
+R> 
+R> # correlation matrices for unequal variances were wrong
+R> # from Pamela Ohman-Strickland <ohmanpa@UMDNJ.EDU>
+R> 
+R> a <- 4.048
+R> shi <- -9
+R> slo <- -10
+R> mu <- -5
+R> sig <- matrix(c(1,1,1,2),ncol=2) 
+R> pmvnorm(lower=c(-a,slo),upper=c(a,shi),mean=c(mu,2*mu),sigma=sig)
+[1] 0.04210555
+attr(,"error")
+[1] 1e-15
+attr(,"msg")
+[1] "Normal Completion"
+R> 
+R> proc.time()
+[1] 1.05 0.09 1.20 0.00 0.00
+R> 
