@@ -1,6 +1,6 @@
 \name{qmvt}
 \alias{qmvt}
-\title{ Quantiles of the Multvariate t Distribution }
+\title{ Quantiles of the Multivariate t Distribution }
 \description{
 
 Computes the equicoordinate quantile function of the multivariate t
@@ -10,8 +10,8 @@ based on an inversion of the algorithms by Genz and Bretz.
 }
 \usage{
 qmvt(p, interval = c(-10, 10), tail = c("lower.tail", "upper.tail", "both.tails"), 
-df = 1, delta = 0, corr = NULL, sigma = NULL, maxpts = 25000, 
-abseps = 0.001, releps = 0, ...)
+     df = 1, delta = 0, corr = NULL, sigma = NULL, maxpts = 25000, 
+     abseps = 0.001, releps = 0, ...)
 }
 \arguments{
   \item{p}{ probability.}
