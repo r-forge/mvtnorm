@@ -1,11 +1,44 @@
 attach(NULL, name = "CheckExEnv")
-assign(".CheckExEnv", pos.to.env(2), pos = length(search()))
+assign(".CheckExEnv", as.environment(2), pos = length(search())) # base
+## This plot.new() patch has no effect yet for persp();
+## layout() & filled.contour() are now ok
+assign("plot.new", function() { .Internal(plot.new())
+		       pp <- par(c("mfg","mfcol","oma","mar"))
+		       if(all(pp$mfg[1:2] == c(1, pp$mfcol[2]))) {
+			 outer <- (oma4 <- pp$oma[4]) > 0; mar4 <- pp$mar[4]
+			 mtext(paste("help(",..nameEx,")"), side = 4,
+			       line = if(outer)max(1, oma4 - 1) else min(1, mar4 - 1),
+			       outer = outer, adj=1, cex= .8, col="orchid")} },
+       env = .CheckExEnv)
+assign("cleanEx", function(env = .GlobalEnv) {
+	rm(list = ls(envir = env, all.names = TRUE), envir = env)
+	RNGkind("Wichmann-Hill", "default")
+	assign(".Random.seed", c(0,rep(7654,3)), pos=1)
+       },
+       env = .CheckExEnv)
+assign("..nameEx", "__{must remake R-ex/*.R}__", env = .CheckExEnv) #-- for now
 assign("ptime", proc.time(), env = .CheckExEnv)
 postscript("mvtnorm-Examples.ps")
 assign("par.postscript", par(no.readonly = TRUE), env = .CheckExEnv)
 options(contrasts = c(unordered = "contr.treatment", ordered = "contr.poly"))
 library('mvtnorm')
-rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
+cleanEx(); ..nameEx <- "Mvnorm"
+###--- >>> `Mvnorm' <<<----- The Multivariate Normal Distribution
+
+	## alias	 help(dmvnorm)
+	## alias	 help(rmvnorm)
+
+##___ Examples ___:
+
+dmvnorm(x=c(0,0))
+dmvnorm(x=c(0,0), mean=c(1,1))
+x <- rmvnorm(n=100, mean=c(1,1))
+plot(x)
+
+## Keywords: 'distribution', 'multivariate'.
+
+
+cleanEx(); ..nameEx <- "pmvnorm"
 ###--- >>> `pmvnorm' <<<----- Multivariate Normal Distribution
 
 	## alias	 help(pmvnorm)
@@ -15,8 +48,8 @@ rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
 
 n <- 5
 mean <- rep(0, 5)
-lower <- -1
-upper <- 3
+lower <- rep(-1, 5)
+upper <- rep(3, 5)
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
 corr[upper.tri(corr)] <- 0.5
@@ -40,13 +73,25 @@ sigma <- diag(3)
 sigma[2,1] <- 3/5
 sigma[3,1] <- 1/3
 sigma[3,2] <- 11/15
-pmvnorm(lower=-Inf, upper=c(1,4,2), mean=rep(0, m), sigma)
+pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), corr=sigma)
+
+# Correlation and Covariance
+
+a <- pmvnorm(lower=-Inf, upper=c(2,2), sigma = diag(2)*2)
+b <- pmvnorm(lower=-Inf, upper=c(2,2)/sqrt(2), corr=diag(2))
+stopifnot(all.equal(round(a,5) , round(b, 5)))
+
+
+  # bugged Fritz
+  stopifnot(all.equal(pmvnorm(-Inf, c(Inf, 0), 0, diag(2)), pmvnorm(-Inf,
+                      c(Inf, 0), 0)))
+
 
 
 ## Keywords: 'distribution'.
 
 
-rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
+cleanEx(); ..nameEx <- "pmvt"
 ###--- >>> `pmvt' <<<----- Multivariate t Distribution
 
 	## alias	 help(pmvt)
@@ -61,10 +106,10 @@ df <- 4
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
 delta <- rep(0, 5)
-prob <- pmvt(lower=lower, upper=upper, delta=delta,df=df, corr=corr)
+prob <- pmvt(lower=lower, upper=upper, delta=delta, df=df, corr=corr)
 print(prob)
 
-pmvt(-Inf, 3, df = 3, sigma = 0) == pt(3, 3)
+pmvt(lower=-Inf, upper=3, df = 3, sigma = 1) == pt(3, 3)
 
 # Example from R News paper (original by Edwards and Berry, 1987)
 
@@ -85,19 +130,33 @@ delta <- rep(0,5)
 myfct <- function(q, alpha) {
   lower <- rep(-q, ncol(cv))
   upper <- rep(q, ncol(cv))
-  pmvt(lower, upper, delta, df, cr, abseps=0.0001) - alpha
+  pmvt(lower=lower, upper=upper, delta=delta, df=df, corr=cr, abseps=0.0001) - alpha
 }
 
 round(uniroot(myfct, lower=1, upper=5, alpha=0.95)$root, 3)
 
 # compare pmvt and pmvnorm for large df:
 
-a <- pmvnorm(-Inf, 1, mean=rep(0, 5), corr=diag(5))
-b <- pmvt(-Inf, 1, df=rep(300,5), corr=diag(5), delta=rep(0, 5))
+a <- pmvnorm(lower=-Inf, upper=1, mean=rep(0, 5), corr=diag(5))
+b <- pmvt(lower=-Inf, upper=1, delta=rep(0, 5), df=rep(300,5),
+          corr=diag(5))
 a
 b
 
 stopifnot(round(a, 2) == round(b, 2))
+
+# correlation and covariance matrix
+
+a <- pmvt(lower=-Inf, upper=2, delta=rep(0,5), df=3,
+          sigma = diag(5)*2)
+b <- pmvt(lower=-Inf, upper=2/sqrt(2), delta=rep(0,5),
+          df=3, corr=diag(5))  
+attributes(a) <- NULL
+attributes(b) <- NULL
+a
+b
+stopifnot(all.equal(round(a,3) , round(b, 3)))
+
 
 
 ## Keywords: 'distribution'.

@@ -135,7 +135,7 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
     infin[lower == -Inf & upper == Inf] <- -1
     
     if (n > 1) {
-        corrF <- matrix(as.vector(corr), ncol=n, byrow=T)
+        corrF <- matrix(as.vector(corr), ncol=n, byrow=TRUE)
         corrF <- corrF[upper.tri(corrF)]
     } else corrF <- corr 
 
