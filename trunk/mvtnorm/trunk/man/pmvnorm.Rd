@@ -103,6 +103,12 @@ a <- pmvnorm(lower=-Inf, upper=c(2,2), sigma = diag(2)*2)
 b <- pmvnorm(lower=-Inf, upper=c(2,2)/sqrt(2), corr=diag(2))
 stopifnot(all.equal(round(a,5) , round(b, 5)))
 
+\testonly{
+  # bugged Fritz
+  stopifnot(all.equal(pmvnorm(-Inf, c(Inf, 0), 0, diag(2)), pmvnorm(-Inf,
+                      c(Inf, 0), 0)))
+}
+
 
 }
 
