@@ -13,13 +13,13 @@ pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0,
 releps = 0.001)
 }
 \arguments{
-  \item{mean}{ the mean vector.}
-  \item{corr}{ the correlation matrix.}
-  \item{lower}{ the vector of lower limits.}
-  \item{upper}{ the vector of upper limits.}
-  \item{maxpts}{ maximum number of function values. }
-  \item{abseps}{ absolute error tolerance. }
-  \item{releps}{ relative error tolerance. }
+  \item{mean}{ the mean vector of length n.}
+  \item{corr}{ the correlation matrix of dimension n.}
+  \item{lower}{ the vector of lower limits of length n.}
+  \item{upper}{ the vector of upper limits of length n.}
+  \item{maxpts}{ maximum number of function values as integer. }
+  \item{abseps}{ absolute error tolerance as double. }
+  \item{releps}{ relative error tolerance as double. }
 }
 \details{
 
@@ -55,7 +55,7 @@ t-probabilities. \emph{(submitted)}
 }
 
 \author{ Fortran Code by Alan Genz <AlanGenz@wsu.edu> and Frank Bretz
-<bretz@ifgb.uni-hannover.de>, R port by Torsten Hothorn
+<bretz@ifgb.uni-hannover.de>, \R port by Torsten Hothorn
 <Torsten.Hothorn@rzmail.uni-erlangen.de> }
 
 \examples{
@@ -71,4 +71,4 @@ print(prob)
 
 }
 
-\keyword{multivariate normal distribution}
+\keyword{distribution}
