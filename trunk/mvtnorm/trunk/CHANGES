@@ -1,5 +1,9 @@
 # $Id$
 
+	0.5-8 (21.01.2003)
+
+	fixed bugreport PR#2478: sigma for univariate probabilities
+
 	0.5-7 (27.11.2002)
 
 	use R's random number generator in the FORTRAN code:
