@@ -1,5 +1,9 @@
 # $Id$
 
+	0.4-4 (06.12.2001)
+
+	bugfix
+
 	0.4-3 (05.12.2001)
 
 	the length of lower, upper and mean (delta) is now recycled to the
