@@ -156,7 +156,7 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
                         as.double(corrF), as.double(delta), as.integer(maxpts),
                         as.double(abseps), as.double(releps),  
                         error = as.double(error), value = as.double(value),
-                        inform = as.integer(inform))
+                        inform = as.integer(inform), PACKAGE="mvtnorm")
     
     error <- ret$error; value <- ret$value; inform <- ret$inform
 

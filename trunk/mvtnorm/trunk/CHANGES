@@ -1,5 +1,9 @@
 # $Id$
 
+	0.5-5 (03.07.2002)
+
+	use .Fortran(..., PACKAGE="mvtnorm")
+
 	0.5-4 (09.04.2002)
 
 	correlation matrices for sigma with unequal variances incorrectly
