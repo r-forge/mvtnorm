@@ -1,5 +1,10 @@
 # $Id$
 
+	0.6-1 (18.06.2003)
+
+	pmvt(..., df = 0, ...) will return normal probabilities for both
+        the univariate and multvariate problem
+
 	0.6-0 (17.06.2003)
 
 	Fortran code in `mvt.f' updated to recent version by Alan and Frank.
