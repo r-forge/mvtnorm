@@ -3,6 +3,43 @@
 \usepackage{bibentry}
 \renewcommand{\baselinestretch}{1.5}
 
+\newcommand{\ba}{{\bf a}}
+\newcommand{\bb}{{\bf b}}
+\newcommand{\ta}{{\tilde a}}
+\newcommand{\tb}{{\tilde b}}
+\newcommand{\bab}{\bar{{\bf a}}}
+\newcommand{\bbb}{\bar{{\bf b}}}
+\newcommand{\byb}{\bar{{\bf y}}}
+\newcommand{\be}{{\bf e}}
+\newcommand{\bu}{{\bf u}}
+\newcommand{\bk}{{\bf k}}
+\newcommand{\bp}{{\bf p}}
+\newcommand{\bq}{{\bf q}}
+\newcommand{\bt}{{\bf t}}
+\newcommand{\bx}{{\bf x}}
+\newcommand{\by}{{\bf y}}
+\newcommand{\bz}{{\bf z}}
+\newcommand{\bv}{{\bf v}}
+\newcommand{\bw}{{\bf w}}
+\newcommand{\bg}{{\bg b}}
+\newcommand{\bs}{{\bf s}}
+\newcommand{\bI}{{\bf I}}
+\newcommand{\bR}{{\bf R}}
+\newcommand{\bT}{{\bf T}}
+\newcommand{\binf}{\mbox{\boldmath $\infty$}}
+\newcommand{\thh}{\mbox{\boldmath $\theta$}}
+\newcommand{\la}{\mbox{\boldmath $\lambda$}}
+\newcommand{\bbt}{\mbox{\boldmath $\beta$}}
+\newcommand{\muu}{\mbox{\boldmath $\mu$}}
+\newcommand{\brho}{\mbox{\boldmath $\rho$}}
+\newcommand{\bdel}{\mbox{\boldmath $\delta$}}
+\newcommand{\Sig}{\mbox{\boldmath $\Sigma$}}
+\newcommand{\Ph}{\mbox{\boldmath $\Phi$}}
+\newcommand{\beps}{\mbox{\boldmath $\epsilon$}}
+\newcommand{\bbet}{\mbox{\boldmath $\beta$}}
+
+
+
 \begin{document}
 
 \title{On Multivariate $t$ and Gau{\ss} Probabilities in R}
@@ -83,8 +120,35 @@ with an absolute error of $2.7e-07$.
 
 \section{Details}
 
-This section outlines the basic ideas of the algorithms used (short!
-non-technical) ;-) Frank?
+This section outlines the basic ideas of the algorithms used. The
+multivariate $t$ distribution (MVT) is given by $$ \bT(\ba, \bb,
+\Sig, \nu) = \frac{2^{1-\frac{\nu}{2}}}{\Gamma(\frac{\nu}{2})}
+\int\limits_0^{\infty}s^{\nu-1}e^{-\frac{s^2}{2}}
+\Ph(\frac{s\ba}{\sqrt{\nu}},\frac{s\bb}{\sqrt{\nu}},\Sig) ds, $$
+where the multivariate normal distribution function (MVN) $$
+\Ph(\ba,\bb, \Sig) = \frac{1}{\sqrt{|\Sig| (2\pi)^m}}
+\int\limits_{a_1}^{b_1} \int\limits_{a_2}^{b_2} ...
+\int\limits_{a_m}^{b_m} e^{- \frac{1}{2} \bx^t \Sig^{-1} \bx}
+d\bx, $$ $\bx = (x_1, x_2, ..., x_m)^t$, $-\infty \leq a_i < b_i
+\leq \infty$ for all $i$, and $\Sig$ is a positive semi-definite
+symmetric $m \times m$ matrix. The original integral over an
+arbitrary $m$-dimensional, possibly unbounded hyper-rectangle is
+transformed to an integral over the unit hypercube. These
+transformations are described e.g. in \cite{numerical-:1992} for the MVN
+case and in \cite{numerical-:1999} for the MVT case. Several
+suitable standard integration routines can be applied to this
+transformed integral. For the present implementation randomized
+lattice rules were used. Such lattice rules seek to fill the
+integration region evenly in a deterministic process. In
+principle, they construct regular patterns, such that the
+projections of the integration points onto each axis produce an
+equidistant subdivision of the axis. Robust integration error
+bounds are obtained by introducing additional shifts of the
+entire set of integration nodes in random directions. Since this
+additional randomization step is only performed to introduce a
+robust Monte Carlo error bound, 10 simulation runs are usually
+sufficient. For a more detailed description \cite{numerical-:1999}
+might be referred to.
 
 \section{Applications}
 
