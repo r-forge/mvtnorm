@@ -13,13 +13,6 @@ rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
 ##___ Examples ___:
 
 
-# ok, first of all a little univariate test: 
-
-prob <- pmvnorm(mean = 3, corr = 1, lower = -Inf, upper = 3)
-print(prob$value - pnorm(3,3))
-
-# now something more meaningful
-
 n <- 5
 mean <- rep(0, 5)
 lower <- rep(-1, 5)
@@ -41,13 +34,6 @@ rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
 ##___ Examples ___:
 
 
-# ok, first of all a little univariate test: 
-
-prob <- pmvt(lower = -Inf, upper = 3, df = 3, corr = 1, delta = 0)
-print(prob$value - pt(3,3))
-
-# now something more meaningful
-
 n <- 5
 lower <- rep(-1, 5)
 upper <- rep(3, 5)
@@ -59,7 +45,7 @@ prob <- pmvt(lower, upper, df, corr , delta)
 print(prob)
 
 
-## Keywords: 'mutivariate t distribution'.
+## Keywords: 'distribution'.
 
 
 cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")

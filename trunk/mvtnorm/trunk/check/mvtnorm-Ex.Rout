@@ -28,14 +28,6 @@ Type	"q()" to quit R.
 > ##___ Examples ___:
 > 
 > 
-> # ok, first of all a little univariate test: 
-> 
-> prob <- pmvnorm(mean = 3, corr = 1, lower = -Inf, upper = 3)
-> print(prob$value - pnorm(3,3))
-[1] 0.4986501
-> 
-> # now something more meaningful
-> 
 > n <- 5
 > mean <- rep(0, 5)
 > lower <- rep(-1, 5)
@@ -45,10 +37,10 @@ Type	"q()" to quit R.
 > prob <- pmvnorm(mean, corr, lower, upper)
 > print(prob)
 $value
-[1] 0.5800593
+[1] 0.5798866
 
 $error
-[1] 0.001834674
+[1] 0.0003839004
 
 $msg
 [1] "Normal Completion"
@@ -66,14 +58,6 @@ $msg
 > ##___ Examples ___:
 > 
 > 
-> # ok, first of all a little univariate test: 
-> 
-> prob <- pmvt(lower = -Inf, upper = 3, df = 3, corr = 1, delta = 0)
-> print(prob$value - pt(3,3))
-[1] 0
-> 
-> # now something more meaningful
-> 
 > n <- 5
 > lower <- rep(-1, 5)
 > upper <- rep(3, 5)
@@ -84,21 +68,21 @@ $msg
 > prob <- pmvt(lower, upper, df, corr , delta)
 > print(prob)
 $value
-[1] 0.5064544
+[1] 0.5066307
 
 $error
-[1] 0.001931504
+[1] 0.0004089173
 
 $msg
 [1] "Normal Completion"
 
 > 
 > 
-> ## Keywords: 'mutivariate t distribution'.
+> ## Keywords: 'distribution'.
 > 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  0.18 0 0.18 0 0 
+Time elapsed:  0.31 0 0.31 0 0 
 > dev.off(); quit('no')
 null device 
           1 
