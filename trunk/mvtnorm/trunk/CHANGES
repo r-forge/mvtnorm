@@ -1,8 +1,10 @@
 # $Id$
 
-	0.7-0 (02.09.2004)
+	0.7-0 (xx.09.2004)
 
 	a coding session with Frank produced `qmv{t,norm}'.
+        try to check if the support specified by `lower' and `upper' is
+        empty (problem spotted by Peter Thomson <peter@statsresearch.co.nz>)
 
 	0.6-8 (03.06.2004)
 

@@ -4,38 +4,46 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
 {
     UNI <- FALSE
     if (is.null(lower) || any(is.na(lower)))
-        stop("lower not specified or contains NA")
+        stop(sQuote("lower"), " not specified or contains NA")
     if (is.null(upper) || any(is.na(upper)))
-        stop("upper not specified or contains NA")
+        stop(sQuote("upper"), " not specified or contains NA")
     rec <- cbind(lower, upper, mean)
     lower <- rec[,"lower"]
     upper <- rec[,"upper"]
+    if (!all(lower <= upper))
+        stop("at least one element of ", sQuote("lower"), " is larger than ", 
+             sQuote("upper"))
     mean <- rec[,"mean"]
     if (any(is.na(mean)))
         stop("mean contains NA")
     if (is.null(corr) && is.null(sigma)) {
         corr <- diag(length(lower))
-        # warning("both corr and sigma not specified: using sigma=diag(length(lower))")
+        # warning("both ", sQuote("corr"), " and ", sQuote("sigma"),
+        # " not specified: using sigma=diag(length(lower))")
     }
     if (!is.null(corr) && !is.null(sigma)) {
         sigma <- NULL
-        warning("both corr and sigma specified: ignoring sigma")
+        warning("both ", sQuote("corr"), " and ", sQuote("sigma"), 
+                " specified: ignoring ", sQuote("sigma"))
     }
     if (!is.null(corr)) {
          if (!is.matrix(corr)) {
              if (length(corr) == 1)
                 UNI <- TRUE
              if (length(corr) != length(lower))
-               stop("diag(corr) and lower are of different length")
+               stop(sQuote("diag(corr)"), " and ", sQuote("lower"), 
+                    " are of different length")
          } else {
              if (length(corr) == 1) {
                  UNI <- TRUE
                  corr <- corr[1,1]
                  if (length(lower) != 1)
-                   stop("corr and lower are of different length")
+                   stop(sQuote("corr"), " and ", sQuote("lower"), 
+                        " are of different length")
              } else {
                  if (length(diag(corr)) != length(lower))        
-                     stop("diag(corr) and lower are of different length")
+                     stop(sQuote("diag(corr)"), " and ", sQuote("lower"), 
+                          " are of different length")
              }
          }
     }
@@ -44,16 +52,19 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
             if (length(sigma) == 1)
                 UNI <- TRUE
             if (length(sigma) != length(lower))        
-               stop("diag(sigma) and lower are of different length")
+               stop(sQuote("diag(sigma)"), " and ", sQuote("lower"), 
+                    " are of different length")
          } else {
             if (length(sigma) == 1) {
                 UNI <- TRUE       
                 sigma <- sigma[1,1]
                 if (length(lower) != 1) 
-                  stop("sigma and lower are of different length")
+                  stop(sQuote("sigma"), " and ", sQuote("lower"), 
+                       " are of different length")
             } else {
               if (length(diag(sigma)) != length(lower))                     
-                 stop("diag(sigma) and lower are of different length")
+                 stop(sQuote("diag(sigma)"), " and ", sQuote("lower"), 
+                      " are of different length")
             }
          }
     }
@@ -69,7 +80,7 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
     if (!is.null(carg$corr)) {
       corr <- carg$corr
       if (carg$uni) {
-          stop("sigma not specified: cannot compute pnorm")
+          stop(sQuote("sigma"), " not specified: cannot compute pnorm")
       } else {
           lower <- carg$lower - carg$mean
           upper <- carg$upper - carg$mean
@@ -103,9 +114,10 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
                        sigma=sigma)
     if (is.null(df))
-        stop("df not specified")
+        stop(sQuote("df"), " not specified")
     if (any(df < 0))
-        stop("cannot compute multivariate t distribution with df < 0")
+        stop("cannot compute multivariate t distribution with ",
+             sQuote("df"), " < 0")
     if (carg$uni) {
         if (df > 0)
             RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
@@ -138,6 +150,13 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
 mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
                 abseps = 0.001, releps = 0)
 {
+    ### handle cases where the support is the empty set
+    if (any(abs(lower - upper)) < sqrt(.Machine$double.eps) || 
+        any(is.na(lower - upper))) {
+        RET <- list(value = 0, error = 0, msg = "lower == upper")
+        return(RET)
+    }
+
     n <- ncol(corr)
     if (is.null(n) || n < 2) stop("dimension less then n = 2")
 
