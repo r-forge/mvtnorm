@@ -9,8 +9,7 @@ based on algorithms by Genz and Bretz.
 
 }
 \usage{
-pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0.001, 
-                    releps = 0)
+pmvnorm(mean, corr, lower, upper, maxpts = 25000, abseps =0.001, releps = 0)
 }
 \arguments{
   \item{mean}{ the mean vector of length n.}
