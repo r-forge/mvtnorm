@@ -8,7 +8,7 @@
 }
 \usage{
 mvt(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001,
-           releps = 0, tol=1e-7)
+           releps = 0)
 sig2corr(sigma)
 checkmvArgs(lower, upper, mean, corr, sigma)
 }

@@ -11,7 +11,7 @@ based on algorithms by Genz and Bretz.
 \usage{
 pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
         corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
-        releps = 0,  tol = 1e-7)
+        releps = 0)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -26,8 +26,6 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
-  \item{tol}{ the tolerance for detecting linear dependencies in the
-          columns of \code{corr}}
 }
 \details{
 
