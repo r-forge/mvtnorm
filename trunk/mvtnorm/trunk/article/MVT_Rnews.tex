@@ -60,26 +60,34 @@ Pullman, WA 99164-3113 USA}
 
 \maketitle
 
-\section{Algorithms}
+\section*{Introduction}
 
-The numerical computation if a multivariate normal or $t$ probability is
+The numerical computation of a multivariate normal or $t$ probability is
 often a difficult problem. Recent developments resulted in algorithms for
 the fast computation of those probabilities for arbitrary correlation
 structures. We refer to the work described in \cite{numerical-:1992},
 \cite{comparison:1993} and \cite{numerical-:1999}. The procedures proposed
 in those papers are implemented in package {\ttfamily mvtnorm}, available at
-CRAN. We first illustrate the use of the package using a simple example.
+CRAN. Basically, the package implements two functions: {\ttfamily pmvnorm}
+for the computation of multivariate normal probabilities and {\ttfamily
+pmvt} for the computation of multivariate $t$ probabilities, both for
+arbitrary means (resp. noncentrality parameters), correlation matrices
+and integration bounds.
 
-\section{A Simple Example}
+We first illustrate the use of the package using a simple example of the
+multivariate normal distribution in Section \ref{simple}. 
+A little more details are given in Section \ref{details}. 
+
+\section{A Simple Example \label{simple}}
 
 Assume that $ X = (X_1, X_2, X_3) $ is multivariate normal with correlation
 matrix
 \begin{eqnarray*}
-\Sigma = \left( \begin{array}{ccc} 1 & \frac{3}{5} & \frac{1}{3} \\
+\Sig = \left( \begin{array}{ccc} 1 & \frac{3}{5} & \frac{1}{3} \\
 \frac{3}{5} & 1 & \frac{11}{15} \\
 \frac{1}{3} & \frac{11}{15} & 1 \end{array} \right)
 \end{eqnarray*}
-and expectation $ \mu = 0 $. We are interested in the probability 
+and expectation $ \mu = (0,0,0)^{\top} $. We are interested in the probability 
 \begin{eqnarray*}
 P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2). 
 \end{eqnarray*}
@@ -90,7 +98,8 @@ R> sigma <- diag(3)
 R> sigma[2,1] <- 3/5
 R> sigma[3,1] <- 1/3
 R> sigma[3,2] <- 11/15
-R> pmvnorm(mean=rep(0, m), sigma, lower=rep(-Inf, m), upper=c(1,4,2))
+R> pmvnorm(mean=rep(0, m), sigma, 
+           lower=rep(-Inf, m), upper=c(1,4,2))
 $value
 [1] 0.8279846
 
@@ -100,10 +109,12 @@ $error
 $msg
 [1] "Normal Completion"
 \end{verbatim}
-First, the lower triangular of the correlation matrix is needed. The mean
-vector is passed to pmvnorm by the argument {\ttfamily mean}. The region of
-integration is given by {\ttfamily lower} and {\ttfamily upper}, both can
-take {\ttfamily -Inf} or {\ttfamily +Inf}. The value of {\ttfamily pmvnorm}
+First, the lower triangular of the correlation matrix {\ttfamily sigma} 
+is needed. The mean
+vector is passed to {\ttfamily pmvnorm} by the argument {\ttfamily mean}. 
+The region of
+integration is given by the vectors {\ttfamily lower} and {\ttfamily upper}, 
+both can have elements {\ttfamily -Inf} or {\ttfamily +Inf}. The value of {\ttfamily pmvnorm}
 is a list with the following components:
 \begin{itemize}
 \item {\ttfamily value}: the estimated integral value,
@@ -118,7 +129,7 @@ P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2) \approx
 \end{eqnarray*}
 with an absolute error of $2.7e-07$. 
 
-\section{Details}
+\section{Details \label{details}}
 
 This section outlines the basic ideas of the algorithms used. The
 multivariate $t$ distribution (MVT) is given by $$ \bT(\ba, \bb,
