@@ -68,6 +68,7 @@ lower <- rep(-1, 5)
 upper <- rep(3, 5)
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
+corr[upper.tri(corr)] <- 0.5
 prob <- pmvnorm(mean, corr, lower, upper)
 print(prob)
 
