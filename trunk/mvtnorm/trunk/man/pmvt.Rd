@@ -30,9 +30,10 @@ It involves both the computation of singular and nonsingular
 probabilities. The methodology is described in
 Genz and Bretz (1999) and Genz and Bretz (2000).
 
-For a given correlation matrix \code{corr} (which has to be 
-positive semi-definite) and degrees of freedom \code{df} the following 
-values are numerically evaluated.
+For a given correlation matrix \code{corr}, for short \eqn{A}, say, 
+(which has to be  positive semi-definite) and 
+degrees of freedom \code{df} the following 
+values are numerically evaluated
 
 \deqn{I = K \int s^{df-1} \exp(-s^2/2) \Phi(s \cdot lower/\sqrt{df}-delta,
 s \cdot upper/\sqrt{df}-delta) ds }
