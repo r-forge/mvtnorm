@@ -1,5 +1,10 @@
 # $Id$
 
+	0.5-15 (16.06.2003)
+
+	a note on one-sided probabilities in `pmvt'
+	correlation matrices in cats example a little bit nicer 	
+
 	0.5-14 (06.05.2003)
 
 	the package owns a vignette based on the paper in RNews 1(2)
