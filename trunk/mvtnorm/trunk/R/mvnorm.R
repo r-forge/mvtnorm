@@ -44,8 +44,8 @@ dmvnorm <- function (x, mean, sigma, log=FALSE)
         stop("mean and sigma have non-conforming size")
     }
     distval <- mahalanobis(x, center = mean, cov = sigma)
-    logdet <- sum(log(La.eigen(sigma, symmetric=TRUE,
-                                      only.values=TRUE)$values))
+    logdet <- sum(log(eigen(sigma, symmetric=TRUE,
+                                   only.values=TRUE)$values))
     logretval <- -(ncol(x)*log(2*pi) + logdet + distval)/2
     if(log) return(logretval)
     exp(logretval)
