@@ -57,7 +57,7 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
 
 
 pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL, sigma=NULL,
-                    maxpts = 25000, abseps = 0.001, releps = 0)
+                    maxpts = 25000, abseps = 0.001, releps = 0,  tol = 1e-7)
 {
     carg <- checkmvArgs(lower=lower, upper=upper, mean=mean, corr=corr,
                       sigma=sigma)
@@ -83,7 +83,7 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
           mean <- rep(0, length(lower))
           corr <- t(t(carg$sigma)/diag(carg$sigma))
           RET <- mvt(lower=lower, upper=upper, df=0, corr=corr, delta=mean,
-                     maxpts=maxpts, abseps=abseps,releps=releps)
+                     maxpts=maxpts, abseps=abseps,releps=releps,tol=tol)
       }
     }
     attr(RET$value, "error") <- RET$error
@@ -93,7 +93,7 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
 
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                  df=1, corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
-                 releps = 0)
+                 releps = 0, tol = 1e-7)
 {
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
                        sigma=sigma)
@@ -108,13 +108,15 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     } else {
         if (!is.null(carg$corr)) {
             RET <- mvt(lower=carg$lower, upper=carg$upper, df=df, corr=carg$corr,
-                       delta=carg$mean,  maxpts=maxpts, abseps=abseps,releps=releps)
+                       delta=carg$mean,  maxpts=maxpts,
+                       abseps=abseps,releps=releps, tol=tol)
         } else {
             lower <- carg$lower/sqrt(diag(carg$sigma))
             upper <- carg$upper/sqrt(diag(carg$sigma))
             corr <- t(t(sigma)/diag(carg$sigma))
             RET <- mvt(lower=lower, upper=upper, df=df, corr=corr,
-                       delta=carg$mean, maxpts=maxpts, abseps=abseps,releps=releps)
+                       delta=carg$mean, maxpts=maxpts,
+                       abseps=abseps,releps=releps, tol=tol)
         }
     }
     attr(RET$value, "error") <- RET$error
@@ -124,7 +126,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
 
 
 mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
-                abseps = 0.001, releps = 0)
+                abseps = 0.001, releps = 0,  tol = 1e-7)
 {
     n <- ncol(corr)
     if (is.null(n) || n < 2) stop("dimension less then n = 2")
@@ -152,7 +154,7 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
     ret <- .Fortran("mvtdst", as.integer(n), as.integer(df),
                         as.double(lower), as.double(upper), as.integer(infin),
                         as.double(corrF), as.double(delta), as.integer(maxpts),
-                        as.double(abseps), as.double(releps),
+                        as.double(abseps), as.double(releps), as.double(tol), 
                         error = as.double(error), value = as.double(value),
                         inform = as.integer(inform))
     
