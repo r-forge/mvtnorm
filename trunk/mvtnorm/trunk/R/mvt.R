@@ -104,6 +104,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
       }
     } else {
       if (carg$uni) {
+          #<FIXME> work-around for bug in pt: pt(-Inf, 3) != pt(-Inf, 3, ncp=0)
           if (carg$mean != 0) {
             RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
                             pt(carg$lower, df=df, ncp=carg$mean),
@@ -113,6 +114,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                             pt(carg$lower, df=df),
                     error = 0, msg="univariate: using pt")
           }
+          #</FIXME>
       } else {
           lower <- carg$lower/sqrt(diag(carg$sigma))
           upper <- carg$upper/sqrt(diag(carg$sigma))

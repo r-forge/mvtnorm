@@ -19,7 +19,9 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{delta}{ the vector of noncentrality parameters of length n.}
   \item{df}{ degree of freedom as integer.}
   \item{corr}{ the correlation matrix of dimension n.}
-  \item{sigma}{ the covariance matrix of dimension n.}
+  \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
+                \code{sigma} can be specified. If \code{sigma} is given, the  
+                problem is standardized.}
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
@@ -96,7 +98,7 @@ delta <- rep(0, 5)
 prob <- pmvt(lower=lower, upper=upper, delta=delta, df=df, corr=corr)
 print(prob)
 
-pmvt(lower=-Inf, upper=3, df = 3, sigma = 0) == pt(3, 3)
+pmvt(lower=-Inf, upper=3, df = 3, sigma = 1) == pt(3, 3)
 
 # Example from R News paper (original by Edwards and Berry, 1987)
 
@@ -131,6 +133,20 @@ a
 b
 
 stopifnot(round(a, 2) == round(b, 2))
+
+# correlation and covariance matrix
+
+a <- pmvt(lower=rep(-Inf,5), upper=rep(2,5), delta=rep(0,5), df=3,
+          sigma = diag(5)*2)
+b <- pmvt(lower=rep(-Inf,5), upper=rep(2,5)/sqrt(2), delta=rep(0,5),
+          df=3, corr=diag(5))  
+attributes(a) <- NULL
+attributes(b) <- NULL
+a
+b
+stopifnot(all.equal(round(a,3) , round(b, 3)))
+
+
 
 }
 

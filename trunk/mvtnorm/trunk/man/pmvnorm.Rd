@@ -19,7 +19,8 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{mean}{ the mean vector of length n.}
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
-                \code{sigma} can be specified.}
+                \code{sigma} can be specified. If \code{sigma} is given, the
+                problem is standardized.}
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
@@ -40,8 +41,7 @@ The mvn case is treated as a special case of \code{\link{pmvt}} with \code{df=0}
 Univariate problems are passed to \code{\link{pnorm}}.
 
 Multivariate normal density and random numbers are available using
-\code{dmvnorm} (available in \code{\link[e1071]{Mvnorm}}) 
-and \code{\link[MASS]{mvrnorm}}.  
+\code{\link{dmvnorm}} and \code{\link{rmvnorm}}.
  
 }
 \value{
@@ -94,6 +94,13 @@ sigma[2,1] <- 3/5
 sigma[3,1] <- 1/3
 sigma[3,2] <- 11/15
 pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), corr=sigma)
+
+# Correlation and Covariance
+
+a <- pmvnorm(lower=c(-Inf,-Inf), upper=c(2,2), sigma = diag(2)*2)
+b <- pmvnorm(lower=c(-Inf,-Inf), upper=c(2,2)/sqrt(2), corr=diag(2))
+stopifnot(all.equal(round(a,5) , round(b, 5)))
+
 
 }
 

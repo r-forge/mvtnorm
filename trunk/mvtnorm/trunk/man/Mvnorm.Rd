@@ -19,7 +19,7 @@ rmvnorm(n, mean, sigma)
  \item{mean}{Mean vector, default is \code{rep(0, length = ncol(x))}.}
  \item{sigma}{Covariance matrix, default is \code{diag(ncol(x))}.}
 }
-\author{Friedrich Leisch}
+\author{Friedrich Leisch <Friedrich.Leisch@ci.tuwien.ac.at> }
 \seealso{\link{pmvnorm},\link{rnorm}}
 \examples{
 dmvnorm(x=c(0,0))

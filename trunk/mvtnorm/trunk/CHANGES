@@ -1,5 +1,9 @@
 # $Id$
 
+	0.4-2 (04.12.2001)
+
+	several typos, man-pages improved
+
 	0.4-1 (04.12.2001)
 
 	interface changed: sigma (covariance matrix) can be specified as
