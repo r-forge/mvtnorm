@@ -107,9 +107,14 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     if (any(df < 0))
         stop("cannot compute multivariate t distribution with df < 0")
     if (carg$uni) {
-        RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
-                            pt(carg$lower, df=df, ncp=carg$mean),
-                    error = 0, msg="univariate: using pt")
+        if (df > 0)
+            RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
+                                pt(carg$lower, df=df, ncp=carg$mean),
+                       error = 0, msg="univariate: using pt")
+        else
+            RET <- list(value = pnorm(carg$upper, mean = carg$mean) -
+                                pnorm(carg$lower, mean=carg$mean),
+                       error = 0, msg="univariate: using pnorm")
     } else {
         if (!is.null(carg$corr)) {
             RET <- mvt(lower=carg$lower, upper=carg$upper, df=df, corr=carg$corr,
