@@ -27,10 +27,12 @@ This program involves the computation of
 multivariate normal-probabilities with arbitrary correlation matrices.
 It involves both the computation of singular and nonsingular 
 probabilities. The methodology is described in
-Genz and Bretz (1999) and Genz and Bretz (2000).
+Genz (1992) and Genz (1993).
 
 Note that both \code{-Inf} and \code{+Inf} may be specified in \code{lower} and
 \code{upper}. For more details see \link{pmvt}. 
+
+The mvn case is treated as a special case of link{pmvt} with \code{df=0}. 
 
 Multivariate normal density and random numbers are available using
 \link[e1071]{dmvnorm} and \link[MASS]{mvrnorm}.  
@@ -44,13 +46,12 @@ A list with the following components:
 }
 \references{ 
 
-Genz, A. and Bretz, F. (1999), Numerical computation of multivariate
-t-probabilities with application to power calculation of multiple
-contrasts. \emph{Journal of Statistical Computation and Simulation},
-\bold{63}, 361--378.
+Genz, A. (1992). Numerical computation of multivariate normal probabilities.
+\emph{Journal of Computational and Graphical Statistics}, \bold{1}, 141--150 
 
-Genz, A. and Bretz, F. (2001), Methods for the computation of multivariate
-t-probabilities. \emph{(submitted)}
+Genz, A. (1993). Comparison of methods for the computation of multivariate
+normal probabilities. \emph{Computing Science and Statistics}, \bold{25},
+400--405
 
 }
 

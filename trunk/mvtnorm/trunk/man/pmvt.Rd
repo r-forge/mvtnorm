@@ -28,7 +28,7 @@ This program involves the computation of central and noncentral
 multivariate t-probabilities with arbitrary correlation matrices.
 It involves both the computation of singular and nonsingular
 probabilities. The methodology is described in
-Genz and Bretz (1999) and Genz and Bretz (2000).
+Genz and Bretz (1999, 2001).
 
 For a given correlation matrix \code{corr}, for short \eqn{A}, say, 
 (which has to be  positive semi-definite) and 
