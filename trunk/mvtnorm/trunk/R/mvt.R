@@ -1,21 +1,27 @@
 
-pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0, releps = 0.005)
+pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0, releps =
+0.001)
 {
 	if (df < 1) stop("cannot compute multivariate t distribution with df < 1")
 	return(mvt(lower, upper, df, corr, delta, maxpts, abseps,releps))
 }
 
-pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0, releps = 0.005)
+pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0, releps =
+0.001)
 {
 	delta <- mean
+	if (length(mean) != length(lower)) stop("wrong dimensions")
 	return(mvt(lower, upper, df=0, corr, delta, maxpts, abseps,releps))
 }
 
 mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0,
-releps = 0.005)
+releps = 0.001)
 {
 	n <- ncol(corr)
-	if (is.null(n)) n <- 1
+	if (is.null(n)) stop("dimension less then n = 2")
+
+	if (length(lower) != n) stop("wrong dimensions")
+	if (length(upper) != n) stop("wrong dimensions")
 
 	if (n > 100) stop("only dimensions 1 <= n <= 100 allowed") 
 
@@ -41,7 +47,7 @@ releps = 0.005)
 
 	if (inform == 0) msg <- "Normal Completion"
 	if (inform == 1) msg <- "Completion with error > abseps"
-	if (inform == 4) msg <- "Covariance matrix not positive semidefinite"
+	if (inform == 3) msg <- "Covariance matrix not positive semidefinite"
 	
 	out <- list(value = value, error = error, msg = msg)
 	return(out)
