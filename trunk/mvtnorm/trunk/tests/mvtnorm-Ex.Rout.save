@@ -1,6 +1,6 @@
 
-R : Copyright 2001, The R Development Core Team
-Version 1.4.0 Under development (unstable) (2001-12-09)
+R : Copyright 2002, The R Development Core Team
+Version 1.6.0 beta (2002-09-28)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -181,9 +181,9 @@ attr(,"error")
 attr(,"msg")
 [1] "Normal Completion"
 > b
-[1] 0.4211469
+[1] 0.4211355
 attr(,"error")
-[1] 2.231302e-05
+[1] 4.958539e-06
 attr(,"msg")
 [1] "Normal Completion"
 > 
@@ -198,9 +198,9 @@ attr(,"msg")
 > attributes(a) <- NULL
 > attributes(b) <- NULL
 > a
-[1] 0.5653843
+[1] 0.5654242
 > b
-[1] 0.5653325
+[1] 0.5654566
 > stopifnot(all.equal(round(a,3) , round(b, 3)))
 > 
 > 
@@ -209,7 +209,7 @@ attr(,"msg")
 > 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  8.93 0 9.2 0 0 
+Time elapsed:  11.2 0.01 11.62 0 0 
 > dev.off(); quit('no')
 null device 
           1 
