@@ -66,9 +66,9 @@ Pullman, WA 99164-3113 USA}
 
 \maketitle
 
-<<prelim, echo=FALSE, hide=TRUE>>=
+<<prelim, echo=FALSE>>=
 set.seed(290875)
-options(width=60, prompt="R>")
+options(width=60, prompt="R> ")
 @
 
 \section*{Introduction}
