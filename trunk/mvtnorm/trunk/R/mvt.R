@@ -75,7 +75,7 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
           lower <- (carg$lower - carg$mean)/sqrt(diag(carg$sigma))
           upper <- (carg$upper - carg$mean)/sqrt(diag(carg$sigma))
           mean <- rep(0, length(lower))
-          corr <- t(t(carg$sigma)/sqrt(diag(carg$sigma)))
+          corr <- t(t(carg$sigma)/diag(carg$sigma))
           RET <- mvt(lower=lower, upper=upper, df=0, corr=corr, delta=mean,
                      maxpts=maxpts, abseps=abseps,releps=releps)
       }
@@ -104,14 +104,20 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
       }
     } else {
       if (carg$uni) {
-          RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
+          if (carg$mean != 0) {
+            RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
                             pt(carg$lower, df=df, ncp=carg$mean),
                     error = 0, msg="univariate: using pt")
+          } else {
+            RET <- list(value = pt(carg$upper, df=df) -
+                            pt(carg$lower, df=df),
+                    error = 0, msg="univariate: using pt")
+          }
       } else {
           lower <- carg$lower/sqrt(diag(carg$sigma))
           upper <- carg$upper/sqrt(diag(carg$sigma))
-          corr <- t(t(sigma)/sqrt(diag(carg$sigma)))
-          RET <- mvt(lower=carg$lower, upper=carg$upper, df=df, corr=carg$corr,
+          corr <- t(t(sigma)/diag(carg$sigma))
+          RET <- mvt(lower=lower, upper=upper, df=df, corr=corr,
                      delta=carg$mean, maxpts=maxpts, abseps=abseps,releps=releps)
       }
     }
