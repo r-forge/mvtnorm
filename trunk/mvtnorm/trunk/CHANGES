@@ -1,5 +1,9 @@
 # $Id$
 
+	0.6-5 (14.11.2003)
+
+	check if covariance matrix is pd in rmvnorm (by Fritz Leisch)
+
 	0.6-4 (06.10.2003)
 
 	use new base function `cov2cor'
