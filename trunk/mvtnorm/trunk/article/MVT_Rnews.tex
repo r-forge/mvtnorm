@@ -1,0 +1,97 @@
+\documentclass[11pt]{amsart}
+\usepackage[round]{natbib}
+\usepackage{bibentry}
+\renewcommand{\baselinestretch}{1.5}
+
+\begin{document}
+
+\title{On Multivariate $t$ and Gau{\ss} Probabilities in R}
+
+\author{Torsten Hothorn}
+\address{Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg \\
+Institut f\"ur Medizininformatik, Biometrie und Epidemiologie \\
+Waldstra{\ss}e 6, D-91054 Erlangen}
+\email{Torsten.Hothorn@rzmail.uni-erlangen.de}
+\author{Frank Bretz}
+\address{Universit\"at Hannover \\ LG Bioinformatik, FB Gartenbau \\
+Herrenh\"auser Str. 2 \\ D-30419 Hannover}
+\email{bretz@ifgb.uni-hannover.de}
+\author{Alan Genz}
+\address{Department of Mathematics \\ Washington State University \\
+Pullman, WA 99164-3113 USA}
+\email{alangenz@wsu.edu}
+
+\maketitle
+
+\section{Algorithms}
+
+The numerical computation if a multivariate normal or $t$ probability is
+often a difficult problem. Recent developments resulted in algorithms for
+the fast computation of those probabilities for arbitrary correlation
+structures. We refer to the work described in \cite{numerical-:1992},
+\cite{comparison:1993} and \cite{numerical-:1999}. The procedures proposed
+in those papers are implemented in package {\ttfamily mvtnorm}, available at
+CRAN. We first illustrate the use of the package using a simple example.
+
+\section{A Simple Example}
+
+Assume that $ X = (X_1, X_2, X_3) $ is multivariate normal with correlation
+matrix
+\begin{eqnarray*}
+\Sigma = \left( \begin{array}{ccc} 1 & \frac{3}{5} & \frac{1}{3} \\
+\frac{3}{5} & 1 & \frac{11}{15} \\
+\frac{1}{3} & \frac{11}{15} & 1 \end{array} \right)
+\end{eqnarray*}
+and expectation $ \mu = 0 $. We are interested in the probability 
+\begin{eqnarray*}
+P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2). 
+\end{eqnarray*}
+This is computed as follows:
+\begin{verbatim}
+R> m <- 3
+R> sigma <- diag(3)
+R> sigma[2,1] <- 3/5
+R> sigma[3,1] <- 1/3
+R> sigma[3,2] <- 11/15
+R> pmvnorm(mean=rep(0, m), sigma, lower=rep(-Inf, m), upper=c(1,4,2))
+$value
+[1] 0.8279846
+
+$error
+[1] 2.696757e-07
+
+$msg
+[1] "Normal Completion"
+\end{verbatim}
+First, the lower triangular of the correlation matrix is needed. The mean
+vector is passed to pmvnorm by the argument {\ttfamily mean}. The region of
+integration is given by {\ttfamily lower} and {\ttfamily upper}, both can
+take {\ttfamily -Inf} or {\ttfamily +Inf}. The value of {\ttfamily pmvnorm}
+is a list with the following components:
+\begin{itemize}
+\item {\ttfamily value}: the estimated integral value,
+\item {\ttfamily error}: the estimated absolute error,
+\item {\ttfamily msg}: a status message, indicating wheater or not the algorithm
+terminated correctly.
+\end{itemize}
+From the results above it follows that
+\begin{eqnarray*}
+P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2) \approx
+0.82798
+\end{eqnarray*}
+with an absolute error of $2.7e-07$. 
+
+\section{Details}
+
+This section outlines the basic ideas of the algorithms used (short!
+non-technical) ;-) Frank?
+
+\section{Applications}
+
+Here we should give a 'real life' example (multiple testing or something
+like that). Maybe we can bring someone to the idea to hack this stuff ;-)
+
+\bibliographystyle{plainnat}
+\bibliography{litdb}
+
+\end{document}
