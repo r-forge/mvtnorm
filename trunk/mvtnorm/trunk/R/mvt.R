@@ -1,18 +1,30 @@
 
-pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, releps = 0)
+pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
+                 abseps = 0.001, releps = 0)
 {
-	if (df < 1) stop("cannot compute multivariate t distribution with df < 1")
+	if (df < 1) 
+		stop("cannot compute multivariate t distribution with df < 1")
+	if (is.null(ncol(corr))) 
+		return(list(value = pt(upper, df=df, ncp=delta) -
+                                    pt(lower, df=df, ncp=delta),
+                            error = 0, msg="univariate: using pt"))
 	return(mvt(lower, upper, df, corr, delta, maxpts, abseps,releps))
 }
 
-pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0.001, releps = 0)
+pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000,
+                    abseps = 0.001, releps = 0)
 {
 	delta <- mean
 	if (length(mean) != length(lower)) stop("wrong dimensions")
+	if (is.null(ncol(corr)))
+		return(list(value = pnorm(upper, mean=mean, sd=corr) -
+                                    pnorm(lower, mean=mean, sd=corr),
+                            error = 0, msg="univariate: using pnorm"))
 	return(mvt(lower, upper, df=0, corr, delta, maxpts, abseps,releps))
 }
 
-mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, releps = 0)
+mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
+                abseps = 0.001, releps = 0)
 {
 	n <- ncol(corr)
 	if (is.null(n)) stop("dimension less then n = 2")
@@ -27,8 +39,7 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, r
 	infin[lower == -Inf] <- 0
 	infin[lower == -Inf & upper == Inf] <- -1
 	
-	if (n > 1)
-	{
+	if (n > 1) {
 		corrF <- matrix(as.vector(corr), ncol=n, byrow=T)
 		corrF <- corrF[upper.tri(corrF)]
 	} else corrF <- corr 
@@ -38,7 +49,12 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, r
 
 	error <- 0; value <- 0;	inform <- 0
 
-	ret <- .Fortran("mvtdst", as.integer(n), as.integer(df), as.double(lower), as.double(upper), as.integer(infin), as.double(corrF), as.double(delta), as.integer(maxpts), as.double(abseps), as.double(releps), error = as.double(error), value = as.double(value), inform = as.double(inform))
+	ret <- .Fortran("mvtdst", as.integer(n), as.integer(df),
+                        as.double(lower), as.double(upper), as.integer(infin),
+                        as.double(corrF), as.double(delta), as.integer(maxpts),
+                        as.double(abseps), as.double(releps),
+                        error = as.double(error), value = as.double(value),
+                        inform = as.double(inform))
 	
 	error <- ret$error; value <- ret$value; inform <- ret$inform
 
