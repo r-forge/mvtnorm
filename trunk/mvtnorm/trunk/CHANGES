@@ -1,5 +1,10 @@
 # $Id$
 
+	0.5-3 (09.04.2002)
+
+	correlation matrices for sigma with unequal variances incorrectly
+	computed, added `sig2corr' for that propose
+
 	0.5-2 (22.03.2002)
 
 	Frank added `tol' argument to MVTDST, now in mvtnorm
