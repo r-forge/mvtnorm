@@ -1,21 +1,18 @@
 
-pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0, releps =
-0.001)
+pmvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, releps = 0)
 {
 	if (df < 1) stop("cannot compute multivariate t distribution with df < 1")
 	return(mvt(lower, upper, df, corr, delta, maxpts, abseps,releps))
 }
 
-pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0, releps =
-0.001)
+pmvnorm <- function(mean, corr, lower, upper, maxpts = 25000, abseps =0.001, releps = 0)
 {
 	delta <- mean
 	if (length(mean) != length(lower)) stop("wrong dimensions")
 	return(mvt(lower, upper, df=0, corr, delta, maxpts, abseps,releps))
 }
 
-mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0,
-releps = 0.001)
+mvt <- function(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001, releps = 0)
 {
 	n <- ncol(corr)
 	if (is.null(n)) stop("dimension less then n = 2")

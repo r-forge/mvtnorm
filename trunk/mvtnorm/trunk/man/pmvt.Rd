@@ -9,7 +9,7 @@ based on algorithms by Genz and Bretz.
 
 }
 \usage{
-pmvt(lower, upper, df, corr, delta, maxpts=25000, abseps=0, releps=0.001)
+pmvt(lower, upper, df, corr, delta, maxpts=25000, abseps=0.001, releps=0)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
