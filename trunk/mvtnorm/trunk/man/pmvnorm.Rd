@@ -27,7 +27,7 @@ This program involves the computation of
 multivariate normal-probabilities with arbitrary correlation matrices.
 It involves both the computation of singular and nonsingular 
 probabilities. The methodology is described in
-Genz (1992) and Genz (1993).
+Genz (1992, 1993).
 
 Note that both \code{-Inf} and \code{+Inf} may be specified in \code{lower} and
 \code{upper}. For more details see \link{pmvt}. 
