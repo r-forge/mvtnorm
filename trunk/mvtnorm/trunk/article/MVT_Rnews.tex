@@ -47,6 +47,8 @@
 \title{On Multivariate $t$ and Gau{\ss} Probabilities in R}
 
 \author{Torsten Hothorn}
+\thanks{The first author gratefully acknowledges support by Deutsche
+Forschungsgemeinschaft, grand SFB 539 / A4}
 \address{Friedrich-Alexander-Universit\"at Erlangen-N\"urnberg \\
 Institut f\"ur Medizininformatik, Biometrie und Epidemiologie \\
 Waldstra{\ss}e 6, D-91054 Erlangen}
@@ -64,20 +66,22 @@ Pullman, WA 99164-3113 USA}
 
 \section*{Introduction}
 
-The numerical computation of a multivariate normal or $t$ probability is
-often a difficult problem. Recent developments resulted in algorithms for
-the fast computation of those probabilities for arbitrary correlation
-structures. We refer to the work described in \cite{numerical-:1992},
-\cite{comparison:1993} and \cite{numerical-:1999}. The procedures proposed
-in those papers are implemented in package {\ttfamily mvtnorm}, available at
-CRAN. Basically, the package implements two functions: {\ttfamily pmvnorm}
-for the computation of multivariate normal probabilities and {\ttfamily
-pmvt} for the computation of multivariate $t$ probabilities, both for
-arbitrary means (resp. noncentrality parameters), correlation matrices
-and integration bounds.
+The numerical computation of a multivariate normal or $t$
+probability is often a difficult problem. Recent developments
+resulted in algorithms for the fast computation of those
+probabilities for arbitrary correlation structures. We refer to
+the work described in \cite{numerical-:1992},
+\cite{comparison:1993} and \cite{numerical-:1999}. The procedures
+proposed in those papers are implemented in package {\ttfamily
+mvtnorm}, available at CRAN. Basically, the package implements
+two functions: {\ttfamily pmvnorm} for the computation of
+multivariate normal probabilities and {\ttfamily pmvt} for the
+computation of multivariate $t$ probabilities, both for arbitrary
+means (resp. noncentrality parameters), correlation matrices and
+hyperrectangular integration regions.
 
 We first illustrate the use of the package using a simple example of the
-multivariate normal distribution in Section \ref{simple}. 
+multivariate normal distribution in Section \ref{simple}.
 A little more details are given in Section \ref{details}. The application of
 {\ttfamily pmvt} in a multiple testing problem is discussed in Section
 \ref{appl}.
@@ -91,9 +95,9 @@ matrix
 \frac{3}{5} & 1 & \frac{11}{15} \\
 \frac{1}{3} & \frac{11}{15} & 1 \end{array} \right)
 \end{eqnarray*}
-and expectation $ \mu = (0,0,0)^{\top} $. We are interested in the probability 
+and expectation $ \mu = (0,0,0)^{\top} $. We are interested in the probability
 \begin{eqnarray*}
-P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2). 
+P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2).
 \end{eqnarray*}
 This is computed as follows:
 \begin{verbatim}
@@ -102,7 +106,7 @@ R> sigma <- diag(3)
 R> sigma[2,1] <- 3/5
 R> sigma[3,1] <- 1/3
 R> sigma[3,2] <- 11/15
-R> pmvnorm(mean=rep(0, m), sigma, 
+R> pmvnorm(mean=rep(0, m), sigma,
            lower=rep(-Inf, m), upper=c(1,4,2))
 $value
 [1] 0.8279846
@@ -113,11 +117,11 @@ $error
 $msg
 [1] "Normal Completion"
 \end{verbatim}
-First, the lower triangular of the correlation matrix {\ttfamily sigma} 
+First, the lower triangular of the correlation matrix {\ttfamily sigma}
 is needed. The mean
-vector is passed to {\ttfamily pmvnorm} by the argument {\ttfamily mean}. 
+vector is passed to {\ttfamily pmvnorm} by the argument {\ttfamily mean}.
 The region of
-integration is given by the vectors {\ttfamily lower} and {\ttfamily upper}, 
+integration is given by the vectors {\ttfamily lower} and {\ttfamily upper},
 both can have elements {\ttfamily -Inf} or {\ttfamily +Inf}. The value of {\ttfamily pmvnorm}
 is a list with the following components:
 \begin{itemize}
@@ -126,12 +130,12 @@ is a list with the following components:
 \item {\ttfamily msg}: a status message, indicating wheater or not the algorithm
 terminated correctly.
 \end{itemize}
-From the results above it follows that
+>From the results above it follows that
 \begin{eqnarray*}
 P(-\infty < X_1 \le 1, -\infty < X_2 \le 4, -\infty < X_3 \le 2) \approx
 0.82798
 \end{eqnarray*}
-with an absolute error of $2.7e-07$. 
+with an absolute error estimate of $2.7e-07$.
 
 \section{Details \label{details}}
 
@@ -149,8 +153,8 @@ d\bx, $$ $\bx = (x_1, x_2, ..., x_m)^t$, $-\infty \leq a_i < b_i
 symmetric $m \times m$ matrix. The original integral over an
 arbitrary $m$-dimensional, possibly unbounded hyper-rectangle is
 transformed to an integral over the unit hypercube. These
-transformations are described e.g. in \cite{numerical-:1992} for the MVN
-case and in \cite{numerical-:1999} for the MVT case. Several
+transformations are described in \cite{numerical-:1992} for the
+MVN case and in \cite{numerical-:1999} for the MVT case. Several
 suitable standard integration routines can be applied to this
 transformed integral. For the present implementation randomized
 lattice rules were used. Such lattice rules seek to fill the
@@ -167,17 +171,17 @@ might be referred to.
 
 \section{Applications \label{appl}}
 
-The multivariate $t$ distribution is applicable in a wide field of multiple
-testing problems. We will illustrate this using a example studied
-earlier by \cite{the-effici:1987}. For short, the 
-effects of $5$ different perfusates in 
-capillary permeability in cats was investigated by 
-\cite{blood-and-:1987}. The data met the assumptions of a
-standard one-factor ANOVA. For experimental reasons, the investigators were
-interested in a simultaneous confidence intervals for the following pairwise
-comparisons: $ \beta_1 - \beta_2, \beta_1 - \beta_3, \beta_1 - \beta_5,
-\beta_4 - \beta_2 $ and $ \beta_4 - \beta_3 $. Therefore, the matrix of
-contrast if given by 
+The multivariate $t$ distribution is applicable in a wide field
+of multiple testing problems. We will illustrate this using a
+example studied earlier by \cite{the-effici:1987}. For short, the
+effects of $5$ different perfusates in capillary permeability in
+cats was investigated by \cite{blood-and-:1987}. The data met the
+assumptions of a standard one-factor ANOVA. For experimental
+reasons, the investigators were interested in a simultaneous
+confidence intervals for the following pairwise comparisons: $
+\beta_1 - \beta_2, \beta_1 - \beta_3, \beta_1 - \beta_5, \beta_4
+- \beta_2 $ and $ \beta_4 - \beta_3 $. Therefore, the matrix of
+contrast is given by
 \begin{eqnarray*}
 \C = \left( \begin{array}{rrrrr} 1 & -1 & 0 & 0 & 0 \\
 1 & 0 & -1 & 0 & 0 \\
@@ -187,20 +191,21 @@ contrast if given by
 \end{eqnarray*}
 \cite{the-effici:1987} assumed that $ \beta = (\beta_1, \dots, \beta_5) $ is
 multivariate normal with mean $ \beta $ and covariance matrix $ \sigma^2 \V
-$, where $ \V $ is known. Under the null hypothesis $ \beta = 0 $, we need 
+$, where $ \V $ is known. Under the null hypothesis $ \beta = 0 $, we need
 knowledge about the
 distribution of the statistic
 \begin{eqnarray*}
 W = \max_{1 \le j \le 5} \left\{ \frac{| c_j(\hat{\beta} - \beta)
 |}{\hat{\sigma}\sqrt{c_j \V c_j^{\top}}} \right\}
 \end{eqnarray*}
-where $ c_j $ is the $j$th row of $ \C $.
-By assumption, the denominator is $ \chi^2_\nu $, so under hypothesis $ W $
-the argument to $ \max $ follows a multivariate $ t $ distribution.
-Confidence intervals can be obtained by $ c_j \hat{\beta} \pm w_\alpha
-\hat{\sigma} \sqrt{c_j \V c_i^\top} $, where $ w_\alpha $ is the $ 1 - \alpha
-$ quantile of the null distribution of $ W $. Using {\ttfamily pmvt}, one
-can easily compute the quantile for the example cited above.
+where $ c_j $ is the $j$th row of $ \C $. By assumption,
+$\hat{\sigma}$ is $ \chi_\nu $ distributed, so under hypothesis $
+W $ the argument to $ \max $ follows a multivariate $ t $
+distribution. Confidence intervals can be obtained by $ c_j
+\hat{\beta} \pm w_\alpha \hat{\sigma} \sqrt{c_j \V c_i^\top} $,
+where $ w_\alpha $ is the $ 1 - \alpha $ quantile of the null
+distribution of $ W $. Using {\ttfamily pmvt}, one can easily
+compute the quantile for the example cited above.
 
 \begin{verbatim}
 R> n <- c(26, 24, 20, 33, 32)
@@ -225,23 +230,23 @@ R> uniroot(myfct, lower=1, upper=5, alpha=0.95)
 [1] 2.562
 \end{verbatim}
 
-{\ttfamily n} is the vector of observations of each level of the factor,
-{\ttfamily V} is the covariance matrix of $ \beta $. With the contrasts $ \C
-$ we can compute the correlation matrix {\ttfamily cr} 
-of $ \C\beta $. Finally, we are
-interested in the $ 95\%$ quantile of $ W $. A wrapper function {\ttfamily
-myfct} computes the difference of the multivariate $ t $ probability for
-quantile {\ttfamily q} and {\ttfamily alpha}. The {\ttfamily alpha} quantile 
-can now be computed easily
-using {\ttfamily uniroot}. The $95\%$ quantile of $ W $ in this example is $
-2.562 $, \cite{the-effici:1987} obtained the same result using $ 80.000 $
-simulation runs. The computation needs $ 8.06 $ seconds total time on a 
-Pentium III $450$ MHz with $256$ MB memory.
+{\ttfamily n} is the sample size vector of each level of the
+factor, {\ttfamily V} is the covariance matrix of $ \beta $. With
+the contrasts $ \C $ we can compute the correlation matrix
+{\ttfamily cr} of $ \C\beta $. Finally, we are interested in the
+$ 95\%$ quantile of $ W $. A wrapper function {\ttfamily myfct}
+computes the difference of the multivariate $ t $ probability for
+quantile {\ttfamily q} and {\ttfamily alpha}. The {\ttfamily
+alpha} quantile can now be computed easily using {\ttfamily
+uniroot}. The $95\%$ quantile of $ W $ in this example is $ 2.562
+$, \cite{the-effici:1987} obtained the same result using $ 80.000
+$ simulation runs. The computation needs $ 8.06 $ seconds total
+time on a Pentium III $450$ MHz with $256$ MB memory.
 
-Using package {\ttfamily mvtnorm}, the efficient computation of 
-multivariate normal or $ t $ probabilities is now available 
+Using package {\ttfamily mvtnorm}, the efficient computation of
+multivariate normal or $ t $ probabilities is now available
 in {\ttfamily R}. We hope that this is helpful to users / programmers who
-deal with multiple testing problems. 
+deal with multiple testing problems.
 
 \bibliographystyle{plainnat}
 \bibliography{litdb}
