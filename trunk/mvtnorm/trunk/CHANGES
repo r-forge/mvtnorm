@@ -1,5 +1,10 @@
 # $Id$
 
+	0.6-0 (17.06.2003)
+
+	Fortran code in `mvt.f' updated to recent version by Alan and Frank.
+        This fixes problems with `pmvt' and large degrees of freedom.
+
 	0.5-15 (16.06.2003)
 
 	a note on one-sided probabilities in `pmvt'
