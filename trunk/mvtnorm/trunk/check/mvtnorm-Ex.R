@@ -30,6 +30,7 @@ prob <- pmvnorm(mean, corr, lower, upper)
 print(prob)
 
 
+## Keywords: 'multivariate normal distribution'.
 
 
 rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
@@ -58,6 +59,7 @@ prob <- pmvt(lower, upper, df, corr , delta)
 print(prob)
 
 
+## Keywords: 'mutivariate t distribution'.
 
 
 cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")

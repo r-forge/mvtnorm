@@ -20,7 +20,9 @@ releps = 0.005)
   \item{releps}{ relative error tolerance. }
 }
 \details{
-To add. 
+
+Hier kommt die Beschreibung rein.
+ 
 }
 \value{
 A list with the following components:
@@ -28,7 +30,7 @@ A list with the following components:
   \item{error}{estimated absolute error.}
   \item{msg}{status messages.}
 }
-\references{ Add the articles. }
+\references{ Und hier die Artikel (max 3) }
 
 \author{ Fortran Code by Alan Genz <AlanGenz@wsu.edu>, Frank Bretz
 <bretz@ifgb.uni-hannover.de>, R port by Torsten Hothorn

@@ -32,7 +32,7 @@ Type	"q()" to quit R.
 > 
 > prob <- pmvnorm(mean = 3, corr = 1, lower = -Inf, upper = 3)
 > print(prob$value - pnorm(3,3))
-[1] 0
+[1] 0.4986501
 > 
 > # now something more meaningful
 > 
@@ -55,6 +55,7 @@ $msg
 
 > 
 > 
+> ## Keywords: 'multivariate normal distribution'.
 > 
 > 
 > rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
@@ -93,10 +94,11 @@ $msg
 
 > 
 > 
+> ## Keywords: 'mutivariate t distribution'.
 > 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  0.18 0 0.2 0 0 
+Time elapsed:  0.18 0 0.18 0 0 
 > dev.off(); quit('no')
 null device 
           1 
