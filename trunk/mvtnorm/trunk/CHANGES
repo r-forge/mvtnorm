@@ -1,5 +1,9 @@
 # $Id$
 
+	0.5-10 (09.04.2003)
+
+	mvtnorm is now in a NAMESPACE
+
 	0.5-9 (13.02.2003)
 
 	log argument added to dmvnorm, thanks to 
