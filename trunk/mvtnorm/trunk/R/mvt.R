@@ -52,7 +52,8 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
 {
     carg <- checkmvArgs(lower=lower, upper=upper, mean=mean, corr=corr,
                       sigma=sigma)
-    if (!is.null(corr)) {
+    if (!is.null(carg$corr)) {
+      corr <- carg$corr
       if (carg$uni) {
           stop("sigma not specified: cannot compute pnorm")
       } else {
@@ -91,7 +92,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
         stop("df not specified")
     if (df < 1)
         stop("cannot compute multivariate t distribution with df < 1")
-    if (!is.null(corr)) {
+    if (!is.null(carg$corr)) {
       if (carg$uni) {
           stop("sigma not specified: cannot compute pt")
       } else {
@@ -100,17 +101,9 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
       }
     } else {
       if (carg$uni) {
-          #<FIXME> work-around for bug in pt: pt(-Inf, 3) != pt(-Inf, 3, ncp=0)
-          if (carg$mean != 0) {
-            RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
+        RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
                             pt(carg$lower, df=df, ncp=carg$mean),
                     error = 0, msg="univariate: using pt")
-          } else {
-            RET <- list(value = pt(carg$upper, df=df) -
-                            pt(carg$lower, df=df),
-                    error = 0, msg="univariate: using pt")
-          }
-          #</FIXME>
       } else {
           lower <- carg$lower/sqrt(diag(carg$sigma))
           upper <- carg$upper/sqrt(diag(carg$sigma))
