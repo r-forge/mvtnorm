@@ -23,7 +23,7 @@ prob <- pmvnorm(mean, corr, lower, upper)
 print(prob)
 
 
-## Keywords: 'multivariate normal distribution'.
+## Keywords: 'distribution'.
 
 
 rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))

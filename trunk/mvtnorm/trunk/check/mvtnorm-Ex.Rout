@@ -47,7 +47,7 @@ $msg
 
 > 
 > 
-> ## Keywords: 'multivariate normal distribution'.
+> ## Keywords: 'distribution'.
 > 
 > 
 > rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
@@ -82,7 +82,7 @@ $msg
 > 
 > 
 > cat("Time elapsed: ", proc.time() - get("ptime", env = .CheckExEnv),"\n")
-Time elapsed:  0.31 0 0.31 0 0 
+Time elapsed:  0.31 0 0.32 0 0 
 > dev.off(); quit('no')
 null device 
           1 
