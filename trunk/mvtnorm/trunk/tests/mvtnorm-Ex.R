@@ -15,8 +15,8 @@ rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
 
 n <- 5
 mean <- rep(0, 5)
-lower <- rep(-1, 5)
-upper <- rep(3, 5)
+lower <- -1
+upper <- 3
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
 corr[upper.tri(corr)] <- 0.5
@@ -25,11 +25,11 @@ print(prob)
 
 stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, sigma=1) == pnorm(3))
 
-a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))
+a <- pmvnorm(lower=-Inf,upper=c(.3,.5),mean=c(2,4),diag(2))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5),c(2,4))),16))
 
-a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
+a <- pmvnorm(lower=-Inf,upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5,1),c(2,4,1))),16))
 
@@ -40,7 +40,7 @@ sigma <- diag(3)
 sigma[2,1] <- 3/5
 sigma[3,1] <- 1/3
 sigma[3,2] <- 11/15
-pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), sigma)
+pmvnorm(lower=-Inf, upper=c(1,4,2), mean=rep(0, m), sigma)
 
 
 ## Keywords: 'distribution'.
@@ -55,8 +55,8 @@ rm(list = ls(all = TRUE)); .Random.seed <- c(0,rep(7654,3))
 
 
 n <- 5
-lower <- rep(-1, 5)
-upper <- rep(3, 5)
+lower <- -1
+upper <- 3
 df <- 4
 corr <- diag(5)
 corr[lower.tri(corr)] <- 0.5
@@ -92,8 +92,8 @@ round(uniroot(myfct, lower=1, upper=5, alpha=0.95)$root, 3)
 
 # compare pmvt and pmvnorm for large df:
 
-a <- pmvnorm(rep(-Inf, 5), rep(1, 5), mean=rep(0, 5), corr=diag(5))
-b <- pmvt(rep(-Inf, 5), rep(1, 5), df=rep(300,5), corr=diag(5), delta=rep(0, 5))
+a <- pmvnorm(-Inf, 1, mean=rep(0, 5), corr=diag(5))
+b <- pmvt(-Inf, 1, df=rep(300,5), corr=diag(5), delta=rep(0, 5))
 a
 b
 

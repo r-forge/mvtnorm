@@ -1,5 +1,11 @@
 # $Id$
 
+	0.4-3 (05.12.2001)
+
+	the length of lower, upper and mean (delta) is now recycled to the
+	length of the largest, i.e. it is possible to say
+	pmvnorm(lower=-Inf, upper=1, mean=rep(1,10), corr=diag(10))
+
 	0.4-2 (04.12.2001)
 
 	several typos, man-pages improved

@@ -20,7 +20,9 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the
-                problem is standardized.}
+                problem is standardized. If neither \code{corr} nor
+                \code{sigma} is given, the identity matrix is used 
+                for \code{sigma}. }
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
@@ -78,11 +80,11 @@ print(prob)
 
 stopifnot(pmvnorm(lower=-Inf, upper=3, mean=0, sigma=1) == pnorm(3))
 
-a <- pmvnorm(lower=rep(-Inf,2),upper=c(.3,.5),mean=c(2,4),diag(2))
+a <- pmvnorm(lower=-Inf,upper=c(.3,.5),mean=c(2,4),diag(2))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5),c(2,4))),16))
 
-a <- pmvnorm(lower=rep(-Inf,3),upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
+a <- pmvnorm(lower=-Inf,upper=c(.3,.5,1),mean=c(2,4,1),diag(3))
 
 stopifnot(round(a,16) == round(prod(pnorm(c(.3,.5,1),c(2,4,1))),16))
 
@@ -97,8 +99,8 @@ pmvnorm(lower=rep(-Inf, m), upper=c(1,4,2), mean=rep(0, m), corr=sigma)
 
 # Correlation and Covariance
 
-a <- pmvnorm(lower=c(-Inf,-Inf), upper=c(2,2), sigma = diag(2)*2)
-b <- pmvnorm(lower=c(-Inf,-Inf), upper=c(2,2)/sqrt(2), corr=diag(2))
+a <- pmvnorm(lower=-Inf, upper=c(2,2), sigma = diag(2)*2)
+b <- pmvnorm(lower=-Inf, upper=c(2,2)/sqrt(2), corr=diag(2))
 stopifnot(all.equal(round(a,5) , round(b, 5)))
 
 

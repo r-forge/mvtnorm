@@ -5,21 +5,17 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
     UNI <- FALSE
     if (is.null(lower) || any(is.na(lower)))
         stop("lower not specified or contains NA")
-    if (is.null(upper) || any(is.na(lower)))
+    if (is.null(upper) || any(is.na(upper)))
         stop("upper not specified or contains NA")
-    if (length(lower) != length(upper))
-        stop("lower and upper are of different length")
-    if (is.null(mean)) {
-        mean <- rep(0, length(lower))
-        warning("mean not specified: using rep(0, length(lower))")
-    }
+    rec <- cbind(lower, upper, mean)
+    lower <- rec[,"lower"]
+    upper <- rec[,"upper"]
+    mean <- rec[,"mean"]
     if (any(is.na(mean)))
         stop("mean contains NA")
-    if (length(mean) != length(lower))
-        stop("mean and lower are of different lenght")
     if (is.null(corr) && is.null(sigma)) {
         corr <- diag(length(lower))
-        warning("both corr and sigma not specified: using sigma=diag(length(lower))")
+        # warning("both corr and sigma not specified: using sigma=diag(length(lower))")
     }
     if (!is.null(corr) && !is.null(sigma)) {
         sigma <- NULL
@@ -30,10 +26,10 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
              if (length(corr) == 1)
                 UNI <- TRUE
              if (length(corr) != length(lower))
-               stop("diag(corr) and lower are of diffenent length")
+               stop("diag(corr) and lower are of different length")
          } else {
              if (length(diag(corr)) != length(lower))        
-               stop("diag(corr) and lower are of diffenent length")
+               stop("diag(corr) and lower are of different length")
          }
     }
     if (!is.null(sigma)) {
@@ -41,10 +37,10 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
             if (length(sigma) == 1)
                 UNI <- TRUE
             if (length(sigma) != length(lower))        
-               stop("diag(sigma) and lower are of diffenent length")
+               stop("diag(sigma) and lower are of different length")
          } else {
             if (length(diag(sigma)) != length(lower))                     
-               stop("diag(sigma) and lower are of diffenent length")
+               stop("diag(sigma) and lower are of different length")
          }
     }
     list(lower=lower, upper=upper, mean=mean, corr=corr, sigma=sigma, uni=UNI)
