@@ -37,6 +37,8 @@
 \newcommand{\Ph}{\mbox{\boldmath $\Phi$}}
 \newcommand{\beps}{\mbox{\boldmath $\epsilon$}}
 \newcommand{\bbet}{\mbox{\boldmath $\beta$}}
+\newcommand{\C}{\mbox{\boldmath $C$}}
+\newcommand{\V}{\mbox{\boldmath $V$}}
 
 
 
@@ -76,7 +78,9 @@ and integration bounds.
 
 We first illustrate the use of the package using a simple example of the
 multivariate normal distribution in Section \ref{simple}. 
-A little more details are given in Section \ref{details}. 
+A little more details are given in Section \ref{details}. The application of
+{\ttfamily pmvt} in a multiple testing problem is discussed in Section
+\ref{appl}.
 
 \section{A Simple Example \label{simple}}
 
@@ -161,10 +165,83 @@ robust Monte Carlo error bound, 10 simulation runs are usually
 sufficient. For a more detailed description \cite{numerical-:1999}
 might be referred to.
 
-\section{Applications}
+\section{Applications \label{appl}}
 
-Here we should give a 'real life' example (multiple testing or something
-like that). Maybe we can bring someone to the idea to hack this stuff ;-)
+The multivariate $t$ distribution is applicable in a wide field of multiple
+testing problems. We will illustrate this using a example studied
+earlier by \cite{the-effici:1987}. For short, the 
+effects of $5$ different perfusates in 
+capillary permeability in cats was investigated by 
+\cite{blood-and-:1987}. The data met the assumptions of a
+standard one-factor ANOVA. For experimental reasons, the investigators were
+interested in a simultaneous confidence intervals for the following pairwise
+comparisons: $ \beta_1 - \beta_2, \beta_1 - \beta_3, \beta_1 - \beta_5,
+\beta_4 - \beta_2 $ and $ \beta_4 - \beta_3 $. Therefore, the matrix of
+contrast if given by 
+\begin{eqnarray*}
+\C = \left( \begin{array}{rrrrr} 1 & -1 & 0 & 0 & 0 \\
+1 & 0 & -1 & 0 & 0 \\
+1 & 0 & 0 & 0 & -1 \\
+0 & 1 & 0 & -1 & 0 \\
+0 & 0 & 1 & -1 & 0 \end{array} \right) .
+\end{eqnarray*}
+\cite{the-effici:1987} assumed that $ \beta = (\beta_1, \dots, \beta_5) $ is
+multivariate normal with mean $ \beta $ and covariance matrix $ \sigma^2 \V
+$, where $ \V $ is known. Under the null hypothesis $ \beta = 0 $, we need 
+knowledge about the
+distribution of the statistic
+\begin{eqnarray*}
+W = \max_{1 \le j \le 5} \left\{ \frac{| c_j(\hat{\beta} - \beta)
+|}{\hat{\sigma}\sqrt{c_j \V c_j^{\top}}} \right\}
+\end{eqnarray*}
+where $ c_j $ is the $j$th row of $ \C $.
+By assumption, the denominator is $ \chi^2_\nu $, so under hypothesis $ W $
+the argument to $ \max $ follows a multivariate $ t $ distribution.
+Confidence intervals can be obtained by $ c_j \hat{\beta} \pm w_\alpha
+\hat{\sigma} \sqrt{c_j \V c_i^\top} $, where $ w_\alpha $ is the $ 1 - \alpha
+$ quantile of the null distribution of $ W $. Using {\ttfamily pmvt}, one
+can easily compute the quantile for the example cited above.
+
+\begin{verbatim}
+R> n <- c(26, 24, 20, 33, 32)
+R> V <- diag(1/n)
+R> df <- 130
+R> C <- c(1,1,1,0,0,-1,0,0,1,0,0,-1,0,0,1,0,0,0,-1,-1,0,0,-1,0,0)
+R> C <- matrix(C, ncol=5)
+R> cv <- C%*%V%*%t(C)
+R> cr <- matrix(rep(0, ncol(cv)^2), ncol=ncol(cv))
+R> for (i in 1:5) {
++   for (j in 1:5) {
++     cr[i,j] <- cv[i,j]/sqrt(cv[i,i]*cv[j,j] )
++   }
++ }
+R> delta <- rep(0,5)
+R> myfct <- function(q, alpha) {
++  lower <- rep(-q, ncol(cv))
++  upper <- rep(q, ncol(cv))
++  pmvt(lower, upper, df, cr, delta, abseps=0.0001)$value - alpha
++}
+R> uniroot(myfct, lower=1, upper=5, alpha=0.95)
+[1] 2.562
+\end{verbatim}
+
+{\ttfamily n} is the vector of observations of each level of the factor,
+{\ttfamily V} is the covariance matrix of $ \beta $. With the contrasts $ \C
+$ we can compute the correlation matrix {\ttfamily cr} 
+of $ \C\beta $. Finally, we are
+interested in the $ 95\%$ quantile of $ W $. A wrapper function {\ttfamily
+myfct} computes the difference of the multivariate $ t $ probability for
+quantile {\ttfamily q} and {\ttfamily alpha}. The {\ttfamily alpha} quantile 
+can now be computed easily
+using {\ttfamily uniroot}. The $95\%$ quantile of $ W $ in this example is $
+2.562 $, \cite{the-effici:1987} obtained the same result using $ 80.000 $
+simulation runs. The computation needs $ 8.06 $ seconds total time on a 
+Pentium III $450$ MHz with $256$ MB memory.
+
+Using package {\ttfamily mvtnorm}, the efficient computation of 
+multivariate normal or $ t $ probabilities is now available 
+in {\ttfamily R}. We hope that this is helpful to users / programmers who
+deal with multiple testing problems. 
 
 \bibliographystyle{plainnat}
 \bibliography{litdb}
