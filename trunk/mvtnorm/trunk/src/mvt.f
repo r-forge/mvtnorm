@@ -1,5 +1,5 @@
       SUBROUTINE MVTDST( N, NU, LOWER, UPPER, INFIN, CORREL, DELTA, 
-     &           MAXPTS, ABSEPS, RELEPS, TOL, ERROR, VALUE, INFORM )       
+     &                   MAXPTS, ABSEPS, RELEPS, ERROR, VALUE, INFORM )       
 *
 *     A subroutine for computing non-central multivariate t probabilities.
 *     This subroutine uses an algorithm (QRSVN) described in the paper
@@ -36,7 +36,6 @@
 *            increase MAXPTS if ERROR is too large.
 *     ABSEPS DOUBLE PRECISION absolute error tolerance.
 *     RELEPS DOUBLE PRECISION relative error tolerance.
-*     TOL    DOUBLE PRECISION singularity tolerance.
 *     ERROR  DOUBLE PRECISION estimated absolute error, 
 *            with 99% confidence level.
 *     VALUE  DOUBLE PRECISION estimated value for the integral
@@ -51,7 +50,7 @@
       EXTERNAL MVFUNC
       INTEGER N, ND, NU, INFIN(*), MAXPTS, INFORM, IVLS
       DOUBLE PRECISION CORREL(*), LOWER(*), UPPER(*), DELTA(*), RELEPS, 
-     &                 ABSEPS, TOL, ERROR, VALUE, MVINIT, MVFUNC
+     &                 ABSEPS, ERROR, VALUE, MVINIT, MVFUNC
       COMMON /PTBLCK/IVLS
       IVLS = 0
       IF ( N .GT. 1000 .OR. N .LT. 1 ) THEN
@@ -59,8 +58,8 @@
          VALUE = 0
          ERROR = 1
       ELSE
-         INFORM = MVINIT( N, NU, CORREL, LOWER, UPPER, DELTA, INFIN, 
-     &                   TOL, ND, VALUE, ERROR )
+         INFORM = MVINIT( N, NU, CORREL, LOWER, UPPER, DELTA, INFIN,
+     &                   ND, VALUE, ERROR )
          IF ( INFORM .EQ. 0 .AND. ND .GT. 1 ) THEN
 *
 *             Call the lattice rule integration subroutine
@@ -82,7 +81,6 @@
 *
       INTEGER N, NUIN, NU, INFIN(*), ND, NL, INFORM  
       DOUBLE PRECISION W(*), LOWER(*), UPPER(*), CORREL(*), DELTA(*)
-      DOUBLE PRECISION TOL
       PARAMETER ( NL = 1000 )
       DOUBLE PRECISION COV(NL*(NL+1)/2), A(NL),B(NL), DL(NL), Y(NL), SNU
       INTEGER INFI(NL)
@@ -99,12 +97,12 @@
 *
 *     Entry point for intialization.
 *
-      ENTRY MVINIT( N, NUIN, CORREL, LOWER, UPPER, DELTA, INFIN, TOL,
+      ENTRY MVINIT( N, NUIN, CORREL, LOWER, UPPER, DELTA, INFIN, 
      &             ND, VL, ER )
 *
 *     Initialization and computation of covariance Cholesky factor.
 *
-      CALL MVSORT( N, LOWER, UPPER, DELTA, CORREL, INFIN, TOL, Y, 
+      CALL MVSORT( N, LOWER, UPPER, DELTA, CORREL, INFIN, Y, 
      &            ND,     A,     B,    DL,    COV,  INFI, INFORM )
       MVINIT = INFORM
       IF ( INFORM .EQ. 0 ) THEN
@@ -138,6 +136,7 @@
          IF ( ND .EQ. 1 ) THEN
             IF ( INFI(1) .NE. 1 ) VL = MVSTDT( NU, B(1) ) 
             IF ( INFI(1) .NE. 0 ) VL = VL - MVSTDT( NU, A(1) ) 
+            IF ( VL .LT. 0 ) VL = 0
             ER = 1D-16
          END IF
          IF ( NU .GT. 0 ) SNU = SQRT( DBLE(NU) )
@@ -199,20 +198,18 @@
       END DO
       END
 *
-      SUBROUTINE MVSORT( N, LOWER, UPPER, DELTA, CORREL, INFIN, TOL, Y, 
+      SUBROUTINE MVSORT( N, LOWER, UPPER, DELTA, CORREL, INFIN, Y, 
      &                  ND,     A,     B,    DL,    COV,  INFI, INFORM )
 *
 *     Subroutine to sort integration limits and determine Cholesky factor.
 *
       INTEGER N, ND, INFIN(*), INFI(*), INFORM
-      DOUBLE PRECISION TOL 
       DOUBLE PRECISION     A(*),     B(*),    DL(*),    COV(*), 
      &                 LOWER(*), UPPER(*), DELTA(*), CORREL(*), Y(*)
       INTEGER I, J, K, L, M, II, IJ, IL, JMIN
       DOUBLE PRECISION SUMSQ, AJ, BJ, SUM, SQTWPI, EPS, EPSI, D, E
       DOUBLE PRECISION CVDIAG, AMIN, BMIN, DEMIN, YL, YU
-      PARAMETER ( SQTWPI = 2.50662 82746 31001D0 )
-      EPS = TOL
+      PARAMETER ( SQTWPI = 2.50662 82746 31001D0, EPS = 1D-14 )
       INFORM = 0
       IJ = 0
       II = 0
