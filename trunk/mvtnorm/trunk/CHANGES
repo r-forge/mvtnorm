@@ -1,0 +1,7 @@
+# $Id$
+
+	0.4-1 (04.12.2001)
+
+	interface changed: sigma (covariance matrix) can be specified as
+                           well
+	{rd}mvnorm added from package e1071 (thanks to Fritz!)
