@@ -1149,9 +1149,9 @@
             DO I = 1, 1000
                DL = DL*RR/( AL + I ) 
                CHI = CHI + DL
-               IF ( ABS( DL*RR/( AL + I + 1 - RR ) ) .LT. EPS ) EXIT
+               IF ( ABS( DL*RR/( AL + I + 1 - RR ) ) .LT. EPS ) GO TO 10
             END DO
-            CHI = 1 - CHI/AL
+ 10         CHI = 1 - CHI/AL
          ELSE
 *
 *           Use Incomplete Gamma continued fraction
@@ -1169,11 +1169,11 @@
                IF ( DI .EQ. 0 ) DI = EPS 
                DL = CI/DI
                CHI = CHI*DL
-               IF ( ABS( DL - 1 ) .LT. EPS ) EXIT
+               IF ( ABS( DL - 1 ) .LT. EPS ) GO TO 20
             END DO
          END IF
       END IF
-      DF =  ( P - CHI )/EXP( LKN + ( N - 1 )*LOG(R) - RR )
+ 20   DF =  ( P - CHI )/EXP( LKN + ( N - 1 )*LOG(R) - RR )
       MVCHNC = R - DF*( 1 - DF*( R - ( N - 1 )/R )/2 )   
       END
 *

@@ -1,5 +1,10 @@
 # $Id$
 
+	0.6-8 (03.06.2004)
+
+	EXIT statements are not supported by `f2c', Alan added GOTO
+        statements to `MVCHNC' 
+
 	0.6-7 (27.05.2004)
 
 	Alan's fix to MVCHNC solves problems with large degree of freedom
