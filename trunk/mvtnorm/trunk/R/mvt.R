@@ -169,6 +169,10 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
     infin[upper == Inf] <- 1
     infin[lower == -Inf] <- 0
     infin[lower == -Inf & upper == Inf] <- -1
+
+    ### this is a bug in `mvtdst' not yet fixed
+    if (all(infin < 0)) 
+        return(list(value = 1, error = 0, msg = "Normal Completion"))
     
     if (n > 1) {
         corrF <- matrix(as.vector(corr), ncol=n, byrow=TRUE)
