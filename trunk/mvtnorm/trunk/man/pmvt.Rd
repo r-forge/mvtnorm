@@ -100,10 +100,6 @@ multiple comparisons. \emph{Biometrics}, \bold{43}, 913--928.
 
 }
 
-\author{ Fortran Code by Alan Genz <AlanGenz@wsu.edu> and Frank Bretz
-<frank.bretz@pharma.novartis.com>, \R port by Torsten Hothorn
-<Torsten.Hothorn@rzmail.uni-erlangen.de> }
-
 \seealso{\code{\link{qmvt}}}
 
 \examples{
