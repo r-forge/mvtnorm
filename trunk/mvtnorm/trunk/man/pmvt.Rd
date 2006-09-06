@@ -1,6 +1,7 @@
 \name{pmvt}
 \alias{pmvt}
 \alias{rmvt}
+\alias{dmvt}
 \title{ Multivariate t Distribution }
 \description{
 
@@ -14,6 +15,7 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
      df=1, corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
      releps = 0)
 rmvt(n, sigma=diag(2), df=1)
+dmvt(x, delta, sigma, df = 0, log = TRUE)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -30,6 +32,9 @@ rmvt(n, sigma=diag(2), df=1)
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
   \item{n}{ number of observations.}
+  \item{x}{Vector or matrix of quantiles. If \code{x} is a matrix, each
+   row is taken to be a quantile.}
+  \item{log}{Logical; if \code{TRUE}, densities d are given as log(d).}
 }
 
 \details{
