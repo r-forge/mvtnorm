@@ -58,6 +58,9 @@
      &                 ABSEPS, TOL, ERROR, VALUE, E(1), V(1)
       COMMON /PTBLCK/IVLS
       IVLS = 0
+      
+      CALL rndstart()
+      
       IF ( N .GT. 1000 .OR. N .LT. 1 ) THEN
          VALUE = 0
          ERROR = 1
@@ -75,6 +78,9 @@
             VALUE = V(1)
          ENDIF
       ENDIF
+      
+      CALL rndend()
+      
       END
 *
       SUBROUTINE MVSUBR( N, W, NF, F )
@@ -1493,8 +1499,7 @@
 *     the way `Writing R extentions' advertises.
 *
       DOUBLE PRECISION x
-      CALL rndstart()
+
       x = unifrnd()
-      CALL rndend()
       MVUNI = x
       END
