@@ -1498,7 +1498,7 @@
 *     use R's random number generator directly
 *     the way `Writing R extentions' advertises.
 *
-      DOUBLE PRECISION x
+      DOUBLE PRECISION unifrnd, x
 
       x = unifrnd()
       MVUNI = x
