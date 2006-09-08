@@ -1,21 +1,17 @@
 \name{pmvt}
 \alias{pmvt}
-\alias{rmvt}
-\alias{dmvt}
 \title{ Multivariate t Distribution }
 \description{
 
-Computes the the distribution function of the multivariate t distribution 
-for arbitrary limits, degrees of freedom and correlation matrices 
-based on algorithms by Genz and Bretz.
+  Computes the the distribution function of the multivariate t distribution 
+  for arbitrary limits, degrees of freedom and correlation matrices 
+  based on algorithms by Genz and Bretz.
 
 }
 \usage{
 pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
      df=1, corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
      releps = 0)
-rmvt(n, sigma=diag(2), df=1)
-dmvt(x, delta, sigma, df = 0, log = TRUE)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -31,10 +27,6 @@ dmvt(x, delta, sigma, df = 0, log = TRUE)
   \item{maxpts}{ maximum number of function values as integer. }
   \item{abseps}{ absolute error tolerance as double. }
   \item{releps}{ relative error tolerance as double. }
-  \item{n}{ number of observations.}
-  \item{x}{Vector or matrix of quantiles. If \code{x} is a matrix, each
-   row is taken to be a quantile.}
-  \item{log}{Logical; if \code{TRUE}, densities d are given as log(d).}
 }
 
 \details{
@@ -70,9 +62,6 @@ which can be downloaded (together with additional material
 and additional codes) from the websites 
 \url{http://www.bioinf.uni-hannover.de/~bretz/} 
 and \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}.
-
-\code{rmvt} is a wrapper to \code{\link{rmvnorm}} for random number
-generation.
 
 If \code{df = 0}, normal probabilities are returned. 
 
@@ -165,8 +154,6 @@ a <- pmvt(0, 1,df=10)
 attributes(a) <- NULL
 b <- pt(1, df=10) - pt(0, df=10)
 stopifnot(all.equal(round(a,10) , round(b, 10)))
-
-rmvt(10, sigma=diag(10))
 
 }
 

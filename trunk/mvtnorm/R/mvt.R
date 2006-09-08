@@ -221,7 +221,7 @@ rmvt <- function(n, sigma=diag(2), df=1) {
   rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
 }
 
-dmvt <- function(x, delta, sigma, df = 0, log = TRUE)
+dmvt <- function(x, delta, sigma, df = 1, log = TRUE)
 {
     if (df == 0)
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
