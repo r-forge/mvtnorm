@@ -312,9 +312,9 @@ qmvt <- function(p, interval = c(-10, 10),
         stop(sQuote("p"), " is not a double between zero and one")
 
     tail <- match.arg(tail)
-    dim <- length(mean)
-    if (is.matrix(corr)) dim <- nrow(corr)
-    if (is.matrix(sigma)) dim <- nrow(sigma)
+    dim <- 1
+    if (!is.null(corr)) dim <- NROW(corr)
+    if (!is.null(sigma)) dim <- NROW(sigma)
     lower <- rep(0, dim)
     upper <- rep(0, dim)
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
