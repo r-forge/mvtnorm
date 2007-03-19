@@ -239,7 +239,7 @@ dmvt <- function(x, delta, sigma, df = 1, log = TRUE)
         stop("x and sigma have non-conforming size")
     }
     if (NROW(sigma) != NCOL(sigma)) {
-        stop("sigma meanst be a square matrix")
+        stop("sigma must be a square matrix")
     }
     if (length(delta) != NROW(sigma)) {
         stop("mean and sigma have non-conforming size")
