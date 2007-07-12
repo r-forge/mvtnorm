@@ -89,7 +89,7 @@ stopifnot(all.equal(pmvnorm(-Inf, c(Inf, 0), 0, diag(2)), pmvnorm(-Inf,
                     c(Inf, 0), 0)))
 
 # this is a bug in `mvtdst' nobody was able to fix yet :-(
-stopifnot(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0) == 0)
+stopifnot(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0)) == 1)
 
 ### check for correct random seed initialization
 ### problem reported by Karen Conneely <conneely@umich.edu>
