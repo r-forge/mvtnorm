@@ -184,11 +184,6 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
 
     error <- 0; value <- 0; inform <- 0
 
-    ### TOL argument re-added in version 0.6-3
-    ### not yet exported
-
-    tol <- 1e-10
-
     ret <- .Fortran("mvtdst", N = as.integer(n), 
                               NU = as.integer(df),
                               LOWER = as.double(lower), 
@@ -199,7 +194,6 @@ mvt <- function(lower, upper, df, corr, delta, maxpts = 25000,
                               MAXPTS = as.integer(maxpts),
                               ABSEPS = as.double(abseps), 
                               RELEPS = as.double(releps),  
-                              TOL = as.double(tol),
                               error = as.double(error), 
                               value = as.double(value),
                               inform = as.integer(inform), PACKAGE="mvtnorm")
