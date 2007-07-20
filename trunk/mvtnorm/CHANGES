@@ -6,6 +6,10 @@
         dimensions > 100). Thanks to Karen Conneely <conneely@umich.edu>
         for motivating the update and for checking the new version.
 
+	rmvnorm() now can also use a Cholesky decomposition to compute
+        the root of sigma (thanks to Fabian Scheipl)
+
+
 	0.7-5 (15.09.2006)
 
         fix problem reported by valgrind
