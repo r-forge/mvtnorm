@@ -1,6 +1,6 @@
 # $Id$
 
-	0.8-0 (12.07.2007)
+	0.8-0 (23.07.2007)
 
 	upgrade to 7/7 version of MVTDST (includes better support for
         dimensions > 100). Thanks to Karen Conneely <conneely@umich.edu>
