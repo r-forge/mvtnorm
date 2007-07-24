@@ -1,5 +1,11 @@
 # $Id$
 
+	0.8-1 (24.07.2007)
+
+        Orion Poplawski <orion@cora.nwra.com> spotted a meaningless check in
+        the regression tests
+
+
 	0.8-0 (23.07.2007)
 
 	upgrade to 7/7 version of MVTDST (includes better support for
