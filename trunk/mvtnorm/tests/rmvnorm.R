@@ -1,3 +1,6 @@
+
+library("mvtnorm")
+
 m <- 1:3
 
 s <- diag(1:3)

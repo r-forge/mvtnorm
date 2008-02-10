@@ -10,7 +10,9 @@
 }
 \usage{
 dmvnorm(x, mean, sigma, log=FALSE)
-rmvnorm(n, mean, sigma, method=c("svd", "chol"))
+rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
+        method=c("eigen", "svd", "chol"))
+
 }
 \arguments{
  \item{x}{Vector or matrix of quantiles. If \code{x} is a matrix, each
