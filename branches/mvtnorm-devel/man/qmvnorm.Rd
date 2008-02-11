@@ -9,8 +9,9 @@ based on an inversion of the algorithms by Genz and Bretz.
 
 }
 \usage{
-qmvnorm(p, interval = c(-10, 10), tail = c("lower.tail", "upper.tail", "both.tails"), 
-        mean = 0, corr = NULL, sigma = NULL, algorithm = GenzBretz(), ...)
+qmvnorm(p, interval = c(-10, 10), tail = c("lower.tail", 
+        "upper.tail", "both.tails"), mean = 0, corr = NULL, 
+        sigma = NULL, algorithm = GenzBretz(), ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

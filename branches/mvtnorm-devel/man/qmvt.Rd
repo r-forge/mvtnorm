@@ -9,8 +9,9 @@ based on an inversion of the algorithms by Genz and Bretz.
 
 }
 \usage{
-qmvt(p, interval = c(-10, 10), tail = c("lower.tail", "upper.tail", "both.tails"), 
-     df = 1, delta = 0, corr = NULL, sigma = NULL, algorithm = GenzBretz(), ...)
+qmvt(p, interval = c(-10, 10), tail = c("lower.tail", 
+     "upper.tail", "both.tails"), df = 1, delta = 0, corr = NULL, 
+     sigma = NULL, algorithm = GenzBretz(), ...)
 }
 \arguments{
   \item{p}{ probability.}

@@ -43,7 +43,7 @@ The multivariate normal
 case is treated as a special case of \code{\link{pmvt}} with \code{df=0} and 
 univariate problems are passed to \code{\link{pnorm}}.
 
-Multivariate normal density and random numbers are available using
+The multivariate normal density and random deviates are available using
 \code{\link{dmvnorm}} and \code{\link{rmvnorm}}.
  
 }
@@ -55,16 +55,20 @@ The evaluated distribution function is returned with attributes
 \references{ 
 
 Genz, A. (1992). Numerical computation of multivariate normal probabilities.
-\emph{Journal of Computational and Graphical Statistics}, \bold{1}, 141--150 
+\emph{Journal of Computational and Graphical Statistics}, \bold{1}, 141--150.
 
 Genz, A. (1993). Comparison of methods for the computation of multivariate
 normal probabilities. \emph{Computing Science and Statistics}, \bold{25},
-400--405
+400--405.
 
 Miwa, A., Hayter J. and Kuriki, S. (2003).
 The evaluation of general non-centred orthant probabilities.
 \emph{Journal of the Royal Statistical Society}, Ser. B, 65, 223--234.
 
+}
+
+\source{
+  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
 }
 
 \seealso{\code{\link{qmvnorm}}}

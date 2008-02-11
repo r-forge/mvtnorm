@@ -33,11 +33,11 @@ the algorithm by Miwa et al. (2003) can be used as well.
 \references{ 
 
 Genz, A. (1992). Numerical computation of multivariate normal probabilities.
-\emph{Journal of Computational and Graphical Statistics}, \bold{1}, 141--150 
+\emph{Journal of Computational and Graphical Statistics}, \bold{1}, 141--150.
 
 Genz, A. (1993). Comparison of methods for the computation of multivariate
 normal probabilities. \emph{Computing Science and Statistics}, \bold{25},
-400--405
+400--405.
 
 Genz, A. and Bretz, F. (2002), Methods for the computation of multivariate
 t-probabilities. \emph{Journal of Computational and Graphical Statistics},
