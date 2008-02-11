@@ -10,8 +10,7 @@
 }
 \usage{
 pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
-     df=1, corr=NULL, sigma=NULL, maxpts = 25000, abseps = 0.001,
-     releps = 0)
+     df=1, corr=NULL, sigma=NULL, algorithm = GenzBretz(), ...)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -24,9 +23,9 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                 problem is standardized. If neither \code{corr} nor
                 \code{sigma} is given, the identity matrix is used 
                 for \code{sigma}. }
-  \item{maxpts}{ maximum number of function values as integer. }
-  \item{abseps}{ absolute error tolerance as double. }
-  \item{releps}{ relative error tolerance as double. }
+  \item{algorithm}{ an object of class \code{\link{GenzBretz}} defining the
+                    hyper parameters of this algorithm.}
+  \item{...}{}
 }
 
 \details{

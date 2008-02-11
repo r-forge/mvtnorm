@@ -2,7 +2,8 @@ useDynLib(mvtnorm)
 
 import(stats)
 
-export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt)
+export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
+       GenzBretz, Miwa)
 
 # some package try to access low-level functionality: npmc in this case
 export(mvt)

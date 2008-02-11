@@ -5,8 +5,7 @@
  Internal mvtnorm functions.
 }
 \usage{
-mvt(lower, upper, df, corr, delta, maxpts = 25000, abseps = 0.001,
-           releps = 0)
+mvt(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 }
 \details{
   This functions are not to be called by the user.
