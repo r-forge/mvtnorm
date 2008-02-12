@@ -19,16 +19,17 @@ Miwa(steps = 128)
 \details{
 
 There are two algorithms available for evaluating normal
-probabilities: The default is the Quasi-Monte-Carlo procedure
+probabilities: The default is the randomized Quasi-Monte-Carlo procedure
 by Genz (1992, 1993) and Genz and Bretz (2002) applicable to
-arbitrary covariance structures and dimensions up to 100, say.
+arbitrary covariance structures and dimensions up to 1000.
 
 For smaller dimensions (up to 20) and non-singular covariance matrices,
 the algorithm by Miwa et al. (2003) can be used as well.
 
 }
 \value{
-    An object of class \code{GenzBretz} or \code{Miwa} defining hyper parameters.
+    An object of class \code{GenzBretz} or \code{Miwa} 
+    defining hyper parameters.
 }
 \references{ 
 
