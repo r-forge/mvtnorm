@@ -156,7 +156,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
         algorithm <- do.call(algorithm, list())
 
     ### handle cases where the support is the empty set
-    if (any(abs(lower - upper)) < sqrt(.Machine$double.eps) || 
+    if (any(abs(lower - upper) < sqrt(.Machine$double.eps)) || 
         any(is.na(lower - upper))) {
         RET <- list(value = 0, error = 0, msg = "lower == upper")
         return(RET)
