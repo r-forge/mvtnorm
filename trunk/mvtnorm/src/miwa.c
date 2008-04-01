@@ -396,6 +396,20 @@ void gridcalc(struct GRID *g)
   return;
 }
 
+int checkall(int *vector,int length,int value)
+ {
+       int returnvalue=1, i = 0;
+       for (i=0; i< length ; i++)
+       {
+           if (vector[i]!=value)
+           {
+             returnvalue=0;
+           }
+       }
+      return(returnvalue);
+ }
+
+
 /*
  *  interface to R
  * 
@@ -426,18 +440,6 @@ infinvalue is used to take the value of infin.
     infinvalue = INTEGER(infin);
     infinlength = LENGTH(infin);
 
-int checkall(int *vector,int length,int value)
- {
-       int returnvalue=1;
-       for (i=0; i< length ; i++)
-       {
-           if (vector[i]!=value)
-           {
-             returnvalue=0;
-           }
-       }
-      return(returnvalue);
- }
  
   for (i = 0; i < dim - 1; i++) {
         for(j = i + 1; j < dim; j++) {
