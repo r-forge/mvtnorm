@@ -1,6 +1,3 @@
-article
-R/CVS
-inst/CVS
-man/CVS
-src/CVS
+inst/article
 inst/paper
+inst/todo
