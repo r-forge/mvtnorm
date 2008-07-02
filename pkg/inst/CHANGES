@@ -1,5 +1,11 @@
 # $Id$
 
+	0.9-1 (xx.07.2008)
+
+        better check for covariance matrices, suggested by 
+        James Rogers  <James.A.Rogers@pfizer.com>
+
+
 	0.9-0 (1.04.2008)
 
 	add support for the multivariate normal distributions in small

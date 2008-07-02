@@ -1,6 +1,6 @@
 Package: mvtnorm
 Title: Multivariate Normal and t Distributions
-Version: 0.9-0
+Version: 0.9-1
 Date: $Date$
 Author: Alan Genz, Frank Bretz and Torsten Hothorn
   with contributions by Tetsuhisa Miwa, Xuefei Mi, Friedrich Leisch 
