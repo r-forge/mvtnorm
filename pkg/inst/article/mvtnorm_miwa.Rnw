@@ -21,15 +21,15 @@ both with respect to computing time and accuracy.
 %%TH: is this Genz & Bretz 1999 or Genz 1992. For the
 %% first one we need Genz/Bretz throughout the manuscript.
 For small dimension problems, Miwa's procedure is a numerical method
-which has advantages in achieving higher accuracy with less time
-consumption compared to the Monte-Carlo method. For large
-dimension $m$, Miwa's procedure could get more accurate results, but
-the time consumption is huge compared to Genz \& Bretz' procedure.
-It is only applicable to problems with dimension smaller than $20$,
-whereas the Monte-Carlo procedure by \cite{Genz1999} can be used to
-evaluate $1000$-dimensional normal distributions. At the end of this
-article, a suggestion is given for choosing a suitable algorithm in
-different situations. 
+that it has advantages in achieving higher accuracy with less time
+consumption compared to the Monte-Carlo method. For large dimension
+$m$, Miwa's procedure could get more accurate results, but the time
+consumption is huge compared to Genz \& Bretz' procedure. It is only
+applicable to problems with dimension smaller than $20$, whereas the
+Monte-Carlo procedure by \cite{Genz1999} can be used to evaluate
+$1000$-dimensional normal distributions. At the end of this article,
+a suggestion is given for choosing a suitable algorithm in different
+situations.
 
 \section{Introduction}
 An algorithm for calculating any non-centered orthant probability of
@@ -65,19 +65,19 @@ The two-sided probability
 F_{m}(\d, \c) = \Prob\{d_i \leq X_i \leq c_i; \, 1\leq i\leq m\}
 \end{eqnarray*}
 %%TH: what is C_m???
-can be calculated from $2^m$ $m$-dimensional one-sided probabilities
-which have the same mean and correlation matrix. The total order of
-this two-sided problem is $G \times m! \times 2^m$.
+can be calculated from $2^m$ $m$-dimensional one-sided
+probabilities, which have the same mean and correlation matrix. The
+total order of this two-sided problem is $G \times m! \times 2^m$.
 
-A new \code{algorithm} argument to \code{pmvnorm()} and \code{qmvnorm()}
-has been introduced in \pkg{mvtnorm} version 0.9-0 in order to
-switch between two algorithms: \code{GenzBretz()} is the default
-and triggers the use of the above mentioned
-quasi-randomized Monte-Carlo procedure by \cite{Genz1999}.
-Alternatively, \code{algorithm = Miwa()} applies the procedure
-discussed here. Both functions can be used to specify hyper-parameters
-of the algorithm. For \code{Miwa()}, the argument
-\code{steps} defines the number of grid points $G$ to be evaluated.
+A new \code{algorithm} argument to \code{pmvnorm()} and
+\code{qmvnorm()} has been introduced in \pkg{mvtnorm} version 0.9-0
+to switch between two algorithms: \code{GenzBretz()} is the default
+and triggers the use of the above mentioned quasi-randomized
+Monte-Carlo procedure by \cite{Genz1999}. Alternatively,
+\code{algorithm = Miwa()} applies the procedure discussed here. Both
+functions can be used to specify hyper-parameters of the algorithm.
+For \code{Miwa()}, the argument \code{steps} defines the number of
+grid points $G$ to be evaluated.
 
 The following example shows how to calculate the probability
 \begin{eqnarray*}
@@ -102,11 +102,12 @@ pmvnorm(lower = -c(1,4,2),
         upper = c(1,4,2),
         mean=rep(0, m), corr = S,
         algorithm = Miwa())
-@ The upper limit and lower limit of the integral region are passed
+@ 
+The upper limit and lower limit of the integral region are passed
 by the vectors \code{upper} and \code{lower}. The mean vector and
-correlation matrix are given by the vector \code{mean} and the matrix
-\code{corr}. From the result we know that $p = 0.6536804$ with
-given correlation matrix $\Cor$.
+correlation matrix are given by the vector \code{mean} and the
+matrix \code{corr}. From the result, we know that $p = 0.6536804$
+with given correlation matrix $\Cor$.
 
 \begin{table*}[t!]
 \begin{center}
@@ -153,17 +154,17 @@ i\neq j$, $1 \leq i \leq m$.} \label{table2}
 
 
 \section{Accuracy and time consumption}
-In this section we compare the accuracy and time consumption of
-the \R{} implementation of the algorithm of \cite{Miwa2003}
-with the default procedure for approximating multivariate
-normal probabilities in \pkg{mvtnorm} by \cite{Genz1999}.
-The experiments were performed using an
-Intel$\circledR$ Pentium$\circledR$ processor with 2.8 GHz.
+In this section, we compare the accuracy and time consumption of the
+\R{} implementation of the algorithm of \cite{Miwa2003} with the
+default procedure for approximating multivariate normal
+probabilities in \pkg{mvtnorm} by \cite{Genz1999}. The experiments
+were performed using an Intel$\circledR$ Pentium$\circledR$
+processor with 2.8 GHz.
 
 \subsection{Probabilities with tri-diagonal correlation matrix}
 
 The exact value of $P_m(\bmu, \Cor)$ is known if $\Cor$ has some
-special structure. E.g., when $\Cor$ is a $m$-dimensional
+special structure. For example, when $\Cor$ is a $m$-dimensional
 tri-diagonal correlation matrix with correlation coefficients
 \begin{eqnarray*}
 \rho_{i,j} = \left\{ \begin{array}{cc} -2^{-1} & j = i \pm 1 \\
@@ -177,8 +178,8 @@ points) and the Genz \& Bretz algorithm
 (with absolute error tolerance
 $\varepsilon=10^{-4},10^{-5},10^{-6}$) for probabilities with
 tri-diagonal correlation matrix are compared in Table \ref{table1}.
-In each calculation we have results with small variance. The values
-which do not hold the tolerance error are marked with bold
+In each calculation, we have results with small variance. The
+values, which do not hold the tolerance error, are marked with bold
 characters and are underlined in the tables. When the dimension is
 larger than five, Genz \& Bretz' algorithm with error tolerance
 smaller than $10^{-5}$ is hard to achieve. While Miwa's algorithm
@@ -237,7 +238,7 @@ probability when the dimension $m$ is larger than 7.
 We have implemented an \R{} interface to the procedure of
 \cite{Miwa2003} in the \R{} package \pkg{mvtnorm}. For small
 dimensions, it is an alternative to quasi-randomized Monte-Carlo
-procedures which are computed by default. However, Miwa's algorithm
+procedures, which are computed by default. However, Miwa's algorithm
 has some disadvantages. When the dimension $m$ increases, the time
 consumption of Miwa's algorithm increases dramatically. Moreover, it
 can't be applied to singular problems which are common in multiple
