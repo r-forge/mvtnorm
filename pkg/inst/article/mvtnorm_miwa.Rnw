@@ -4,7 +4,7 @@
 %%TH: Why is the method `analytical'? it involves numerical intergration, i.e., approximation!
 
 \title{New Numerical Algorithm for
-Multivariate Normal Probabilities in $\pkg{mvtnorm}$ Package}
+Multivariate Normal Probabilities in Package $\pkg{mvtnorm}$}
 \author{Xuefei Mi, Tetsuhisa Miwa and Torsten Hothorn}
 
 \maketitle
@@ -20,7 +20,7 @@ both with respect to computing time and accuracy.
 
 %%TH: is this Genz & Bretz 1999 or Genz 1992. For the
 %% first one we need Genz/Bretz throughout the manuscript.
-For small dimension problems, Miwa's procedure is a numerical method
+For low-dimensional problems, Miwa's procedure is a numerical method
 that it has advantages in achieving higher accuracy with less time
 consumption compared to the Monte-Carlo method. For large dimension
 $m$, Miwa's procedure could get more accurate results, but the time
@@ -79,6 +79,28 @@ functions can be used to specify hyper-parameters of the algorithm.
 For \code{Miwa()}, the argument \code{steps} defines the number of
 grid points $G$ to be evaluated.
 
+\begin{table*}[t!]
+\begin{center}
+\begin{tabular}{l | llll }
+ \hline
+ \multicolumn{1}{c |}{Algorithm} & \multicolumn{2}{c}{$m=5$} &
+\multicolumn{2}{c}{$m=10$} \\
+ \hline
+  & $\rho=\frac{1}{2}$ & $\rho=-\frac{1}{2}$ & $\rho=\frac{1}{2}$ & $\rho=-\frac{1}{2}$ \\
+ Genz \& Bretz $(\varepsilon=10^{-4})$ & 0.08468833          & 0.001385620 &  0.008863600  & $2.376316 \times 10^{-8}$ \\
+   Genz \& Bretz $(\varepsilon=10^{-5})$ & 0.08472561          & \underline{\textbf{0.001390769}} &  0.008863877  & \underline{\textbf{2.319286 $\times$ $10^{-8}$}} \\
+  Genz \& Bretz $(\varepsilon=10^{-6})$ & \underline{\textbf{0.08472682}} & 0.001388424 &  \underline{\textbf{0.008862195}}  & $2.671923 \times 10^{-8}$ \\
+ Miwa $(G=128)$              & 0.08472222          & 0.001388889 &  0.008863235  & $2.505205 \times 10^{-8} $\\
+   Exact.           & 0.08472222          & 0.001388889 & 0.008863236  & $2.505211 \times 10^{-8}$ \\
+\hline
+\end{tabular}
+\label{table1} \caption{Value of probabilities with tri-diagonal
+correlation coefficients, $\rho_{i,i\pm1}=\rho,  1\leq i \leq m$
+and $\rho_{i,j}=0,\forall |i-j|>1$. $\rho = 2^{-1}$ or $\rho= -2^{-1}$. }
+\end{center}
+\end{table*}
+
+
 The following example shows how to calculate the probability
 \begin{eqnarray*}
 p & = & F_{m}(\d, \c) \\
@@ -102,55 +124,13 @@ pmvnorm(lower = -c(1,4,2),
         upper = c(1,4,2),
         mean=rep(0, m), corr = S,
         algorithm = Miwa())
-@ 
+@
 The upper limit and lower limit of the integral region are passed
 by the vectors \code{upper} and \code{lower}. The mean vector and
 correlation matrix are given by the vector \code{mean} and the
 matrix \code{corr}. From the result, we know that $p = 0.6536804$
 with given correlation matrix $\Cor$.
 
-\begin{table*}[t!]
-\begin{center}
-\begin{tabular}{l | llll }
- \hline
- \multicolumn{1}{c |}{Algorithm} & \multicolumn{2}{c}{$m=5$} &
-\multicolumn{2}{c}{$m=10$} \\
- \hline
-  & $\rho=\frac{1}{2}$ & $\rho=-\frac{1}{2}$ & $\rho=\frac{1}{2}$ & $\rho=-\frac{1}{2}$ \\
- Genz \& Bretz $(\varepsilon=10^{-4})$ & 0.08468833          & 0.001385620 &  0.008863600  & $2.376316 \times 10^{-8}$ \\
-   Genz \& Bretz $(\varepsilon=10^{-5})$ & 0.08472561          & \underline{\textbf{0.001390769}} &  0.008863877  & \underline{\textbf{2.319286 $\times$ $10^{-8}$}} \\
-  Genz \& Bretz $(\varepsilon=10^{-6})$ & \underline{\textbf{0.08472682}} & 0.001388424 &  \underline{\textbf{0.008862195}}  & $2.671923 \times 10^{-8}$ \\
- Miwa $(G=128)$              & 0.08472222          & 0.001388889 &  0.008863235  & $2.505205 \times 10^{-8} $\\
-   Exact.           & 0.08472222          & 0.001388889 & 0.008863236  & $2.505211 \times 10^{-8}$ \\
-\hline
-\end{tabular}
-\label{table1} \caption{Value of probabilities with tri-diagonal
-correlation coefficients, $\rho_{i,i\pm1}=\rho,  1\leq i \leq m$
-and $\rho_{i,j}=0,\forall |i-j|>1$. $\rho = 2^{-1}$ or $\rho= -2^{-1}$. }
-\end{center}
-\end{table*}
-
-
-\begin{table*}[b!]
-\begin{center}
-\begin{tabular}{l | llll }
- \hline
- \multicolumn{1}{c |}{Algorithm} & \multicolumn{2}{c}{m=5} &
-\multicolumn{2}{c}{m=9} \\
- \hline
-  & $\rho=\frac{1}{2}$ & sec. & $\rho=\frac{1}{2}$ & sec. \\
-  Genz \& Bretz $(\varepsilon=10^{-4})$ & 0.1666398 & 0.029 &  0.09998728 & 0.231 \\
-   Genz \& Bretz $(\varepsilon=10^{-5})$  & 0.1666719 & 0.132&  0.09998277  & 0.403 \\
-   Genz \& Bretz $(\varepsilon=10^{-6})$ & 0.1666686 & 0.133 &  0.09999726  & 0.431 \\
- Miwa $(G=128)$              & 0.1666667 &  0.021 &  0.09999995  & \underline{89.921} \\
-   Exact.          & 0.1666667 &  &  0.10000000  & \\
-\hline
-\end{tabular}
-\end{center}
-\caption{Accuracy and time consumption of centered orthant
-probabilities with correlation coefficients, $\rho_{i,j}=2^{-1},
-i\neq j$, $1 \leq i \leq m$.} \label{table2}
-\end{table*}
 
 
 \section{Accuracy and time consumption}
@@ -179,10 +159,10 @@ points) and the Genz \& Bretz algorithm
 $\varepsilon=10^{-4},10^{-5},10^{-6}$) for probabilities with
 tri-diagonal correlation matrix are compared in Table \ref{table1}.
 In each calculation, we have results with small variance. The
-values, which do not hold the tolerance error, are marked with bold
+values which do not hold the tolerance error are marked with bold
 characters and are underlined in the tables. When the dimension is
 larger than five, Genz \& Bretz' algorithm with error tolerance
-smaller than $10^{-5}$ is hard to achieve. While Miwa's algorithm
+smaller than $10^{-5}$ is hard to achieve while Miwa's algorithm
 with grid points $G=128$ achieves error tolerance smaller than
 $10^{-7}$.
 
@@ -205,13 +185,53 @@ consumption of Miwa's algorithm and Genz \& Bretz' algorithm for
 this situation are compared in Table \ref{table2}. As a numerical
 algorithm, Miwa's algorithm still has better tolerance error.
 However, the time consumption of Miwa's algorithm increases
-none-linearly when the dimension of the orthant probabilities
+non-linearly when the dimension of the orthant probabilities
 increases. A detail time consumption analysis for both methods is
 given in Table \ref{table3}. Miwa's algorithm is much slower than
 Genz \& Bretz' algorithm in calculating two-sided orthant
-probability when the dimension $m$ is larger than 7.
+probability when the dimension $m$ is larger than seven.
 
 
+
+
+\section{Conclusion}
+
+We have implemented an \R{} interface to the procedure of
+\cite{Miwa2003} in the \R{} package \pkg{mvtnorm}. For small
+dimensions, it is an alternative to quasi-randomized Monte-Carlo
+procedures, which are computed by default. However, Miwa's algorithm
+has some disadvantages. When the dimension $m$ increases, the time
+consumption of Miwa's algorithm increases dramatically. Moreover, it
+can't be applied to singular problems which are common in multiple
+testing problems, for example.
+
+\section{Acknowledgements}
+
+The authors would like to thank the reviewers for their comments
+that help improve the manuscript and the package.
+
+
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{l | llll }
+ \hline
+ \multicolumn{1}{c |}{Algorithm} & \multicolumn{2}{c}{m=5} &
+\multicolumn{2}{c}{m=9} \\
+ \hline
+  & $\rho=\frac{1}{2}$ & sec. & $\rho=\frac{1}{2}$ & sec. \\
+  Genz \& Bretz $(\varepsilon=10^{-4})$ & 0.1666398 & 0.029 &  0.09998728 & 0.231 \\
+   Genz \& Bretz $(\varepsilon=10^{-5})$  & 0.1666719 & 0.132&  0.09998277  & 0.403 \\
+   Genz \& Bretz $(\varepsilon=10^{-6})$ & 0.1666686 & 0.133 &  0.09999726  & 0.431 \\
+ Miwa $(G=128)$              & 0.1666667 &  0.021 &  0.09999995  & \underline{89.921} \\
+   Exact.          & 0.1666667 &  &  0.10000000  & \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Accuracy and time consumption of centered orthant
+probabilities with correlation coefficients, $\rho_{i,j}=2^{-1},
+i\neq j$, $1 \leq i \leq m$.} \label{table2}
+\end{table*}
 
 \begin{table*}
 \begin{center}
@@ -233,23 +253,7 @@ probability when the dimension $m$ is larger than 7.
 \end{center}
 \end{table*}
 
-\section{Conclusion}
 
-We have implemented an \R{} interface to the procedure of
-\cite{Miwa2003} in the \R{} package \pkg{mvtnorm}. For small
-dimensions, it is an alternative to quasi-randomized Monte-Carlo
-procedures, which are computed by default. However, Miwa's algorithm
-has some disadvantages. When the dimension $m$ increases, the time
-consumption of Miwa's algorithm increases dramatically. Moreover, it
-can't be applied to singular problems which are common in multiple
-testing problems, for example.
-
-\section{Acknowledgements}
-
-The authors would like to thank the reviewers for their comments
-that help improve the manuscript and the package. This project is
-supported by the Institute of Biostatistics, Leibniz University
-Hannover.
 
 
 
