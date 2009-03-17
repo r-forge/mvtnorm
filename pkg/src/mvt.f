@@ -299,8 +299,8 @@
                   ENDIF
                END DO
             ENDIF
+ 10      CONTINUE
          END DO
- 10   CONTINUE
 *
 *     Sort remaining limits and determine Cholesky factor.
 *
