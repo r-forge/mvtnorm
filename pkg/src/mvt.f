@@ -136,6 +136,10 @@
 *
          IF ( ND .EQ. 0 ) THEN
             ER = 0
+*  Code added to fix ND = 0 bug, 24/03/2009 ->
+            VL = 1
+*  <- Code added to fix ND = 0 bug, 24/03/2009
+
          ELSE IF ( ND.EQ.1 .AND. ( NU.LT.1 .OR. ABS(DL(1)).EQ.0 ) ) THEN
 *     
 *           1-d case for normal or central t

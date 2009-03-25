@@ -1,5 +1,9 @@
 # $Id$
 
+        0.9-6 (25.03.2009)
+
+        update Alan's FORTRAN code
+
         0.9-5 (17.03.2009)
 
         fix FORTRAN bug spotted by Alex Lenkoski
