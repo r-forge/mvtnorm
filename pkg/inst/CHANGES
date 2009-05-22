@@ -1,5 +1,9 @@
 # $Id$
 
+        0.9-7 (22.05.2009)
+
+        make sure `error' is not NA
+
         0.9-6 (25.03.2009)
 
         update Alan's FORTRAN code
