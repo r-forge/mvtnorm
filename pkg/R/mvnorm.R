@@ -40,6 +40,7 @@ rmvnorm<-function (n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     
     retval <- matrix(rnorm(n * ncol(sigma)), nrow = n) %*%  retval
     retval <- sweep(retval, 2, mean, "+")
+    colnames(retval) <- names(mean)
     retval
 }
 
