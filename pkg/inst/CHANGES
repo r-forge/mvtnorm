@@ -1,5 +1,11 @@
 # $Id$
 
+        0.9-91 (13.04.2010)
+
+        better search interval for uniroot in qmv{t,norm} speeds up
+        quantile estimation; suggestion by Björn Bornkamp 
+        <bornkamp@statistik.tu-dortmund.de>
+
         0.9-9 (27.01.2010)
 
         document ... in pmvt.Rd
