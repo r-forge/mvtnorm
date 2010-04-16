@@ -261,7 +261,7 @@ approx_interval <- function(p, tail, corr, df = 0) {
     }
 
     if (tail == "both.tails")
-        p <- ifelse(p > 0.5, p + (1 - p) / 2, p / 2)
+        p <- p + (1 - p) / 2
 
              ### univariate quantile (corr == 1, perfect correlation)
     ret <- c(qfun(p),
@@ -289,6 +289,8 @@ qmvnorm <- function(p, interval = NULL,
         algorithm <- dots$algorithm
 
     tail <- match.arg(tail)
+    if (tail == "both.tails" && p < 0.5)
+        stop("cannot compute two-sided quantile for p < 0.5")
     dim <- length(mean)
     if (is.matrix(corr)) dim <- nrow(corr)
     if (is.matrix(sigma)) dim <- nrow(sigma)
@@ -346,6 +348,8 @@ qmvt <- function(p, interval = NULL,
         algorithm <- dots$algorithm
 
     tail <- match.arg(tail)
+    if (tail == "both.tails" && p < 0.5)
+        stop("cannot compute two-sided quantile for p < 0.5")
     dim <- 1
     if (!is.null(corr)) dim <- NROW(corr)
     if (!is.null(sigma)) dim <- NROW(sigma)
