@@ -52,6 +52,9 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
                  if (length(diag(corr)) != length(lower))        
                      stop(sQuote("diag(corr)"), " and ", sQuote("lower"), 
                           " are of different length")
+                 if ((min(corr) < -1 || max(corr) > 1) || 
+                     !isTRUE(all.equal(diag(corr), rep(1, nrow(corr)))))
+                     stop(sQuote("corr"), " is not a correlation matrix")
              }
          }
     }
@@ -75,6 +78,8 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
               if (length(diag(sigma)) != length(lower))                     
                  stop(sQuote("diag(sigma)"), " and ", sQuote("lower"), 
                       " are of different length")
+              if (!isTRUE(all.equal(sigma, t(sigma))) || any(diag(sigma) < 0))
+                 stop(sQuote("sigma"), " is not a covariance matrix")
             }
          }
     }

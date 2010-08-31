@@ -27,15 +27,11 @@ probval.TVPACK <- function (x, n, df, lower, upper, infin, corr, corrF, delta) {
   
     if (n == 2) {
         cr <- as.double(corr[2,1])
-        if (abs(cr) >= 1)
-            stop("need to have value in (-1,1) as correlation")
         res <- .Fortran("bvtlrcall", nu, upp[1], upp[2], cr, val = double(1))
     }
 
     if (n == 3) {
         cr <- c(corr[2,1], corr[3,1], corr[3,2])
-        if (any(abs(cr) >= 1))
-            stop("need to have values in (-1,1) as correlations")
         cr <- as.double(cr)
         res <- .Fortran("tvtlrcall", nu, upp, cr, eps, val = double(1))
     }
