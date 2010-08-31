@@ -17,6 +17,10 @@
 *          Pullman, WA 99164-3113
 *          Email : alangenz@wsu.edu
 *
+*
+*       Original source available from
+*       http://www.math.wsu.edu/faculty/genz/software/fort77/tvpack.f
+*
       PROGRAM TVTST
       INTEGER I, J, NU, NT
       PARAMETER ( NT = 20 )
