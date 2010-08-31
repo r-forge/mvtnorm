@@ -1,6 +1,7 @@
 \name{algorithms}
 \alias{GenzBretz}
 \alias{Miwa}
+\alias{TVPACK}
 \title{ Choice of Algorithm and Hyper Parameters }
 \description{
   Choose between two algorithms for evaluating normal distributions
@@ -9,6 +10,7 @@
 \usage{
 GenzBretz(maxpts = 25000, abseps = 0.001, releps = 0)
 Miwa(steps = 128)
+TVPACK(abseps = 1e-6)
 }
 \arguments{
   \item{maxpts}{ maximum number of function values as integer. }
@@ -25,6 +27,9 @@ arbitrary covariance structures and dimensions up to 1000.
 
 For smaller dimensions (up to 20) and non-singular covariance matrices,
 the algorithm by Miwa et al. (2003) can be used as well.
+
+For two- and three-dimensional problems, \code{TVPACK} implements
+an interface to the methods described by Genz (2004).
 
 }
 \value{
@@ -43,6 +48,10 @@ normal probabilities. \emph{Computing Science and Statistics}, \bold{25},
 Genz, A. and Bretz, F. (2002), Methods for the computation of multivariate
 t-probabilities. \emph{Journal of Computational and Graphical Statistics},
 \bold{11}, 950--971.
+
+Genz, A. (2004), Numerical computation of rectangular bivariate and
+trivariate normal and t-probabilities, \emph{Statistics and
+Computing}, \bold{14}, 251--260.
 
 Genz, A. and Bretz, F. (2009), \emph{Computation of Multivariate Normal and
 t Probabilities}. Lecture Notes in Statistics, Vol. 195. Springer-Verlag,

@@ -1,5 +1,10 @@
 # $Id$
 
+        0.9-93 (30.08.2010)
+
+        interface to Alan's TVPACK algorithms for 2- and 3-d 
+        probabilities by Bjoern Bornkamp added.
+
         0.9-92 (06.07.2010)
 
         update to new mvtdstpack.f (7/10) by Alan. Fixes
