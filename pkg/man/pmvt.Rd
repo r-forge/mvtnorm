@@ -23,7 +23,7 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                 problem is standardized. If neither \code{corr} nor
                 \code{sigma} is given, the identity matrix is used 
                 for \code{sigma}. }
-  \item{algorithm}{ an object of class \code{\link{GenzBretz}} defining the
+  \item{algorithm}{ an object of class \code{\link{GenzBretz}} or \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
   \item{...}{additional parameters (currently given to \code{GenzBretz} for
               backward compatibility issues). }
@@ -34,8 +34,12 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
 This program involves the computation of central and noncentral
 multivariate t-probabilities with arbitrary correlation matrices.
 It involves both the computation of singular and nonsingular
-probabilities. The methodology is described in
-Genz and Bretz (1999, 2002).
+probabilities. The methodology is based on randomized quasi Monte Carlo
+methods and described in Genz and Bretz (1999, 2002).
+
+For central 2- and 3-dimensional problems one can also use the TVPACK
+routines described by Genz (2004), which only handles semi-infinite
+integration regions.
 
 For a given correlation matrix \code{corr}, for short \eqn{A}, say, 
 (which has to be  positive semi-definite) and 
@@ -53,8 +57,7 @@ is the multivariate normal distribution and $m$ is the number of rows of \eqn{A}
 
 Note that both \code{-Inf} and \code{+Inf} may be specified in 
 the lower and upper integral limits in order to compute one-sided
-probabilities. Randomized quasi-Monte Carlo methods are used for the 
-computations.
+probabilities. 
 
 Univariate problems are passed to \code{\link{pt}}. 
 If \code{df = 0}, normal probabilities are returned. 
@@ -77,6 +80,10 @@ contrasts. \emph{Journal of Statistical Computation and Simulation},
 Genz, A. and Bretz, F. (2002), Methods for the computation of multivariate
 t-probabilities. \emph{Journal of Computational and Graphical Statistics},
 \bold{11}, 950--971.
+
+Genz, A. (2004), Numerical computation of rectangular bivariate and
+trivariate normal and t-probabilities, \emph{Statistics and
+Computing}, \bold{14}, 251--260.
 
 Genz, A. and Bretz, F. (2009), \emph{Computation of Multivariate Normal and
 t Probabilities}. Lecture Notes in Statistics, Vol. 195. Springer-Verlag,  

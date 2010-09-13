@@ -5,7 +5,7 @@
 
 Computes the equicoordinate quantile function of the multivariate t
 distribution for arbitrary correlation matrices
-based on an inversion of the algorithms by Genz and Bretz.
+based on inversion of qmvt.
 
 }
 \usage{
@@ -31,7 +31,8 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
                 problem is standardized. If neither \code{corr} nor
                 \code{sigma} is given, the identity matrix is used
                 for \code{sigma}. }
-  \item{algorithm}{ an object of class \code{\link{GenzBretz}} defining the
+  \item{algorithm}{ an object of class \code{\link{GenzBretz}} or
+                    \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
   \item{...}{ additional parameters to be passed to                                            
               \code{\link{uniroot}}.}

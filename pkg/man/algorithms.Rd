@@ -4,7 +4,7 @@
 \alias{TVPACK}
 \title{ Choice of Algorithm and Hyper Parameters }
 \description{
-  Choose between two algorithms for evaluating normal distributions
+  Choose between three algorithms for evaluating normal distributions
   and define hyper parameters.
 }
 \usage{
@@ -20,7 +20,7 @@ TVPACK(abseps = 1e-6)
 }
 \details{
 
-There are two algorithms available for evaluating normal
+There are three algorithms available for evaluating normal
 probabilities: The default is the randomized Quasi-Monte-Carlo procedure
 by Genz (1992, 1993) and Genz and Bretz (2002) applicable to
 arbitrary covariance structures and dimensions up to 1000.
@@ -28,8 +28,9 @@ arbitrary covariance structures and dimensions up to 1000.
 For smaller dimensions (up to 20) and non-singular covariance matrices,
 the algorithm by Miwa et al. (2003) can be used as well.
 
-For two- and three-dimensional problems, \code{TVPACK} implements
-an interface to the methods described by Genz (2004).
+For two- and three-dimensional problems and semi-infinite integration
+region, \code{TVPACK} implements an interface to the methods described
+by Genz (2004).
 
 }
 \value{
