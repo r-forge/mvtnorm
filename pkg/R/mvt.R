@@ -1,5 +1,16 @@
 # $Id$ 
 
+chkcorr <- function(x) {
+
+    if (!is.matrix(x)) return(TRUE)
+    rownames(x) <- colnames(x) <- NULL
+    storage.mode(x) <- "numeric"
+    
+    ret <- (min(x) < -1 || max(x) > 1) ||
+           !isTRUE(all.equal(diag(x), rep(1, nrow(x))))
+    !ret
+}
+
 checkmvArgs <- function(lower, upper, mean, corr, sigma) 
 {
     UNI <- FALSE
@@ -52,8 +63,7 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
                  if (length(diag(corr)) != length(lower))        
                      stop(sQuote("diag(corr)"), " and ", sQuote("lower"), 
                           " are of different length")
-                 if ((min(corr) < -1 || max(corr) > 1) || 
-                     !isTRUE(all.equal(diag(corr), rep(1, nrow(corr)))))
+                 if (!chkcorr(corr))
                      stop(sQuote("corr"), " is not a correlation matrix")
              }
          }
