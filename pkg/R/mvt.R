@@ -5,8 +5,9 @@ chkcorr <- function(x) {
     if (!is.matrix(x)) return(TRUE)
     rownames(x) <- colnames(x) <- NULL
     storage.mode(x) <- "numeric"
-    
-    ret <- (min(x) < -1 || max(x) > 1) ||
+    ONE <- 1 + .Machine$double.eps
+
+    ret <- (min(x) < -ONE || max(x) > ONE) ||
            !isTRUE(all.equal(diag(x), rep(1, nrow(x))))
     !ret
 }
@@ -134,10 +135,20 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
 
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                  df=1, corr=NULL, sigma=NULL, 
-                 algorithm = GenzBretz(), ...)
+                 algorithm = GenzBretz(), 
+                 type = c("Kshirsagar", "LocationScale"), ...)
 {
+    type <- match.arg(type)
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
-                       sigma=sigma)
+                        sigma=sigma)
+    if (type == "LocationScale") {
+        d <- sqrt(diag(carg$sigma))
+        carg$lower <- (carg$lower - carg$mean)/d
+        carg$upper <- (carg$upper - carg$mean)/d
+        carg$corr <- cov2cor(carg$sigma)
+        carg$mean <- rep(0, length(carg$mean))
+    }
+
     if (is.null(df))
         stop(sQuote("df"), " not specified")
     if (any(df < 0))
@@ -224,11 +235,30 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     return(RET)
 }
 
-rmvt <- function(n, sigma=diag(2), df=1) {
-  rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
+rmvt <- function(n, sigma = diag(2), df = 1, 
+     delta = rep(0, nrow(sigma)),
+     type = c("LocationScale", "Kshirsagar")) {
+
+    if (length(delta) != nrow(sigma))
+      stop("delta and sigma have non-conforming size")
+
+    if (df == 0)
+        return(rmvnorm(n, mean = delta, sigma = sigma))
+    type <- match.arg(type)
+
+    if (type == "Kshirsagar")
+        return(rmvnorm(n, mean = delta, sigma = sigma)/
+               sqrt(rchisq(n, df)/df))
+
+    if (type == "LocationScale"){
+        sims <- rmvnorm(n, sigma = sigma)/sqrt(rchisq(n, df)/df)
+        return(sweep(sims, 2, delta, "+"))
+    }
+    ### was: rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
 }
 
-dmvt <- function(x, delta, sigma, df = 1, log = TRUE)
+dmvt <- function(x, delta, sigma, df = 1, 
+                 log = TRUE, type = "LocationScale")
 {
     if (df == 0)
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
@@ -353,7 +383,8 @@ qmvnorm <- function(p, interval = NULL,
 qmvt <- function(p, interval = NULL, 
                  tail = c("lower.tail", "upper.tail", "both.tails"), 
                  df = 1, delta = 0, corr = NULL, sigma = NULL,
-                 algorithm = GenzBretz(), ...) {
+                 algorithm = GenzBretz(), 
+                 type = c("Kshirsagar", "LocationScale"), ...) {
 
     if (length(p) != 1 || (p <= 0 || p >= 1)) 
         stop(sQuote("p"), " is not a double between zero and one")
@@ -361,6 +392,7 @@ qmvt <- function(p, interval = NULL,
     dots <- dots2GenzBretz(...)
     if (!is.null(dots$algorithm)  && !is.null(algorithm)) 
         algorithm <- dots$algorithm
+    type <- match.arg(type)
 
     tail <- match.arg(tail)
     if (tail == "both.tails" && p < 0.5)
@@ -386,7 +418,7 @@ qmvt <- function(p, interval = NULL,
            },)
            pmvt(lower = low, upper = upp, df = df, delta = args$mean,
                 corr = args$corr, sigma = args$sigma,
-                algorithm = algorithm) - p
+                algorithm = algorithm, type = type) - p
     }
 
     if (is.null(interval) || length(interval) != 2) {

@@ -10,8 +10,10 @@
   generates random deviates.
 }
 \usage{
-rmvt(n, sigma = diag(2), df = 1)
-dmvt(x, delta, sigma, df = 1, log = TRUE)
+rmvt(n, sigma = diag(2), df = 1, delta = rep(0, nrow(sigma)),
+     type = c("LocationScale", "Kshirsagar"))
+dmvt(x, delta, sigma, df = 1, log = TRUE,
+     type = "LocationScale")
 }
 \arguments{
  \item{x}{Vector or matrix of quantiles. If \code{x} is a matrix, each
@@ -21,6 +23,13 @@ dmvt(x, delta, sigma, df = 1, log = TRUE)
  \item{sigma}{Correlation matrix, default is \code{diag(ncol(x))}.}
  \item{df}{ degree of freedom as integer.}
  \item{log}{Logical; if \code{TRUE}, densities d are given as log(d).}
+ \item{type}{ type of the noncentral multivariate t distribution
+              to be computed. \code{type = "Kshirsagar"} corresponds
+              to formula (1.3) and \code{type = "LocationScale"}
+              to formula (1.4) in Genz and Bretz (2009).
+              Note that the defaults differ from the default 
+              in \code{\link{pmvt}} (for reasons of backward 
+              compatibility).}
 }
 \seealso{\code{\link{pmvt}} and \code{\link{qmvt}}}
 \examples{

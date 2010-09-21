@@ -10,7 +10,8 @@
 }
 \usage{
 pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
-     df=1, corr=NULL, sigma=NULL, algorithm = GenzBretz(), ...)
+     df=1, corr=NULL, sigma=NULL, algorithm = GenzBretz(), 
+     type = c("Kshirsagar", "LocationScale"), ...)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -25,6 +26,10 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                 for \code{sigma}. }
   \item{algorithm}{ an object of class \code{\link{GenzBretz}} or \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
+  \item{type}{ type of the noncentral multivariate t distribution
+               to be computed. \code{type = "Kshirsagar"} corresponds
+               to formula (1.3) and \code{type = "LocationScale"}
+               to formula (1.4) in Genz and Bretz (2009).}
   \item{...}{additional parameters (currently given to \code{GenzBretz} for
               backward compatibility issues). }
 }
