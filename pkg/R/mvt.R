@@ -136,17 +136,23 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                  df=1, corr=NULL, sigma=NULL, 
                  algorithm = GenzBretz(), 
-                 type = c("Kshirsagar", "LocationScale"), ...)
+                 type = c("Kshirsagar", "shifted"), ...)
 {
     type <- match.arg(type)
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
                         sigma=sigma)
-    if (type == "LocationScale") {
-        d <- sqrt(diag(carg$sigma))
-        carg$lower <- (carg$lower - carg$mean)/d
-        carg$upper <- (carg$upper - carg$mean)/d
-        carg$corr <- cov2cor(carg$sigma)
-        carg$mean <- rep(0, length(carg$mean))
+    if (type == "shifted") { # can be handled by integrating over central t
+      if(!is.null(carg$corr)){ # using transformed integration bounds
+        d <- 1
+      } else {
+        if(!is.null(carg$sigma)){
+          d <- sqrt(diag(carg$sigma))
+          carg$corr <- cov2cor(carg$sigma)
+        }
+      }
+      carg$lower <- (carg$lower - carg$mean)/d
+      carg$upper <- (carg$upper - carg$mean)/d
+      carg$mean <- rep(0, length(carg$mean))
     }
 
     if (is.null(df))
@@ -167,12 +173,13 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
         if (!is.null(carg$corr)) {
             RET <- mvt(lower=carg$lower, upper=carg$upper, df=df, corr=carg$corr,
                        delta=carg$mean,  algorithm = algorithm, ...)
-        } else {
-            lower <- carg$lower/sqrt(diag(carg$sigma))
-            upper <- carg$upper/sqrt(diag(carg$sigma))
+        } else { # need to transform integration bounds and delta
+            d <- sqrt(diag(carg$sigma))
+            lower <- carg$lower/d
+            upper <- carg$upper/d
             corr <- cov2cor(carg$sigma)
             RET <- mvt(lower=lower, upper=upper, df=df, corr=corr,
-                       delta=carg$mean, algorithm = algorithm, ...)
+                       delta=carg$mean/d, algorithm = algorithm, ...)
         }
     }
     attr(RET$value, "error") <- RET$error
@@ -237,7 +244,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 
 rmvt <- function(n, sigma = diag(2), df = 1, 
      delta = rep(0, nrow(sigma)),
-     type = c("LocationScale", "Kshirsagar")) {
+     type = c("shifted", "Kshirsagar")) {
 
     if (length(delta) != nrow(sigma))
       stop("delta and sigma have non-conforming size")
@@ -250,7 +257,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
         return(rmvnorm(n, mean = delta, sigma = sigma)/
                sqrt(rchisq(n, df)/df))
 
-    if (type == "LocationScale"){
+    if (type == "shifted"){
         sims <- rmvnorm(n, sigma = sigma)/sqrt(rchisq(n, df)/df)
         return(sweep(sims, 2, delta, "+"))
     }
@@ -258,7 +265,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
 }
 
 dmvt <- function(x, delta, sigma, df = 1, 
-                 log = TRUE, type = "LocationScale")
+                 log = TRUE, type = "shifted")
 {
     if (df == 0)
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
@@ -384,7 +391,7 @@ qmvt <- function(p, interval = NULL,
                  tail = c("lower.tail", "upper.tail", "both.tails"), 
                  df = 1, delta = 0, corr = NULL, sigma = NULL,
                  algorithm = GenzBretz(), 
-                 type = c("Kshirsagar", "LocationScale"), ...) {
+                 type = c("Kshirsagar", "shifted"), ...) {
 
     if (length(p) != 1 || (p <= 0 || p >= 1)) 
         stop(sQuote("p"), " is not a double between zero and one")

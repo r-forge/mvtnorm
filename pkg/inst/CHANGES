@@ -1,12 +1,12 @@
 # $Id$
 
-        0.9-94 (21.09.2010)
+        0.9-94 (16.11.2010)
 
         allow for two different noncentral t distributions (via type
         argument), by Bjoern Bornkamp 
 
 
-        0.9-93 (30.08.2010)
+        0.9-93 (30.08.2010, not published)
 
         interface to Alan's TVPACK algorithms for 2- and 3-d 
         probabilities by Bjoern Bornkamp added.

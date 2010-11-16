@@ -12,7 +12,7 @@ based on inversion of qmvt.
 qmvt(p, interval = NULL, tail = c("lower.tail", 
      "upper.tail", "both.tails"), df = 1, delta = 0, corr = NULL, 
      sigma = NULL, algorithm = GenzBretz(), 
-     type = c("Kshirsagar", "LocationScale"), ...)
+     type = c("Kshirsagar", "shifted"), ...)
 }
 \arguments{
   \item{p}{ probability.}
@@ -24,7 +24,8 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
                \eqn{P[X > x] = p} and 
                \code{both.tails} leads to \eqn{x} 
                with \eqn{P[-x \le X \le x] = p}.}
-  \item{delta}{ the vector of noncentrality parameters of length n.}
+  \item{delta}{ the vector of noncentrality parameters of length n, for
+   \code{type = "shifted"} delta specifies the mode.}
   \item{df}{ degree of freedom as integer.}
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
@@ -36,9 +37,12 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
                     \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
   \item{type}{ type of the noncentral multivariate t distribution
-               to be computed. \code{type = "Kshirsagar"} corresponds
-               to formula (1.3) and \code{type = "LocationScale"}
-               to formula (1.4) in Genz and Bretz (2009).}
+              to be computed. \code{type = "Kshirsagar"} corresponds
+              to formula (1.4) in Genz and Bretz (2009) (see also
+	      Chapter 5.1 in Kotz and Nadarajah (2004)) and
+	      \code{type = "shifted"} corresponds to the formula before
+	      formula (1.4) in Genz and Bretz (2009)
+	      (see also formula (1.1) in Kotz and Nadarajah (2004)). }
   \item{...}{ additional parameters to be passed to                                            
               \code{\link{uniroot}}.}
 }
