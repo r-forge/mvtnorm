@@ -3,8 +3,13 @@
         0.9-94 (16.11.2010)
 
         allow for two different noncentral t distributions (via type
-        argument), by Bjoern Bornkamp 
+        argument)
 
+        add support for one-dimensional quantiles (requested by Jerry Lewis
+        <jerry.lewis@biogenidec.com>)
+
+        documentation fixes for problems spotted by
+        Jerry Lewis <jerry.lewis@biogenidec.com>
 
         0.9-93 (30.08.2010, not published)
 

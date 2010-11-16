@@ -349,6 +349,15 @@ qmvnorm <- function(p, interval = NULL,
     lower <- rep(0, dim)
     upper <- rep(0, dim)
     args <- checkmvArgs(lower, upper, mean, corr, sigma)
+    if (args$uni) {
+        if (is.null(args$sigma))
+          stop(sQuote("sigma"), " not specified: cannot compute qnorm")
+        if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
+        q <- qnorm(p, mean = args$mean, sd = args$sigma, 
+                   lower.tail = (tail != "upper.tail"))
+        qroot <- c(quantile = q, f.quantile = 0)
+        return(qroot)
+    }
     dim <- length(args$mean)
 
     pfct <- function(q) {
@@ -410,6 +419,13 @@ qmvt <- function(p, interval = NULL,
     lower <- rep(0, dim)
     upper <- rep(0, dim)
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
+    if (args$uni) {
+        if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
+        q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
+        qroot <- c(quantile = q, f.quantile = 0)
+        return(qroot)
+    }
+
     dim <- length(args$mean)
 
     pfct <- function(q) {
