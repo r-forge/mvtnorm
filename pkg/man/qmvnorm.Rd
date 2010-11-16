@@ -35,8 +35,8 @@ qmvnorm(p, interval = NULL, tail = c("lower.tail",
                   \code{\link{Miwa}} or \code{\link{TVPACK}}
                   specifying both the algorithm to be used as well as
                   the associated hyper parameters.}
-  \item{...}{ additional parameters to be passed to
-              \code{\link{uniroot}}.}
+  \item{...}{ additional parameters to be passed to 
+              \code{\link{GenzBretz}}.}
 }
 \details{
 

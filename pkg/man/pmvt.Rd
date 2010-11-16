@@ -18,7 +18,7 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{upper}{ the vector of upper limits of length n.}
   \item{delta}{ the vector of noncentrality parameters of length n, for
    \code{type = "shifted"} delta specifies the mode.}
-  \item{df}{ degree of freedom as integer.}
+  \item{df}{ degree of freedom as integer. Normal probabilities are computed for \code{df=0}.}
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the  

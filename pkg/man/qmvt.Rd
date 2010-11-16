@@ -26,7 +26,7 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
                with \eqn{P[-x \le X \le x] = p}.}
   \item{delta}{ the vector of noncentrality parameters of length n, for
    \code{type = "shifted"} delta specifies the mode.}
-  \item{df}{ degree of freedom as integer.}
+  \item{df}{ degree of freedom as integer. Normal quantiles are computed for \code{df = 0}.}
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the
@@ -44,7 +44,7 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
 	      formula (1.4) in Genz and Bretz (2009)
 	      (see also formula (1.1) in Kotz and Nadarajah (2004)). }
   \item{...}{ additional parameters to be passed to                                            
-              \code{\link{uniroot}}.}
+              \code{\link{GenzBretz}}.}
 }
 \details{
 
@@ -61,7 +61,7 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
   of iterations used and an approximate estimated precision from
   \code{\link{uniroot}}.
 }
-\seealso{\code{\link{pmvnorm}}, \code{\link{qmvt}}}
+\seealso{\code{\link{pmvnorm}}, \code{\link{qmvnorm}}}
 \examples{
 qmvt(0.95, df = 16, tail = "both")
 }
