@@ -1,5 +1,10 @@
 # $Id$
 
+        0.9-95 (18.11.2010)
+
+        q{mvt,mvnorm} shall always return a list, not a vector
+	checks for correlation matrices are less picky now
+
         0.9-94 (16.11.2010)
 
         allow for two different noncentral t distributions (via type
