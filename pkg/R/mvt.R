@@ -282,7 +282,8 @@ dmvt <- function(x, delta, sigma, df = 1,
     if (NCOL(x) != NCOL(sigma)) {
         stop("x and sigma have non-conforming size")
     }
-    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps))) {
+    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps), 
+                     check.attributes = FALSE)) {
         stop("sigma must be a symmetric matrix")
     }
     if (length(delta) != NROW(sigma)) {
