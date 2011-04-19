@@ -11,7 +11,7 @@
 }
 \usage{
 rmvt(n, sigma = diag(2), df = 1, delta = rep(0, nrow(sigma)),
-     type = c("shifted", "Kshirsagar"))
+     type = c("shifted", "Kshirsagar"), ...)
 dmvt(x, delta, sigma, df = 1, log = TRUE,
      type = "shifted")
 }
@@ -42,6 +42,8 @@ dmvt(x, delta, sigma, df = 1, log = TRUE,
               in \code{\link{pmvt}} (for reasons of backward 
               compatibility).
 	    }
+ \item{\dots}{ additional arguments to \code{\link{rmvnorm}},
+               for example \code{method}.}
 	  }
 \details{
   For type = "shifted" the following density is implemented

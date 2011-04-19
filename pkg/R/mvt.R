@@ -244,21 +244,21 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 
 rmvt <- function(n, sigma = diag(2), df = 1, 
      delta = rep(0, nrow(sigma)),
-     type = c("shifted", "Kshirsagar")) {
+     type = c("shifted", "Kshirsagar"), ...) {
 
     if (length(delta) != nrow(sigma))
       stop("delta and sigma have non-conforming size")
 
     if (df == 0)
-        return(rmvnorm(n, mean = delta, sigma = sigma))
+        return(rmvnorm(n, mean = delta, sigma = sigma, ...))
     type <- match.arg(type)
 
     if (type == "Kshirsagar")
-        return(rmvnorm(n, mean = delta, sigma = sigma)/
+        return(rmvnorm(n, mean = delta, sigma = sigma, ...)/
                sqrt(rchisq(n, df)/df))
 
     if (type == "shifted"){
-        sims <- rmvnorm(n, sigma = sigma)/sqrt(rchisq(n, df)/df)
+        sims <- rmvnorm(n, sigma = sigma, ...)/sqrt(rchisq(n, df)/df)
         return(sweep(sims, 2, delta, "+"))
     }
     ### was: rmvnorm(n,sigma=sigma)/sqrt(rchisq(n,df)/df)
@@ -446,7 +446,7 @@ qmvt <- function(p, interval = NULL,
     }
 
     if (is.null(interval) || length(interval) != 2) {
-        if (delta == 0 & is.null(args$sigma)) {
+        if (isTRUE(all.equal(max(abs(delta)), 0)) & is.null(args$sigma)) {
             cr <- args$corr
             interval <- approx_interval(p = p, tail = tail, 
                                         corr = cr, df = df)

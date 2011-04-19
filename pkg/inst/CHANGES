@@ -1,5 +1,14 @@
 # $Id$
 
+        0.9-98 (19.04.2011)
+
+	allow ... to pass arguments to rmvnorm in rmvt
+
+        0.9-97 (31.01.2011)
+
+	use check.attributes = FALSE in isSymmetric calls
+        (requested by Nick Sabbe <nick.sabbe@ugent.be>)
+
         0.9-96 (28.01.2011)
 
         use fixed interval when sigma is specified in qmvt
