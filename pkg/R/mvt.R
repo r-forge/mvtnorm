@@ -321,11 +321,12 @@ approx_interval <- function(p, tail, corr, df = 0) {
              ### multivariate quantile (corr == 0, independence)
              qfun(p^(1 / NCOL(corr))))
 
+    if (tail == "upper.tail")
+        ret <- rev(-ret)
+
     ### just to please uniroot
     ret <- ret * c(0.9, 1.1)
 
-    if (tail == "upper.tail")
-        ret <- rev(-ret)
     ret
 }
 
