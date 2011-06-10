@@ -1,5 +1,13 @@
 # $Id$
 
+        0.9-9991 (10.06.2011)
+
+        tvpack wasn't working on 64bit machines. The reason
+        was that the wrapper SUBROUTINEs around the original
+        FUNCTIONs didn't return the appropriate double precision
+        for unknown reasons. Redefining TVTL and BVTL as FUNCTIONs
+        fixed the problem.
+
         0.9-999 (26.04.2011)
 
 	still problems in fix approx_interval (when !is.null(sigma));
