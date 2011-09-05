@@ -1,5 +1,9 @@
 # $Id$
 
+        0.9-9992 (05.09.2011)
+
+        qmvt(..., df = 0, ...) gave NaN
+
         0.9-9991 (10.06.2011)
 
         tvpack wasn't working on 64bit machines. The reason

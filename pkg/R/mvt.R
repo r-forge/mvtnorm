@@ -424,7 +424,11 @@ qmvt <- function(p, interval = NULL,
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
     if (args$uni) {
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
-        q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
+        if (df == 0) {
+            q <- qnorm(p, mean = args$mean, lower.tail = (tail != "upper.tail"))
+        } else {
+            q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
+        }
         qroot <- list(quantile = q, f.quantile = 0)
         return(qroot)
     }
