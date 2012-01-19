@@ -11,11 +11,12 @@ CC=`"${R_HOME}/bin/R" CMD config CC`
 CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
 dnl needed for x64 with at least one gcc version
+PKG_CFLAGS=""
 if test  "${CC}" = "gcc -std=gnu99" ; then
-    CFLAGS="-O2 -ffloat-store"
+    PKG_CFLAGS="-O2 -ffloat-store"
 fi;
 
-AC_SUBST(CFLAGS)                                  
+AC_SUBST(PKG_CFLAGS)                                  
 
 AC_CONFIG_FILES([src/Makevars])
 
