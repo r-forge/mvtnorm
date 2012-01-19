@@ -12,7 +12,7 @@ CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
 dnl needed for x64 with at least one gcc version
 if test  "${CC}" = "gcc -std=gnu99" ; then
-    CFLAGS="${CFLAGS} -ffloat-store"
+    CFLAGS="-O2 -ffloat-store"
 fi;
 
 AC_SUBST(CFLAGS)                                  
