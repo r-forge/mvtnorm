@@ -1646,7 +1646,7 @@ CC=`"${R_HOME}/bin/R" CMD config CC`
 CFLAGS=`"${R_HOME}/bin/R" CMD config CFLAGS`
 
 if test  "${CC}" = "gcc -std=gnu99" ; then
-    CFLAGS="${CFLAGS} -ffloat-store"
+    CFLAGS="-O2 -ffloat-store"
 fi;
 
 
