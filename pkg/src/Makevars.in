@@ -1,4 +1,0 @@
-### need to add "-ffloat-store" for x64 Debian with
-### GCC 4.6.2 (Debian 4.6.2-11) 
-### don't ask me why
-PKG_CFLAGS=@PKG_CFLAGS@
