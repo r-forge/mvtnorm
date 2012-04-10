@@ -160,6 +160,8 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     if (any(df < 0))
         stop("cannot compute multivariate t distribution with ",
              sQuote("df"), " < 0")
+    if (!isTRUE(all.equal(as.integer(df), df)))
+        stop(sQuote("df"), " is not an integer")
     if (carg$uni) {
         if (df > 0)
             RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
