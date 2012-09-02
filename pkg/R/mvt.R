@@ -272,6 +272,8 @@ dmvt <- function(x, delta, sigma, df = 1,
     if (df == 0)
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
 
+    type <- match.arg(type)
+
     if (is.vector(x)) {
         x <- matrix(x, ncol = length(x))
     }
