@@ -1,5 +1,19 @@
 # $Id$
 
+        0.9-9994 (06.12.2012)
+
+        set.seed(29)
+        rmvnorm(10, ...)
+
+        produces the same first ten rows as
+
+        set.seed(29)
+        rmvnorm(100, ...)
+
+        as suggested by Paul Johnson <pauljohn@ku.edu>. There is a new
+        argument pre0.9_9993 for changing back to the `old' output. Also
+        applies to rmvt.
+
         0.9-9993 (22.10.2012)
 
         sigma is called `scale' matrix of {dpq}mvt, thanks to
