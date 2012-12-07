@@ -11,8 +11,8 @@
         rmvnorm(100, ...)
 
         as suggested by Paul Johnson <pauljohn@ku.edu>. There is a new
-        argument pre0.9_9993 for changing back to the `old' output. Also
-        applies to rmvt.
+        argument pre0.9_9993 for changing back to the `old' output. This
+        _DOES NOT_  apply to rmvt.
 
         0.9-9993 (22.10.2012)
 
