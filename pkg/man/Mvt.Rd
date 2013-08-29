@@ -5,7 +5,7 @@
 \description{
   These functions provide information about the multivariate \eqn{t}
   distribution with non-centrality parameter (or mode) \code{delta},
-  dispersion or scale matrix \code{sigma} and degrees of freedom \code{df}.
+  scale matrix \code{sigma} and degrees of freedom \code{df}.
   \code{dmvt} gives the density and \code{rmvt}
   generates random deviates.
 }
@@ -20,7 +20,7 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
   \item{n}{number of observations.}
   \item{delta}{the vector of noncentrality parameters of length n, for
     \code{type = "shifted"} delta specifies the mode.}
-  \item{sigma}{dispersion or scale matrix, defaults to
+  \item{sigma}{scale matrix, defaults to
     \code{diag(ncol(x))}.}
   \item{df}{degrees of freedom.}
   \item{log}{\code{\link{logical}} indicating whether densities \eqn{d}
@@ -47,17 +47,20 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
 }
 \details{
   If \eqn{\bm{X}}{X} denotes a random vector following a \eqn{t} distribution
-  with location vector \eqn{\bm{0}}{0} and dispersion matrix
+  with location vector \eqn{\bm{0}}{0} and scale matrix
   \eqn{\Sigma}{Sigma} (written \eqn{X\sim t_\nu(\bm{0},\Sigma)}{X ~ t_nu(0,
-    Sigma)}), note that the dispersion matrix (the argument
+    Sigma)}), the scale matrix (the argument
   \code{sigma}) is not equal to the covariance matrix \eqn{Cov(\bm{X})}{Cov(X)}
   of \eqn{\bm{X}}{X}. If the degrees of freedom \eqn{\nu}{nu} (the
   argument \code{df}) is larger than 2, then
   \eqn{Cov(\bm{X})=\Sigma\nu/(\nu-2)}{Cov(X)=Sigma
     nu/(nu-2)}. Furthermore,
   in this case the correlation matrix \eqn{Cor(\bm{X})}{Cor(X)} equals
-  the correlation matrix corresponding to the dispersion matrix
-  \eqn{\Sigma}{Sigma} (which can be computed with \code{\link{cov2cor}()}).
+  the correlation matrix corresponding to the scale matrix
+  \eqn{\Sigma}{Sigma} (which can be computed with
+  \code{\link{cov2cor}()}). Note that the scale matrix is sometimes
+  referred to as \dQuote{dispersion matrix};
+  see McNeil, Frey, Embrechts (2005, p. 74).
 
   For \code{type = "shifted"} the density
   \deqn{c(1+(x-\delta)'S^{-1}(x-\delta)/\nu)^{-(\nu+m)/2}}
@@ -67,12 +70,16 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
   \code{sigma} above), \eqn{\delta}{delta} is the
   non-centrality vector and \eqn{\nu}{nu} are the degrees of freedom.
 
-  Note that \code{df==0} historically leads to the multivariate normal
-  distribution. However, from a mathematical point of view,
+  \code{df==0} historically leads to the multivariate normal
+  distribution. From a mathematical point of view, rather
   \code{df==Inf} corresponds to the multivariate normal distribution
   (not implemented).
 }
-
+\references{
+  McNeil, A. J., Frey, R., and Embrechts, P. (2005).
+  \emph{Quantitative Risk Management: Concepts, Techniques, Tools}.
+  Princeton University Press.
+}
 \seealso{\code{\link{pmvt}()} and \code{\link{qmvt}()}}
 \examples{
 dmvt(x = c(0,0), sigma = diag(2))
