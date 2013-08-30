@@ -22,7 +22,8 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
     \code{type = "shifted"} delta specifies the mode.}
   \item{sigma}{scale matrix, defaults to
     \code{diag(ncol(x))}.}
-  \item{df}{degrees of freedom.}
+  \item{df}{degrees of freedom. \code{df = 0} or \code{df = Inf}
+    corresponds to the multivariate normal distribution.}
   \item{log}{\code{\link{logical}} indicating whether densities \eqn{d}
     are given as \eqn{\log(d)}{log(d)}.}
   \item{type}{type of the noncentral multivariate \eqn{t} distribution.
@@ -73,7 +74,11 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
   \code{df=0} historically leads to the multivariate normal
   distribution. From a mathematical point of view, rather
   \code{df=Inf} corresponds to the multivariate normal
-  distribution. This is (now) also allowed for \code{rmvt()}.
+  distribution. This is (now) also allowed for \code{rmvt()} and
+  \code{dmvt()}.
+
+  Note that \code{dmvt()} has default \code{log = TRUE}, whereas
+  \code{\link{dmvnorm}()} has default \code{log = FALSE}.
 }
 \references{
   McNeil, A. J., Frey, R., and Embrechts, P. (2005).
@@ -82,7 +87,17 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
 }
 \seealso{\code{\link{pmvt}()} and \code{\link{qmvt}()}}
 \examples{
+## basic evaluation
 dmvt(x = c(0,0), sigma = diag(2))
+
+## check behavior for df=0 and df=Inf
+x <- c(1.23, 4.56)
+mu <- 1:2
+Sigma <- diag(2)
+x0 <- dmvt(x, delta = mu, sigma = Sigma, df = 0) # default log = TRUE!
+x8 <- dmvt(x, delta = mu, sigma = Sigma, df = Inf) # default log = TRUE!
+xn <- dmvnorm(x, mean = mu, sigma = Sigma, log = TRUE)
+stopifnot(identical(x0, x8), identical(x0, xn))
 
 ## X ~ t_3(0, diag(2))
 x <- rmvt(100, sigma = diag(2), df = 3) # t_3(0, diag(2)) sample

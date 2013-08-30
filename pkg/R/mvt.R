@@ -163,11 +163,11 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     if (!isTRUE(all.equal(as.integer(df), df)))
         stop(sQuote("df"), " is not an integer")
     if (carg$uni) {
-        if (df > 0)
+        if (df > 0) # TODO: take out df == Inf; vectorized?
             RET <- list(value = pt(carg$upper, df=df, ncp=carg$mean) -
                                 pt(carg$lower, df=df, ncp=carg$mean),
                        error = 0, msg="univariate: using pt")
-        else
+        else # df == 0
             RET <- list(value = pnorm(carg$upper, mean = carg$mean) -
                                 pnorm(carg$lower, mean=carg$mean),
                        error = 0, msg="univariate: using pnorm")
@@ -250,9 +250,9 @@ rmvt <- function(n, sigma = diag(2), df = 1,
 {
     if (length(delta) != nrow(sigma))
         stop("delta and sigma have non-conforming size")
-    if (hasArg(mean)) # => normal mean variance mixture != t distribution (!)
+    if (hasArg(mean)) # MH: normal mean variance mixture != t distribution (!)
         stop("Providing 'mean' does *not* sample from a multivariate t distribution!")
-    if (df == 0 || df == Inf) # now (also) properly allow df = Inf
+    if (df == 0 || df == Inf) # MH: now (also) properly allow df = Inf
         return(rmvnorm(n, mean = delta, sigma = sigma, ...))
     type <- match.arg(type)
     switch(type,
@@ -270,7 +270,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
 dmvt <- function(x, delta, sigma, df = 1,
                  log = TRUE, type = "shifted")
 {
-    if (df == 0)
+    if (df == 0 || df == Inf) # MH: now (also) properly allow df = Inf
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
 
     type <- match.arg(type)
@@ -429,7 +429,7 @@ qmvt <- function(p, interval = NULL,
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
     if (args$uni) {
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
-        if (df == 0) {
+        if (df == 0 || df == Inf) { # MH: now (also) properly allow df = Inf
             q <- qnorm(p, mean = args$mean, lower.tail = (tail != "upper.tail"))
         } else {
             q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
