@@ -70,10 +70,10 @@ dmvt(x, delta, sigma, df = 1, log = TRUE, type = "shifted")
   \code{sigma} above), \eqn{\delta}{delta} is the
   non-centrality vector and \eqn{\nu}{nu} are the degrees of freedom.
 
-  \code{df==0} historically leads to the multivariate normal
+  \code{df=0} historically leads to the multivariate normal
   distribution. From a mathematical point of view, rather
-  \code{df==Inf} corresponds to the multivariate normal distribution
-  (not implemented).
+  \code{df=Inf} corresponds to the multivariate normal
+  distribution. This is (now) also allowed for \code{rmvt()}.
 }
 \references{
   McNeil, A. J., Frey, R., and Embrechts, P. (2005).
@@ -95,8 +95,17 @@ Sigma <- matrix(c(4, 2, 2, 3), ncol=2)
 set.seed(271)
 x <- rep(mu, each=n) + rmvt(n, sigma=Sigma, df=3)
 plot(x)
+
 ## Note that the call rmvt(n, mean=mu, sigma=Sigma, df=3) does *not*
-## give a valid sample from t_3(mu, Sigma)!
+## give a valid sample from t_3(mu, Sigma)! [and thus throws an error]
+try(rmvt(n, mean=mu, sigma=Sigma, df=3))
+
+## df=Inf correctly samples from a multivariate normal distribution
+set.seed(271)
+x <- rep(mu, each=n) + rmvt(n, sigma=Sigma, df=Inf)
+set.seed(271)
+x. <- rmvnorm(n, mean=mu, sigma=Sigma)
+stopifnot(identical(x, x.))
 }
 \keyword{distribution}
 \keyword{multivariate}
