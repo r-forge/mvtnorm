@@ -32,8 +32,8 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
   \item{sigma}{ the covariance matrix of dimension n. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the
                 problem is standardized. If neither \code{corr} nor
-                \code{sigma} is given, the identity matrix is used
-                for \code{sigma}. }
+                \code{sigma} is given, the identity matrix in the univariate
+		case (so \code{corr = 1}) is used for \code{corr}. }
   \item{algorithm}{ an object of class \code{\link{GenzBretz}} or
                     \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
@@ -74,5 +74,15 @@ q0 <- qmvt(0.95, sigma = Sigma, df = 0,   tail = "both")$quantile
 qn <- qmvnorm(0.95, sigma = Sigma, tail = "both")$quantile
 stopifnot(# identical(q0, q8),
           identical(q0, qn))
+
+## if neither sigma nor corr are provided, corr = 1 is used internally
+df <- 0
+qt95 <- qmvt(0.95, df = df, tail = "both")$quantile
+stopifnot(identical(qt95, qmvt(0.95, df = df, corr  = 1, tail = "both")$quantile),
+          identical(qt95, qmvt(0.95, df = df, sigma = 1, tail = "both")$quantile))
+df <- 4
+qt95 <- qmvt(0.95, df = df, tail = "both")$quantile
+stopifnot(identical(qt95, qmvt(0.95, df = df, corr  = 1, tail = "both")$quantile),
+          identical(qt95, qmvt(0.95, df = df, sigma = 1, tail = "both")$quantile))
 }
 \keyword{distribution}
