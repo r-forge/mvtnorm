@@ -189,6 +189,8 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     return(RET$value)
 }
 
+isInf <- function(x) x > 0 & is.infinite(x) # check for  Inf
+isNInf <- function(x) x < 0 & is.infinite(x) # check for -Inf
 
 mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 {
@@ -216,9 +218,9 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     if (n > 1000) stop("only dimensions 1 <= n <= 1000 allowed")
 
     infin <- rep(2, n)
-    infin[upper == Inf] <- 1
-    infin[lower == -Inf] <- 0
-    infin[lower == -Inf & upper == Inf] <- -1
+    infin[ isInf(upper)] <- 1
+    infin[isNInf(lower)] <- 0
+    infin[isNInf(lower) & isInf(upper)] <- -1
 
     ### this is a bug in `mvtdst' not yet fixed
     if (all(infin < 0))
@@ -252,7 +254,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
         stop("delta and sigma have non-conforming size")
     if (hasArg(mean)) # MH: normal mean variance mixture != t distribution (!)
         stop("Providing 'mean' does *not* sample from a multivariate t distribution!")
-    if (df == 0 || (df > 0 && is.infinite(df))) # MH: now (also) properly allow df = Inf
+    if (df == 0 || isInf(df)) # MH: now (also) properly allow df = Inf
         return(rmvnorm(n, mean = delta, sigma = sigma, ...))
     type <- match.arg(type)
     switch(type,
@@ -270,7 +272,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
 dmvt <- function(x, delta, sigma, df = 1,
                  log = TRUE, type = "shifted")
 {
-    if (df == 0 || (df > 0 && is.infinite(df))) # MH: now (also) properly allow df = Inf
+    if (df == 0 || isInf(df)) # MH: now (also) properly allow df = Inf
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
 
     type <- match.arg(type)
@@ -429,7 +431,7 @@ qmvt <- function(p, interval = NULL,
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
     if (args$uni) {
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
-        if (df == 0 || (df > 0 && is.infinite(df))) { # MH: now (also) properly allow df = Inf
+        if (df == 0 || isInf(df)) { # MH: now (also) properly allow df = Inf
             q <- qnorm(p, mean = args$mean, lower.tail = (tail != "upper.tail"))
         } else {
             q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
@@ -492,10 +494,10 @@ probval <- function(x, ...)
 
 probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
 
-    if(df > 0 && is.infinite(df)) df <- 0 # MH: deal with df=Inf (internally requires df=0!)
+    if(isInf(df)) df <- 0 # MH: deal with df=Inf (internally requires df=0!)
 
-    lower[lower == -Inf] <- 0
-    upper[upper == Inf] <- 0
+    lower[isNInf(lower)] <- 0
+    upper[ isInf(upper)] <- 0
 
     error <- 0; value <- 0; inform <- 0
     ret <- .Fortran("mvtdst", N = as.integer(n),
@@ -516,7 +518,7 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta)
 
 probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
 
-    if (!( df==0 || (df > 0 && is.infinite(df)) ))
+    if (!( df==0 || isInf(df) ))
         stop("Miwa algorithm cannot compute t-probabilities")
 
     if (n > 20)
