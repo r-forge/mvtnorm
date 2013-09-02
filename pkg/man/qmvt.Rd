@@ -70,9 +70,9 @@ qmvt(0.95, df = 16, tail = "both")
 ## check behavior for df=0 and df=Inf
 Sigma <- diag(2)
 q0 <- qmvt(0.95, sigma = Sigma, df = 0,   tail = "both")$quantile
-## q8 <- qmvt(0.95, sigma = Sigma, df = Inf, tail = "both")$quantile
+q8 <- qmvt(0.95, sigma = Sigma, df = Inf, tail = "both")$quantile
 qn <- qmvnorm(0.95, sigma = Sigma, tail = "both")$quantile
-stopifnot(# identical(q0, q8),
+stopifnot(identical(q0, q8),
           identical(q0, qn))
 
 ## if neither sigma nor corr are provided, corr = 1 is used internally
