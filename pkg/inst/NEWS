@@ -1,5 +1,10 @@
 # $Id$
 
+        0.9-9996 (04.09.2013)
+
+        documentation updates by Marius Hofert
+        df = Inf
+
         0.9-9995 (29.05.2013)
 
         update to version 2013-06-29 of mvtdst.f from Alan's website
