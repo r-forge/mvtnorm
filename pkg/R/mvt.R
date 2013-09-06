@@ -189,6 +189,7 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
     return(RET$value)
 }
 
+## identical(., Inf) would be faster but not vectorized
 isInf <- function(x) x > 0 & is.infinite(x) # check for  Inf
 isNInf <- function(x) x < 0 & is.infinite(x) # check for -Inf
 
