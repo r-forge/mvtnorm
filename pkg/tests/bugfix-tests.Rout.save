@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2013-05-16 r62756) -- "Unsuffered Consequences"
+R version 3.0.1 (2013-05-16) -- "Good Sport"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -421,8 +421,17 @@ $estim.prec
 +        pmvt(lower=c(-Inf,-Inf),upper=c(1.96,1.96), delta=c(1.72,1.72),df=100,corr=corr))
 > stopifnot(all(abs(p - mean(p)) < 1 / 100))
 > 
-> 
+> ### spotted and fixed by Xuefei Mi
+> m <- 3
+> S <- diag(m)
+> S[2, 1] <- S[1, 2] <- 1/4
+> S[3, 1] <- S[1, 3] <- 1/5
+> S[3, 2] <- S[2, 3] <- 1/3
+> # NaN was given.
+> p <- pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf), mean=c(0, 0, 0),
++              sigma=S, algorithm = Miwa())
+> stopifnot(!is.na(p))
 > 
 > proc.time()
    user  system elapsed 
-  7.340   0.060   7.404 
+  7.276   0.080   7.358 

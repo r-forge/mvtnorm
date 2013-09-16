@@ -223,6 +223,33 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     infin[isNInf(lower)] <- 0
     infin[isNInf(lower) & isInf(upper)] <- -1
 
+    ### fix for Miwa algo:
+    ### pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf), 
+    ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa()) 
+    ###         returned NA
+
+    if (class(algorithm) == "Miwa") {
+        if (any(infin == -1) & n >= 3) {
+            WhereBothInfIs <- which(infin == -1) 
+            n <- n - length(WhereBothInfIs)
+            corr <- corr[-WhereBothInfIs, -WhereBothInfIs]
+            upper <- upper[-WhereBothInfIs]
+            lower <- lower[-WhereBothInfIs]
+        }
+
+        if (any(infin == 0) & n >= 2) {
+            WhereNegativInfIs <- which(infin==0)
+            inversecorr <- rep(1, n)
+            inversecorr[WhereNegativInfIs] <- -1   
+            corr <- diag(inversecorr) %*% corr %*% diag(inversecorr)
+            infin[WhereNegativInfIs] <- 1
+
+            tempsaveupper <- upper[WhereNegativInfIs]
+            upper[WhereNegativInfIs] <- -lower[WhereNegativInfIs]
+            lower[WhereNegativInfIs] <- -tempsaveupper
+        }
+    } 
+
     ### this is a bug in `mvtdst' not yet fixed
     if (all(infin < 0))
         return(list(value = 1, error = 0, msg = "Normal Completion"))

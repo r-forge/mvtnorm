@@ -1,10 +1,15 @@
 # $Id$
 
-        0.9-9996 (04.09.2013)
+        0.9-9996 (16.09.2013)
 
         documentation updates/corrections/examples by Marius Hofert
         df = Inf
         rmvt(): argument 'mean' not allowed anymore (prone to misuse)
+
+        pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf),
+                mean=c(0, 0, 0), sigma=S, algorithm = Miwa())
+        returned NaN, fixed by Xuefei Mi
+
 
         0.9-9995 (29.05.2013)
 
