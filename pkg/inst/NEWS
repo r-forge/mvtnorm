@@ -1,5 +1,10 @@
 # $Id$
 
+        0.9-9997 (17.01.2014)
+
+	T. Miwa fixed a runtime error in miwa.c reported by UB sanitizer
+
+
         0.9-9996 (16.09.2013)
 
         documentation updates/corrections/examples by Marius Hofert
