@@ -1,6 +1,6 @@
 
-R version 3.0.1 (2013-05-16) -- "Good Sport"
-Copyright (C) 2013 The R Foundation for Statistical Computing
+R Under development (unstable) (2014-01-16 r64804) -- "Unsuffered Consequences"
+Copyright (C) 2014 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -403,6 +403,9 @@ attr(,"msg")
 $iter
 [1] 13
 
+$init.it
+[1] NA
+
 $estim.prec
 [1] 6.103516e-05
 
@@ -434,4 +437,4 @@ $estim.prec
 > 
 > proc.time()
    user  system elapsed 
-  7.276   0.080   7.358 
+  7.192   0.128   7.327 
