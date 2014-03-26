@@ -66,10 +66,14 @@ dmvnorm <- function (x, mean, sigma, log=FALSE)
     if (length(mean) != NROW(sigma)) {
         stop("mean and sigma have non-conforming size")
     }
-    distval <- mahalanobis(x, center = mean, cov = sigma)
-    logdet <- sum(log(eigen(sigma, symmetric=TRUE,
-                                   only.values=TRUE)$values))
-    logretval <- -(ncol(x)*log(2*pi) + logdet + distval)/2
+
+    ### <faster code contributed by Matteo Fasiolo mf364 at bath.ac.uk
+    dec <- chol(sigma)
+    tmp <- forwardsolve(t(dec), t(x) - mean)
+    rss <- colSums(tmp ^ 2)
+    logretval <- - sum(log(diag(dec))) - 0.5 * length(mean) * log(2 * pi) - 0.5 * rss
+    ### />
+
     if(log) return(logretval)
     exp(logretval)
 }
