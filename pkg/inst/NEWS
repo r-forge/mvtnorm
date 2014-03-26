@@ -1,9 +1,12 @@
 # $Id$
 
+        0.9-9998 (xx.03.2014)
+
+        faster code for dmvnorm by Matteo Fasiolo <mf364 at bath.ac.uk>
+
         0.9-9997 (17.01.2014)
 
 	T. Miwa fixed a runtime error in miwa.c reported by UB sanitizer
-
 
         0.9-9996 (16.09.2013)
 
