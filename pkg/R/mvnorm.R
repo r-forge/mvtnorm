@@ -74,6 +74,8 @@ dmvnorm <- function (x, mean, sigma, log=FALSE)
     logretval <- - sum(log(diag(dec))) - 0.5 * length(mean) * log(2 * pi) - 0.5 * rss
     ### />
 
+    names(logretval) <- rownames(x)
+
     if(log) return(logretval)
     exp(logretval)
 }
