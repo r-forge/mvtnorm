@@ -66,6 +66,7 @@ dmvnorm <- function (x, mean, sigma, log=FALSE)
     if (length(mean) != NROW(sigma)) {
         stop("mean and sigma have non-conforming size")
     }
+    if( !is.null(dim(mean)) ) dim(mean) <- NULL
 
     ### <faster code contributed by Matteo Fasiolo mf364 at bath.ac.uk
     dec <- chol(sigma)
