@@ -70,7 +70,7 @@ dmvnorm <- function (x, mean, sigma, log=FALSE)
 
     ### <faster code contributed by Matteo Fasiolo mf364 at bath.ac.uk
     dec <- chol(sigma)
-    tmp <- forwardsolve(t(dec), t(x) - mean)
+    tmp <- forwardsolve(dec, t(x) - mean, transpose = TRUE)
     rss <- colSums(tmp ^ 2)
     logretval <- - sum(log(diag(dec))) - 0.5 * length(mean) * log(2 * pi) - 0.5 * rss
     ### />
