@@ -72,7 +72,10 @@ dmvnorm <- function (x, mean, sigma, log = FALSE, trustme = FALSE)
 
         ### <faster code contributed by Matteo Fasiolo mf364 at bath.ac.uk
         dec <- try(chol(sigma))
-        if (inherits(dec, "try-error")) return(NaN)
+        if (inherits(dec, "try-error")) {
+            warning("cannot compute chol(sigma)")
+            return(NaN)
+        }
     } else {
         dec <- chol(sigma)
     }
