@@ -1,6 +1,10 @@
 # $Id$
 
-        0.9-9998 (xx.03.2014)
+        0.9-9999 (17.04.2014)
+
+        dmvnorm (again) returns NaN in case sigma is not decomposable
+
+        0.9-9998 (21.03.2014)
 
         faster code for dmvnorm by Matteo Fasiolo <mf364 at bath.ac.uk>
 
