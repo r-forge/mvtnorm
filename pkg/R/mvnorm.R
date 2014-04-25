@@ -79,7 +79,7 @@ dmvnorm <- function (x, mean, sigma, log = FALSE, trustme = FALSE)
     } else {
         dec <- chol(sigma)
     }
-    tmp <- forwardsolve(dec, t(x) - mean, transpose = TRUE)
+    tmp <- backsolve(dec, t(x) - mean, transpose = TRUE)
     rss <- colSums(tmp ^ 2)
     logretval <- - sum(log(diag(dec))) - 0.5 * length(mean) * log(2 * pi) - 0.5 * rss
     ### />
