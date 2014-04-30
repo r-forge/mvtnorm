@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2014-04-24 r65482) -- "Unsuffered Consequences"
+R version 3.1.0 Patched (2014-04-28 r65512) -- "Spring Dance"
 Copyright (C) 2014 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -456,9 +456,9 @@ $estim.prec
 +   ld1 <- d1(x=x, mean=m, sigma=Sigma)
 +   ld2 <- d2(x=x, mean=m, sigma=Sigma)
 +  
-+   stopifnot(isTRUE(all.equal(ld1, ld2)))
++   stopifnot(all.equal(ld1, ld2))
 + }
 > 
 > proc.time()
    user  system elapsed 
-  6.768   0.060   6.831 
+  7.729   0.029   7.826 

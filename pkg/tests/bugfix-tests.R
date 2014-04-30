@@ -317,5 +317,5 @@ for (i in 1:100) {
   ld1 <- d1(x=x, mean=m, sigma=Sigma)
   ld2 <- d2(x=x, mean=m, sigma=Sigma)
  
-  stopifnot(isTRUE(all.equal(ld1, ld2)))
+  stopifnot(all.equal(ld1, ld2))
 }
