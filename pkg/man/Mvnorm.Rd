@@ -22,9 +22,10 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
  \item{log}{Logical; if \code{TRUE}, densities d are given as log(d).}
  \item{trustme}{Logical; skip checks for full speed. You're on your own here!}
  \item{method}{Matrix decomposition used to determine the matrix root of
-  \code{sigma}, possible methods are eigenvalue decomposition
-	(\code{"eigen"}, default), singular value decomposition
-	(\code{"svd"}), and Cholesky decomposition (\code{"chol"}).}
+   \code{sigma}, possible methods are eigenvalue decomposition
+   (\code{"eigen"}, default), singular value decomposition
+   (\code{"svd"}), and Cholesky decomposition (\code{"chol"}).  The
+   Cholesky is typically fastest, not by much though.}
  \item{pre0.9_9994}{Logical; if \code{FALSE}, the output produced in mvtnorm
                     versions up to 0.9-9993 is reproduced. In 0.9-9994, the 
                     output is organized such that \code{rmvnorm(10,...)} has the
