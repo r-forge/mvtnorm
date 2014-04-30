@@ -224,13 +224,13 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     infin[isNInf(lower) & isInf(upper)] <- -1
 
     ### fix for Miwa algo:
-    ### pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf), 
-    ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa()) 
+    ### pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf),
+    ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa())
     ###         returned NA
 
     if (class(algorithm) == "Miwa") {
         if (any(infin == -1) & n >= 3) {
-            WhereBothInfIs <- which(infin == -1) 
+            WhereBothInfIs <- which(infin == -1)
             n <- n - length(WhereBothInfIs)
             corr <- corr[-WhereBothInfIs, -WhereBothInfIs]
             upper <- upper[-WhereBothInfIs]
@@ -240,7 +240,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
         if (any(infin == 0) & n >= 2) {
             WhereNegativInfIs <- which(infin==0)
             inversecorr <- rep(1, n)
-            inversecorr[WhereNegativInfIs] <- -1   
+            inversecorr[WhereNegativInfIs] <- -1
             corr <- diag(inversecorr) %*% corr %*% diag(inversecorr)
             infin[WhereNegativInfIs] <- 1
 
@@ -248,7 +248,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
             upper[WhereNegativInfIs] <- -lower[WhereNegativInfIs]
             lower[WhereNegativInfIs] <- -tempsaveupper
         }
-    } 
+    }
 
     ### this is a bug in `mvtdst' not yet fixed
     if (all(infin < 0))
@@ -308,36 +308,36 @@ dmvt <- function(x, delta, sigma, df = 1,
     if (is.vector(x)) {
         x <- matrix(x, ncol = length(x))
     }
-    if (missing(delta)) {
-        delta <- rep(0, length = ncol(x))
-    }
-    if (missing(sigma)) {
-        sigma <- diag(ncol(x))
-    }
-    if (NCOL(x) != NCOL(sigma)) {
+    p <- ncol(x)
+    if (missing(delta))
+        delta <- rep.int(0, p)
+    else if(!is.null(dim(delta))) dim(delta) <- NULL
+
+    if (missing(sigma))
+        sigma <- diag(p)
+
+    if (p != ncol(sigma))
         stop("x and sigma have non-conforming size")
-    }
     if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
-                     check.attributes = FALSE)) {
+                     check.attributes = FALSE))
         stop("sigma must be a symmetric matrix")
+    if (length(delta) != p)
+        stop("delta and sigma have non-conforming size")
+
+    dec <- tryCatch(chol(sigma), error=function(e)e)
+    if (inherits(dec, "error")) {
+	x.is.d <- colSums(t(x) != delta) == 0
+	logretval <- rep.int(-Inf, nrow(x))
+	logretval[x.is.d] <- Inf # and all other f(.) == 0
+    } else {
+	R.x_m <- backsolve(dec, t(x) - delta, transpose = TRUE)
+	rss <- colSums(R.x_m ^ 2)
+	logretval <- lgamma((p + df)/2) -
+	    (lgamma(df / 2) + sum(log(diag(dec))) + p/2 * log(pi * df)) -
+		0.5 * (df + p) * log1p(rss / df)
     }
-    if (length(delta) != NROW(sigma)) {
-        stop("mean and sigma have non-conforming size")
-    }
-
-    m <- NCOL(sigma)
-
-    distval <- mahalanobis(x, center = delta, cov = sigma)
-
-    logdet <- sum(log(eigen(sigma, symmetric = TRUE,
-                            only.values = TRUE)$values))
-
-    logretval <- lgamma((m + df)/2) -
-                 (lgamma(df / 2) + 0.5 * (logdet + m * log(pi * df))) -
-                 0.5 * (df + m) * log(1 + distval / df)
-    if (log)
-        return(logretval)
-    return(exp(logretval))
+    names(logretval) <- rownames(x)
+    if (log) logretval else exp(logretval)
 }
 
 ### find suitable interval to search for quantile
@@ -384,8 +384,7 @@ qmvnorm <- function(p, interval = NULL,
     dim <- length(mean)
     if (is.matrix(corr)) dim <- nrow(corr)
     if (is.matrix(sigma)) dim <- nrow(sigma)
-    lower <- rep(0, dim)
-    upper <- rep(0, dim)
+    lower <- upper <- rep.int(0, dim)
     args <- checkmvArgs(lower, upper, mean, corr, sigma)
     if (args$uni) {
         if (is.null(args$sigma))
@@ -393,8 +392,7 @@ qmvnorm <- function(p, interval = NULL,
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
         q <- qnorm(p, mean = args$mean, sd = args$sigma,
                    lower.tail = (tail != "upper.tail"))
-        qroot <- list(quantile = q, f.quantile = 0)
-        return(qroot)
+        return( list(quantile = q, f.quantile = 0) )
     }
     dim <- length(args$mean)
 
@@ -421,7 +419,7 @@ qmvnorm <- function(p, interval = NULL,
             interval <- approx_interval(p = p, tail = tail,
                                         corr = cr, df = 0)
         } else {
-            interval <- c(ifelse(tail == "both.tails", 0, -10), 10)
+            interval <- c(if(tail == "both.tails") 0 else -10, 10)
         }
     }
 
@@ -454,8 +452,7 @@ qmvt <- function(p, interval = NULL,
     dim <- 1
     if (!is.null(corr)) dim <- NROW(corr)
     if (!is.null(sigma)) dim <- NROW(sigma)
-    lower <- rep(0, dim)
-    upper <- rep(0, dim)
+    lower <- upper <- rep.int(0, dim)
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
     if (args$uni) {
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
@@ -492,29 +489,27 @@ qmvt <- function(p, interval = NULL,
             interval <- approx_interval(p = p, tail = tail,
                                         corr = cr, df = df)
         } else {
-            interval <- c(ifelse(tail == "both.tails", 0, -10), 10)
+            interval <- c(if(tail == "both.tails") 0 else -10, 10)
         }
     }
 
-    if (is.null(dots$uniroot)) {
-        qroot <- uniroot(pfct, interval = interval)
-    } else {
-        qroot <- do.call("uniroot", list(pfct, interval = interval, dots$uniroot))
-    }
+    qroot <-
+        if (is.null(dots$uniroot)) {
+            uniroot(pfct, interval = interval)
+        } else {
+            do.call("uniroot", list(pfct, interval = interval, dots$uniroot))
+        }
     names(qroot)[1:2] <- c("quantile", "f.quantile")
     qroot
 }
 
 GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
-    ret <- list(maxpts = maxpts, abseps = abseps, releps = releps)
-    class(ret) <- "GenzBretz"
-    ret
+    structure(list(maxpts = maxpts, abseps = abseps, releps = releps),
+              class = "GenzBretz")
 }
 
 Miwa <- function(steps = 128) {
-    ret <- list(steps = steps)
-    class(ret) <- "Miwa"
-    ret
+    structure(list(steps = steps), class = "Miwa")
 }
 
 probval <- function(x, ...)
@@ -561,8 +556,7 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
                          upper = as.double(upper),
                          lower = as.double(lower),
                          infin = as.integer(infin))
-    ret <- list(value = p, inform = 0, error = NA)
-    ret
+    list(value = p, inform = 0, error = NA)
 }
 
 dots2GenzBretz <- function(...) {
