@@ -128,9 +128,8 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
                      algorithm = algorithm, ...)
       }
     }
-    attr(RET$value, "error") <- RET$error
-    attr(RET$value, "msg") <- RET$msg
-    return(RET$value)
+    ## return
+    structure(RET$value, "error" = RET$error, "msg" = RET$msg)
 }
 
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
@@ -297,32 +296,27 @@ rmvt <- function(n, sigma = diag(2), df = 1,
            stop("wrong 'type'"))
 }
 
-dmvt <- function(x, delta, sigma, df = 1,
+dmvt <- function(x, delta = rep(0, p), sigma = diag(p), df = 1,
                  log = TRUE, type = "shifted")
 {
+    if (is.vector(x))
+        x <- matrix(x, ncol = length(x))
+    p <- ncol(x)
     if (df == 0 || isInf(df)) # MH: now (also) properly allow df = Inf
         return(dmvnorm(x, mean = delta, sigma = sigma, log = log))
-
-    type <- match.arg(type)
-
-    if (is.vector(x)) {
-        x <- matrix(x, ncol = length(x))
+    if(!missing(delta)) {
+	if(!is.null(dim(delta))) dim(delta) <- NULL
+	if (length(delta) != p)
+	    stop("delta and sigma have non-conforming size")
     }
-    p <- ncol(x)
-    if (missing(delta))
-        delta <- rep.int(0, p)
-    else if(!is.null(dim(delta))) dim(delta) <- NULL
-
-    if (missing(sigma))
-        sigma <- diag(p)
-
-    if (p != ncol(sigma))
-        stop("x and sigma have non-conforming size")
-    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
-                     check.attributes = FALSE))
-        stop("sigma must be a symmetric matrix")
-    if (length(delta) != p)
-        stop("delta and sigma have non-conforming size")
+    if(!missing(sigma)) {
+	if (p != ncol(sigma))
+	    stop("x and sigma have non-conforming size")
+	if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
+			 check.attributes = FALSE))
+	    stop("sigma must be a symmetric matrix")
+    }
+    type <- match.arg(type)
 
     dec <- tryCatch(chol(sigma), error=function(e)e)
     if (inherits(dec, "error")) {
