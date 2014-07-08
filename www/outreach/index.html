@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Outreach</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/outreach/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
+
+
+
+    <body>
+
+    
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+<!-- MathJax scripts -->
+<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<header class="site-header">
+
+  <div class="wrap">
+
+  
+    <img src="http://mvtnorm.r-forge.r-project.org/img/mvtnorm.png ">
+  
+                  
+    <nav class="site-nav">
+      <div class="trigger">
+        <a class="page-link" href="/">Home</a>
+        
+          <a class="page-link" href="http://mvtnorm.r-forge.r-project.org/news/">News</a>
+        
+          <a class="page-link" href="http://mvtnorm.r-forge.r-project.org/authors/">Authors</a>
+        
+          <a class="page-link" href="http://mvtnorm.r-forge.r-project.org/publications/">Publications</a>
+        
+          <a class="page-link" href="http://mvtnorm.r-forge.r-project.org/outreach/">Outreach</a>
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>Outreach</h1>
+  </header>
+
+  <article class="post-content">
+  <div class="home">
+
+Papers reporting results based on package mvtnorm or papers
+referring to the methodology:
+<P><P>
+ <ul class="posts">
+     
+     
+     <li> <A HREF="http://scholar.google.de/scholar?oi=bibs&hl=en&cites=6544661453467094935">
+          Google Scholar citations</A> of 
+           
+          
+            Springer-Verlag
+          
+          (2009)
+             
+          publication </li>
+     
+     
+     
+     <li> <A HREF="http://scholar.google.de/scholar?oi=bibs&hl=en&cites=1406755671628176635">
+          Google Scholar citations</A> of 
+           
+          <A HREF="http://dx.doi.org/10.1111/1467-9868.00382">
+           
+          
+            Journal of the Royal Statistical Society, Series B: Methodology 
+          
+          (2003)
+           
+          </A>
+             
+          publication </li>
+     
+     
+     </ul>
+                 
+
+   The following CRAN packages use package mvtnorm:
+   <P><P>
+    
+      <A HREF=http://CRAN.R-project.org/package=adaptsmoFMRI> adaptsmoFMRI</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=AdMit> AdMit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=asd> asd</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=AssotesteR> AssotesteR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=B2Z> B2Z</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BACprior> BACprior</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BAEssd> BAEssd</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BayesCR> BayesCR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bayesGARCH> bayesGARCH</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Bayesianbetareg> Bayesianbetareg</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Bayesthresh> Bayesthresh</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BAYSTAR> BAYSTAR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bcrm> bcrm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Bergm> Bergm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bgmm> bgmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bifactorial> bifactorial</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BinNor> BinNor</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Bmix> Bmix</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CAMAN> CAMAN</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=caper> caper</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CDM> CDM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CDVine> CDVine</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CPMCGLM> CPMCGLM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=crawl> crawl</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=cslogistic> cslogistic</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=cudia> cudia</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=dawai> dawai</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=depend.truncation> depend.truncation</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=distrEllipse> distrEllipse</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=dmt> dmt</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=DoseFinding> DoseFinding</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=DunnettTests> DunnettTests</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=edrGraphicalTools> edrGraphicalTools</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=EMC> EMC</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=EMMIXskew> EMMIXskew</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=emulator> emulator</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=FactMixtAnalysis> FactMixtAnalysis</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=fdasrvf> fdasrvf</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=fExpressCertificates> fExpressCertificates</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=fgof> fgof</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ForImp> ForImp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=freqparcoord> freqparcoord</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=genetics> genetics</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=GenOrd> GenOrd</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=GGMselect> GGMselect</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=glassomix> glassomix</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=glmpathcr> glmpathcr</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=GLSME> GLSME</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=goric> goric</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=growthrate> growthrate</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=gset> gset</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=gsg> gsg</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hbim> hbim</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hdrcde> hdrcde</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hglasso> hglasso</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hierarchicalDS> hierarchicalDS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hmmm> hmmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HPbayes> HPbayes</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hsmm> hsmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hyperSpec> hyperSpec</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ICS> ICS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ICSNP> ICSNP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=IMIS> IMIS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=imputeYn> imputeYn</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=JJcorr> JJcorr</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=kcirt> kcirt</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ks> ks</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=lava.tobit> lava.tobit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=lawstat> lawstat</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=LCAextend> LCAextend</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=lmec> lmec</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=LogConcDEAD> LogConcDEAD</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=logcondiscr> logcondiscr</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=lordif> lordif</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=LSMonteCarlo> LSMonteCarlo</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mada> mada</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MAMS> MAMS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mc2d> mc2d</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MCPMod> MCPMod</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MetabolAnalyze> MetabolAnalyze</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=metamisc> metamisc</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MFDA> MFDA</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mhsmm> mhsmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=miceadds> miceadds</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=miscF> miscF</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=miscFuncs> miscFuncs</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MitISEM> MitISEM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mixsmsn> mixsmsn</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mmcm> mmcm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MNM> MNM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Modalclust> Modalclust</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mombf> mombf</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MRsurv> MRsurv</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=multcomp> multcomp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=multinomRob> multinomRob</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MultiOrd> MultiOrd</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=multxpert> multxpert</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=muma> muma</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mutoss> mutoss</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mvProbit> mvProbit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mvSLOUCH> mvSLOUCH</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mvtBinaryEP> mvtBinaryEP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=nparcomp> nparcomp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=OptInterim> OptInterim</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=OrdNor> OrdNor</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pacose> pacose</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PairedData> PairedData</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=paleoTS> paleoTS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pamm> pamm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=parallelMCMCcombine> parallelMCMCcombine</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PAWL> PAWL</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pcaPP> pcaPP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=plgp> plgp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PoisNor> PoisNor</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=polycor> polycor</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pomp> pomp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PowerTOST> PowerTOST</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=propagate> propagate</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=psbcGroup> psbcGroup</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pscl> pscl</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=QRM> QRM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=R2GUESS> R2GUESS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RAD> RAD</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=random.polychor.pa> random.polychor.pa</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=reglogit> reglogit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RfmriVC> RfmriVC</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RidgeFusion> RidgeFusion</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RxCEcolInf> RxCEcolInf</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SamplerCompare> SamplerCompare</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=schwartz97> schwartz97</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=selectiongain> selectiongain</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SeleMix> SeleMix</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SemiParBIVProbit> SemiParBIVProbit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SemiParSampleSel> SemiParSampleSel</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SEMModComp> SEMModComp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=simboot> simboot</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sirt> sirt</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SmoothHazard> SmoothHazard</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SNPassoc> SNPassoc</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SNPmaxsel> SNPmaxsel</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sp23design> sp23design</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=spate> spate</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=spatialprobit> spatialprobit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=spatialTailDep> spatialTailDep</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=spfrontier> spfrontier</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ssmrob> ssmrob</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SSsimple> SSsimple</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Stem> Stem</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=symmoments> symmoments</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=texmex> texmex</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=tilting> tilting</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=timeROC> timeROC</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=tlmec> tlmec</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=tmvtnorm> tmvtnorm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=varSelectIP> varSelectIP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=weightedScores> weightedScores</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=asbio> asbio</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BayesFactor> BayesFactor</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BayesSingleSub> BayesSingleSub</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bayesTFR> bayesTFR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bcpmeta> bcpmeta</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bindata> bindata</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=binMto> binMto</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=boolean3> boolean3</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=BSagri> BSagri</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CALIBERrfimpute> CALIBERrfimpute</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CCTpack> CCTpack</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ChemoSpec> ChemoSpec</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=CIDnetworks> CIDnetworks</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=clinfun> clinfun</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=clusteval> clusteval</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=clustMD> clustMD</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=coin> coin</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=conting> conting</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=copula> copula</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=copulaedas> copulaedas</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=DFIT> DFIT</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=drsmooth> drsmooth</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ETC> ETC</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=flexsurv> flexsurv</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=freestats> freestats</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=funreg> funreg</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=geiger> geiger</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=GMCM> GMCM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=gMCP> gMCP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HWEBayes> HWEBayes</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hyperdirichlet> hyperdirichlet</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ic.infer> ic.infer</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ifa> ifa</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=intamap> intamap</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=latentnet> latentnet</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=LICORS> LICORS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=list> list</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MARSS> MARSS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=matie> matie</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=maxstat> maxstat</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MCPAN> MCPAN</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mcprofile> mcprofile</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MESS> MESS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mistral> mistral</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mratios> mratios</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MSBVAR> MSBVAR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=msm> msm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MTS> MTS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=multicon> multicon</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=multivator> multivator</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=OPDOE> OPDOE</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PIGShift> PIGShift</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=plsRbeta> plsRbeta</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=plsRglm> plsRglm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=PopED> PopED</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=protiq> protiq</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=rpf> rpf</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=rrcov> rrcov</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SimComp> SimComp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=simexaft> simexaft</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sortinghat> sortinghat</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sparsediscrim> sparsediscrim</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=spikeSlabGAM> spikeSlabGAM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=TAM> TAM</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=tsbridge> tsbridge</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=uniReg> uniReg</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=varComp> varComp</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=VineCopula> VineCopula</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=acopula> acopula</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Anthropometry> Anthropometry</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bayesGDS> bayesGDS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=bpkde> bpkde</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ccaPP> ccaPP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=chngpt> chngpt</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=colorspace> colorspace</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=coxme> coxme</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=disp2D> disp2D</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=FastHCS> FastHCS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=FastPCS> FastPCS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=FastRCS> FastRCS</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=flexmix> flexmix</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=FNN> FNN</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=fpc> fpc</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=gconcord> gconcord</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=glmlep> glmlep</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=gmm> gmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=hda> hda</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HH> HH</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=highfrequency> highfrequency</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HSAUR> HSAUR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HSAUR2> HSAUR2</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=HSAUR3> HSAUR3</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=IPMpack> IPMpack</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=ipred> ipred</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=IPSUR> IPSUR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=laGP> laGP</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=LINselect> LINselect</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=longclust> longclust</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MCMCglmm> MCMCglmm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mistat> mistat</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=monomvn> monomvn</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=MVA> MVA</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=mvnfast> mvnfast</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=party> party</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=partykit> partykit</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=pcalg> pcalg</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=polyCub> polyCub</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=prabclus> prabclus</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=psych> psych</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RcmdrPlugin.EZR> RcmdrPlugin.EZR</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=RcmdrPlugin.NMBU> RcmdrPlugin.NMBU</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=robustHD> robustHD</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sampleSelection> sampleSelection</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=simFrame> simFrame</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SNPmaxsel> SNPmaxsel</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=SparseGrid> SparseGrid</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sparseLTSEigen> sparseLTSEigen</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=sparseMVN> sparseMVN</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=stochvol> stochvol</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=strucchange> strucchange</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=stsm> stsm</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=threeboost> threeboost</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=tlemix> tlemix</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=trustOptim> trustOptim</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=vcd> vcd</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=yuima> yuima</A>
+    
+      <A HREF=http://CRAN.R-project.org/package=Zelig> Zelig</A>
+    
+
+</div>
+
+  </article>
+
+</div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+    <nav class="site-nav">
+          <div class="trigger">
+          
+    <A class="page-link" HREF=http://CRAN.R-project.org/package=mvtnorm>Download</A>
+
+    <A class="page-link" HREF=http://CRAN.R-project.org/web/packages/mvtnorm/mvtnorm.pdf>Manual</A>
+    
+    <A class="page-link" HREF=http://CRAN.R-project.org/src/contrib/mvtnorm_1.0-0.tar.gz>Source</A>
+
+    <A class="page-link" HREF=https://r-forge.r-project.org/projects/mvtnorm>Development</A>
+
+
+</div>
+</nav>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
