@@ -1,6 +1,5 @@
 # Site settings
-#baseurl: "http://multcomp.r-forge.r-project.org"
-baseurl: ""#http://party.r-forge.r-project.org"
+baseurl: "http://mvtnorm.r-forge.r-project.org"
 
 # Build settings
 markdown: kramdown
