@@ -17,3 +17,4 @@ Description: Computes multivariate normal and t probabilities, quantiles,
 Imports: stats
 Depends: R(>= 1.9.0)
 License: GPL-2
+URL: http://mvtnorm.R-forge.R-project.org

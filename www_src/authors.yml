@@ -4,7 +4,7 @@
   role: aut
   email: ~
   comment: ~
-  url: alan_genz.jpg
+  url: http://www.math.wsu.edu/faculty/genz/homepage
   image: /img/alan_genz.jpg
 - name: Frank Bretz
   given: Frank
@@ -12,8 +12,8 @@
   role: aut
   email: ~
   comment: ~
-  url: frank_bretz.jpg
-  image: http://mediasres-itn.eu/sites/default/files/images/Frank%20Bretz.JPG
+  url: http://www.biostat.uni-hannover.de/fb.html
+  image: /img/frank_bretz.jpg
 - name: Tetsuhisa Miwa
   given: Tetsuhisa
   family: Miwa
@@ -37,4 +37,4 @@
   email: Torsten.Hothorn_@_R-project.org
   comment: ~
   url: http://user.math.uzh.ch/hothorn/
-  image: torsten_hothorn.jpg
+  image: /img/torsten_hothorn.jpg
