@@ -1,0 +1,26 @@
+---
+layout: page
+title: Publications
+permalink: /publications/
+---
+
+Scholary papers describing the methodology
+========================================================
+
+```{r setup, include = FALSE, cache = FALSE}
+library("RefManageR")
+bib <- ReadBib("mvtnorm.bib", check = FALSE)
+BibOptions(check.entries = FALSE, style = "html", cite.style = "authoryear",
+           bib.style = "numeric")
+```
+The mvtnorm package implements methods to evaluate the probability, density, and quantile
+functions of the multivariate normal and t distributions. For the general case, tailored
+Monte Carlo methods described by `r Citet(bib, "Genz_Bretz_2009")` are applied; for the
+bivariate normal the exact approach by `r Citet(bib, "Miwa_Hayter_Kuriki_2003")` is available 
+as an alternative.
+
+**References**
+
+```{r results = "asis", echo = FALSE}
+PrintBibliography(bib, .opts = list(check.entries = FALSE, sorting = "ynt"))
+```

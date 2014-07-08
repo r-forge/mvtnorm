@@ -1,0 +1,40 @@
+- name: Alan Genz
+  given: Alan
+  family: Genz
+  role: aut
+  email: ~
+  comment: ~
+  url: alan_genz.jpg
+  image: /img/alan_genz.jpg
+- name: Frank Bretz
+  given: Frank
+  family: Bretz
+  role: aut
+  email: ~
+  comment: ~
+  url: frank_bretz.jpg
+  image: http://mediasres-itn.eu/sites/default/files/images/Frank%20Bretz.JPG
+- name: Tetsuhisa Miwa
+  given: Tetsuhisa
+  family: Miwa
+  role: aut
+  email: ~
+  comment: ~
+  url: http://cse.niaes.affrc.go.jp/miwa/
+- name: Xuefei Mi
+  given: Xuefei
+  family: Mi
+  role: aut
+  email: ~
+  comment: ~
+  url: https://www.uni-hohenheim.de/1597.html?typo3state=persons&lsfid=7004
+- name: Torsten Hothorn
+  given: Torsten
+  family: Hothorn
+  role:
+  - aut
+  - cre
+  email: Torsten.Hothorn@R-project.org
+  comment: ~
+  url: http://user.math.uzh.ch/hothorn/
+  image: torsten_hothorn.jpg
