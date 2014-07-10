@@ -1,10 +1,10 @@
 
 Changes in version 1.0-0 (2014-07-08)
 
-  o  After 14 years, we now feel save enough to publish mvtnorm 1.0-0.
+  o  After 14 years, we now feel safe enough to publish mvtnorm 1.0-0.
      Many packages depend, import, or suggest mvtnorm, so this version
      change also indicates that the package is now stable and, to a very
-     large extend, the API is frozen. We will of course continue to fix 
+     large extent, the API is frozen. We will of course continue to fix 
      bugs or other problems but new features are unlikely to go into this
      package.
 
