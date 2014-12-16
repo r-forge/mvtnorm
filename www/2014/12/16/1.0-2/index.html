@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Version 0.9-999</title>
+    <title>Version 1.0-2</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="">
-    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2011/04/26/0.9-999/">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2014/12/16/1.0-2/">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
@@ -62,14 +62,19 @@ hljs.initHighlightingOnLoad();
       <div class="post">
 
   <header class="post-header">
-    <h1>Version 0.9-999</h1>
-    <p class="meta">Apr 26, 2011</p>
+    <h1>Version 1.0-2</h1>
+    <p class="meta">Dec 16, 2014</p>
   </header>
 
   <article class="post-content">
   <ul>
-<li> still problems in fix approx_interval (when !is.null(sigma));
- disable for the time being </li>
+<li> start providing C interfaces to the underlying algorithms.
+ mvtnorm_C_mvtdst() directly calls Alan's FORTRAN code and
+ can be used in other packages via LinkingTo. See
+ mvtnorm/inst/C_API_Example for an example very much inspired
+ by the example provided in package xts. </li>
+<li> provide .C interfaces to the FORTRAN routines and allow switching
+ on/off of R' RNG. </li>
 </ul>
 
   </article>
