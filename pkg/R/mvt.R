@@ -529,7 +529,8 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta)
                           RELEPS = as.double(x$releps),
                           error = as.double(error),
                           value = as.double(value),
-                          inform = as.integer(inform))
+                          inform = as.integer(inform),
+                          RND = as.integer(1)) ### init RNG
     ret
 }
 

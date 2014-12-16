@@ -5,13 +5,19 @@
 void C_mvtdst(int *n, int *nu, double *lower, double *upper,
               int *infin, double *corr, double *delta,
               int *maxpts, double *abseps, double *releps,
-              double *error, double *value, int *inform)
+              double *error, double *value, int *inform, int *rnd)
 {
+
+    if (rnd[0]) GetRNGstate();
+
     /* call FORTRAN subroutine */
     F77_CALL(mvtdst)(n, nu, lower, upper, 
                      infin, corr, delta,
                      maxpts, abseps, releps, 
                      error, value, inform);
+
+    if (rnd[0]) PutRNGstate();
+
 }
 
 void C_tvtlr(int *NU, double *H, double *R, double *EPSI, double *TVTL) {
@@ -26,10 +32,10 @@ void C_bvtlr(int *NU, double *DH, double *DK, double *R, double *BVTL) {
 
 
 static const R_CMethodDef cMethods[] = {
-    {"C_mvtdst", (DL_FUNC) &C_mvtdst, 13, (R_NativePrimitiveArgType[13]){INTSXP, INTSXP, REALSXP, REALSXP, 
+    {"C_mvtdst", (DL_FUNC) &C_mvtdst, 14, (R_NativePrimitiveArgType[14]){INTSXP, INTSXP, REALSXP, REALSXP, 
                                            INTSXP, REALSXP, REALSXP, 
                                            INTSXP, REALSXP, REALSXP, 
-                                           REALSXP, REALSXP, INTSXP}}, 
+                                           REALSXP, REALSXP, INTSXP, INTSXP}}, 
     {"C_tvtlr", (DL_FUNC) &C_tvtlr, 5, (R_NativePrimitiveArgType[13]){INTSXP, REALSXP, REALSXP, REALSXP, REALSXP}},
     {"C_bvtlr", (DL_FUNC) &C_bvtlr, 5, (R_NativePrimitiveArgType[13]){INTSXP, REALSXP, REALSXP, REALSXP, REALSXP}},
     {NULL, NULL, 0}
