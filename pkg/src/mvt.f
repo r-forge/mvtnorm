@@ -63,8 +63,6 @@
       COMMON /PTBLCK/IVLS
       IVLS = 0
 
-*      CALL rndstart()
-
       IF ( N .GT. 1000 .OR. N .LT. 1 ) THEN
          VALUE = 0
          ERROR = 1
@@ -82,8 +80,6 @@
             VALUE = V(1)
          ENDIF
       ENDIF
-      
-*      CALL rndend()
       
       END
 *
