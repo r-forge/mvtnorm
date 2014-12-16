@@ -1,4 +1,13 @@
 
+Changes in version 1.0-2 (2014-12-16)
+
+  o  start providing C interfaces to the underlying algorithms.
+     mvtnorm_C_mvtdst() directly calls Alan's FORTRAN code and
+     can be used in other packages via LinkingTo. See
+     mvtnorm/inst/C_API_Example for an example.
+
+  o  provide .C interfaces to the FORTRAN routines.
+
 Changes in version 1.0-1 (2014-11-11)
 
   o  replace internal MVCHNV FORTRAN FUNCTION with
