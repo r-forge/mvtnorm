@@ -5,7 +5,8 @@ importFrom("stats",
 	   pnorm, qnorm, rnorm,
 	   pt, qt,
 	   rchisq,
-	   cov2cor)
+	   cov2cor, optimise)
+importFrom("methods", hasArg)
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK)

@@ -17,7 +17,7 @@ qmvnorm(p, interval = NULL, tail = c("lower.tail",
 \arguments{
   \item{p}{ probability.}
   \item{interval}{ optional, a vector containing the end-points of the interval to be
-          searched by \code{\link{uniroot}}.}
+          searched by \code{\link{optimise}}.}
   \item{tail}{ specifies which quantiles should be computed.
                \code{lower.tail} gives the quantile \eqn{x} for which 
                \eqn{P[X \le x] = p}, \code{upper.tail} gives \eqn{x} with 
@@ -41,17 +41,15 @@ qmvnorm(p, interval = NULL, tail = c("lower.tail",
 \details{
 
   Only equicoordinate quantiles are computed, i.e., the quantiles in each
-  dimension coincide. Currently, the distribution function is inverted by 
-  using the
-  \code{\link{uniroot}} function which may result in limited accuracy of the 
-  quantiles. 
+  dimension coincide. As of version 1.0-3, the distribution function is inverted by 
+  minimising the squared difference of the distribution function and \code{p}
+  (multiple times to reduce the impact of a specific seed). This
+  may result in limited accuracy of the quantiles. 
 }
 \value{
-  A list with four components: \code{quantile} and \code{f.quantile} 
-  give the location of the quantile and the value of the function
-  evaluated at that point. \code{iter} and \code{estim.prec} give the number 
-  of iterations used and an approximate estimated precision from
-  \code{\link{uniroot}}.
+  A list with two components: \code{quantile} and \code{f.quantile} 
+  give the location of the quantile and the difference between the distribution
+  function evaluated at the quantile and \code{p}. 
 }
 \seealso{\code{\link{pmvnorm}}, \code{\link{qmvt}}}
 \examples{
