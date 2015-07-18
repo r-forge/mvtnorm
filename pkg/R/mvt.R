@@ -366,11 +366,11 @@ qmvnorm <- function(p, interval = NULL,
 
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
         runif(1)
+    R.seed <- get(".Random.seed", envir = .GlobalEnv)
 
-    pfct <- function(q, root = FALSE) {
+    pfct <- function(q) {
         ### use the same seed for different values of q
-        R.seed <- get(".Random.seed", envir = .GlobalEnv)
-        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+        assign(".Random.seed", R.seed, envir = .GlobalEnv)
         switch(tail, "both.tails" = {
                   low <- rep(-abs(q), dim)
                   upp <- rep( abs(q), dim)
@@ -384,18 +384,15 @@ qmvnorm <- function(p, interval = NULL,
            ret <- pmvnorm(lower = low, upper = upp, mean = args$mean,
                           corr = args$corr, sigma = args$sigma,
                           algorithm = algorithm) - p
-           if (root) return(ret)
-           return((ret)^2)
+           return(ret^2)
     }
 
-    if (is.null(interval) || length(interval) != 2)
-        interval <- c(if(tail == "both.tails") 0 else -10, 10)
+    qroot <- optim(qnorm(p), pfct, method = "BFGS")
 
-    qroot <- replicate(10, 
-        optimize(pfct, interval = interval))
-    qroot <- list(quantile = median(unlist(qroot["minimum",])))
-    qroot$f.quantile <- pfct(qroot$quantile, root = TRUE)[1]
+    if (qroot$convergence != 0)
+        warning("Search for quantile terminated unsuccessfully:", qroot$message)
 
+    qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
     qroot
 }
 
@@ -436,11 +433,11 @@ qmvt <- function(p, interval = NULL,
 
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
         runif(1)
+    R.seed <- get(".Random.seed", envir = .GlobalEnv)
 
-    pfct <- function(q, root = FALSE) {
+    pfct <- function(q) {
         ### use the same seed for different values of q
-        R.seed <- get(".Random.seed", envir = .GlobalEnv)
-        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+        assign(".Random.seed", R.seed, envir = .GlobalEnv)
         switch(tail, "both.tails" = {
                   low <- rep(-abs(q), dim)
                   upp <- rep( abs(q), dim)
@@ -454,19 +451,18 @@ qmvt <- function(p, interval = NULL,
            ret <- pmvt(lower = low, upper = upp, df = df, delta = args$mean,
                        corr = args$corr, sigma = args$sigma,
                        algorithm = algorithm, type = type) - p
-           if (root) return(ret)
-           return((ret)^2)
+           return(ret^2)
     }
 
-    if (is.null(interval) || length(interval) != 2)
-        interval <- c(if(tail == "both.tails") 0 else -10, 10)
+    par <- ifelse(is.finite(df) && (df > 0), qt(p, df = df), qnorm(p))
+    qroot <- optim(par, pfct, method = "BFGS")
 
-    qroot <- replicate(10,
-        optimize(pfct, interval = interval))
-    qroot <- list(quantile = median(unlist(qroot["minimum",])))
-    qroot$f.quantile <- pfct(qroot$quantile, root = TRUE)[1]
+    if (qroot$convergence != 0)
+        warning("Search for quantile terminated unsuccessfully:", qroot$message)
 
+    qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
     qroot
+
 }
 
 GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
