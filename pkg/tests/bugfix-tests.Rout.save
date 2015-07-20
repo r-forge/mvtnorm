@@ -1,6 +1,6 @@
 
-R version 3.1.2 (2014-10-31) -- "Pumpkin Helmet"
-Copyright (C) 2014 The R Foundation for Statistical Computing
+R Under development (unstable) (2015-06-30 r68608) -- "Unsuffered Consequences"
+Copyright (C) 2015 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -402,20 +402,7 @@ $quantile
 [1] 1.233641
 
 $f.quantile
-[1] 1.652806e-07
-attr(,"error")
-[1] 0
-attr(,"msg")
-[1] "Normal Completion"
-
-$iter
-[1] 13
-
-$init.it
-[1] NA
-
-$estim.prec
-[1] 6.103516e-05
+[1] 2.182919e-14
 
 > 
 > ### qmvt(..., df = 0, ...) didn't work
@@ -666,4 +653,4 @@ $estim.prec
 > 
 > proc.time()
    user  system elapsed 
-  6.984   0.035   7.013 
+  6.655   0.042   6.692 

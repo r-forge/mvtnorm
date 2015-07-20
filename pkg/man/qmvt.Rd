@@ -17,7 +17,7 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
 \arguments{
   \item{p}{ probability.}
   \item{interval}{ optional, a vector containing the end-points of the interval to be
-          searched by \code{\link{optimise}}.}
+          searched.  This argument is IGNORED since 1.0-3.}
   \item{tail}{ specifies which quantiles should be computed.
                \code{lower.tail} gives the quantile \eqn{x} for which
                \eqn{P[X \le x] = p}, \code{upper.tail} gives \eqn{x} with
