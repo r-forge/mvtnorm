@@ -1,5 +1,5 @@
 
-Changes in version 1.0-3 (2015-07-20)
+Changes in version 1.0-3 (2015-07-21)
 
   o  new algorithm for quantile estimation. Quantiles are 
      now computed by minimising the squared distance between the 

@@ -5,7 +5,7 @@
 
 Computes the equicoordinate quantile function of the multivariate t
 distribution for arbitrary correlation matrices
-based on inversion of qmvt.
+based on inversion of \code{\link{qmvt}}.
 
 }
 \usage{
@@ -51,9 +51,8 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
 
   Only equicoordinate quantiles are computed, i.e., the quantiles in each
   dimension coincide. As of version 1.0-3, the distribution function is inverted by
-  minimising the squared difference of the distribution function and \code{p}    
-  (multiple times to reduce the impact of a specific seed). This
-  may result in limited accuracy of the quantiles.  
+  minimising the squared difference of the distribution function and \code{p}. The result
+  is seed dependend.
 }
 \value{
   A list with two components: \code{quantile} and \code{f.quantile} 
