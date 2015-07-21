@@ -460,7 +460,7 @@ qmvt <- function(p, interval = NULL,
     pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),          
                            "upper.tail" = 1 - p^(1/dim),
                            "lower.tail" = p^(1/dim))    
-    par <- ifelse(is.finite(df) && (df > 0), qt(pstart, df = df), qnorm(p))
+    par <- ifelse(is.finite(df) && (df > 0), qt(pstart, df = df), qnorm(pstart))
     qroot <- optim(par, pfct, method = "BFGS", control = list(maxit = 1000))
 
     if (qroot$convergence != 0)
