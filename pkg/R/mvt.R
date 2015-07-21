@@ -387,10 +387,13 @@ qmvnorm <- function(p, interval = NULL,
            return(ret^2)
     }
 
-    qroot <- optim(qnorm(p), pfct, method = "BFGS")
+    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),
+                           "upper.tail" = 1 - p^(1/dim),
+                           "lower.tail" = p^(1/dim))
+    qroot <- optim(qnorm(pstart), pfct, method = "BFGS", control = list(maxit = 1000))
 
     if (qroot$convergence != 0)
-        warning("Search for quantile terminated unsuccessfully:", qroot$message)
+        stop("Search for quantile terminated unsuccessfully:", qroot$message)
 
     qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
     qroot
@@ -454,11 +457,14 @@ qmvt <- function(p, interval = NULL,
            return(ret^2)
     }
 
-    par <- ifelse(is.finite(df) && (df > 0), qt(p, df = df), qnorm(p))
-    qroot <- optim(par, pfct, method = "BFGS")
+    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),          
+                           "upper.tail" = 1 - p^(1/dim),
+                           "lower.tail" = p^(1/dim))    
+    par <- ifelse(is.finite(df) && (df > 0), qt(pstart, df = df), qnorm(p))
+    qroot <- optim(par, pfct, method = "BFGS", control = list(maxit = 1000))
 
     if (qroot$convergence != 0)
-        warning("Search for quantile terminated unsuccessfully:", qroot$message)
+        stop("Search for quantile terminated unsuccessfully:", qroot$message)
 
     qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
     qroot

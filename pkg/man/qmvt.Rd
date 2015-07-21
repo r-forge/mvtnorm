@@ -74,7 +74,7 @@ q8 <- qmvt(0.95, sigma = Sigma, df = Inf, tail = "both")$quantile
 set.seed(29)
 qn <- qmvnorm(0.95, sigma = Sigma, tail = "both")$quantile
 stopifnot(identical(q0, q8),
-          identical(q0, qn))
+          isTRUE(all.equal(q0, qn, tol = (.Machine$double.eps)^(1/3))))
 
 ## if neither sigma nor corr are provided, corr = 1 is used internally
 df <- 0
