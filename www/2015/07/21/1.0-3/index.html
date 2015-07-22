@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Version 0.5-8</title>
+    <title>Version 1.0-3</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="">
-    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2003/01/21/0.5-8/">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2015/07/21/1.0-3/">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
@@ -62,13 +62,18 @@ hljs.initHighlightingOnLoad();
       <div class="post">
 
   <header class="post-header">
-    <h1>Version 0.5-8</h1>
-    <p class="meta">Jan 21, 2003</p>
+    <h1>Version 1.0-3</h1>
+    <p class="meta">Jul 21, 2015</p>
   </header>
 
   <article class="post-content">
   <ul>
-<li> fixed bugreport PR#2478: sigma for univariate probabilities </li>
+<li> new algorithm for quantile estimation. Quantiles are 
+ now computed by minimising the squared distance between the 
+ distribution function and the probability whereas previous versions
+ used uniroot(). The procedure is now performed multiple times with
+ difference random seeds in order to stabilise the results. The
+ \code{interval} argument to the quantile functions is IGNORED now. </li>
 </ul>
 
   </article>
