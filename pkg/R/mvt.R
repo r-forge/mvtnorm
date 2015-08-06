@@ -477,6 +477,7 @@ GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
 }
 
 Miwa <- function(steps = 128) {
+    if (steps > 4098) stop("maximum number of steps is 4098")
     structure(list(steps = steps), class = "Miwa")
 }
 
