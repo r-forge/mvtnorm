@@ -1,20 +1,20 @@
 # $Id$
 
+##' Do we have a correlation matrix?
+##' @param x typically a matrix
 chkcorr <- function(x) {
-
-    if (!is.matrix(x)) return(FALSE)
+    if (!is.matrix(x) || (d <- dim(x))[1] != d[2])
+        return(FALSE)
     rownames(x) <- colnames(x) <- NULL
     storage.mode(x) <- "numeric"
     ONE <- 1 + sqrt(.Machine$double.eps)
 
-    ret <- (min(x) < -ONE || max(x) > ONE) ||
-           !isTRUE(all.equal(diag(x), rep(1, nrow(x))))
-    !ret
+    ## return
+    -ONE <= min(x) && max(x) <= ONE && isTRUE(all.equal(diag(x), rep(1, d[1])))
 }
 
 checkmvArgs <- function(lower, upper, mean, corr, sigma)
 {
-    UNI <- FALSE
     if (!is.numeric(lower) || !is.vector(lower))
         stop(sQuote("lower"), " is not a numeric vector")
     if (!is.numeric(upper) || !is.vector(upper))
@@ -25,7 +25,7 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
         stop(sQuote("lower"), " not specified or contains NA")
     if (is.null(upper) || any(is.na(upper)))
         stop(sQuote("upper"), " not specified or contains NA")
-    rec <- cbind(lower, upper, mean)
+    rec <- cbind(lower, upper, mean)# <--> recycling to same length
     lower <- rec[,"lower"]
     upper <- rec[,"upper"]
     if (!all(lower <= upper))
@@ -44,6 +44,7 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
         warning("both ", sQuote("corr"), " and ", sQuote("sigma"),
                 " specified: ignoring ", sQuote("sigma"))
     }
+    UNI <- FALSE
     if (!is.null(corr)) {
          if (!is.numeric(corr))
              stop(sQuote("corr"), " is not numeric")
@@ -199,15 +200,14 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     addargs <- list(...)
     if (length(addargs) > 0)
         algorithm <- GenzBretz(...)
-    if (is.function(algorithm) || is.character(algorithm))
+    else if (is.function(algorithm) || is.character(algorithm))
         algorithm <- do.call(algorithm, list())
 
     ### handle cases where the support is the empty set
-    if (any(abs(lower - upper) < sqrt(.Machine$double.eps)) ||
-        any(is.na(lower - upper))) {
-        RET <- list(value = 0, error = 0, msg = "lower == upper")
-        return(RET)
-    }
+    ##  Note: checkmvArgs() has been called ==> lower, upper are *not* NA
+    if (any(abs(d <- lower - upper) < sqrt(.Machine$double.eps)*(abs(lower)+abs(upper)) |
+            lower == upper)) ## e.g. Inf == Inf
+	return(list(value = 0, error = 0, msg = "lower == upper"))
 
     n <- ncol(corr)
     if (is.null(n) || n < 2) stop("dimension less then n = 2")
@@ -227,8 +227,8 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa())
     ###         returned NA
 
-    if (class(algorithm) == "Miwa") {
-        if (any(infin == -1) & n >= 3) {
+    if (inherits(algorithm, "Miwa")) {
+        if (n >= 3 && any(infin == -1)) {
             WhereBothInfIs <- which(infin == -1)
             n <- n - length(WhereBothInfIs)
             corr <- corr[-WhereBothInfIs, -WhereBothInfIs]
@@ -236,11 +236,11 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
             lower <- lower[-WhereBothInfIs]
         }
 
-        if (any(infin == 0) & n >= 2) {
+        if (n >= 2 && any(infin == 0)) {
             WhereNegativInfIs <- which(infin==0)
             inversecorr <- rep(1, n)
             inversecorr[WhereNegativInfIs] <- -1
-            corr <- diag(inversecorr) %*% corr %*% diag(inversecorr)
+            corr <- diag(inversecorr) %*% corr %*% diag(inversecorr) ## MM_FIXME
             infin[WhereNegativInfIs] <- 1
 
             tempsaveupper <- upper[WhereNegativInfIs]
@@ -260,17 +260,16 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 
 
     ret <- probval(algorithm, n, df, lower, upper, infin, corr, corrF, delta)
-    error <- ret$error; value <- ret$value; inform <- ret$inform
+    inform <- ret$inform
+    msg <-
+        if (inform == 0) "Normal Completion"
+    else if (inform == 1) "Completion with error > abseps"
+    else if (inform == 2) "N greater 1000 or N < 1"
+    else if (inform == 3) "Covariance matrix not positive semidefinite"
+    else inform
 
-    msg <- NULL
-    if (inform == 0) msg <- "Normal Completion"
-    if (inform == 1) msg <- "Completion with error > abseps"
-    if (inform == 2) msg <- "N greater 1000 or N < 1"
-    if (inform == 3) msg <- "Covariance matrix not positive semidefinite"
-    if (is.null(msg)) msg <- inform
-
-    RET <- list(value = value, error = error, msg = msg)
-    return(RET)
+    ## return including error est. and msg:
+    list(value = ret$value, error = ret$error, msg = msg)
 }
 
 rmvt <- function(n, sigma = diag(2), df = 1,
@@ -339,7 +338,7 @@ qmvnorm <- function(p, interval = NULL,
                     mean = 0, corr = NULL, sigma = NULL, algorithm =
                     GenzBretz(), ...)
 {
-    if (length(p) != 1 || (p <= 0 || p >= 1))
+    if (length(p) != 1 || p < 0 || p > 1)
         stop(sQuote("p"), " is not a double between zero and one")
 
     dots <- dots2GenzBretz(...)
@@ -364,7 +363,7 @@ qmvnorm <- function(p, interval = NULL,
     }
     dim <- length(args$mean)
 
-    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
         runif(1)
     R.seed <- get(".Random.seed", envir = .GlobalEnv)
 
@@ -395,8 +394,7 @@ qmvnorm <- function(p, interval = NULL,
     if (qroot$convergence != 0)
         stop("Search for quantile terminated unsuccessfully:", qroot$message)
 
-    qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
-    qroot
+    list(quantile = qroot$par, f.quantile = qroot$value)
 }
 
 qmvt <- function(p, interval = NULL,
@@ -457,18 +455,17 @@ qmvt <- function(p, interval = NULL,
            return(ret^2)
     }
 
-    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),          
+    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),
                            "upper.tail" = 1 - p^(1/dim),
-                           "lower.tail" = p^(1/dim))    
+                           "lower.tail" = p^(1/dim))
     par <- ifelse(is.finite(df) && (df > 0), qt(pstart, df = df), qnorm(pstart))
     qroot <- optim(par, pfct, method = "BFGS", control = list(maxit = 1000))
 
     if (qroot$convergence != 0)
         stop("Search for quantile terminated unsuccessfully:", qroot$message)
 
-    qroot <- list(quantile = qroot$par, f.quantile = qroot$value)
-    qroot
-
+    ## return
+    list(quantile = qroot$par, f.quantile = qroot$value)
 }
 
 GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
@@ -492,21 +489,21 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta)
     upper[ isInf(upper)] <- 0
 
     error <- 0; value <- 0; inform <- 0
-    ret <- .C("C_mvtdst", N = as.integer(n),
-                          NU = as.integer(df),
-                          LOWER = as.double(lower),
-                          UPPER = as.double(upper),
-                          INFIN = as.integer(infin),
-                          CORREL = as.double(corrF),
-                          DELTA = as.double(delta),
-                          MAXPTS = as.integer(x$maxpts),
-                          ABSEPS = as.double(x$abseps),
-                          RELEPS = as.double(x$releps),
-                          error = as.double(error),
-                          value = as.double(value),
-                          inform = as.integer(inform),
-                          RND = as.integer(1)) ### init RNG
-    ret
+    .C("C_mvtdst",
+       N = as.integer(n),
+       NU = as.integer(df),
+       LOWER = as.double(lower),
+       UPPER = as.double(upper),
+       INFIN = as.integer(infin),
+       CORREL = as.double(corrF),
+       DELTA = as.double(delta),
+       MAXPTS = as.integer(x$maxpts),
+       ABSEPS = as.double(x$abseps),
+       RELEPS = as.double(x$releps),
+       error = as.double(error),
+       value = as.double(value),
+       inform = as.integer(inform),
+       RND = as.integer(1)) ### init RNG
 }
 
 probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
@@ -515,7 +512,7 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
         stop("Miwa algorithm cannot compute t-probabilities")
 
     if (n > 20)
-        stop("Miwa algorithm cannot compute exact probabilities for n > 20")
+        stop("Miwa algorithm cannot compute probabilities for dimension n > 20")
 
     sc <- try(solve(corr))
     if (inherits(sc, "try-error"))
