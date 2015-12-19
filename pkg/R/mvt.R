@@ -336,7 +336,8 @@ dmvt <- function(x, delta = rep(0, p), sigma = diag(p), df = 1,
 qmvnorm <- function(p, interval = NULL,
                     tail = c("lower.tail", "upper.tail", "both.tails"),
                     mean = 0, corr = NULL, sigma = NULL, algorithm =
-                    GenzBretz(), ...)
+                    GenzBretz(),
+                    ptol = 0.001, maxiter = 500, trace = FALSE, ...)
 {
     if (length(p) != 1 || p < 0 || p > 1)
         stop(sQuote("p"), " is not a double between zero and one")
@@ -359,7 +360,7 @@ qmvnorm <- function(p, interval = NULL,
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
         q <- qnorm(p, mean = args$mean, sd = args$sigma,
                    lower.tail = (tail != "upper.tail"))
-        return( list(quantile = q, f.quantile = 0) )
+        return( list(quantile = q, f.quantile = p) )
     }
     dim <- length(args$mean)
 
@@ -382,26 +383,32 @@ qmvnorm <- function(p, interval = NULL,
            },)
            ret <- pmvnorm(lower = low, upper = upp, mean = args$mean,
                           corr = args$corr, sigma = args$sigma,
-                          algorithm = algorithm) - p
-           return(ret^2)
+                          algorithm = algorithm)
+           if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
+             ret <- 1-ret
+           return(ret)
     }
-
-    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),
-                           "upper.tail" = 1 - p^(1/dim),
-                           "lower.tail" = p^(1/dim))
-    qroot <- optim(qnorm(pstart), pfct, method = "BFGS", control = list(maxit = 1000))
-
-    if (qroot$convergence != 0)
-        stop("Search for quantile terminated unsuccessfully:", qroot$message)
-
-    list(quantile = qroot$par, f.quantile = qroot$value)
+    if(is.null(interval)){
+      intp <- switch(tail,
+                     both.tails = (1 - (1 - p)/2)^(c(1,1/dim)),
+                     upper.tail = c(0.5,0.9), ## not so smart
+                     lower.tail = p^c(1,1/dim))
+      interval <- qnorm(intp)*c(0.8, 1.25)
+    } ## note: interval does not need to cover the true root for get_quant_loclin
+    if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
+      p <- 1-p
+    qroot <- get_quant_loclin(pfct, p, interval=interval,
+                              link="probit",
+                              ytol=ptol, maxiter=maxiter, verbose=trace)
+    qroot
 }
 
 qmvt <- function(p, interval = NULL,
                  tail = c("lower.tail", "upper.tail", "both.tails"),
                  df = 1, delta = 0, corr = NULL, sigma = NULL,
                  algorithm = GenzBretz(),
-                 type = c("Kshirsagar", "shifted"), ...) {
+                 type = c("Kshirsagar", "shifted"),
+                 ptol = 0.001, maxiter = 500, trace = FALSE, ...) {
 
     if (length(p) != 1 || (p <= 0 || p >= 1))
         stop(sQuote("p"), " is not a double between zero and one")
@@ -426,7 +433,7 @@ qmvt <- function(p, interval = NULL,
         } else {
             q <- qt(p, df = df, ncp = args$mean, lower.tail = (tail != "upper.tail"))
         }
-        qroot <- list(quantile = q, f.quantile = 0)
+        qroot <- list(quantile = q, f.quantile = p)
         return(qroot)
     }
 
@@ -451,22 +458,32 @@ qmvt <- function(p, interval = NULL,
            },)
            ret <- pmvt(lower = low, upper = upp, df = df, delta = args$mean,
                        corr = args$corr, sigma = args$sigma,
-                       algorithm = algorithm, type = type) - p
-           return(ret^2)
+                       algorithm = algorithm, type = type)
+        if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
+          ret <- 1-ret
+        return(ret)
     }
-
-    pstart <- switch(tail, "both.tails" = (1 - (1 - p)/2)^(1/dim),
-                           "upper.tail" = 1 - p^(1/dim),
-                           "lower.tail" = p^(1/dim))
-    par <- ifelse(is.finite(df) && (df > 0), qt(pstart, df = df), qnorm(pstart))
-    qroot <- optim(par, pfct, method = "BFGS", control = list(maxit = 1000))
-
-    if (qroot$convergence != 0)
-        stop("Search for quantile terminated unsuccessfully:", qroot$message)
-
-    ## return
-    list(quantile = qroot$par, f.quantile = qroot$value)
+    if(is.null(interval)){
+      intp <- switch(tail,
+                     both.tails = (1 - (1 - p)/2)^(c(1,1/dim)),
+                     upper.tail = c(0.5,0.9), ## not so smart
+                     lower.tail = p^c(1,1/dim))
+      if(is.finite(df) && (df > 0)){
+        intq <- qt(intp, df = df)
+      } else {
+        intq <- qnorm(intp)
+      }
+      interval <- intq*c(0.8, 1.25)
+    } ## note: interval does not need to cover the true root for get_quant_loclin, just initial guesses
+    if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
+      p <- 1-p
+    link <- ifelse(df <= 7 & df > 0, "cauchit", "probit")
+    qroot <- get_quant_loclin(pfct, p, interval=interval,
+                              link=link,
+                              ytol=ptol, maxiter=maxiter, verbose=trace)
+    qroot
 }
+
 
 GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
     structure(list(maxpts = maxpts, abseps = abseps, releps = releps),
