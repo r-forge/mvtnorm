@@ -400,6 +400,7 @@ qmvnorm <- function(p, interval = NULL,
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link="probit",
                               ytol=ptol, maxiter=maxiter, verbose=trace)
+    qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
 
@@ -481,6 +482,7 @@ qmvt <- function(p, interval = NULL,
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link=link,
                               ytol=ptol, maxiter=maxiter, verbose=trace)
+    qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
 
