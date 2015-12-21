@@ -1,3 +1,6 @@
+
+library("mvtnorm")
+
 set.seed(1)
 dim <- 10
 df <- 5
