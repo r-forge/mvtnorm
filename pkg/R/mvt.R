@@ -439,7 +439,7 @@ qmvnorm <- function(p, interval = NULL,
       interval <- getInt(p=p, delta=args$mean, sigma=sig,
                          tail=tail, df=Inf)
       dif <- diff(interval)
-      interval <- interval+c(-1,1)*0.2*dif ## extend range slightly
+      interval <- interval+c(-1,1)*0.2*max(dif,0.1) ## extend range slightly
     } 
     if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
       p <- 1-p
@@ -519,7 +519,7 @@ qmvt <- function(p, interval = NULL,
       interval <- getInt(p=p, delta=args$mean, sigma=sig,
                          tail=tail, type=type, df=df)
       dif <- diff(interval)
-      interval <- interval+c(-1,1)*0.2*dif ## extend range slightly
+      interval <- interval+c(-1,1)*0.2*max(dif,0.1) ## extend range slightly
     } 
     if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
       p <- 1-p
