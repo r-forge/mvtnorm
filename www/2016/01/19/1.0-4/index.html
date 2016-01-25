@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Version 0.8-3</title>
+    <title>Version 1.0-4</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="">
-    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2008/02/19/0.8-3/">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2016/01/19/1.0-4/">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
@@ -62,14 +62,20 @@ hljs.initHighlightingOnLoad();
       <div class="post">
 
   <header class="post-header">
-    <h1>Version 0.8-3</h1>
-    <p class="meta">Feb 19, 2008</p>
+    <h1>Version 1.0-4</h1>
+    <p class="meta">Jan 19, 2016</p>
   </header>
 
   <article class="post-content">
   <ul>
-<li> make sure rmvnorm(1, sigma = matrix(0.5, 1, 1)) works
- (reported by Kurt Hornik) </li>
+<li> a new algorithm for quantile estimation, again. Quantiles are 
+ now computed by a stochastic root finding algorithm. Note
+ that f.quantile in the output of qmv{t,norm} is now (again)
+ the squared difference between the cdf evaluated at the
+ quantile and the level. The \code{interval} argument to the 
+ quantile functions is used as a starting value for the
+ root finder when available. </li>
+<li> clean-ups in C and R code and documentation </li>
 </ul>
 
   </article>
