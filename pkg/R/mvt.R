@@ -445,7 +445,7 @@ qmvnorm <- function(p, interval = NULL,
       p <- 1-p
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link="probit",
-                              ytol=ptol, maxiter=maxiter, verbose=trace)
+                              ptol=ptol, maxiter=maxiter, verbose=trace)
     qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
@@ -526,7 +526,7 @@ qmvt <- function(p, interval = NULL,
     link <- ifelse(df <= 7 & df > 0, "cauchit", "probit")
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link=link,
-                              ytol=ptol, maxiter=maxiter, verbose=trace)
+                              ptol=ptol, maxiter=maxiter, verbose=trace)
     qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
