@@ -19,14 +19,14 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         }
         ## ev$vectors %*% diag(sqrt(ev$values), length(ev$values)) %*% t(ev$vectors)
         ## faster for large  nrow(sigma):
-        t(ev$vectors %*% (t(ev$vectors) * sqrt(ev$values)))
+        t(ev$vectors %*% (t(ev$vectors) * sqrt(pmax(ev$values, 0))))
     }
     else if(method == "svd"){
         s. <- svd(sigma)
         if (!all(s.$d >= -sqrt(.Machine$double.eps) * abs(s.$d[1]))){
             warning("sigma is numerically not positive definite")
         }
-        t(s.$v %*% (t(s.$u) * sqrt(s.$d)))
+        t(s.$v %*% (t(s.$u) * sqrt(pmax(s.$d, 0))))
     }
     else if(method == "chol"){
         R <- chol(sigma, pivot = TRUE)
