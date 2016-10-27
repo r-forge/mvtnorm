@@ -15,7 +15,7 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     R <- if(method == "eigen") {
         ev <- eigen(sigma, symmetric = TRUE)
         if (!all(ev$values >= -sqrt(.Machine$double.eps) * abs(ev$values[1]))){
-            warning("sigma is numerically not positive definite")
+            warning("sigma is numerically not positive semidefinite")
         }
         ## ev$vectors %*% diag(sqrt(ev$values), length(ev$values)) %*% t(ev$vectors)
         ## faster for large  nrow(sigma):
@@ -24,7 +24,7 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     else if(method == "svd"){
         s. <- svd(sigma)
         if (!all(s.$d >= -sqrt(.Machine$double.eps) * abs(s.$d[1]))){
-            warning("sigma is numerically not positive definite")
+            warning("sigma is numerically not positive semidefinite")
         }
         t(s.$v %*% (t(s.$u) * sqrt(pmax(s.$d, 0))))
     }
