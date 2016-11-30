@@ -443,9 +443,11 @@ qmvnorm <- function(p, interval = NULL,
     } 
     if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
       p <- 1-p
+    minx <- ifelse(tail == "both.tails", 0, -Inf)
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link="probit",
-                              ptol=ptol, maxiter=maxiter, verbose=trace)
+                              ptol=ptol, maxiter=maxiter,
+                              minx=minx, verbose=trace)
     qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
@@ -523,10 +525,12 @@ qmvt <- function(p, interval = NULL,
     } 
     if(tail == "upper.tail") ## get_quant_loclin assumes an increasing function
       p <- 1-p
+    minx <- ifelse(tail == "both.tails", 0, -Inf)
     link <- ifelse(df <= 7 & df > 0, "cauchit", "probit")
     qroot <- get_quant_loclin(pfct, p, interval=interval,
                               link=link,
-                              ptol=ptol, maxiter=maxiter, verbose=trace)
+                              ptol=ptol, maxiter=maxiter,
+                              minx=minx, verbose=trace)
     qroot$f.quantile <- qroot$f.quantile - p
     qroot
 }
