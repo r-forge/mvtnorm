@@ -557,7 +557,7 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta)
     upper[ isInf(upper)] <- 0
 
     error <- 0; value <- 0; inform <- 0
-    .C("C_mvtdst",
+    .C(C_mvtdst,
        N = as.integer(n),
        NU = as.integer(df),
        LOWER = as.double(lower),
@@ -586,7 +586,7 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
     if (inherits(sc, "try-error"))
         stop("Miwa algorithm cannot compute probabilities for singular problems")
 
-    p <- .Call("C_miwa", steps = as.integer(x$steps),
+    p <- .Call(C_miwa, steps = as.integer(x$steps),
                          corr = as.double(corr),
                          upper = as.double(upper),
                          lower = as.double(lower),
