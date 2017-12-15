@@ -11,7 +11,7 @@ Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Bjoern", "Bornkamp", role = "ctb"),
              person("Martin", "Maechler", role = "ctb"),
              person("Torsten", "Hothorn", role = c("aut", "cre"),
-                    email = "Torsten.Hothorn@R-project.org"))
+                    email = "Torsten.Hothorn@R-project.org", comment = c(ORCID = "0000-0001-8301-0471")))
 Description: Computes multivariate normal and t probabilities, quantiles,
   random deviates and densities.
 Imports: stats, methods
