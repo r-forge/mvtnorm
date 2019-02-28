@@ -482,8 +482,9 @@ qmvt <- function(p, interval = NULL,
     if (!is.null(sigma)) dim <- NROW(sigma)
     lower <- upper <- rep.int(0, dim)
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
+    if (is.null(args$sigma)) args$sigma <- 1
     if (args$uni) {
-        if (!is.null(arg$sigma))
+        if (!identical(args$sigma, 1))
             stop("sigma != 1 not implemented for univariate case")
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
         if (df == 0 || isInf(df)) { # MH: now (also) properly allow df = Inf

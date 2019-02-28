@@ -1,7 +1,7 @@
 Package: mvtnorm
 Title: Multivariate Normal and t Distributions
-Version: 1.0-8
-Date: 2018-05-31
+Version: 1.0-9
+Date: 2019-02-28
 Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Frank", "Bretz", role = "aut"),
              person("Tetsuhisa", "Miwa", role = "aut"),
@@ -15,6 +15,6 @@ Authors@R: c(person("Alan", "Genz", role = "aut"),
 Description: Computes multivariate normal and t probabilities, quantiles,
   random deviates and densities.
 Imports: stats, methods
-Depends: R(>= 1.9.0)
+Depends: R(>= 3.5.0)
 License: GPL-2
 URL: http://mvtnorm.R-forge.R-project.org
