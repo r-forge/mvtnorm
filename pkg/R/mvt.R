@@ -486,6 +486,7 @@ qmvt <- function(p, interval = NULL,
     if (args$uni) {
         if (!identical(args$sigma, 1))
             stop("sigma != 1 not implemented for univariate case")
+        args$sigma <- NULL
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
         if (df == 0 || isInf(df)) { # MH: now (also) properly allow df = Inf
             q <- qnorm(p, mean = args$mean, lower.tail = (tail != "upper.tail"))
