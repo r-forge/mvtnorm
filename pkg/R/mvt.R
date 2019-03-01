@@ -482,8 +482,8 @@ qmvt <- function(p, interval = NULL,
     if (!is.null(sigma)) dim <- NROW(sigma)
     lower <- upper <- rep.int(0, dim)
     args <- checkmvArgs(lower, upper, delta, corr, sigma)
-    if (is.null(args$sigma)) args$sigma <- 1
     if (args$uni) {
+        if (is.null(args$sigma)) args$sigma <- 1
         if (!identical(args$sigma, 1))
             stop("sigma != 1 not implemented for univariate case")
         args$sigma <- NULL
