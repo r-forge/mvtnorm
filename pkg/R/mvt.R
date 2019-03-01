@@ -344,7 +344,7 @@ dmvt <- function(x, delta = rep(0, p), sigma = diag(p), df = 1,
 getInt <- function(p, delta, sigma, tail,
                    type = c("Kshirsagar", "shifted"), df){
   type <- match.arg(type)
-  sds <- sqrt(diag(sigma))
+  sds <- c(sqrt(diag(sigma)))
   if(df == 0 | df == Inf){
     df <- Inf
     cdf <- function(x, ...)
