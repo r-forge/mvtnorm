@@ -271,7 +271,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     msg <-
         if (inform == 0) "Normal Completion"
     else if (inform == 1) "Completion with error > abseps"
-    else if (inform == 2) "N greater 1000 or N < 1"
+    else if (inform == 2) "Dimension greater 1000 or dimension < 1"
     else if (inform == 3) "Covariance matrix not positive semidefinite"
     else inform
 
