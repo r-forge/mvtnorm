@@ -1,9 +1,9 @@
 # $Id$
 
 rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
-                   method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE)
+                   method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 {
-    if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
+    if (checkSymmetry && !isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
                      check.attributes = FALSE)) {
         stop("sigma must be a symmetric matrix")
     }
@@ -39,7 +39,7 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     retval
 }
 
-dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE)
+dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE)
 {
     if (is.vector(x))
 	x <- matrix(x, ncol = length(x))
@@ -52,7 +52,7 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE)
     if(!missing(sigma)) {
 	if (p != ncol(sigma))
 	    stop("x and sigma have non-conforming size")
-	if (!isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
+	if (checkSymmetry && !isSymmetric(sigma, tol = sqrt(.Machine$double.eps),
 			 check.attributes = FALSE))
 	    stop("sigma must be a symmetric matrix")
     }
