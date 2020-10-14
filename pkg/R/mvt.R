@@ -202,17 +202,15 @@ isNInf <- function(x) x < 0 & is.infinite(x) # check for -Inf
 
 mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
 {
-
     ### only for compatibility with older versions
-    addargs <- list(...)
-    if (length(addargs) > 0)
+    if (...length() > 0)
         algorithm <- GenzBretz(...)
     else if (is.function(algorithm) || is.character(algorithm))
         algorithm <- do.call(algorithm, list())
 
     ### handle cases where the support is the empty set
     ##  Note: checkmvArgs() has been called ==> lower, upper are *not* NA
-    if (any(abs(d <- lower - upper) < sqrt(.Machine$double.eps)*(abs(lower)+abs(upper)) |
+    if (any(abs(lower - upper) < sqrt(.Machine$double.eps)*(abs(lower)+abs(upper)) |
             lower == upper)) ## e.g. Inf == Inf
 	return(list(value = 0, error = 0, msg = "lower == upper"))
 
@@ -260,13 +258,12 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     if (all(infin < 0))
         return(list(value = 1, error = 0, msg = "Normal Completion"))
 
-    if (n > 1) {
-        corrF <- matrix(as.vector(corr), ncol=n, byrow=TRUE)
-        corrF <- corrF[upper.tri(corrF)]
-    } else corrF <- corr
+    if(inherits(algorithm, "GenzBretz") && n > 1) {
+        corr <- matrix(as.vector(corr), ncol=n, byrow=TRUE)
+        corr <- corr[upper.tri(corr)]
+    }
 
-
-    ret <- probval(algorithm, n, df, lower, upper, infin, corr, corrF, delta)
+    ret <- probval(algorithm, n, df, lower, upper, infin, corr, delta)
     inform <- ret$inform
     msg <-
         if (inform == 0) "Normal Completion"
@@ -552,16 +549,17 @@ GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
               class = "GenzBretz")
 }
 
-Miwa <- function(steps = 128) {
-    if (steps > 4098) stop("maximum number of steps is 4098")
-    structure(list(steps = steps), class = "Miwa")
+Miwa <- function(steps = 128, checkCorr = TRUE) {
+    if (steps > 4097) stop("maximum number of steps is 4097") # MAXGRD in ../src/miwa.h
+    structure(list(steps = steps, checkCorr=checkCorr), class = "Miwa")
 }
 
 probval <- function(x, ...)
     UseMethod("probval")
 
-probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
 
+probval.GenzBretz <- function(x, n, df, lower, upper, infin, corrF, delta)
+{
     if(isInf(df)) df <- 0 # MH: deal with df=Inf (internally requires df=0!)
 
     lower[isNInf(lower)] <- 0
@@ -585,17 +583,21 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corr, corrF, delta)
        RND = as.integer(1)) ### init RNG
 }
 
-probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
-
+probval.Miwa <- function(x, n, df, lower, upper, infin, corr, delta)
+{
     if (!( df==0 || isInf(df) ))
         stop("Miwa algorithm cannot compute t-probabilities")
-
     if (n > 20)
         stop("Miwa algorithm cannot compute probabilities for dimension n > 20")
 
-    sc <- try(solve(corr))
-    if (inherits(sc, "try-error"))
-        stop("Miwa algorithm cannot compute probabilities for singular problems")
+    if(any(delta != 0)) {
+        upper <- upper - delta
+        lower <- lower - delta
+    }
+    if(x$checkCorr) ## FIXME solve(*, tol = .Machine$double.eps); prbly need larger tol!
+        tryCatch(solve(corr), error = function(e)
+            stop("Miwa algorithm cannot compute probabilities for singular problems",
+                 call. = FALSE))
 
     p <- .Call(C_miwa, steps = as.integer(x$steps),
                          corr = as.double(corr),
@@ -604,6 +606,8 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, corrF, delta) {
                          infin = as.integer(infin))
     list(value = p, inform = 0, error = NA)
 }
+
+## NB:  probval.TVPACK () --- defined in  ./tvpack.R
 
 dots2GenzBretz <- function(...) {
     addargs <- list(...)

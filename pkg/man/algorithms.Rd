@@ -9,7 +9,7 @@
 }
 \usage{
 GenzBretz(maxpts = 25000, abseps = 0.001, releps = 0)
-Miwa(steps = 128)
+Miwa(steps = 128, checkCorr = TRUE)
 TVPACK(abseps = 1e-6)
 }
 \arguments{
@@ -19,7 +19,11 @@ TVPACK(abseps = 1e-6)
   \item{abseps}{absolute error tolerance; for \code{TVPACK} only used
     for dimension 3.}
   \item{releps}{ relative error tolerance as double. }
-  \item{steps}{ number of grid points to be evaluated. }
+  \item{steps}{number of grid points to be evaluated; cannot be larger than
+    4097.}
+  \item{checkCorr}{logical indicating if a check for singularity of the
+    correlation matrix should be performed (once per function call to
+    \code{pmvt()} or \code{pmvnorm()}).}
 }
 \details{
 
