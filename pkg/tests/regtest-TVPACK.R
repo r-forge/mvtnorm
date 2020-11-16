@@ -1,4 +1,33 @@
 library("mvtnorm")
+
+## Showing the TVPACK() gives *NON*-random results:
+(cor1 <- toeplitz(c(1, 1/4, -1/8)))
+(up1  <- c(1/4, 7/4, 5/8))
+d <- length(up1) # = 3
+pmvt.. <- function(df, algorithm)
+    vapply(df, function(df) pmvt(upper=up1, corr=cor1, df=df, algorithm=algorithm),
+           numeric(1))
+
+dfs <- 1:9
+pmvt_TV.7 <- replicate(7, pmvt..(dfs, TVPACK()))
+
+stopifnot(pmvt_TV.7 == pmvt_TV.7[,1])
+(pmvt.TV. <- pmvt_TV.7[,1])
+(pmvt.TV  <- pmvt..(dfs, TVPACK(1e-14)))# has no effect here
+pmvt.TV - pmvt.TV. ## all 0 {unexpectedly ??}
+
+
+set.seed(47) ## and default algorithm: -> *random* result
+pmvt_7 <- replicate(7, vapply(dfs, function(df) pmvt(df=df, upper=up1, corr=cor1), numeric(1)))
+## relative errors
+relE <- 1 - pmvt_7 / pmvt.TV
+rng.rE <- range(abs(relE))
+stopifnot(1e-6 < rng.rE[1], rng.rE[2] < 7e-4)
+stopifnot(all.equal(
+    colMeans(abs(relE)),
+    c(88, 64, 105, 73, 52, 90, 87)*1e-6, tol= 1e-3))
+
+
 set.seed(29)
 
 ########################################################################

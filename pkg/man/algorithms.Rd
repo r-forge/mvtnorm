@@ -4,8 +4,8 @@
 \alias{TVPACK}
 \title{ Choice of Algorithm and Hyper Parameters }
 \description{
-  Choose between three algorithms for evaluating normal distributions
-  and define hyper parameters.
+  Choose between three algorithms for evaluating normal (and t-)
+  distributions and define hyper parameters.
 }
 \usage{
 GenzBretz(maxpts = 25000, abseps = 0.001, releps = 0)
@@ -27,12 +27,14 @@ TVPACK(abseps = 1e-6)
 }
 \details{
 
-There are three algorithms available for evaluating normal
+  There are three algorithms available for evaluating normal
+  (and two algorithms for t-)
 probabilities: The default is the randomized Quasi-Monte-Carlo procedure
 by Genz (1992, 1993) and Genz and Bretz (2002) applicable to
 arbitrary covariance structures and dimensions up to 1000.
 
-For smaller dimensions (up to 20) and non-singular covariance matrices,
+For normal probabilities, smaller dimensions (up to 20) and non-singular
+covariance matrices,
 the algorithm by Miwa et al. (2003) can be used as well.
 
 For two- and three-dimensional problems and semi-infinite integration
@@ -41,8 +43,8 @@ by Genz (2004).
 
 }
 \value{
-    An object of class \code{GenzBretz} or \code{Miwa}
-    defining hyper parameters.
+  An object of class \code{"GenzBretz"}, \code{"Miwa"}, or \code{"TVPACK"}
+  defining hyper parameters.
 }
 \references{
 
