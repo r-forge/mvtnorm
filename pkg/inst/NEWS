@@ -1,10 +1,12 @@
 
-Changes in version 1.1-2 (2020-10-14)
+Changes in version 1.1-2 (2020-11-17)
 
   o  Miwa(n) now also works for non-zero mean|delta; n <= 4097, not 4098 (from C code);
      optional 'checkCorr=' argument; documentation, one NOTE less.
      Minimal C code cleanup.
      mvt() <-> probval() simplification.
+
+  o  TVPACK() now also works when some (but not all) bounds are (-Inf, Inf).
 
 Changes in version 1.1-1 (2020-06-09)
 

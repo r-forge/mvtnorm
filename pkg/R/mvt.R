@@ -227,21 +227,22 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     infin[isNInf(lower)] <- 0
     infin[isNInf(lower) & isInf(upper)] <- -1
 
-    ### fix for Miwa algo:
+    ### fix for Miwa (and TVPACK) algo:
     ### pmvnorm(lower=c(-Inf, 0, 0), upper=c(0, Inf, Inf),
-    ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa())
-    ###         returned NA
-
-    if (inherits(algorithm, "Miwa")) {
-        if (n >= 3 && any(infin == -1)) {
+    ###         mean=c(0, 0, 0), sigma=S, algorithm = Miwa()) # returned NA
+    if((isMiwa <- inherits(algorithm, "Miwa")) || inherits(algorithm, "TVPACK")) {
+        if (n >= 3 && any(infin == -1)) { # Int(-Inf, +Inf;..) --> reduce dimension
             WhereBothInfIs <- which(infin == -1)
             n <- n - length(WhereBothInfIs)
             corr <- corr[-WhereBothInfIs, -WhereBothInfIs]
             upper <- upper[-WhereBothInfIs]
             lower <- lower[-WhereBothInfIs]
+            if(!missing(delta))
+                delta <- delta[-WhereBothInfIs]
+            infin <- infin[-WhereBothInfIs]
         }
 
-        if (n >= 2 && any(infin == 0)) {
+        if (isMiwa && n >= 2 && any(infin == 0)) {
             WhereNegativInfIs <- which(infin==0)
             inversecorr <- rep(1, n)
             inversecorr[WhereNegativInfIs] <- -1

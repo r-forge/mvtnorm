@@ -105,3 +105,31 @@ upper <- rexp(3, 1)
 ctrl <- Miwa(steps=128)
 pmvnorm(upper=upper, corr=corr, algorithm = ctrl)
 pmvnorm(upper=upper, corr=corr, algorithm = TVPACK())
+
+##==== Cases where some  (lower[j], upper[j]) == (-Inf, Inf) :
+S <- toeplitz(c(1, 1/2, 1/4))
+
+set.seed(11)
+P0 <- pmvnorm(lower=c(-Inf, 0, 0), upper=Inf, corr=S)
+P1 <- pmvnorm(lower=c(-Inf, 0, 0), upper=Inf, corr=S, algorithm = TVPACK()) # had failed
+P2 <- pmvnorm(lower=c(-Inf, 0, 0), upper=Inf, corr=S, algorithm = Miwa())
+P2a<- pmvnorm(lower=c(-Inf, 0, 0), upper=Inf, corr=S, algorithm = Miwa(512))
+P2.<- pmvnorm(lower=c(-Inf, 0, 0), upper=Inf, corr=S, algorithm = Miwa(2048))
+
+stopifnot(all.equal(1/3, c(P0), tol=1e-14)
+        , all.equal(1/3, c(P1), tol=1e-14)
+        , all.equal(1/3, c(P2), tol=1e-9 ) # 3.765e-10
+        , all.equal(1/3, c(P2a),tol=4e-12) # 8.32 e-13
+        , all.equal(1/3, c(P2.),tol=2e-12) # 5.28 e-13
+)
+
+## t-dist [TVPACK() had failed] :
+set.seed(11)
+Ptdef <- replicate(20, c(pmvt(lower=c(-Inf, 1, 2), upper=Inf, df=2, corr=S)))
+unique(Ptdef)# see length 1; i.e., same result [even though default is Monte-Carlo ??]
+Pt1 <- pmvt(lower=c(-Inf, 1, 2), upper=Inf, df=2, corr=S, algorithm = TVPACK())
+P. <- 0.0570404044526986
+stopifnot(exprs = {
+    all.equal(P., c(Pt1), tol = 1e-14)# seen 3.65 e-16
+    abs(P. - Ptdef) < 1e-15 # seen 1.39 e-17
+})
