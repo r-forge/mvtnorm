@@ -100,7 +100,7 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
 
 
 pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL, sigma=NULL,
-                    algorithm = GenzBretz(), ...)
+                    algorithm = GenzBretz(), keepAttr=TRUE, ...)
 {
     carg <- checkmvArgs(lower=lower, upper=upper, mean=mean, corr=corr,
                         sigma=sigma)
@@ -130,13 +130,16 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
       }
     }
     ## return
-    structure(RET$value, "error" = RET$error, "msg" = RET$msg)
+    if(keepAttr)
+        structure(RET$value, error = RET$error, msg = RET$msg,
+                  algorithm = RET$algorithm)
+    else RET$value
 }
 
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                  df=1, corr=NULL, sigma=NULL,
                  algorithm = GenzBretz(),
-                 type = c("Kshirsagar", "shifted"), ...)
+                 type = c("Kshirsagar", "shifted"), keepAttr=TRUE, ...)
 {
     type <- match.arg(type)
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
@@ -191,13 +194,15 @@ pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                        delta=carg$mean/d, algorithm = algorithm, ...)
         }
     }
-    attr(RET$value, "error") <- RET$error
-    attr(RET$value, "msg") <- RET$msg
-    return(RET$value)
+    ## return
+    if(keepAttr)
+        structure(RET$value, error = RET$error, msg = RET$msg,
+                  algorithm = RET$algorithm)
+    else RET$value
 }
 
 ## identical(., Inf) would be faster but not vectorized
-isInf <- function(x) x > 0 & is.infinite(x) # check for  Inf
+isInf  <- function(x) x > 0 & is.infinite(x) # check for  Inf
 isNInf <- function(x) x < 0 & is.infinite(x) # check for -Inf
 
 mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
@@ -274,7 +279,7 @@ mvt <- function(lower, upper, df, corr, delta, algorithm = GenzBretz(), ...)
     else inform
 
     ## return including error est. and msg:
-    list(value = ret$value, error = ret$error, msg = msg)
+    list(value = ret$value, error = ret$error, msg = msg, algo = class(algorithm))
 }
 
 rmvt <- function(n, sigma = diag(2), df = 1,
