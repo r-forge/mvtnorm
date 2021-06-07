@@ -555,9 +555,9 @@ GenzBretz <- function(maxpts = 25000, abseps = 0.001, releps = 0) {
               class = "GenzBretz")
 }
 
-Miwa <- function(steps = 128, checkCorr = TRUE) {
+Miwa <- function(steps = 128, checkCorr = TRUE, maxval = 1e3) {
     if (steps > 4097) stop("maximum number of steps is 4097") # MAXGRD in ../src/miwa.h
-    structure(list(steps = steps, checkCorr=checkCorr), class = "Miwa")
+    structure(list(steps = steps, checkCorr=checkCorr, maxval = maxval), class = "Miwa")
 }
 
 probval <- function(x, ...)
@@ -604,6 +604,12 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, delta)
         tryCatch(solve(corr), error = function(e)
             stop("Miwa algorithm cannot compute probabilities for singular problems",
                  call. = FALSE))
+    
+    if (length(unique(infin)) != 1L) {
+        warning("Approximating +/-Inf by +/-", x$maxval)
+        lower[infin <= 0L] <- -x$maxval
+        upper[abs(infin) == 1L] <- x$maxval
+    }
 
     p <- .Call(C_miwa, steps = as.integer(x$steps),
                          corr = as.double(corr),

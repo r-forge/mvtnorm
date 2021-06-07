@@ -9,7 +9,7 @@
 }
 \usage{
 GenzBretz(maxpts = 25000, abseps = 0.001, releps = 0)
-Miwa(steps = 128, checkCorr = TRUE)
+Miwa(steps = 128, checkCorr = TRUE, maxval = 1e3)
 TVPACK(abseps = 1e-6)
 }
 \arguments{
@@ -24,6 +24,8 @@ TVPACK(abseps = 1e-6)
   \item{checkCorr}{logical indicating if a check for singularity of the
     correlation matrix should be performed (once per function call to
     \code{pmvt()} or \code{pmvnorm()}).}
+  \item{maxval}{replacement for \code{Inf} when non-orthrant probabilities
+                involving \code{Inf} shall be computed.}
 }
 \details{
 
@@ -35,7 +37,11 @@ arbitrary covariance structures and dimensions up to 1000.
 
 For normal probabilities, smaller dimensions (up to 20) and non-singular
 covariance matrices,
-the algorithm by Miwa et al. (2003) can be used as well.
+the algorithm by Miwa et al. (2003) can be used as well. This algorithm can
+compute orthrant probabilities (\code{lower} being \code{-Inf} or
+\code{upper} equal to \code{Inf}). Non-orthrant probabilities are computed
+from the corresponding orthrant probabilities, however, infinite limits are
+replaced by \code{maxval} along with a warning.
 
 For two- and three-dimensional problems and semi-infinite integration
 region, \code{TVPACK} implements an interface to the methods described
