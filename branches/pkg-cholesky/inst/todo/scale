@@ -1,0 +1,21 @@
+
+Date: Thu, 27 Mar 2008 12:29:01 +0000
+From: Jonathan Rougier <j.c.rougier@bristol.ac.uk>
+To: Torsten Hothorn <Torsten.Hothorn@R-project.org>
+Subject: mvtnorm package
+
+Hi Torsten,
+
+It's a very minor point regarding the documentation of mvtnorm.  In
+?dmvt you refer to sigma as the 'covariance matrix'.  I think it is
+better to refer to this as the 'scale matrix', because the covariance is
+(df / (df - 2)) * sigma.
+
+Best wishes, Jonathan.
+
+-- 
+Jonathan Rougier
+Department of Mathematics     tel: +44 (0)117 9287782
+University of Bristol         fax: +44 (0)117 9287999
+University Walk               email: j.c.rougier@bristol.ac.uk
+Bristol, BS8 1TW              htt
