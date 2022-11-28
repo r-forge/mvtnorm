@@ -54,7 +54,8 @@ urlcolor={linkcolor}%
 
 \newcommand{\pkg}[1]{\textbf{#1}}
 \newcommand{\proglang}[1]{\textsf{#1}}
-\newcommand{\code}[1]{\texttt{#1()}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\cmd}[1]{\texttt{#1()}}
 
 \newcommand{\R}{\mathbb{R} }
 \newcommand{\Prob}{\mathbb{P} }
@@ -73,7 +74,7 @@ urlcolor={linkcolor}%
 
 \author{Torsten Hothorn \\ Universit\"at Z\"urich}
 
-\title{Parallel \code{pmvnorm} in the \pkg{mvtnorm} Package}
+\title{Parallel \cmd{pmvnorm} in the \pkg{mvtnorm} Package}
 
 \begin{document}
 
@@ -170,6 +171,193 @@ For each $i = 1, \dots, N$, do
 
 \chapter{\proglang{R} Code}
 
+\section{Lower triangilar matrices}
+
+@o ltmatrices.R -cp
+@{
+@<ltmatrices@>
+@<dim.ltmatrices@>
+@<print ltmatrices@>
+@}
+
+We first need infrastructure for dealing with multiple lower triangular matrices
+$\mC_i \in \R^{\J \times \J}$ for $i = 1, \dots, N$. We note that each such matrix
+$\mC$ can be stored in a vector of length $\J (\J + 1) / 2$, or if all diagonal elements 
+$c^{(i)}_{jj} \equiv 1, j = 1, \dots, \J$ of length $\J (\J - 1) / 2$.
+
+Therefore, we can storge $N$ such matrices in an $N \times \J (\J + 1) / 2$  (\code{diag = TRUE})
+or $N \times \J (\J - 1) / 2$ matrix (\code{diag = FALSE}). Sometimes it is
+more convenient to store the transposed $\J (\J + 1) / 2 \times N$ matrix
+(\code{trans = TRUE}).
+
+Each vector might define the lower triangular matrix
+either in row or column-major order:
+
+\begin{eqnarray*}
+ \mC & = & \begin{pmatrix}
+ c_{11} & & & & 0\\
+ c_{21}\ & c_{22} \\
+ c_{31} & c_{32} & c_{33} \\
+ \vdots & \vdots & & \ddots & \\
+ c_{J1} & c_{J2} & \ldots & &  c_{JJ}
+ \end{pmatrix}  \text{matrix indexing}\\
+& = &  
+\begin{pmatrix}
+ c_{1} & & & & 0\\
+ c_{2} & c_{J + 1} \\
+ c_{3} & c_{J + 2} & c_{2J} \\
+ \vdots & \vdots & & \ddots & \\
+ c_{J} & c_{2J - 1} & \ldots & &  c_{J(J + 1) / 2}
+ \end{pmatrix} \text{column-major, \code{byrow = FALSE}} \\
+& = & \begin{pmatrix}
+ c_{1} & & & & 0\\
+ c_{2} & c_{3} \\
+ c_{4} & c_{5} & c_{6} \\
+ \vdots & \vdots & & \ddots & \\
+ c_{J((J + 1) / 2 -1) + 1} & c_{J((J + 1) / 2 -1) + 2} & \ldots & &  c_{J(J + 1) / 2}
+ \end{pmatrix} \text{row-major, \code{byrow = TRUE}}
+\end{eqnarray*}
+
+Based on some matrix \code{object}, the dimension is computed and checked as
+@d ltmatrices dim
+@{
+    J <- floor((1 + sqrt(1 + 4 * 2 * ifelse(trans, nrow(object), ncol(object)))) / 2 - diag)
+    stopifnot(ifelse(trans, nrow(object), ncol(object)) == J * (J - 1) / 2 + diag * J)
+@}
+
+Typically the $\J$ dimensions are associated with names, and we therefore
+compute identifiers for the vector elements in either column- or row-major
+order (for later printing)
+
+@d ltmatrices names
+@{
+nonames <- FALSE
+if (!isTRUE(names)) {
+    if (is.character(names))
+        stopifnot(is.character(names) &&
+                  length(unique(names)) == J)
+    else
+        nonames <- TRUE
+} else {
+    names <- as.character(1:J)
+}
+
+if (!nonames) {
+    L1 <- matrix(names, nrow = J, ncol = J)
+    L2 <- matrix(names, nrow = J, ncol = J, byrow = TRUE)
+    L <- matrix(paste(L1, L2, sep = "."), nrow = J, ncol = J)
+    if (trans) {
+        if (byrow)
+            rownames(object) <- t(L)[upper.tri(L, diag = diag)]
+        else
+            rownames(object) <- L[lower.tri(L, diag = diag)]
+    } else {
+        if (byrow)
+            colnames(object) <- t(L)[upper.tri(L, diag = diag)]
+        else
+            colnames(object) <- L[lower.tri(L, diag = diag)]
+    }
+}
+@}
+
+The constructor essentially attaches attributes to a matrix \code{object}
+
+@d ltmatrices
+@{
+ltmatrices <- function(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE) {
+
+    if (!is.matrix(object) && trans) 
+        object <- matrix(object, ncol = 1L)
+    if (!is.matrix(object) && !trans) 
+        object <- matrix(object, nrow = 1L)
+
+    @<ltmatrices dim@>
+    
+    @<ltmatrices names@>
+
+    attr(object, "diag")    <- diag
+    attr(object, "byrow")   <- byrow
+    attr(object, "trans")   <- trans
+    attr(object, "rcnames") <- names
+
+    class(object) <- c("ltmatrices", class(object))
+    object
+}
+@}
+
+The dimensions of such an object are always $N \times \J \times \J$, as
+given by
+
+@d dim.ltmatrices
+@{
+dim.ltmatrices <- function(x) {
+    J <- length(attr(x, "rcnames"))
+    class(x) <- class(x)[-1L]
+    return(c(ifelse(attr(x, "trans"), ncol(x), nrow(x)), J, J))
+}
+@}
+
+<<example>>=
+source("ltmatrices.R")
+J <- 4
+N <- 6
+diag <- TRUE
+nm <- LETTERS[1:J]
+
+x <- matrix(1:(N * (J * (J - 1) / 2 + diag * J)), byrow = TRUE, nrow = N)
+lx <- ltmatrices(x, diag = TRUE, byrow = TRUE, names = nm)
+dim(lx)
+unclass(lx)
+@@
+
+@d print ltmatrices
+@{
+as.array.ltmatrices <- function(x, symmetric = FALSE, ...) {
+
+    diag <- attr(x, "diag")
+    byrow <- attr(x, "byrow")
+    trans <- attr(x, "trans")
+    rcnames <- attr(x, "rcnames")
+    class(x) <- class(x)[-1L]
+    if (trans) x <- t(x)
+    J <- length(rcnames)
+
+    L <- matrix(1L, nrow = J, ncol = J)
+    diag(L) <- 2L
+    if (byrow) {
+        L[upper.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+        L <- t(L)
+    } else {
+        L[lower.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+    }
+    if (symmetric) {
+        L[upper.tri(L)] <- 0L
+        dg <- diag(L)
+        L <- L + t(L)
+        diag(L) <- dg
+    }
+    ret <- t(cbind(0, 1, x)[, c(L), drop = FALSE])
+    class(ret) <- "array"
+    dim(ret) <- c(J, J, nrow(x))
+    dimnames(ret) <- list(rcnames, rcnames, rownames(x))
+    return(ret)
+}
+
+as.array.symatrices <- function(x, ...)
+    return(as.array.ltmatrices(x, symmetric = TRUE))
+
+print.ltmatrices <- function(x, ...)
+    print(as.array(x))
+
+print.symatrices <- function(x, ...)
+    print(as.array(x))
+@}
+
+
+<<example>>=
+print(lx)
+as.array(lx)[,,1]
+@@
 
 \section{Variables}
 
