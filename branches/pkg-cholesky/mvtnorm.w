@@ -270,6 +270,15 @@ if (!nonames) {
 }
 @}
 
+@d ltmatrices input
+@{
+if (inherits(object, "ltmatrices")) {
+    ret <- .reorder(object, byrow = byrow)
+    ret <- .transpose(object, trans = trans)
+    return(ret)
+}
+@}
+
 The constructor essentially attaches attributes to a matrix \code{object}
 
 @d ltmatrices
@@ -280,6 +289,8 @@ ltmatrices <- function(object, diag = FALSE, byrow = FALSE, trans = FALSE, names
         object <- matrix(object, ncol = 1L)
     if (!is.matrix(object) && !trans) 
         object <- matrix(object, nrow = 1L)
+
+    @<ltmatrices input@>
 
     @<ltmatrices dim@>
     
@@ -421,7 +432,7 @@ between the two forms.
 @}
 
 <<ex-reorder>>=
-(rx <- .reorder(lx, byrow = FALSE))
+(rx <- ltmatrices(lx, byrow = FALSE))
 all.equal(as.array(rx), ax)
 @@
 
@@ -447,7 +458,7 @@ this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!).
 @}
 
 <<ex-trans>>=
-(tx <- .transpose(lx, trans = TRUE))
+(tx <- ltmatrices(lx, trans = TRUE))
 all.equal(as.array(tx), ax)
 @@
 
@@ -949,9 +960,13 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 @}
 
 <<ex-tcrossprod>>=
-.tcrossprod.ltmatrices(lx, diag_only = TRUE)
-.tcrossprod.ltmatrices(lx)
-array(unlist(apply(ax, 3, tcrossprod, simplify = FALSE)), dim = dim(ax))
+d <- .tcrossprod.ltmatrices(lx, diag_only = TRUE)
+a1 <- as.array(t1 <- .tcrossprod.ltmatrices(lx))
+diagonals(t1)
+d
+a2 <- array(unlist(apply(ax, 3, tcrossprod, simplify = FALSE)), dim = dim(ax),
+dimnames = dimnames(ax))
+all.equal(a1, a2)
 @@
 
 
