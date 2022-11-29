@@ -166,12 +166,7 @@ For each $i = 1, \dots, N$, do
 
 \end{enumerate}
 
-
-@d pmvnorm2 prototype
-@{pmvnorm2(lower, upper, mean, chol, control, ...)@}
-
 \chapter{Lower Triangular Matrices}
-
 
 @o ltmatrices.R -cp
 @{
@@ -1217,7 +1212,7 @@ for (j = 1; j < iJ; j++) {
 @d pMVN3
 @{
 pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000, 
-                 w = matrix(runif(M * (J - 1)), ncol = M), ...) {
+                  w = matrix(runif(M * (J - 1)), ncol = M), ...) {
 
     @<input checks@>
 
