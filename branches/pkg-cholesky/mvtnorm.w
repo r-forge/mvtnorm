@@ -636,6 +636,16 @@ all $i = 1, \dots, N$.
 @<tcrossprod@>
 @}
 
+\code{A} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
+(matrix of dimension $\J (\J - 1) / 2 + \J \text{diag} \times N$), and
+\code{b} is the $\J \times N$ matrix $(\yvec_1 \mid \yvec_2 \mid \dots \mid
+\yvec_N)$. This function returns the $\J \times N$ matrix $(\xvec_1 \mid \xvec_2 \mid \dots \mid
+\xvec_N)$ of solutions.
+
+If \code{b} is not given, $\mC_i^{-1}$ is returned in transposed
+column-major order (matrix of dimension $\J (\J 1 1) / 2  \times N$) ALWAYS
+including the diagonals.
+
 @d solve
 @{
 
@@ -663,6 +673,7 @@ SEXP R_ltmatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
 
     /* p = J * (J - 1) / 2 + diag * J */
     p = LENGTH(A) / iN;
+
     /* add diagonal elements (expected by Lapack) */
     nrow = (p + (1 - Rdiag) * iJ);
 
@@ -768,23 +779,26 @@ solve.ltmatrices <- function(a, b, ...) {
     diag <- attr(x, "diag")
     rcnames <- attr(x, "rcnames")
     J <- length(rcnames)
+    class(x) <- class(x)[-1L]
+    storage.mode(x) <- "double"
 
     if (!missing(b)) {
-        if (!is.matrix(b)) b <- matrix(b, nrow = J)
+        if (!is.matrix(b)) b <- matrix(b, nrow = J, ncol = ncol(x))
         stopifnot(ncol(b) == ncol(x))
         stopifnot(nrow(b) == J)
-        ret <- .Call("R_ltmatrices_solve", as.double(unclass(x)), as.double(b), 
-                     as.integer(nrow(x)), as.integer(J), as.logical(diag))
+        ret <- .Call("R_ltmatrices_solve", x, as.double(b), 
+                     as.integer(ncol(x)), as.integer(J), as.logical(diag))
         ret <- matrix(ret, nrow = J)
         colnames(ret) <- colnames(x)
         rownames(ret) <- rcnames
         return(ret)
     }
 
-    ret <- .Call("R_ltmatrices_solve", as.double(unclass(x)), NULL,
-                 as.integer(nrow(x)), as.integer(J), as.logical(diag))
-    ret <- matrix(ret, ncol = dim(x)[1L])
-    colnames(ret) <- colnames(unclass(x))
+    ret <- try(.Call("R_ltmatrices_solve", x, NULL,
+                 as.integer(ncol(x)), as.integer(J), as.logical(diag)))
+    ret <- matrix(ret, ncol = ncol(x))
+    colnames(ret) <- colnames(x)
+
     if (!diag)
         ### ret always includes diagonal elements
         ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
@@ -802,6 +816,10 @@ solve.ltmatrices <- function(a, b, ...) {
 apply(ax, 3, solve, simplify = FALSE)
 for (i in 1:N)
     print(round(ax[,,i] %*% as.array(sx)[,,i], 3))
+
+y <- runif(J)
+solve(lx, y)
+apply(ax, 3, solve, b = y, simplify = TRUE)
 @@
 
 \section{Crossproducts}
