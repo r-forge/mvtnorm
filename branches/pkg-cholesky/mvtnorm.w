@@ -951,7 +951,7 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 <<ex-tcrossprod>>=
 .tcrossprod.ltmatrices(lx, diag_only = TRUE)
 .tcrossprod.ltmatrices(lx)
-apply(ax, 3, tcrossprod, simplify = FALSE)
+array(unlist(apply(ax, 3, tcrossprod, simplify = FALSE)), dim = dim(ax))
 @@
 
 
