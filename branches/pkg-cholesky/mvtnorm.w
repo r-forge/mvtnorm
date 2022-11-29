@@ -375,7 +375,8 @@ print.symatrices <- function(x, ...)
 <<ex-print>>=
 print(lx)
 ## array subsetting
-as.array(lx)[,,1]
+ax <- as.array(lx)
+ax[,,1]
 @@
 
 It is sometimes convenient to have access to lower triangular matrices in
@@ -420,7 +421,8 @@ between the two forms.
 @}
 
 <<ex-reorder>>=
-.reorder(lx, byrow = FALSE)
+(rx <- .reorder(lx, byrow = FALSE))
+all.equal(as.array(rx), ax)
 @@
 
 The internal representation as $N \times \J (\J + 1) / 2$ matrix to a matrix
@@ -445,7 +447,8 @@ this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!).
 @}
 
 <<ex-trans>>=
-.transpose(lx, trans = TRUE)
+(tx <- .transpose(lx, trans = TRUE))
+all.equal(as.array(tx), ax)
 @@
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
@@ -510,7 +513,8 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
 @}
 
 <<ex-subset>>=
-lx[c(1, 3), c(2, 4)]
+sx <- lx[c(1, 3), c(2, 4)]
+all.equal(as.array(sx), ax[c(2, 4), c(2, 4), c(1, 3)])
 @@
 
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
@@ -607,7 +611,12 @@ N$ can be computed with $\code{y}$ being an $N \times \J$ matrix (FIXME?)
 
 <<ex-mult>>=
 y <- matrix(runif(J * N), nrow = N)
-.mult(lx, y)
+(mx <- .mult(lx, y))
+m <- matrix(0, nrow = N, ncol = J, dimnames = list(rownames(x), nm))
+for (i in 1:N) 
+    m[i,] <- ax[,,i] %*% y[i,]
+all.equal(mx, m)
+
 @@
 
 \section{Solving linear systems}
@@ -654,6 +663,7 @@ SEXP R_ltmatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
 
     /* p = J * (J - 1) / 2 + diag * J */
     p = LENGTH(A) / iN;
+    /* add diagonal elements (expected by Lapack) */
     nrow = (p + (1 - Rdiag) * iJ);
 
     @<setup memory@>
@@ -679,12 +689,12 @@ SEXP R_ltmatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
 /* return object: include unit diagnonal elements if Rdiag == 0 */
 
 dA = REAL(A);
-PROTECT(ans = allocVector(REALSXP, iN * nrow));
+PROTECT(ans = allocVector(REALSXP, nrow * iN));
 dans = REAL(ans);
 
 if (b != R_NilValue) {
     db = REAL(b);
-    PROTECT(ansx = allocVector(REALSXP, iN * iJ));
+    PROTECT(ansx = allocVector(REALSXP, iJ * iN));
     dansx = REAL(ansx);
 }
 @}
@@ -754,7 +764,7 @@ solve.ltmatrices <- function(a, b, ...) {
     trans_orig <- attr(a, "trans")
 
     x <- .reorder(a, byrow = FALSE)
-    x <- .transpose(a, trans = TRUE)
+    x <- .transpose(x, trans = TRUE)
     diag <- attr(x, "diag")
     rcnames <- attr(x, "rcnames")
     J <- length(rcnames)
@@ -788,13 +798,18 @@ solve.ltmatrices <- function(a, b, ...) {
 @}
 
 <<ex-solve>>=
-solve(lx)
+(sx <- solve(lx))
+apply(ax, 3, solve, simplify = FALSE)
+for (i in 1:N)
+    print(round(ax[,,i] %*% as.array(sx)[,,i], 3))
 @@
 
 \section{Crossproducts}
 
 Compute $\mC_i \mC_i^\top$ or $\text{diag}(\mC_i \mC_i^\top)$
-(\code{diag\_only = TRUE}) for $i = 1, \dots, N$.
+(\code{diag\_only = TRUE}) for $i = 1, \dots, N$. These are symmetric
+matrices, so we store them as a lower triangular matrix using a different
+class name \code{symatrices}.
 
 @d tcrossprod
 @{
@@ -805,7 +820,7 @@ SEXP R_ltmatrices_tcrossprod (SEXP A, SEXP N, SEXP J, SEXP diag, SEXP diag_only)
     SEXP ans;
     int iJ = INTEGER(J)[0];
     int iN = INTEGER(N)[0];
-    int i, j, k, ix;
+    int i, j, k, ix, nrow;
     double *dans, *dA;
     Rboolean Rdiag_only = asLogical(diag_only);
     Rboolean Rdiag = asLogical(diag);
@@ -852,7 +867,8 @@ for (int n = 0; n < iN; n++) {
 
 @d tcrossprod full
 @{
-PROTECT(ans = allocVector(REALSXP, iJ * (iJ + 1) / 2 * iN)); 
+nrow = iJ * (iJ + 1) / 2;
+PROTECT(ans = allocVector(REALSXP, nrow * iN)); 
 dans = REAL(ans);
 for (int n = 0; n < INTEGER(N)[0]; n++) {
     dans[0] = 1.0;
@@ -877,7 +893,7 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
             }
         }
     }
-    dans = dans + iJ;
+    dans = dans + nrow;
     dA = dA + p;
 }
 @}
@@ -897,8 +913,7 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
     x <- .reorder(x, byrow = FALSE)
     x <- .transpose(x, trans = TRUE)
     class(x) <- class(x)[-1L]
-    xdim <- dim(x)
-    N <- xdim[2L]
+    N <- ncol(x)
 
     ret <- matrix(.Call("R_ltmatrices_tcrossprod", as.double(x), as.integer(N), as.integer(J), 
                         as.logical(diag), as.logical(diag_only)), ncol = N)
@@ -916,7 +931,9 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 @}
 
 <<ex-tcrossprod>>=
+.tcrossprod.ltmatrices(lx, diag_only = TRUE)
 .tcrossprod.ltmatrices(lx)
+apply(ax, 3, tcrossprod, simplify = FALSE)
 @@
 
 
