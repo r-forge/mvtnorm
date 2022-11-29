@@ -1005,7 +1005,7 @@ Step 1
 @d input checks
 @{
 stopifnot(inherits(chol, "ltmatrices"))
-chol <- ltmatrices(chol, trans = FALSE)
+chol <- ltmatrices(chol, trans = TRUE)
 chol <- ltmatrices(chol, byrow = TRUE)
 d <- dim(chol)
 N <- d[1L]
@@ -1224,7 +1224,7 @@ pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000,
 
     M <- ncol(w)
     ret <- intsum / M
-    error <- 2.5 * sqrt((varsum / M - (intsum / M)^2) / M)
+    error <- 2.5 * sqrt((varsum / M - ret^2) / M)
     attr(ret, "error") <- error
     ret
 }
@@ -1244,6 +1244,38 @@ all.equal(p3, p2)
 
 cbind(p1, p2, p3)
 
+@@
+
+\chapter{Maximum-likelihood Example}
+
+<<ex-ML>>=
+N <- 1000
+J <- 3
+L <- matrix(prm <- runif(J * (J + 1) / 2), nrow = J * (J + 1) / 2, ncol = N)
+lx <- ltmatrices(L, diag = TRUE, byrow = FALSE, trans = TRUE)
+Z <- matrix(rnorm(N * J), ncol = J)
+
+Y <- .mult(lx, Z)
+
+var(Y)
+.tcrossprod.ltmatrices(lx[1,])
+
+a <- t(Y - runif(N * J, max = .1))
+b <- t(Y + runif(N * J, max = .1))
+
+M <- 2000
+W <- matrix(runif(M * (J - 1)), ncol = M)
+
+ll <- function(parm) {
+
+     C <- matrix(parm, nrow = J * (J + 1) / 2, ncol = N)
+     C <- ltmatrices(C, diag = TRUE, byrow = FALSE, trans = TRUE)
+     -sum(log(pMVN3(lower = a, upper = b, chol = C, w = W)))
+}
+
+ll(prm)
+
+#optim(rep(0, J * (J + 1) / 2), fn = ll)
 @@
 
 \chapter{Package Infrastructure}
