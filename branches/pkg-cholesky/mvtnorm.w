@@ -1016,7 +1016,10 @@ pMVN <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
         for (i in 2:J) {
             idx <- start:((start - 1) + (i - 1))
             start <- max(idx) + 1
-            y[,i - 1] <- qnorm(d + w[k, i - 1] * (e - d))
+            tmp <- d + w[k, i - 1] * (e - d)
+            tmp <- pmax(.Machine$double.eps, tmp)
+            tmp <- pmin(1 - .Machine$double.eps, tmp)
+            y[,i - 1] <- qnorm(tmp)
             x <- rowSums(uC[,idx,drop = FALSE] * y[,1:(i - 1)])
             d <- pnorm(ac[i,] - x)
             e <- pnorm(bc[i,] - x)
