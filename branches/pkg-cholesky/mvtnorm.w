@@ -1010,7 +1010,6 @@ Step 1
 @d input checks
 @{
 stopifnot(inherits(chol, "ltmatrices"))
-stopifnot(attr(chol, "diag"))
 chol <- ltmatrices(chol, trans = FALSE)
 chol <- ltmatrices(chol, byrow = TRUE)
 d <- dim(chol)
@@ -1030,12 +1029,17 @@ Step 2
 
 @d standardise
 @{
-dchol <- diagonals(chol)
-ac <- lower / t(dchol)
-bc <- upper / t(dchol)
-
-C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
-C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
+if (attr(chol, "diag")) {
+    dchol <- diagonals(chol)
+    ac <- lower / t(dchol)
+    bc <- upper / t(dchol)
+    C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
+    C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
+} else {
+    ac <- lower
+    bc <- upper
+    C <- ltmatrices(chol, byrow = TRUE)
+}
 uC <- unclass(C)
 @}
 
@@ -1146,10 +1150,11 @@ double C_pnorm_fast (double x, double m) {
 
 @d R pMVN
 @{
-SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M) {
+SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
     SEXP ans;
-    double *da, *db, *dC, *dW, *intsum, *varsum;
+    double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
+    double mdtol = 1.0 - dtol;
     int iM = INTEGER(M)[0]; 
     int iN = INTEGER(N)[0]; 
     int iJ = INTEGER(J)[0]; 
@@ -1195,10 +1200,13 @@ f = emd;
 start = 0;
 for (j = 1; j < iJ; j++) {
     tmp = d + dW[j - 1] * emd;
+    if (tmp < dtol) tmp = dtol;
+    if (tmp > mdtol) tmp = mdtol;
     y[j - 1] = qnorm(tmp, 0.0, 1.0, 1, 0);
     x = 0.0;
-    for (k = 0; k < j - 1; k++)
+    for (k = 0; k < j; k++)
         x += dC[start + k] * y[k];
+    start += j;
     d = C_pnorm_fast(da[j], x);
     e = C_pnorm_fast(db[j], x);
     emd = e - d;
@@ -1215,7 +1223,7 @@ pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000,
 
     @<standardise@>
 
-    ret <- .Call("R_pMVN", ac, bc, uC, N, J, w, ncol(w));
+    ret <- .Call("R_pMVN", ac, bc, t(unclass(C)), N, J, w, ncol(w), .Machine$double.eps);
     intsum <- ret[,1]
     varsum <- ret[,2]
 
@@ -1231,10 +1239,16 @@ pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000,
 <<ex-pMVN3>>= 
 dyn.load("pMVN.so")
 
-M <- 1
+M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
-pMVN(a, b, chol = lx, w = W)
-pMVN3(a, b, chol = lx,  w = W)
+system.time(p1 <- pMVN(a, b, chol = lx, w = W))
+system.time(p2 <- pMVN2(a, b, chol = lx,  w = W))
+system.time(p3 <- pMVN3(a, b, chol = lx,  w = W))
+all.equal(p1, p2)
+all.equal(p3, p2)
+
+cbind(p1, p2, p3)
+
 @@
 
 \chapter{Package Infrastructure}
