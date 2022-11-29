@@ -977,18 +977,20 @@ all.equal(a1, a2)
 @{
 @<pMVN@>
 @<pMVN2@>
+@<pMVN3@>
 @}
 
 @d pMVN
 @{
 pMVN <- function(lower, upper, mean = 0, chol, M = 10000, 
-                 w = matrix(runif(M * (J - 1)), nrow = M), ...) {
+                 w = matrix(runif(M * (J - 1)), ncol = M), ...) {
 
     @<input checks@>
 
     @<standardise@>
 
     intsum <- varsum <- numeric(N)
+    M <- ncol(w)
 
     for (k in 1:M) {
 
@@ -1050,7 +1052,7 @@ start <- 1
 for (i in 2:J) {
     idx <- start:((start - 1) + (i - 1))
     start <- max(idx) + 1
-    tmp <- d + w[k, i - 1] * (e - d)
+    tmp <- d + w[i - 1, k] * (e - d)
     tmp <- pmax(.Machine$double.eps, tmp)
     tmp <- pmin(1 - .Machine$double.eps, tmp)
     y[,i - 1] <- qnorm(tmp)
@@ -1097,6 +1099,142 @@ b <- a + 2 + matrix(runif(N * J), nrow = J)
 
 pMVN(a, b, chol = lx, M = 25000)
 pMVN2(a, b, chol = lx)
+@@
+
+@o pMVN.c -cc
+@{
+#include <R.h>
+#include <Rmath.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
+#include <Rconfig.h>
+@<pnorm fast@>
+@<R pMVN@>
+@}
+
+@d pnorm fast
+@{
+/* see https://ssrn.com/abstract=2842681 */
+const double g2 =  -0.0150234471495426236132;
+const double g4 = 0.000666098511701018747289;
+const double g6 = 5.07937324518981103694e-06;
+const double g8 = -2.92345273673194627762e-06;
+const double g10 = 1.34797733516989204361e-07;
+const double m2dpi = -2.0 / M_PI; //3.141592653589793115998;
+
+double C_pnorm_fast (double x, double m) {
+
+    double tmp, ret;
+    double x2, x4, x6, x8, x10;
+
+    if (R_FINITE(x)) {
+        x = x - m;
+        x2 = x * x;
+        x4 = x2 * x2;
+        x6 = x4 * x2;
+        x8 = x6 * x2;
+        x10 = x8 * x2;
+        tmp = 1 + g2 * x2 + g4 * x4 + g6 * x6  + g8 * x8 + g10 * x10;
+        tmp = m2dpi * x2 * tmp;
+        ret = .5 + ((x > 0) - (x < 0)) * sqrt(1 - exp(tmp)) / 2.0;
+    } else {
+        ret = (x > 0 ? 1.0 : 0.0);
+    }
+    return(ret);
+}
+@}
+
+@d R pMVN
+@{
+SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M) {
+
+    SEXP ans;
+    double *da, *db, *dC, *dW, *intsum, *varsum;
+    int iM = INTEGER(M)[0]; 
+    int iN = INTEGER(N)[0]; 
+    int iJ = INTEGER(J)[0]; 
+    int p = LENGTH(C) / iN;
+    int start, j, k;
+    double tmp, e, d, f, emd, x, y[iJ - 1];
+
+    PROTECT(ans = allocMatrix(REALSXP, iN, 2));
+    intsum = REAL(ans);
+    varsum = intsum + iN;
+    intsum[0] = 0.0;
+    varsum[0] = 0.0;
+
+    dW = REAL(W);
+
+    for (int m = 0; m < iM; m++) {
+        da = REAL(a);
+        db = REAL(b);
+        dC = REAL(C);
+
+        for (int i = 0; i < iN; i++) {
+            @<C inner loop@>
+            intsum[i] += f;
+            varsum[i] += pow(f, 2);
+            da = da + iJ;
+            db = db + iJ;
+            dC = dC + p;
+        }
+        dW = dW + (iJ - 1);
+    }
+
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+@d C inner loop
+@{
+d = C_pnorm_fast(da[0], 0.0);
+e = C_pnorm_fast(db[0], 0.0);
+emd = e - d;
+f = emd;
+start = 0;
+for (j = 1; j < iJ; j++) {
+    tmp = d + dW[j - 1] * emd;
+    y[j - 1] = qnorm(tmp, 0.0, 1.0, 1, 0);
+    x = 0.0;
+    for (k = 0; k < j - 1; k++)
+        x += dC[start + k] * y[k];
+    d = C_pnorm_fast(da[j], x);
+    e = C_pnorm_fast(db[j], x);
+    emd = e - d;
+    f = emd * f;
+}
+@}
+
+@d pMVN3
+@{
+pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000, 
+                 w = matrix(runif(M * (J - 1)), ncol = M), ...) {
+
+    @<input checks@>
+
+    @<standardise@>
+
+    ret <- .Call("R_pMVN", ac, bc, uC, N, J, w, ncol(w));
+    intsum <- ret[,1]
+    varsum <- ret[,2]
+
+    M <- ncol(w)
+    ret <- intsum / M
+    error <- 2.5 * sqrt((varsum / M - (intsum / M)^2) / M)
+    attr(ret, "error") <- error
+    ret
+}
+@}
+
+
+<<ex-pMVN3>>= 
+dyn.load("pMVN.so")
+
+M <- 1
+W <- matrix(runif(M * (J - 1)), ncol = M)
+pMVN(a, b, chol = lx, w = W)
+pMVN3(a, b, chol = lx,  w = W)
 @@
 
 \chapter{Package Infrastructure}
