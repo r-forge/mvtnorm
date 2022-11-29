@@ -970,6 +970,114 @@ all.equal(a1, a2)
 @@
 
 
+\chapter{Prototyping}
+
+
+<<pMVN>>=
+pMVN <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
+
+    stopifnot(inherits(chol, "ltmatrices"))
+    stopifnot(attr(chol, "diag"))
+    chol <- ltmatrices(chol, trans = FALSE)
+    chol <- ltmatrices(chol, byrow = TRUE)
+    d <- dim(chol)
+    N <- d[1L]
+    J <- d[2L]
+
+    stopifnot(nrow(lower) == J && ncol(lower) == N)
+    stopifnot(nrow(upper) == J && ncol(upper) == N)
+    if (is.matrix(mean))
+        stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+    lower <- lower - mean
+    upper <- upper - mean
+
+    dchol <- diagonals(chol)
+
+    ac <- lower / t(dchol)
+    bc <- upper / t(dchol)
+
+    C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
+    C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
+    uC <- unclass(C)
+
+    w <- matrix(runif(M * (J - 1)), ncol = J - 1)
+
+    intsum <- varsum <- numeric(N)
+
+    for (k in 1:M) {
+
+        d <- pnorm(ac[1,])
+        e <- pnorm(bc[1,])
+        f <- e - d
+        y <- matrix(0, nrow = N, ncol = J - 1)
+        start <- 1
+
+        for (i in 2:J) {
+            idx <- start:((start - 1) + (i - 1))
+            start <- max(idx) + 1
+            y[,i - 1] <- qnorm(d + w[k, i - 1] * (e - d))
+            x <- rowSums(uC[,idx,drop = FALSE] * y[,1:(i - 1)])
+            d <- pnorm(ac[i,] - x)
+            e <- pnorm(bc[i,] - x)
+            f <- (e - d) * f
+       }
+       intsum <- intsum + f
+       varsum <- varsum + f^2
+    }
+
+    ret <- intsum / M
+    error <- 2.5 * sqrt((varsum / M - (intsum / M)^2) / M)
+    attr(ret, "error") <- error
+    ret
+}
+
+pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
+
+    stopifnot(inherits(chol, "ltmatrices"))
+    stopifnot(attr(chol, "diag"))
+    chol <- ltmatrices(chol, trans = FALSE)
+    chol <- ltmatrices(chol, byrow = TRUE)
+    d <- dim(chol)
+    N <- d[1L]
+    J <- d[2L]
+
+    stopifnot(nrow(lower) == J && ncol(lower) == N)
+    stopifnot(nrow(upper) == J && ncol(upper) == N)
+    if (is.matrix(mean))
+        stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+    lower <- lower - mean
+    upper <- upper - mean
+
+    sigma <- .tcrossprod.ltmatrices(chol)
+
+    ret <- error <- numeric(N)
+    for (i in 1:N) {
+        tmp <- pmvnorm(lower = lower[,i], upper = upper[,i], sigma = as.array(sigma[i,])[,,1])
+        ret[i] <- tmp
+        error[i] <- attr(tmp, "error")
+    }
+    attr(ret, "error") <- error
+    ret
+}
+@@
+
+<<ex-pMVN>>=
+library("mvtnorm")
+J <- 5
+N <- 10
+
+x <- matrix(runif(N * J * (J + 1) / 2), ncol = N)
+lx <- ltmatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+
+a <- matrix(runif(N * J), nrow = J) - 2
+b <- a + 2 + matrix(runif(N * J), nrow = J)
+
+pMVN(a, b, chol = lx, M = 25000)
+pMVN2(a, b, chol = lx)
+@@
+
 \chapter{Package Infrastructure}
 
 
