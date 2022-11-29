@@ -316,6 +316,7 @@ dim.ltmatrices <- function(x) {
     class(x) <- class(x)[-1L]
     return(c(ifelse(attr(x, "trans"), ncol(x), nrow(x)), J, J))
 }
+dim.symatrices <- dim.ltmatrices
 @}
 
 Let's set-up an example for illustration:
@@ -972,61 +973,27 @@ all.equal(a1, a2)
 
 \chapter{Prototyping}
 
+@o prototype.R -cp
+@{
+@<pMVN@>
+@<pMVN2@>
+@}
 
-<<pMVN>>=
-pMVN <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
+@d pMVN
+@{
+pMVN <- function(lower, upper, mean = 0, chol, M = 10000, 
+                 w = matrix(runif(M * (J - 1)), nrow = M), ...) {
 
-    stopifnot(inherits(chol, "ltmatrices"))
-    stopifnot(attr(chol, "diag"))
-    chol <- ltmatrices(chol, trans = FALSE)
-    chol <- ltmatrices(chol, byrow = TRUE)
-    d <- dim(chol)
-    N <- d[1L]
-    J <- d[2L]
+    @<input checks@>
 
-    stopifnot(nrow(lower) == J && ncol(lower) == N)
-    stopifnot(nrow(upper) == J && ncol(upper) == N)
-    if (is.matrix(mean))
-        stopifnot(nrow(mean) == J && ncol(mean) == N)
-
-    lower <- lower - mean
-    upper <- upper - mean
-
-    dchol <- diagonals(chol)
-
-    ac <- lower / t(dchol)
-    bc <- upper / t(dchol)
-
-    C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
-    C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
-    uC <- unclass(C)
-
-    w <- matrix(runif(M * (J - 1)), ncol = J - 1)
+    @<standardise@>
 
     intsum <- varsum <- numeric(N)
 
     for (k in 1:M) {
 
-        d <- pnorm(ac[1,])
-        e <- pnorm(bc[1,])
-        f <- e - d
-        y <- matrix(0, nrow = N, ncol = J - 1)
-        start <- 1
+         @<inner loop@>
 
-        for (i in 2:J) {
-            idx <- start:((start - 1) + (i - 1))
-            start <- max(idx) + 1
-            tmp <- d + w[k, i - 1] * (e - d)
-            tmp <- pmax(.Machine$double.eps, tmp)
-            tmp <- pmin(1 - .Machine$double.eps, tmp)
-            y[,i - 1] <- qnorm(tmp)
-            x <- rowSums(uC[,idx,drop = FALSE] * y[,1:(i - 1)])
-            d <- pnorm(ac[i,] - x)
-            e <- pnorm(bc[i,] - x)
-            f <- (e - d) * f
-       }
-       intsum <- intsum + f
-       varsum <- varsum + f^2
     }
 
     ret <- intsum / M
@@ -1034,24 +1001,73 @@ pMVN <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
     attr(ret, "error") <- error
     ret
 }
+@}
 
+Step 1
+
+@d input checks
+@{
+stopifnot(inherits(chol, "ltmatrices"))
+stopifnot(attr(chol, "diag"))
+chol <- ltmatrices(chol, trans = FALSE)
+chol <- ltmatrices(chol, byrow = TRUE)
+d <- dim(chol)
+N <- d[1L]
+J <- d[2L]
+
+stopifnot(nrow(lower) == J && ncol(lower) == N)
+stopifnot(nrow(upper) == J && ncol(upper) == N)
+if (is.matrix(mean))
+    stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+lower <- lower - mean
+upper <- upper - mean
+@}
+
+Step 2
+
+@d standardise
+@{
+dchol <- diagonals(chol)
+ac <- lower / t(dchol)
+bc <- upper / t(dchol)
+
+C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
+C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
+uC <- unclass(C)
+@}
+
+Step 3 / 4
+
+@d inner loop
+@{
+d <- pnorm(ac[1,])
+e <- pnorm(bc[1,])
+f <- e - d
+y <- matrix(0, nrow = N, ncol = J - 1)
+start <- 1
+
+for (i in 2:J) {
+    idx <- start:((start - 1) + (i - 1))
+    start <- max(idx) + 1
+    tmp <- d + w[k, i - 1] * (e - d)
+    tmp <- pmax(.Machine$double.eps, tmp)
+    tmp <- pmin(1 - .Machine$double.eps, tmp)
+    y[,i - 1] <- qnorm(tmp)
+    x <- rowSums(uC[,idx,drop = FALSE] * y[,1:(i - 1)])
+    d <- pnorm(ac[i,] - x)
+    e <- pnorm(bc[i,] - x)
+    f <- (e - d) * f
+}
+intsum <- intsum + f
+varsum <- varsum + f^2
+@}
+
+@d pMVN2
+@{
 pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
 
-    stopifnot(inherits(chol, "ltmatrices"))
-    stopifnot(attr(chol, "diag"))
-    chol <- ltmatrices(chol, trans = FALSE)
-    chol <- ltmatrices(chol, byrow = TRUE)
-    d <- dim(chol)
-    N <- d[1L]
-    J <- d[2L]
-
-    stopifnot(nrow(lower) == J && ncol(lower) == N)
-    stopifnot(nrow(upper) == J && ncol(upper) == N)
-    if (is.matrix(mean))
-        stopifnot(nrow(mean) == J && ncol(mean) == N)
-
-    lower <- lower - mean
-    upper <- upper - mean
+    @<input checks@>
 
     sigma <- .tcrossprod.ltmatrices(chol)
 
@@ -1064,10 +1080,12 @@ pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
     attr(ret, "error") <- error
     ret
 }
-@@
+@}
 
 <<ex-pMVN>>=
 library("mvtnorm")
+source("prototype.R")
+source("ltmatrices.R")
 J <- 5
 N <- 10
 
