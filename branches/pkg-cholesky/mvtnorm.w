@@ -711,12 +711,12 @@ SEXP R_ltmatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
 /* return object: include unit diagnonal elements if Rdiag == 0 */
 
 dA = REAL(A);
-PROTECT(ans = allocVector(REALSXP, nrow * iN));
+PROTECT(ans = allocMatrix(REALSXP, nrow, iN));
 dans = REAL(ans);
 
 if (b != R_NilValue) {
     db = REAL(b);
-    PROTECT(ansx = allocVector(REALSXP, iJ * iN));
+    PROTECT(ansx = allocMatrix(REALSXP, iJ, iN));
     dansx = REAL(ansx);
 }
 @}
@@ -797,9 +797,9 @@ solve.ltmatrices <- function(a, b, ...) {
         if (!is.matrix(b)) b <- matrix(b, nrow = J, ncol = ncol(x))
         stopifnot(ncol(b) == ncol(x))
         stopifnot(nrow(b) == J)
-        ret <- .Call("R_ltmatrices_solve", x, as.double(b), 
+        storage.mode(b) <- "double"
+        ret <- .Call("R_ltmatrices_solve", x, b, 
                      as.integer(ncol(x)), as.integer(J), as.logical(diag))
-        ret <- matrix(ret, nrow = J)
         colnames(ret) <- colnames(x)
         rownames(ret) <- rcnames
         return(ret)
@@ -807,7 +807,6 @@ solve.ltmatrices <- function(a, b, ...) {
 
     ret <- try(.Call("R_ltmatrices_solve", x, NULL,
                  as.integer(ncol(x)), as.integer(J), as.logical(diag)))
-    ret <- matrix(ret, ncol = ncol(x))
     colnames(ret) <- colnames(x)
 
     if (!diag)
@@ -874,7 +873,7 @@ SEXP R_ltmatrices_tcrossprod (SEXP A, SEXP N, SEXP J, SEXP diag, SEXP diag_only)
 
 @d tcrossprod diagonal only
 @{
-PROTECT(ans = allocVector(REALSXP, iJ * iN));
+PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
 dans = REAL(ans);
 for (int n = 0; n < iN; n++) {
     dans[0] = 1.0;
@@ -897,7 +896,7 @@ for (int n = 0; n < iN; n++) {
 @d tcrossprod full
 @{
 nrow = iJ * (iJ + 1) / 2;
-PROTECT(ans = allocVector(REALSXP, nrow * iN)); 
+PROTECT(ans = allocMatrix(REALSXP, nrow, iN)); 
 dans = REAL(ans);
 for (int n = 0; n < INTEGER(N)[0]; n++) {
     dans[0] = 1.0;
@@ -943,9 +942,10 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
     x <- .transpose(x, trans = TRUE)
     class(x) <- class(x)[-1L]
     N <- ncol(x)
+    storage.mode(x) <- "double"
 
-    ret <- matrix(.Call("R_ltmatrices_tcrossprod", as.double(x), as.integer(N), as.integer(J), 
-                        as.logical(diag), as.logical(diag_only)), ncol = N)
+    ret <- .Call("R_ltmatrices_tcrossprod", x, as.integer(N), as.integer(J), 
+                        as.logical(diag), as.logical(diag_only))
     colnames(ret) <- colnames(x)
     if (diag_only) {
         rownames(ret) <- rcnames
