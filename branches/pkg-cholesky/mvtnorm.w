@@ -172,6 +172,8 @@ For each $i = 1, \dots, N$, do
 @{
 @<ltmatrices@>
 @<dim.ltmatrices@>
+@<dimnames.ltmatrices@>
+@<names.ltmatrices@>
 @<print ltmatrices@>
 @<transpose ltmatrices@>
 @<reorder ltmatrices@>
@@ -182,6 +184,20 @@ For each $i = 1, \dots, N$, do
 @<tcrossprod ltmatrices@>
 @}
 
+@o ltmatrices.c -cc
+@{
+#include <R.h>
+#include <Rmath.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
+#include <Rconfig.h>
+#include <R_ext/Lapack.h> /* for dtptri */
+@<solve@>
+@<tcrossprod@>
+@<mult@>
+@}
+
+
 We first need infrastructure for dealing with multiple lower triangular matrices
 $\mC_i \in \R^{\J \times \J}$ for $i = 1, \dots, N$. We note that each such matrix
 $\mC$ can be stored in a vector of length $\J (\J + 1) / 2$. If all
@@ -190,10 +206,11 @@ length of this vector is $\J (\J - 1) / 2$.
 
 \section{Multiple lower triangular matrices}
 
-Therefore, we can store $N$ such matrices in an $N \times \J (\J + 1) / 2$  (\code{diag = TRUE})
+We can store $N$ such matrices in an $N \times \J (\J + 1) / 2$  (\code{diag = TRUE})
 or $N \times \J (\J - 1) / 2$ matrix (\code{diag = FALSE}). Sometimes it is
 more convenient to store the transposed $\J (\J + 1) / 2 \times N$ matrix
-(\code{trans = TRUE}).
+(\code{trans = TRUE}, \code{diag = TRUE}) or, for \code{diag = FALSE}, the $\J (\J
+- 1) / 2 \times N$ matrix.
 
 Each vector might define the corresponding lower triangular matrix
 either in row or column-major order:
@@ -232,7 +249,7 @@ Based on some matrix \code{object}, the dimension $\J$ is computed and checked a
 
 Typically the $\J$ dimensions are associated with names, and we therefore
 compute identifiers for the vector elements in either column- or row-major
-order (for later printing)
+order on request (for later printing)
 
 @d ltmatrices names
 @{
@@ -265,6 +282,10 @@ if (!nonames) {
 }
 @}
 
+If \code{object} is already a classed object representing lower triangular
+matrices (we will use the class name \code{ltmatrices}), we might want to
+change the storage form or transpose the underlying matrix.
+
 @d ltmatrices input
 @{
 if (inherits(object, "ltmatrices")) {
@@ -274,7 +295,8 @@ if (inherits(object, "ltmatrices")) {
 }
 @}
 
-The constructor essentially attaches attributes to a matrix \code{object}
+The constructor essentially attaches attributes to a matrix \code{object},
+possibly after some reordering / transposing
 
 @d ltmatrices
 @{
@@ -314,6 +336,26 @@ dim.ltmatrices <- function(x) {
 dim.symatrices <- dim.ltmatrices
 @}
 
+@d dimnames.ltmatrices
+@{
+dimnames.ltmatrices <- function(x) {
+    if (attr(x, "trans"))
+        return(list(colnames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
+    return(list(rownames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
+}
+dimnames.symatrices <- dimnames.ltmatrices
+@}
+
+@d names.ltmatrices
+@{
+names.ltmatrices <- function(x) {
+    if (attr(x, "trans"))
+        return(rownames(unclass(x)))
+    return(colnames(unclass(x)))
+}
+names.symatrices <- names.ltmatrices
+@}
+
 Let's set-up an example for illustration:
 
 <<example>>=
@@ -328,6 +370,8 @@ x <- matrix(1:(N * (J * (J - 1) / 2 + diag * J)), byrow = TRUE, nrow = N)
 rownames(x) <- paste0("x", 1:nrow(x))
 lx <- ltmatrices(x, diag = TRUE, byrow = TRUE, names = nm)
 dim(lx)
+dimnames(lx)
+names(lx)
 unclass(lx)
 @@
 
@@ -342,10 +386,11 @@ as.array.ltmatrices <- function(x, symmetric = FALSE, ...) {
     diag <- attr(x, "diag")
     byrow <- attr(x, "byrow")
     trans <- attr(x, "trans")
-    rcnames <- attr(x, "rcnames")
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
     class(x) <- class(x)[-1L]
     if (trans) x <- t(x)
-    J <- length(rcnames)
 
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
@@ -363,8 +408,8 @@ as.array.ltmatrices <- function(x, symmetric = FALSE, ...) {
     }
     ret <- t(cbind(0, 1, x)[, c(L), drop = FALSE])
     class(ret) <- "array"
-    dim(ret) <- c(J, J, nrow(x))
-    dimnames(ret) <- list(rcnames, rcnames, rownames(x))
+    dim(ret) <- d[3:1]
+    dimnames(ret) <- dn[3:1]
     return(ret)
 }
 
@@ -536,22 +581,18 @@ diagonals <- function(x, ...)
 
 diagonals.ltmatrices <- function(x, ...) {
 
-    rcnames <- attr(x, "rcnames")
     diag <- attr(x, "diag")
     byrow <- attr(x, "byrow")
     trans <- attr(x, "trans")
-    J <- length(rcnames)
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
     class(x) <- class(x)[-1L]
 
     if (!diag) {
-        ret <- matrix(1,  nrow = J, ncol = nrow(x),)
-        if (trans) {
-            rownames(ret) <- rownames(x)
-            colnames(ret) <- rcnames
-        } else {
-            colnames(ret) <- rownames(x)
-            rownames(ret) <- rcnames
-        }
+        ret <- matrix(1,  nrow = J, ncol = nrow(x))
+        colnames(ret) <- dn[[1L]]
+        rownames(ret) <- dn[[2L]]
         return(ret)
     } else {
         if (byrow)
@@ -562,7 +603,7 @@ diagonals.ltmatrices <- function(x, ...) {
             ret <- x[idx, , drop = FALSE]
         else
             ret <- t(x[, idx, drop = FALSE])
-        rownames(ret) <- rcnames
+        rownames(ret) <- dn[[2L]]
         return(ret)
     }
 }
@@ -578,7 +619,7 @@ diagonals(lx)
 \section{Multiplication}
 
 Multiplications $\mC_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
-N$ can be computed with $\code{y}$ being an $N \times \J$ matrix (FIXME?)
+N$ can be computed with $\code{y}$ being an $J \times N$ matrix
 
 @d mult ltmatrices
 @{
@@ -586,50 +627,77 @@ N$ can be computed with $\code{y}$ being an $N \times \J$ matrix (FIXME?)
 .mult <- function(x, y) {
 
     stopifnot(inherits(x, "ltmatrices"))
-
-    rcnames <- attr(x, "rcnames")
-    diag <- attr(x, "diag")
-    J <- length(rcnames)
-    mx <- ifelse(J > 10, Matrix, matrix)
+    d <- dim(x)
+    dn <- dimnames(x)
+    if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
+    stopifnot(nrow(y) == d[2L] && ncol(y) == d[1L])
     x <- .reorder(x, byrow = TRUE)
-    x <- .transpose(x, trans = FALSE)
-    class(x) <- class(x)[-1L]
+    x <- .transpose(x, trans = TRUE)
+    rcnames <- attr(x, "rcnames")
+    storage.mode(x) <- "double"
+    storage.mode(y) <- "double"
 
-    if (!diag) {
-        idx <- 1
-        S <- 1
-        if (J > 2) {
-            S <- mx(rep(rep(1:0, (J - 1)), c(rbind(1:(J - 1), ncol(x)))), nrow = ncol(x))[, -J,drop = FALSE]
-            idx <- unlist(lapply(colSums(S), seq_len))
-        }
-    } else {
-        S <- mx(rep(rep(1:0, J),
-                    c(rbind(1:J, ncol(x)))), nrow = ncol(x))[, -(J + 1), drop = FALSE]
-        idx <- unlist(lapply(colSums(S), seq_len))
-    }
-
-    if (!diag) {
-        A <- y[, idx] * x
-        B <- A %*% S + y[, -1L, drop = FALSE]
-        ret <- cbind(y[, 1L, drop = FALSE], as(B, "matrix"))
-    } else {
-        A <- y[, idx] * x
-        ret <- as(A %*% S, "matrix")
-    }
-    colnames(ret) <- rcnames
-    rownames(ret) <- rownames(x)
+    ret <- .Call("R_mult", x, y, as.integer(d[1L]), 
+                 as.integer(d[2L]), as.logical(attr(x, "diag")))
+    
+    rownames(ret) <- dn[[2L]]
+    colnames(ret) <- dn[[1L]]
     return(ret)
 }
 @}
 
-<<ex-mult>>=
-y <- matrix(runif(J * N), nrow = N)
-(mx <- .mult(lx, y))
-m <- matrix(0, nrow = N, ncol = J, dimnames = list(rownames(x), nm))
-for (i in 1:N) 
-    m[i,] <- ax[,,i] %*% y[i,]
-all.equal(mx, m)
+@d mult
+@{
+SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
 
+    SEXP ans;
+    double *dans, *dA, *dx;
+    Rboolean Rdiag = asLogical(diag);
+    int i, j, k, start;
+
+    /* number of matrices */
+    int iN = INTEGER(N)[0];
+    /* dimension of matrices */
+    int iJ = INTEGER(J)[0];
+    /* p = J * (J - 1) / 2 + diag * J */
+    int p = LENGTH(A) / iN;
+
+    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
+    dans = REAL(ans);
+    dA = REAL(A);
+    dx = REAL(x);
+    
+    for (i = 0; i < iN; i++) {
+        start = 0;
+        for (j = 0; j < iJ; j++) {
+            dans[j] = 0.0;
+            for (k = 0; k < j; k++)
+                dans[j] += dA[start + k] * dx[k];
+            if (Rdiag) {
+                dans[j] += dA[start + j] * dx[j];
+                start += j + 1;
+            } else {
+                dans[j] += dx[j]; 
+                start += j;
+            }
+        }
+        dA = dA + p;
+        dx = dx + iJ;
+        dans = dans + iJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+<<ex-mult>>=
+y <- matrix(runif(J * N), nrow = J)
+(mx <- .mult(lx, y))
+m <- matrix(0, nrow = J, ncol = N, dimnames = list(nm, rownames(x)))
+for (i in 1:N) 
+    m[,i] <- ax[,,i] %*% y[,i]
+all.equal(mx, m)
+m
 @@
 
 \section{Solving linear systems}
@@ -637,17 +705,6 @@ all.equal(mx, m)
 Compute $\mC_i^{-1}$ or solve $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
 all $i = 1, \dots, N$.
 
-@o ltmatrices.c -cc
-@{
-#include <R.h>
-#include <Rmath.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
-#include <Rconfig.h>
-#include <R_ext/Lapack.h> /* for dtptri */
-@<solve@>
-@<tcrossprod@>
-@}
 
 \code{A} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
 (matrix of dimension $\J (\J - 1) / 2 + \J \text{diag} \times N$), and
@@ -790,8 +847,9 @@ solve.ltmatrices <- function(a, b, ...) {
     x <- .reorder(a, byrow = FALSE)
     x <- .transpose(x, trans = TRUE)
     diag <- attr(x, "diag")
-    rcnames <- attr(x, "rcnames")
-    J <- length(rcnames)
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
     class(x) <- class(x)[-1L]
     storage.mode(x) <- "double"
 
@@ -802,21 +860,21 @@ solve.ltmatrices <- function(a, b, ...) {
         storage.mode(b) <- "double"
         ret <- .Call("R_ltmatrices_solve", x, b, 
                      as.integer(ncol(x)), as.integer(J), as.logical(diag))
-        colnames(ret) <- colnames(x)
-        rownames(ret) <- rcnames
+        colnames(ret) <- dn[[1L]]
+        rownames(ret) <- dn[[2L]]
         return(ret)
     }
 
     ret <- try(.Call("R_ltmatrices_solve", x, NULL,
                  as.integer(ncol(x)), as.integer(J), as.logical(diag)))
-    colnames(ret) <- colnames(x)
+    colnames(ret) <- dn[[1L]]
 
     if (!diag)
         ### ret always includes diagonal elements
         ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
 
     ret <- ltmatrices(ret, diag = diag, byrow = FALSE, trans = TRUE, 
-                      names = rcnames)
+                      names = dn[[2L]])
     ret <- .reorder(ret, byrow = byrow_orig)
     ret <- .transpose(ret, trans = trans_orig)
     return(ret)
@@ -936,9 +994,10 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 
     byrow_orig <- attr(x, "byrow")
     trans_orig <- attr(x, "trans")
-    rcnames <- attr(x, "rcnames")
     diag <- attr(x, "diag")
-    J <- length(rcnames)
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
 
     x <- .reorder(x, byrow = FALSE)
     x <- .transpose(x, trans = TRUE)
@@ -948,11 +1007,11 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 
     ret <- .Call("R_ltmatrices_tcrossprod", x, as.integer(N), as.integer(J), 
                         as.logical(diag), as.logical(diag_only))
-    colnames(ret) <- colnames(x)
+    colnames(ret) <- dn[[1L]]
     if (diag_only) {
-        rownames(ret) <- rcnames
+        rownames(ret) <- dn[[2L]]
     } else {
-        ret <- ltmatrices(ret, diag = TRUE, byrow = FALSE, trans = TRUE, names = rcnames)
+        ret <- ltmatrices(ret, diag = TRUE, byrow = FALSE, trans = TRUE, names = dn[[2L]])
         ret <- .reorder(ret, byrow = byrow_orig)
         ret <- .transpose(ret, trans = trans_orig)
         class(ret)[1L] <- "symatrices"
@@ -1261,15 +1320,15 @@ N <- 1000
 J <- 3
 L <- matrix(prm <- runif(J * (J + 1) / 2), nrow = J * (J + 1) / 2, ncol = N)
 lx <- ltmatrices(L, diag = TRUE, byrow = FALSE, trans = TRUE)
-Z <- matrix(rnorm(N * J), ncol = J)
+Z <- matrix(rnorm(N * J), nrow = J)
 
 Y <- .mult(lx, Z)
 
-var(Y)
+var(t(Y))
 .tcrossprod.ltmatrices(lx[1,])
 
-a <- t(Y - runif(N * J, max = .1))
-b <- t(Y + runif(N * J, max = .1))
+a <- Y - runif(N * J, max = .1)
+b <- Y + runif(N * J, max = .1)
 
 M <- 2000
 W <- matrix(runif(M * (J - 1)), ncol = M)
