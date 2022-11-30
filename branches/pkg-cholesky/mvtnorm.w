@@ -365,13 +365,16 @@ dyn.load("ltmatrices.so")
 chk <- function(...) stopifnot(all.equal(...))
 
 set.seed(290875)
-N <- 100
-J <- 10
+N <- 4
+J <- 5
 nm <- LETTERS[1:J]
 Jn <- J * (J - 1) / 2
 ## data
 xn <- matrix(runif(N * Jn), nrow = N, byrow = TRUE)
 xd <- matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE)
+
+ltmatrices(xn, byrow = TRUE)
+ltmatrices(xd, byrow = TRUE, diag = TRUE)
 @@
 
 For pretty printing, we coerse object of class \code{ltmatrices} to
