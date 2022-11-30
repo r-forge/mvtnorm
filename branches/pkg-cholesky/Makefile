@@ -1,7 +1,7 @@
 
 mvtnorm.Rnw:	mvtnorm.w
 	nuweb -r mvtnorm.w
-	R CMD SHLIB ltmatrices.c
+	R CMD SHLIB ltMatrices.c
 	R CMD SHLIB pMVN.c
 	mv mvtnorm.tex mvtnorm.Rnw
 #	mv *.h src
@@ -23,7 +23,7 @@ mvtnorm.pdf:	mvtnorm.tex
 	### NEED to run nuweb TWICE to
 	### sort-out page numbers
 	nuweb -r mvtnorm.w
-	R CMD SHLIB ltmatrices.c
+	R CMD SHLIB ltMatrices.c
 	R CMD SHLIB pMVN.c
 	mv mvtnorm.tex mvtnorm.Rnw
 	R CMD Sweave mvtnorm.Rnw
