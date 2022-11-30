@@ -390,6 +390,9 @@ dimnames(lxn)
 lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE, names = nm)
 dim(lxd)
 dimnames(lxd)
+
+class(lxn) <- "syMatrices"
+lxn
 @@
 
 For pretty printing, we coerse object of class \code{ltMatrices} to
@@ -671,11 +674,13 @@ all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1L)
 \section{Multiplication}
 
 Multiplications $\mC_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
-N$ can be computed with $\code{y}$ being an $J \times N$ matrix
+N$ can be computed with $\code{y}$ being an $J \times N$ matrix of
+columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
+\yvec_N)$. If \code{y} is a single vector, it is recycled $N$ times.
 
 @d mult ltMatrices
 @{
-### L %*% y
+### C %*% y
 Mult <- function(x, y) {
 
     stopifnot(inherits(x, "ltMatrices"))
@@ -697,6 +702,9 @@ Mult <- function(x, y) {
     return(ret)
 }
 @}
+
+The underlying \proglang{C} code assumes $\mC_i$ (here called \code{A}) to
+be in row-major order and in transposed form.
 
 @d mult
 @{
@@ -778,8 +786,8 @@ all $i = 1, \dots, N$.
 \xvec_N)$ of solutions.
 
 If \code{b} is not given, $\mC_i^{-1}$ is returned in transposed
-column-major order (matrix of dimension $\J (\J 1 1) / 2  \times N$) ALWAYS
-including the diagonals.
+column-major order (matrix of dimension $\J (\J 1 1) / 2  \times N$). If
+all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
 @d solve
 @{
@@ -845,6 +853,9 @@ if (b != R_NilValue) {
 }
 @}
 
+The \proglang{LAPACK} functions \code{dtptri} and \code{dtpsv} assume that
+diagonal elements are present, even for unit diagonal matrices.
+
 @d copy elements
 @{
 /* copy data and insert unit diagonal elements when necessary */
@@ -870,6 +881,8 @@ if (b != R_NilValue) {
         dansx[j] = db[j];
 }
 @}
+
+The \proglang{LAPACK} workhorses are called here
 
 @d call Lapack
 @{
@@ -900,10 +913,6 @@ if (b == R_NilValue) {
 
 @d solve ltMatrices
 @{
-
-### inverse of ltMatrices
-### returns inverse matrices as ltMatrices in same storage order (missing b)
-### or mult(solve(a), b)
 solve.ltMatrices <- function(a, b, ...) {
 
     byrow_orig <- attr(a, "byrow")
@@ -935,7 +944,7 @@ solve.ltMatrices <- function(a, b, ...) {
     colnames(ret) <- dn[[1L]]
 
     if (!diag)
-        ### ret always includes diagonal elements
+        ### ret always includes diagonal elements, remove here
         ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
 
     ret <- ltMatrices(ret, diag = diag, byrow = FALSE, trans = TRUE, 
