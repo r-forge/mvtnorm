@@ -1245,7 +1245,7 @@ pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
     ret <- error <- numeric(N)
     for (i in 1:N) {
         if (dim(sigma)[[1L]] > 1) idx <- i
-        tmp <- pmvnorm(lower = lower[,i], upper = upper[,i], sigma = S[,,idx])
+        tmp <- pmvnorm(lower = lower[,i], upper = upper[,i], sigma = S[,,idx], ...)
         ret[i] <- tmp
         error[i] <- attr(tmp, "error")
     }
@@ -1296,7 +1296,8 @@ double pn (double x) {
 }
 
 double qn (double a) {
-    return(qnorm(a, 0.0, 1.0, 1, 0));
+//    if (a < .1 || a > .9)
+        return(qnorm(a, 0.0, 1.0, 1, 0));
     double ret = (a > .5 ? log1p(-log(-log(a) / log2_) / log22) : log1p(-log(-log1p(- a) / log2_) / log22));
     return(a > .5, tenlog41 * ret, - tenlog41 * ret);
 }
@@ -1364,8 +1365,8 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     db = REAL(b);
     for (int i = 0; i < iN; i++) {
         /* the first interval does not depend on w; compute once and store */
-        d0[i] = pn(da[0]);
-        e = pn(db[0]);
+        d0[i] = C_pnorm_fast(da[0], 0.0);
+        e = C_pnorm_fast(db[0], 0.0);
         f0[i] = e - d0[i];
         intsum[i] = 0.0;
         varsum[i] = 0.0;
@@ -1408,13 +1409,13 @@ for (j = 1; j < iJ; j++) {
     tmp = d + dW[j - 1] * emd;
     if (tmp < dtol) tmp = dtol;
     if (tmp > mdtol) tmp = mdtol;
-    y[j - 1] = qn(tmp);
+    y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
     x = 0.0;
     for (k = 0; k < j; k++)
         x += dC[start + k] * y[k];
     start += j;
-    d = pn(da[j] - x);
-    e = pn(db[j] - x);
+    d = C_pnorm_fast(da[j], x);
+    e = C_pnorm_fast(db[j], x);
     emd = e - d;
     f = emd * f;
 }
@@ -1455,7 +1456,7 @@ dyn.load("pMVN.so")
 M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
 #system.time(p1 <- pMVN(a, b, chol = lx, w = W))
-system.time(p2 <- pMVN2(a, b, chol = lx,  w = W))
+system.time(p2 <- pMVN2(a, b, chol = lx,  algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0)))
 system.time(p3 <- pMVN3(a, b, chol = lx,  w = W))
 #all.equal(p1, p2)
 all.equal(p3, p2)
@@ -1493,8 +1494,9 @@ ll <- function(parm) {
 
 ll(prm)
 
-set.seed(29); sum(log(pMVN2(a, b, chol = lx)))
-set.seed(29); sum(log(pMVN3(a, b, chol = lx, w = W)))
+system.time(replicate(100, sum(log(pMVN2(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps =
+0))))))
+system.time(replicate(100, sum(log(pMVN3(a, b, chol = lx, w = W)))))
 
 op <- optim(prm, fn = ll)
 op$value

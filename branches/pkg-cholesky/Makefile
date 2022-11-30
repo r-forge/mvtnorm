@@ -48,7 +48,6 @@ clean:
 	rm -rf *.def
 	rm -rf *.Rd
 	rm -rf *.R
-	rm -rf Makevars
 	rm -rf nw*
 	rm -rf *bbl
 	rm -rf *brf
