@@ -420,10 +420,10 @@ between the two forms.
     cL <- t(cL)
     if (attr(x, "byrow")) ### row -> col order
         return(ltmatrices(x[, cL[lower.tri(cL, diag = diag)], drop = FALSE], 
-                          diag = diag, byrow = FALSE, names = rcnames))
+                          diag = diag, byrow = FALSE, trans = FALSE, names = rcnames))
     ### col -> row order
     return(ltmatrices(x[, t(rL)[upper.tri(rL, diag = diag)], drop = FALSE], 
-                      diag = diag, byrow = TRUE, names = rcnames))
+                      diag = diag, trans = FALSE, byrow = TRUE, names = rcnames))
 }
 @}
 
@@ -525,7 +525,9 @@ all.equal(as.array(sx), ax[c(2, 4), c(2, 4), c(1, 3)])
 @@
 
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
-always returned as an $N \times \J$ matrix (also when \code{trans = TRUE}).
+always returned as an $\J \times N$ matrix (regardless of \code{trans}).
+The reason is that \code{ltmatrices} with \code{trans = TRUE} can be
+standardized elementwise without transposing objects.
 
 @d diagonals ltmatrices
 @{
@@ -538,14 +540,18 @@ diagonals.ltmatrices <- function(x, ...) {
     diag <- attr(x, "diag")
     byrow <- attr(x, "byrow")
     trans <- attr(x, "trans")
-    diag <- attr(x, "diag")
     J <- length(rcnames)
     class(x) <- class(x)[-1L]
 
     if (!diag) {
-        ret <- matrix(1, nrow = nrow(x), ncol = J)
-        rownames(ret) <- rownames(x)
-        colnames(ret) <- rcnames
+        ret <- matrix(1,  nrow = J, ncol = nrow(x),)
+        if (trans) {
+            rownames(ret) <- rownames(x)
+            colnames(ret) <- rcnames
+        } else {
+            colnames(ret) <- rownames(x)
+            rownames(ret) <- rcnames
+        }
         return(ret)
     } else {
         if (byrow)
@@ -553,10 +559,10 @@ diagonals.ltmatrices <- function(x, ...) {
         else
             idx <- cumsum(c(1, J:2))
         if (trans)
-            ret <- t(x[idx, drop = FALSE])
+            ret <- x[idx, , drop = FALSE]
         else
-            ret <- x[, idx, drop = FALSE]
-        colnames(ret) <- rcnames
+            ret <- t(x[, idx, drop = FALSE])
+        rownames(ret) <- rcnames
         return(ret)
     }
 }
@@ -1005,8 +1011,7 @@ Step 1
 @d input checks
 @{
 stopifnot(inherits(chol, "ltmatrices"))
-chol <- ltmatrices(chol, trans = TRUE)
-chol <- ltmatrices(chol, byrow = TRUE)
+chol <- ltmatrices(chol, trans = TRUE, byrow = TRUE)
 d <- dim(chol)
 N <- d[1L]
 J <- d[2L]
@@ -1025,15 +1030,18 @@ Step 2
 @d standardise
 @{
 if (attr(chol, "diag")) {
+    ### diagonals returns J x N and lower/upper are J x N, so
+    ### elementwise standardisation is simple
     dchol <- diagonals(chol)
-    ac <- lower / t(dchol)
-    bc <- upper / t(dchol)
-    C <- unclass(chol) / dchol[,rep(1:J, 1:J)]
-    C <- ltmatrices(C[, -cumsum(c(1, 2:J))], byrow = TRUE, diag = FALSE)
+    ac <- lower / dchol
+    bc <- upper / dchol
+    ### CHECK if dimensions are correct
+    C <- unclass(chol) / dchol[rep(1:J, 1:J),]
+    C <- ltmatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
 } else {
     ac <- lower
     bc <- upper
-    C <- ltmatrices(chol, byrow = TRUE)
+    C <- ltmatrices(chol, byrow = TRUE, trans = TRUE)
 }
 uC <- unclass(C)
 @}
@@ -1055,7 +1063,7 @@ for (i in 2:J) {
     tmp <- pmax(.Machine$double.eps, tmp)
     tmp <- pmin(1 - .Machine$double.eps, tmp)
     y[,i - 1] <- qnorm(tmp)
-    x <- rowSums(uC[,idx,drop = FALSE] * y[,1:(i - 1)])
+    x <- rowSums(t(uC)[,idx ,drop = FALSE] * y[,1:(i - 1)])
     d <- pnorm(ac[i,] - x)
     e <- pnorm(bc[i,] - x)
     f <- (e - d) * f
@@ -1096,7 +1104,7 @@ lx <- ltmatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 2 + matrix(runif(N * J), nrow = J)
 
-pMVN(a, b, chol = lx, M = 25000)
+#pMVN(a, b, chol = lx, M = 25000)
 pMVN2(a, b, chol = lx)
 @@
 
@@ -1218,7 +1226,7 @@ pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000,
 
     @<standardise@>
 
-    ret <- .Call("R_pMVN", ac, bc, t(unclass(C)), N, J, w, ncol(w), .Machine$double.eps);
+    ret <- .Call("R_pMVN", ac, bc, unclass(C), N, J, w, ncol(w), .Machine$double.eps);
     intsum <- ret[,1]
     varsum <- ret[,2]
 
@@ -1236,13 +1244,13 @@ dyn.load("pMVN.so")
 
 M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
-system.time(p1 <- pMVN(a, b, chol = lx, w = W))
+#system.time(p1 <- pMVN(a, b, chol = lx, w = W))
 system.time(p2 <- pMVN2(a, b, chol = lx,  w = W))
 system.time(p3 <- pMVN3(a, b, chol = lx,  w = W))
-all.equal(p1, p2)
+#all.equal(p1, p2)
 all.equal(p3, p2)
 
-cbind(p1, p2, p3)
+cbind(p2, p3)
 
 @@
 
