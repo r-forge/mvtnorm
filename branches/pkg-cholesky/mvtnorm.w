@@ -661,7 +661,7 @@ N$ can be computed with $\code{y}$ being an $J \times N$ matrix
 @d mult ltmatrices
 @{
 ### L %*% y
-.mult <- function(x, y) {
+Mult <- function(x, y) {
 
     stopifnot(inherits(x, "ltmatrices"))
     d <- dim(x)
@@ -731,12 +731,12 @@ SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
 lxn <- ltmatrices(xn, byrow = TRUE)
 lxd <- ltmatrices(xd, byrow = TRUE, diag = TRUE)
 y <- matrix(runif(N * J), nrow = J)
-a <- .mult(lxn, y)
+a <- Mult(lxn, y)
 A <- as.array(lxn)
 b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
 chk(a, t(b))
 
-a <- .mult(lxd, y)
+a <- Mult(lxd, y)
 A <- as.array(lxd)
 b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
 chk(a, t(b))
@@ -744,9 +744,9 @@ chk(a, t(b))
 ### tcrossprod as multiplication
 i <- sample(1:N)[1]
 M <- t(as.array(lxn)[,,i])
-a <- sapply(1:J, function(j) .mult(lxn[i,], M[,j,drop = FALSE]))
+a <- sapply(1:J, function(j) Mult(lxn[i,], M[,j,drop = FALSE]))
 rownames(a) <- colnames(a) <- dimnames(lxn)[[2L]]
-b <- as.array(.tcrossprod.ltmatrices(lxn[i,]))[,,1]
+b <- as.array(Tcrossprod(lxn[i,]))[,,1]
 chk(a, b)
 @@
 
@@ -944,8 +944,8 @@ a <- as.array(solve(lxd))
 b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), dim = rev(dim(lxd)))
 chk(a, b, check.attributes = FALSE)
 
-chk(solve(lxn, y), .mult(solve(lxn), y))
-chk(solve(lxd, y), .mult(solve(lxd), y))
+chk(solve(lxn, y), Mult(solve(lxn), y))
+chk(solve(lxd, y), Mult(solve(lxd), y))
 @@
 
 \section{Crossproducts}
@@ -1046,7 +1046,7 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 @{
 ### L %*% t(L) => returns object of class symatrices
 ### diag(L %*% t(L)) => returns matrix of diagonal elements
-.tcrossprod.ltmatrices <- function(x, diag_only = FALSE) {
+Tcrossprod <- function(x, diag_only = FALSE) {
 
     byrow_orig <- attr(x, "byrow")
     trans_orig <- attr(x, "trans")
@@ -1078,23 +1078,23 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 
 <<ex-tcrossprod>>=
 ## tcrossprod
-a <- as.array(.tcrossprod.ltmatrices(lxn))
+a <- as.array(Tcrossprod(lxn))
 b <- array(apply(as.array(lxn), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxn)))
 chk(a, b, check.attributes = FALSE)
 
 # diagonal elements only
-d <- .tcrossprod.ltmatrices(lxn, diag_only = TRUE)
+d <- Tcrossprod(lxn, diag_only = TRUE)
 chk(d, apply(a, 3, diag))
-chk(d, diagonals(.tcrossprod.ltmatrices(lxn)))
+chk(d, diagonals(Tcrossprod(lxn)))
 
-a <- as.array(.tcrossprod.ltmatrices(lxd))
+a <- as.array(Tcrossprod(lxd))
 b <- array(apply(as.array(lxd), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxd)))
 chk(a, b, check.attributes = FALSE)
 
 # diagonal elements only
-d <- .tcrossprod.ltmatrices(lxd, diag_only = TRUE)
+d <- Tcrossprod(lxd, diag_only = TRUE)
 chk(d, apply(a, 3, diag))
-chk(d, diagonals(.tcrossprod.ltmatrices(lxd)))
+chk(d, diagonals(Tcrossprod(lxd)))
 @@
 
 
@@ -1204,7 +1204,7 @@ pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
 
     @<input checks@>
 
-    sigma <- .tcrossprod.ltmatrices(chol)
+    sigma <- Tcrossprod(chol)
 
     ret <- error <- numeric(N)
     for (i in 1:N) {
@@ -1389,10 +1389,10 @@ L <- matrix(prm <- runif(J * (J + 1) / 2), nrow = J * (J + 1) / 2, ncol = N)
 lx <- ltmatrices(L, diag = TRUE, byrow = FALSE, trans = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 
-Y <- .mult(lx, Z)
+Y <- Mult(lx, Z)
 
 var(t(Y))
-.tcrossprod.ltmatrices(lx[1,])
+Tcrossprod(lx[1,])
 
 a <- Y - runif(N * J, max = .1)
 b <- Y + runif(N * J, max = .1)
