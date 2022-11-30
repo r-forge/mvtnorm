@@ -1130,6 +1130,33 @@ chk(d, diagonals(Tcrossprod(lxd)))
 
 \chapter{Prototyping}
 
+The algorithm needs fast functions for evaluating $\Phi(x)$ and
+$\Phi^{-1}(p)$. We rely on
+\texttt{http://dx.doi.org/10.12988/ams.2014.45338}
+and use
+
+\begin{figure}
+<<pqnorm, fig = TRUE, pdf = TRUE>>=
+pn <- function(x) {
+    ret <- 2^(-22^(1 - 41^(abs(x) / 10)))
+    ifelse(x > 0, ret, 1 - ret)
+}
+
+qn <- function(p) {
+    ret <- 10 / log(41) * log1p(-(log(- log(pmax(p, 1 - p)) / log(2))) / log(22))
+    ifelse(p > .5, ret, -ret)
+}
+
+layout(matrix(1:2, nrow = 1))
+x <- -40:40 / 10
+a <- 1:99 / 100
+plot(x, pnorm(x))
+lines(x, pn(x))
+plot(a, qnorm(a))
+lines(a, qn(a))
+@@
+\end{figure}
+
 @o prototype.R -cp
 @{
 @<pMVN2@>
@@ -1251,8 +1278,28 @@ pMVN2(a, b, chol = lx)
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <Rconfig.h>
+@<pnqn@>
 @<pnorm fast@>
 @<R pMVN@>
+@}
+
+@d pnqn
+@{
+const double tenlog41 = 10 / log(41);
+const double log2_ = log(2);
+const double log22 = log(22);
+
+double pn (double x) {
+    double tmp = (x > 0 ? x : - x);
+    tmp = R_pow(2.0, -R_pow(22.0, 1 - R_pow(41.0, tmp / 10)));
+    return(x > 0 ? tmp : 1 - tmp);
+}
+
+double qn (double a) {
+    return(qnorm(a, 0.0, 1.0, 1, 0));
+    double ret = (a > .5 ? log1p(-log(-log(a) / log2_) / log22) : log1p(-log(-log1p(- a) / log2_) / log22));
+    return(a > .5, tenlog41 * ret, - tenlog41 * ret);
+}
 @}
 
 @d pnorm fast
@@ -1292,7 +1339,7 @@ double C_pnorm_fast (double x, double m) {
 SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
     SEXP ans;
-    double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
+    double *da, *db, *dC, *dW, *intsum, *varsum, *f0, *d0, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
     int p;
 
@@ -1308,12 +1355,22 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
-    PROTECT(ans = allocMatrix(REALSXP, iN, 2));
+    PROTECT(ans = allocMatrix(REALSXP, iN, 4));
     intsum = REAL(ans);
     varsum = intsum + iN;
+    f0 = intsum + 2 * iN;
+    d0 = intsum + 3 * iN;
+    da = REAL(a);
+    db = REAL(b);
     for (int i = 0; i < iN; i++) {
+        /* the first interval does not depend on w; compute once and store */
+        d0[i] = pn(da[0]);
+        e = pn(db[0]);
+        f0[i] = e - d0[i];
         intsum[i] = 0.0;
         varsum[i] = 0.0;
+        da = da + iJ;
+        db = db + iJ;
     }
 
     dW = REAL(W);
@@ -1326,9 +1383,10 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
         for (int i = 0; i < iN; i++) {
             @<C inner loop@>
             intsum[i] += f;
-            varsum[i] += pow(f, 2);
+            varsum[i] += f * f;
             da = da + iJ;
             db = db + iJ;
+            /* constant C */
             if (p > 0)
                 dC = dC + p;
         }
@@ -1342,22 +1400,21 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
 @d C inner loop
 @{
-d = C_pnorm_fast(da[0], 0.0);
-e = C_pnorm_fast(db[0], 0.0);
-emd = e - d;
-f = emd;
+d = d0[i];
+f = f0[i];
+emd = f0[i];
 start = 0;
 for (j = 1; j < iJ; j++) {
     tmp = d + dW[j - 1] * emd;
     if (tmp < dtol) tmp = dtol;
     if (tmp > mdtol) tmp = mdtol;
-    y[j - 1] = qnorm(tmp, 0.0, 1.0, 1, 0);
+    y[j - 1] = qn(tmp);
     x = 0.0;
     for (k = 0; k < j; k++)
         x += dC[start + k] * y[k];
     start += j;
-    d = C_pnorm_fast(da[j], x);
-    e = C_pnorm_fast(db[j], x);
+    d = pn(da[j] - x);
+    e = pn(db[j] - x);
     emd = e - d;
     f = emd * f;
 }
@@ -1424,7 +1481,7 @@ Tcrossprod(lx[1,])
 a <- Y - runif(N * J, max = .1)
 b <- Y + runif(N * J, max = .1)
 
-M <- 20
+M <- 500
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
 ll <- function(parm) {
@@ -1436,9 +1493,13 @@ ll <- function(parm) {
 
 ll(prm)
 
-set.seed(29); sum(log(pMVN3(a, b, chol = lx, M = 10)))
+set.seed(29); sum(log(pMVN2(a, b, chol = lx)))
+set.seed(29); sum(log(pMVN3(a, b, chol = lx, w = W)))
 
-# optim(prm, fn = ll)
+op <- optim(prm, fn = ll)
+op$value
+
+cbind(prm, op$par)
 @@
 
 \chapter{Package Infrastructure}
