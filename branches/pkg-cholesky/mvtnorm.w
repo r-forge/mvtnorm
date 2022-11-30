@@ -687,14 +687,15 @@ Mult <- function(x, y) {
     d <- dim(x)
     dn <- dimnames(x)
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
-    stopifnot(nrow(y) == d[2L] && ncol(y) == d[1L])
+    N <- ifelse(d[1L] == 1, ncol(y), d[1L])
+    stopifnot(nrow(y) == d[2L] && ncol(y) == N)
     x <- .reorder(x, byrow = TRUE)
     x <- .transpose(x, trans = TRUE)
     rcnames <- attr(x, "rcnames")
     storage.mode(x) <- "double"
     storage.mode(y) <- "double"
 
-    ret <- .Call("R_mult", x, y, as.integer(d[1L]), 
+    ret <- .Call("R_mult", x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(attr(x, "diag")))
     
     rownames(ret) <- dn[[2L]]
@@ -713,14 +714,18 @@ SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
     SEXP ans;
     double *dans, *dA, *dx;
     Rboolean Rdiag = asLogical(diag);
-    int i, j, k, start;
+    int i, j, k, start, p;
 
     /* number of matrices */
     int iN = INTEGER(N)[0];
     /* dimension of matrices */
     int iJ = INTEGER(J)[0];
+
     /* p = J * (J - 1) / 2 + diag * J */
-    int p = LENGTH(A) / iN;
+    if (LENGTH(A) == iJ * (iJ - 1) / 2)
+        p = 0;
+    else 
+        p = LENGTH(A) / iN;
 
     PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
     dans = REAL(ans);
@@ -741,7 +746,8 @@ SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
                 start += j;
             }
         }
-        dA = dA + p;
+        if (p > 0)
+            dA = dA + p;
         dx = dx + iJ;
         dans = dans + iJ;
     }
@@ -1126,44 +1132,21 @@ chk(d, diagonals(Tcrossprod(lxd)))
 
 @o prototype.R -cp
 @{
-@<pMVN@>
 @<pMVN2@>
 @<pMVN3@>
-@}
-
-@d pMVN
-@{
-pMVN <- function(lower, upper, mean = 0, chol, M = 10000, 
-                 w = matrix(runif(M * (J - 1)), ncol = M), ...) {
-
-    @<input checks@>
-
-    @<standardise@>
-
-    intsum <- varsum <- numeric(N)
-    M <- ncol(w)
-
-    for (k in 1:M) {
-
-         @<inner loop@>
-
-    }
-
-    ret <- intsum / M
-    error <- 2.5 * sqrt((varsum / M - (intsum / M)^2) / M)
-    attr(ret, "error") <- error
-    ret
-}
 @}
 
 Step 1
 
 @d input checks
 @{
+stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
+
 stopifnot(inherits(chol, "ltMatrices"))
 chol <- ltMatrices(chol, trans = TRUE, byrow = TRUE)
 d <- dim(chol)
-N <- d[1L]
+### allow single matrix C
+N <- ifelse(d[1L] == 1, ncol(lower), d[1L])
 J <- d[2L]
 
 stopifnot(nrow(lower) == J && ncol(lower) == N)
@@ -1183,10 +1166,10 @@ if (attr(chol, "diag")) {
     ### diagonals returns J x N and lower/upper are J x N, so
     ### elementwise standardisation is simple
     dchol <- diagonals(chol)
-    ac <- lower / dchol
-    bc <- upper / dchol
+    ac <- lower / c(dchol)
+    bc <- upper / c(dchol)
     ### CHECK if dimensions are correct
-    C <- unclass(chol) / dchol[rep(1:J, 1:J),]
+    C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
 } else {
     ac <- lower
@@ -1229,10 +1212,13 @@ pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
     @<input checks@>
 
     sigma <- Tcrossprod(chol)
+    S <- as.array(sigma)
+    idx <- 1
 
     ret <- error <- numeric(N)
     for (i in 1:N) {
-        tmp <- pmvnorm(lower = lower[,i], upper = upper[,i], sigma = as.array(sigma[i,])[,,1])
+        if (dim(sigma)[[1L]] > 1) idx <- i
+        tmp <- pmvnorm(lower = lower[,i], upper = upper[,i], sigma = S[,,idx])
         ret[i] <- tmp
         error[i] <- attr(tmp, "error")
     }
@@ -1308,18 +1294,27 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     SEXP ans;
     double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
+    int p;
+
     int iM = INTEGER(M)[0]; 
     int iN = INTEGER(N)[0]; 
     int iJ = INTEGER(J)[0]; 
-    int p = LENGTH(C) / iN;
+
+    if (LENGTH(C) == iJ * (iJ - 1) / 2)
+        p = 0;
+    else 
+        p = LENGTH(C) / iN;
+
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
     PROTECT(ans = allocMatrix(REALSXP, iN, 2));
     intsum = REAL(ans);
     varsum = intsum + iN;
-    intsum[0] = 0.0;
-    varsum[0] = 0.0;
+    for (int i = 0; i < iN; i++) {
+        intsum[i] = 0.0;
+        varsum[i] = 0.0;
+    }
 
     dW = REAL(W);
 
@@ -1334,7 +1329,8 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
             varsum[i] += pow(f, 2);
             da = da + iJ;
             db = db + iJ;
-            dC = dC + p;
+            if (p > 0)
+                dC = dC + p;
         }
         dW = dW + (iJ - 1);
     }
@@ -1369,7 +1365,7 @@ for (j = 1; j < iJ; j++) {
 
 @d pMVN3
 @{
-pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000, 
+pMVN3 <- function(lower, upper, mean = 0, chol, logLik = FALSE, M = 10000, 
                   w = matrix(runif(M * (J - 1)), ncol = M), ...) {
 
     @<input checks@>
@@ -1381,6 +1377,13 @@ pMVN3 <- function(lower, upper, mean = 0, chol, M = 10000,
     varsum <- ret[,2]
 
     M <- ncol(w)
+    .log <- function (x) 
+{
+    ret <- log(pmax(.Machine$double.eps, x))
+    dim(ret) <- dim(x)
+    ret
+}
+    if (logLik) return(sum(.log(intsum) - log(M)))
     ret <- intsum / M
     error <- 2.5 * sqrt((varsum / M - ret^2) / M)
     attr(ret, "error") <- error
@@ -1407,10 +1410,10 @@ cbind(p2, p3)
 \chapter{Maximum-likelihood Example}
 
 <<ex-ML>>=
-N <- 1000
+N <- 100
 J <- 3
-L <- matrix(prm <- runif(J * (J + 1) / 2), nrow = J * (J + 1) / 2, ncol = N)
-lx <- ltMatrices(L, diag = TRUE, byrow = FALSE, trans = TRUE)
+L <- matrix(prm <- runif(J * (J + 1) / 2), ncol = 1L)
+lx <- ltMatrices(L, diag = TRUE, byrow = TRUE, trans = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 
 Y <- Mult(lx, Z)
@@ -1421,19 +1424,21 @@ Tcrossprod(lx[1,])
 a <- Y - runif(N * J, max = .1)
 b <- Y + runif(N * J, max = .1)
 
-M <- 2000
+M <- 20
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
 ll <- function(parm) {
 
-     C <- matrix(parm, nrow = J * (J + 1) / 2, ncol = N)
-     C <- ltMatrices(C, diag = TRUE, byrow = FALSE, trans = TRUE)
-     -sum(log(pMVN3(lower = a, upper = b, chol = C, w = W)))
+     C <- matrix(parm, ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+     -pMVN3(lower = a, upper = b, chol = C, w = W, logLik = TRUE)
 }
 
 ll(prm)
 
-#optim(rep(0, J * (J + 1) / 2), fn = ll)
+set.seed(29); sum(log(pMVN3(a, b, chol = lx, M = 10)))
+
+# optim(prm, fn = ll)
 @@
 
 \chapter{Package Infrastructure}
