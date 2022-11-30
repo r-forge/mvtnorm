@@ -36,7 +36,7 @@ all:	mvtnorm.pdf
 clean:	
 	./cleanup
 	rm -rf *~
-	rm -rf mvtnorm.pdf
+	rm -rf mvtnorm*.pdf
 	rm -rf mvtnorm.R
 	texclean mvtnorm
 	rm -rf mvtnorm.tex
@@ -54,10 +54,10 @@ clean:
 	rm -rf *brf
 	rm -rf *wk
 
-distclean: clean
-	rm -rf src/*
-	rm -rf R/*
-	rm -rf man/*
-	rm -rf vignettes/mvtnorm.Rnw
-	rm -rf tests/mvtnorm.R*
+#distclean: clean
+#	rm -rf src/*
+#	rm -rf R/*
+#	rm -rf man/*
+#	rm -rf vignettes/mvtnorm.Rnw
+#	rm -rf tests/mvtnorm.R*
 	
