@@ -361,18 +361,17 @@ Let's set-up an example for illustration:
 <<example>>=
 source("ltmatrices.R")
 dyn.load("ltmatrices.so")
-J <- 4
-N <- 3
-diag <- TRUE
-nm <- LETTERS[1:J]
 
-x <- matrix(1:(N * (J * (J - 1) / 2 + diag * J)), byrow = TRUE, nrow = N)
-rownames(x) <- paste0("x", 1:nrow(x))
-lx <- ltmatrices(x, diag = TRUE, byrow = TRUE, names = nm)
-dim(lx)
-dimnames(lx)
-names(lx)
-unclass(lx)
+chk <- function(...) stopifnot(all.equal(...))
+
+set.seed(290875)
+N <- 100
+J <- 10
+nm <- LETTERS[1:J]
+Jn <- J * (J - 1) / 2
+## data
+xn <- matrix(runif(N * Jn), nrow = N, byrow = TRUE)
+xd <- matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE)
 @@
 
 For pretty printing, we coerse object of class \code{ltmatrices} to
@@ -424,13 +423,6 @@ print.symatrices <- function(x, ...)
 @}
 
 
-<<ex-print>>=
-print(lx)
-## array subsetting
-ax <- as.array(lx)
-ax[,,1]
-@@
-
 It is sometimes convenient to have access to lower triangular matrices in
 either column- or row major order and this little helper function switches
 between the two forms.
@@ -473,8 +465,22 @@ between the two forms.
 @}
 
 <<ex-reorder>>=
-(rx <- ltmatrices(lx, byrow = FALSE))
-all.equal(as.array(rx), ax)
+## constructor + .reorder + as.array
+a <- as.array(ltmatrices(xn, byrow = TRUE))
+b <- as.array(ltmatrices(ltmatrices(xn, byrow = TRUE), byrow = FALSE))
+chk(a, b)
+
+a <- as.array(ltmatrices(xn, byrow = FALSE))
+b <- as.array(ltmatrices(ltmatrices(xn, byrow = FALSE), byrow = TRUE))
+chk(a, b)
+
+a <- as.array(ltmatrices(xd, byrow = TRUE, diag = TRUE))
+b <- as.array(ltmatrices(ltmatrices(xd, byrow = TRUE, diag = TRUE), byrow = FALSE))
+chk(a, b)
+
+a <- as.array(ltmatrices(xd, byrow = FALSE, diag = TRUE))
+b <- as.array(ltmatrices(ltmatrices(xd, byrow = FALSE, diag = TRUE), byrow = TRUE))
+chk(a, b)
 @@
 
 The internal representation as $N \times \J (\J + 1) / 2$ matrix to a matrix
@@ -499,8 +505,22 @@ this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!).
 @}
 
 <<ex-trans>>=
-(tx <- ltmatrices(lx, trans = TRUE))
-all.equal(as.array(tx), ax)
+## constructor + .reorder + as.array
+a <- as.array(ltmatrices(t(xn), trans = TRUE))
+b <- as.array(ltmatrices(ltmatrices(t(xn), trans = TRUE), trans = FALSE))
+chk(a, b)
+
+a <- as.array(ltmatrices(xn, trans = FALSE))
+b <- as.array(ltmatrices(ltmatrices(xn, trans = FALSE), trans = TRUE))
+chk(a, b)
+
+a <- as.array(ltmatrices(t(xd), trans = TRUE, diag = TRUE))
+b <- as.array(ltmatrices(ltmatrices(t(xd), trans = TRUE, diag = TRUE), trans = FALSE))
+chk(a, b)
+
+a <- as.array(ltmatrices(xd, trans = FALSE, diag = TRUE))
+b <- as.array(ltmatrices(ltmatrices(xd, trans = FALSE, diag = TRUE), trans = TRUE))
+chk(a, b)
 @@
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
@@ -565,8 +585,22 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
 @}
 
 <<ex-subset>>=
-sx <- lx[c(1, 3), c(2, 4)]
-all.equal(as.array(sx), ax[c(2, 4), c(2, 4), c(1, 3)])
+## subset
+a <- as.array(ltmatrices(xn, byrow = FALSE)[1:2, 2:4])
+b <- as.array(ltmatrices(xn, byrow = FALSE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltmatrices(xn, byrow = TRUE)[1:2, 2:4])
+b <- as.array(ltmatrices(xn, byrow = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltmatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 2:4])
+b <- as.array(ltmatrices(xd, byrow = FALSE, diag = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltmatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 2:4])
+b <- as.array(ltmatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
 @@
 
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
@@ -613,7 +647,7 @@ diagonals.symatrices <- diagonals.ltmatrices
 @}
 
 <<ex-diag>>=
-diagonals(lx)
+all(diagonals(ltmatrices(xn, byrow = TRUE)) == 1L)
 @@
 
 \section{Multiplication}
@@ -691,13 +725,26 @@ SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
 @}
 
 <<ex-mult>>=
-y <- matrix(runif(J * N), nrow = J)
-(mx <- .mult(lx, y))
-m <- matrix(0, nrow = J, ncol = N, dimnames = list(nm, rownames(x)))
-for (i in 1:N) 
-    m[,i] <- ax[,,i] %*% y[,i]
-all.equal(mx, m)
-m
+lxn <- ltmatrices(xn, byrow = TRUE)
+lxd <- ltmatrices(xd, byrow = TRUE, diag = TRUE)
+y <- matrix(runif(N * J), nrow = J)
+a <- .mult(lxn, y)
+A <- as.array(lxn)
+b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+chk(a, t(b))
+
+a <- .mult(lxd, y)
+A <- as.array(lxd)
+b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+chk(a, t(b))
+
+### tcrossprod as multiplication
+i <- sample(1:N)[1]
+M <- t(as.array(lxn)[,,i])
+a <- sapply(1:J, function(j) .mult(lxn[i,], M[,j,drop = FALSE]))
+rownames(a) <- colnames(a) <- dimnames(lxn)[[2L]]
+b <- as.array(.tcrossprod.ltmatrices(lxn[i,]))[,,1]
+chk(a, b)
 @@
 
 \section{Solving linear systems}
@@ -882,14 +929,20 @@ solve.ltmatrices <- function(a, b, ...) {
 @}
 
 <<ex-solve>>=
-(sx <- solve(lx))
-apply(ax, 3, solve, simplify = FALSE)
-for (i in 1:N)
-    print(round(ax[,,i] %*% as.array(sx)[,,i], 3))
+## solve
+A <- as.array(lxn)
+a <- solve(lxn)
+a <- as.array(a)
+b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), dim = rev(dim(lxn)))
+chk(a, b, check.attributes = FALSE)
 
-y <- runif(J)
-solve(lx, y)
-apply(ax, 3, solve, b = y, simplify = TRUE)
+A <- as.array(lxd)
+a <- as.array(solve(lxd))
+b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), dim = rev(dim(lxd)))
+chk(a, b, check.attributes = FALSE)
+
+chk(solve(lxn, y), .mult(solve(lxn), y))
+chk(solve(lxd, y), .mult(solve(lxd), y))
 @@
 
 \section{Crossproducts}
@@ -1021,13 +1074,24 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 @}
 
 <<ex-tcrossprod>>=
-d <- .tcrossprod.ltmatrices(lx, diag_only = TRUE)
-a1 <- as.array(t1 <- .tcrossprod.ltmatrices(lx))
-diagonals(t1)
-d
-a2 <- array(unlist(apply(ax, 3, tcrossprod, simplify = FALSE)), dim = dim(ax),
-dimnames = dimnames(ax))
-all.equal(a1, a2)
+## tcrossprod
+a <- as.array(.tcrossprod.ltmatrices(lxn))
+b <- array(apply(as.array(lxn), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxn)))
+chk(a, b, check.attributes = FALSE)
+
+# diagonal elements only
+d <- .tcrossprod.ltmatrices(lxn, diag_only = TRUE)
+chk(d, apply(a, 3, diag))
+chk(d, diagonals(.tcrossprod.ltmatrices(lxn)))
+
+a <- as.array(.tcrossprod.ltmatrices(lxd))
+b <- array(apply(as.array(lxd), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxd)))
+chk(a, b, check.attributes = FALSE)
+
+# diagonal elements only
+d <- .tcrossprod.ltmatrices(lxd, diag_only = TRUE)
+chk(d, apply(a, 3, diag))
+chk(d, diagonals(.tcrossprod.ltmatrices(lxd)))
 @@
 
 
