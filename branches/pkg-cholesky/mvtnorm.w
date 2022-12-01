@@ -721,10 +721,9 @@ SEXP R_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
                 start += j;
             }
         }
-        if (p > 0)
-            dC = dC + p;
-        dy = dy + iJ;
-        dans = dans + iJ;
+        dC += p;
+        dy += iJ;
+        dans += iJ;
     }
     UNPROTECT(1);
     return(ans);
@@ -760,27 +759,27 @@ Compute $\mC_i^{-1}$ or solve $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
 all $i = 1, \dots, N$.
 
 
-\code{A} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
+\code{C} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
 (matrix of dimension $\J (\J - 1) / 2 + \J \text{diag} \times N$), and
-\code{b} is the $\J \times N$ matrix $(\yvec_1 \mid \yvec_2 \mid \dots \mid
+\code{y} is the $\J \times N$ matrix $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 \yvec_N)$. This function returns the $\J \times N$ matrix $(\xvec_1 \mid \xvec_2 \mid \dots \mid
 \xvec_N)$ of solutions.
 
-If \code{b} is not given, $\mC_i^{-1}$ is returned in transposed
+If \code{y} is not given, $\mC_i^{-1}$ is returned in transposed
 column-major order (matrix of dimension $\J (\J 1 1) / 2  \times N$). If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
 @d solve
 @{
-
-SEXP R_ltMatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
+SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
 {
 
     SEXP ans, ansx;
-    double *dA, *db, *dans, *dansx;
-    int n, p, info, k, nrow, j, jj, idx, ONE = 1;
+    double *dans, *dansx, *dy;
+    int k, info, nrow, ncol, jj, idx, ONE = 1;
 
-    Rboolean Rdiag = asLogical(diag);
+    @<RC input@>
+
     char di, lo = 'L', tr = 'N';
     if (Rdiag) {
         /* non-unit diagonal elements */
@@ -790,29 +789,20 @@ SEXP R_ltMatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
         di = 'U';
     }
 
-    /* number of matrices */
-    int iN = INTEGER(N)[0];
-    /* dimension of matrices */
-    int iJ = INTEGER(J)[0];
-
-    /* p = J * (J - 1) / 2 + diag * J */
-    p = LENGTH(A) / iN;
-
-    /* add diagonal elements (expected by Lapack) */
-    nrow = (p + (1 - Rdiag) * iJ);
-
     @<setup memory@>
     
-    /* loop over matrices, ie columns of x */    
-    for (int n = 0; n < iN; n++) {
+    /* loop over matrices, ie columns of C  / y */    
+    for (int i = 0; i < iN; i++) {
 
         @<copy elements@>
 
         @<call Lapack@>
 
         /* next matrix */
-        dans = dans + nrow;
-        dA = dA + p;
+        if (p > 0) {
+            dans += nrow;
+            dC += p;
+        }
     }
 
     @<return objects@>
@@ -823,12 +813,14 @@ SEXP R_ltMatrices_solve (SEXP A, SEXP b, SEXP N, SEXP J, SEXP diag)
 @{
 /* return object: include unit diagnonal elements if Rdiag == 0 */
 
-dA = REAL(A);
-PROTECT(ans = allocMatrix(REALSXP, nrow, iN));
+/* add diagonal elements (expected by Lapack) */
+nrow = (Rdiag ? len : len + iJ);
+ncol = (p > 0 ? iN : 1);
+PROTECT(ans = allocMatrix(REALSXP, nrow, ncol));
 dans = REAL(ans);
 
-if (b != R_NilValue) {
-    db = REAL(b);
+if (y != R_NilValue) {
+    dy = REAL(y);
     PROTECT(ansx = allocMatrix(REALSXP, iJ, iN));
     dansx = REAL(ansx);
 }
@@ -840,26 +832,28 @@ diagonal elements are present, even for unit diagonal matrices.
 @d copy elements
 @{
 /* copy data and insert unit diagonal elements when necessary */
-jj = 0;
-k = 0;
-idx = 0;
-j = 0;
-while(j < p) {
-    if (!Rdiag && (jj == idx)) {
-        dans[jj] = 1.0;
-        idx = idx + (iJ - k);
-        k++;
-    } else {
-        dans[jj] = dA[j];
-        j++;
+if (p > 0 || i == 0) {
+    jj = 0;
+    k = 0;
+    idx = 0;
+    j = 0;
+    while(j < len) {
+        if (!Rdiag && (jj == idx)) {
+            dans[jj] = 1.0;
+            idx = idx + (iJ - k);
+            k++;
+        } else {
+            dans[jj] = dC[j];
+            j++;
+        }
+        jj++;
     }
-    jj++;
+    if (!Rdiag) dans[idx] = 1.0;
 }
-if (!Rdiag) dans[idx] = 1.0;
 
-if (b != R_NilValue) {
+if (y != R_NilValue) {
     for (j = 0; j < iJ; j++)
-        dansx[j] = db[j];
+        dansx[j] = dy[j];
 }
 @}
 
@@ -867,7 +861,7 @@ The \proglang{LAPACK} workhorses are called here
 
 @d call Lapack
 @{
-if (b == R_NilValue) {
+if (y == R_NilValue) {
     /* compute inverse */
     F77_CALL(dtptri)(&lo, &di, &iJ, dans, &info FCONE FCONE);
     if (info != 0)
@@ -875,14 +869,14 @@ if (b == R_NilValue) {
 } else {
     /* solve linear system */
     F77_CALL(dtpsv)(&lo, &tr, &di, &iJ, dans, dansx, &ONE FCONE FCONE);
-    dansx = dansx + iJ;
-    db = db + iJ;
+    dansx += iJ;
+    dy += iJ;
 }
 @}
 
 @d return objects
 @{
-if (b == R_NilValue) {
+if (y == R_NilValue) {
     UNPROTECT(1);
     /* note: ans always includes diagonal elements */
     return(ans);
@@ -909,18 +903,23 @@ solve.ltMatrices <- function(a, b, ...) {
 
     if (!missing(b)) {
         if (!is.matrix(b)) b <- matrix(b, nrow = J, ncol = ncol(x))
-        stopifnot(ncol(b) == ncol(x))
         stopifnot(nrow(b) == J)
+        N <- ifelse(d[1L] == 1, ncol(b), d[1L])
+        stopifnot(ncol(b) == N)
         storage.mode(b) <- "double"
         ret <- .Call("R_ltMatrices_solve", x, b, 
-                     as.integer(ncol(x)), as.integer(J), as.logical(diag))
-        colnames(ret) <- dn[[1L]]
+                     as.integer(N), as.integer(J), as.logical(diag))
+        if (d[1L] == N) {
+            colnames(ret) <- dn[[1L]]
+        } else {
+            colnames(ret) <- colnames(y)
+        }
         rownames(ret) <- dn[[2L]]
         return(ret)
     }
 
     ret <- try(.Call("R_ltMatrices_solve", x, NULL,
-                 as.integer(ncol(x)), as.integer(J), as.logical(diag)))
+                     as.integer(ncol(x)), as.integer(J), as.logical(diag)))
     colnames(ret) <- dn[[1L]]
 
     if (!diag)
@@ -949,6 +948,10 @@ chk(a, b, check.attributes = FALSE)
 
 chk(solve(lxn, y), Mult(solve(lxn), y))
 chk(solve(lxd, y), Mult(solve(lxd), y))
+
+### recycle C
+chk(solve(lxn[1,], y), as.array(solve(lxn[1,]))[,,1] %*% y)
+chk(solve(lxn[rep(1, N),], y), solve(lxn[1,], y), check.attributes = FALSE)
 @@
 
 \section{Crossproducts}
@@ -962,18 +965,15 @@ class name \code{syMatrices}.
 @{
 #define IDX(i, j, n, d) ((i) >= (j) ? (n) * ((j) - 1) - ((j) - 2) * ((j) - 1)/2 + (i) - (j) - (!d) * (j) : 0)
 
-SEXP R_ltMatrices_tcrossprod (SEXP A, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
+SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
 
     SEXP ans;
-    int iJ = INTEGER(J)[0];
-    int iN = INTEGER(N)[0];
-    int i, j, k, ix, nrow;
-    double *dans, *dA;
-    Rboolean Rdiag_only = asLogical(diag_only);
-    Rboolean Rdiag = asLogical(diag);
+    double *dans;
+    int n, k, ix, nrow;
 
-    dA = REAL(A);
-    int p = LENGTH(A) / iN;
+    @<RC input@>
+
+    Rboolean Rdiag_only = asLogical(diag_only);
 
     if (Rdiag_only) {
 
@@ -994,21 +994,21 @@ SEXP R_ltMatrices_tcrossprod (SEXP A, SEXP N, SEXP J, SEXP diag, SEXP diag_only)
 @{
 PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
 dans = REAL(ans);
-for (int n = 0; n < iN; n++) {
+for (n = 0; n < iN; n++) {
     dans[0] = 1.0;
-    if (Rdiag) dans[0] = pow(dA[0], 2);
+    if (Rdiag) dans[0] = pow(dC[0], 2);
     for (i = 1; i < iJ; i++) {
         dans[i] = 0.0;
         for (k = 0; k < i; k++)
-            dans[i] += pow(dA[IDX(i + 1, k + 1, iJ, Rdiag)], 2);
+            dans[i] += pow(dC[IDX(i + 1, k + 1, iJ, Rdiag)], 2);
         if (Rdiag) {
-            dans[i] += pow(dA[IDX(i + 1, i + 1, iJ, Rdiag)], 2);
+            dans[i] += pow(dC[IDX(i + 1, i + 1, iJ, Rdiag)], 2);
         } else {
             dans[i] += 1.0;
         }
     }
-    dans = dans + iJ;
-    dA = dA + p;
+    dans += iJ;
+    dC += len;
 }
 @}
 
@@ -1017,38 +1017,38 @@ for (int n = 0; n < iN; n++) {
 nrow = iJ * (iJ + 1) / 2;
 PROTECT(ans = allocMatrix(REALSXP, nrow, iN)); 
 dans = REAL(ans);
-for (int n = 0; n < INTEGER(N)[0]; n++) {
+for (n = 0; n < INTEGER(N)[0]; n++) {
     dans[0] = 1.0;
-    if (Rdiag) dans[0] = pow(dA[0], 2);
+    if (Rdiag) dans[0] = pow(dC[0], 2);
     for (i = 1; i < iJ; i++) {
         for (j = 0; j <= i; j++) {
             ix = IDX(i + 1, j + 1, iJ, 1);
             dans[ix] = 0.0;
             for (k = 0; k < j; k++)
                 dans[ix] += 
-                    dA[IDX(i + 1, k + 1, iJ, Rdiag)] *
-                    dA[IDX(j + 1, k + 1, iJ, Rdiag)];
+                    dC[IDX(i + 1, k + 1, iJ, Rdiag)] *
+                    dC[IDX(j + 1, k + 1, iJ, Rdiag)];
             if (Rdiag) {
                 dans[ix] += 
-                    dA[IDX(i + 1, j + 1, iJ, Rdiag)] *
-                    dA[IDX(j + 1, j + 1, iJ, Rdiag)];
+                    dC[IDX(i + 1, j + 1, iJ, Rdiag)] *
+                    dC[IDX(j + 1, j + 1, iJ, Rdiag)];
             } else {
                 if (j < i)
-                    dans[ix] += dA[IDX(i + 1, j + 1, iJ, Rdiag)];
+                    dans[ix] += dC[IDX(i + 1, j + 1, iJ, Rdiag)];
                 else
                     dans[ix] += 1.0;
             }
         }
     }
-    dans = dans + nrow;
-    dA = dA + p;
+    dans += nrow;
+    dC += len;
 }
 @}
 
 @d tcrossprod ltMatrices
 @{
-### L %*% t(L) => returns object of class syMatrices
-### diag(L %*% t(L)) => returns matrix of diagonal elements
+### C %*% t(C) => returns object of class syMatrices
+### diag(C %*% t(C)) => returns matrix of diagonal elements
 Tcrossprod <- function(x, diag_only = FALSE) {
 
     if (!inherits(x, "ltMatrices")) {
@@ -1070,7 +1070,7 @@ Tcrossprod <- function(x, diag_only = FALSE) {
     storage.mode(x) <- "double"
 
     ret <- .Call("R_ltMatrices_tcrossprod", x, as.integer(N), as.integer(J), 
-                        as.logical(diag), as.logical(diag_only))
+                 as.logical(diag), as.logical(diag_only))
     colnames(ret) <- dn[[1L]]
     if (diag_only) {
         rownames(ret) <- dn[[2L]]
