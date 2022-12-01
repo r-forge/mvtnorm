@@ -627,7 +627,7 @@ diagonals.ltMatrices <- function(x, ...) {
 
 diagonals.syMatrices <- diagonals.ltMatrices
 
-diagonals.matrix <- diag
+diagonals.matrix <- function(x, ...) diag(x)
 
 @}
 
@@ -912,7 +912,7 @@ solve.ltMatrices <- function(a, b, ...) {
         if (d[1L] == N) {
             colnames(ret) <- dn[[1L]]
         } else {
-            colnames(ret) <- colnames(y)
+            colnames(ret) <- colnames(b)
         }
         rownames(ret) <- dn[[2L]]
         return(ret)

@@ -45,6 +45,9 @@ static const R_CMethodDef cMethods[] = {
 
 static const R_CallMethodDef callMethods[] = {
     {"C_miwa", (DL_FUNC) &C_miwa, 5},
+    {"R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve, 5},
+    {"R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod , 5},
+    {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
     {NULL, NULL, 0}
 };
 

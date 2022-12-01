@@ -9,4 +9,19 @@ importFrom("stats",
 importFrom("methods", hasArg)
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
-       GenzBretz, Miwa, TVPACK)
+       GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, diagonals, Mult)
+
+S3method("as.array", "ltMatrices")
+S3method("as.array", "syMatrices")
+S3method("[", "ltMatrices")
+S3method("[", "syMatrices")
+S3method("print", "ltMatrices")
+S3method("print", "syMatrices")
+S3method("dim", "ltMatrices")
+S3method("dimnames", "ltMatrices")
+S3method("names", "ltMatrices")
+S3method("dim", "syMatrices")
+S3method("dimnames", "syMatrices")
+S3method("names", "syMatrices")
+S3method("solve", "ltMatrices")
+

@@ -9,6 +9,7 @@ mvtnorm.Rnw:	mvtnorm.w
 #	mv Makevars src
 #	mv *def src
 	cp ltMatrices.R R
+	cp ltMatrices.c src
 #	mv *.Rd man
 
 mvtnorm.R: mvtnorm.Rnw
