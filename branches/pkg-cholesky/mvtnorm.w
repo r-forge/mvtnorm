@@ -1340,8 +1340,9 @@ double C_pnorm_fast (double x, double m) {
 SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
     SEXP ans;
-    double *da, *db, *dC, *dW, *intsum, *varsum, *f0, *d0, dtol = REAL(tol)[0];
+    double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
+    double d0, emd0, f0;
     int p;
 
     int iM = INTEGER(M)[0]; 
@@ -1356,42 +1357,45 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
-    PROTECT(ans = allocMatrix(REALSXP, iN, 4));
+    PROTECT(ans = allocMatrix(REALSXP, iN, 2));
     intsum = REAL(ans);
     varsum = intsum + iN;
-    f0 = intsum + 2 * iN;
-    d0 = intsum + 3 * iN;
+
     da = REAL(a);
     db = REAL(b);
+    dC = REAL(C);
+
     for (int i = 0; i < iN; i++) {
-        /* the first interval does not depend on w; compute once and store */
-        d0[i] = C_pnorm_fast(da[0], 0.0);
+
+        d0 = C_pnorm_fast(da[0], 0.0);
         e = C_pnorm_fast(db[0], 0.0);
-        f0[i] = e - d0[i];
+        emd0 = e - d0;
+        f0 = emd0;
         intsum[i] = 0.0;
         varsum[i] = 0.0;
-        da = da + iJ;
-        db = db + iJ;
-    }
 
-    dW = REAL(W);
+        dW = REAL(W);
 
-    for (int m = 0; m < iM; m++) {
-        da = REAL(a);
-        db = REAL(b);
-        dC = REAL(C);
+        for (int m = 0; m < iM; m++) {
 
-        for (int i = 0; i < iN; i++) {
+            d = d0;
+            f = f0;
+            emd = emd0;
+            start = 0;
+
             @<C inner loop@>
+
             intsum[i] += f;
             varsum[i] += f * f;
-            da = da + iJ;
-            db = db + iJ;
-            /* constant C */
-            if (p > 0)
-                dC = dC + p;
+
+            dW = dW + (iJ - 1);
         }
-        dW = dW + (iJ - 1);
+
+        da = da + iJ;
+        db = db + iJ;
+        /* constant C */
+        if (p > 0)
+            dC = dC + p;
     }
 
     UNPROTECT(1);
@@ -1401,10 +1405,6 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
 @d C inner loop
 @{
-d = d0[i];
-f = f0[i];
-emd = f0[i];
-start = 0;
 for (j = 1; j < iJ; j++) {
     tmp = d + dW[j - 1] * emd;
     if (tmp < dtol) tmp = dtol;
@@ -1467,7 +1467,7 @@ cbind(p2, p3)
 
 \chapter{Maximum-likelihood Example}
 
-<<ex-ML>>=
+<<ex-ML, eval = TRUE>>=
 N <- 100
 J <- 3
 L <- matrix(prm <- runif(J * (J + 1) / 2), ncol = 1L)
