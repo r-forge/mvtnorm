@@ -651,7 +651,6 @@ Mult <- function(x, y) {
 
     @<extract slots@>
 
-
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
     stopifnot(nrow(y) == d[2L] && ncol(y) == N)
@@ -743,7 +742,7 @@ M <- t(as.array(lxn)[,,i])
 a <- sapply(1:J, function(j) Mult(lxn[i,], M[,j,drop = FALSE]))
 rownames(a) <- colnames(a) <- dimnames(lxn)[[2L]]
 b <- as.array(Tcrossprod(lxn[i,]))[,,1]
-#chk(a, b, check.attributes = FALSE)
+chk(a, b, check.attributes = FALSE)
 @@
 
 \section{Solving linear systems}
