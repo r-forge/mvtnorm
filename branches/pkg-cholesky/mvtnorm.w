@@ -647,7 +647,7 @@ columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 ### C %*% y
 Mult <- function(x, y) {
 
-    stopifnot(inherits(x, "ltMatrices"))
+    if (!inherits(x, "ltMatrices")) return(x %*% y)
 
     @<extract slots@>
 
@@ -661,7 +661,7 @@ Mult <- function(x, y) {
     storage.mode(x) <- "double"
     storage.mode(y) <- "double"
 
-    ret <- .Call("R_mult", x, y, as.integer(N), 
+    ret <- .Call("R_Mult", x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(diag))
     
     rownames(ret) <- dn[[2L]]
@@ -670,51 +670,60 @@ Mult <- function(x, y) {
 }
 @}
 
-The underlying \proglang{C} code assumes $\mC_i$ (here called \code{A}) to
+The underlying \proglang{C} code assumes $\mC_i$ (here called \code{C}) to
 be in row-major order and in transposed form.
+
+@d RC input
+@{
+/* pointer to C matrices */
+double *dC = REAL(C);
+/* number of matrices */
+int iN = INTEGER(N)[0];
+/* dimension of matrices */
+int iJ = INTEGER(J)[0];
+/* C contains diagonal elements */
+Rboolean Rdiag = asLogical(diag);
+/* p = J * (J - 1) / 2 + diag * J */
+int p, len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
+if (LENGTH(C) == len)
+    /* C is constant for i = 1, ..., N */
+    p = 0;
+else 
+    /* C contains C_1, ...., C_N */
+    p = len;
+int i, j;
+@}
 
 @d mult
 @{
-SEXP R_mult (SEXP A, SEXP x, SEXP N, SEXP J, SEXP diag) {
+SEXP R_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
 
     SEXP ans;
-    double *dans, *dA, *dx;
-    Rboolean Rdiag = asLogical(diag);
-    int i, j, k, start, p;
+    double *dans, *dy = REAL(y);
+    int k, start;
 
-    /* number of matrices */
-    int iN = INTEGER(N)[0];
-    /* dimension of matrices */
-    int iJ = INTEGER(J)[0];
-
-    /* p = J * (J - 1) / 2 + diag * J */
-    if (LENGTH(A) == iJ * (iJ - 1) / 2)
-        p = 0;
-    else 
-        p = LENGTH(A) / iN;
+    @<RC input@>
 
     PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
     dans = REAL(ans);
-    dA = REAL(A);
-    dx = REAL(x);
     
     for (i = 0; i < iN; i++) {
         start = 0;
         for (j = 0; j < iJ; j++) {
             dans[j] = 0.0;
             for (k = 0; k < j; k++)
-                dans[j] += dA[start + k] * dx[k];
+                dans[j] += dC[start + k] * dy[k];
             if (Rdiag) {
-                dans[j] += dA[start + j] * dx[j];
+                dans[j] += dC[start + j] * dy[j];
                 start += j + 1;
             } else {
-                dans[j] += dx[j]; 
+                dans[j] += dy[j]; 
                 start += j;
             }
         }
         if (p > 0)
-            dA = dA + p;
-        dx = dx + iJ;
+            dC = dC + p;
+        dy = dy + iJ;
         dans = dans + iJ;
     }
     UNPROTECT(1);
@@ -1041,6 +1050,12 @@ for (int n = 0; n < INTEGER(N)[0]; n++) {
 ### L %*% t(L) => returns object of class syMatrices
 ### diag(L %*% t(L)) => returns matrix of diagonal elements
 Tcrossprod <- function(x, diag_only = FALSE) {
+
+    if (!inherits(x, "ltMatrices")) {
+        ret <- tcrossprod(x)
+        if (diag_only) ret <- diag(ret)
+        return(ret)
+    }
 
     byrow_orig <- attr(x, "byrow")
     trans_orig <- attr(x, "trans")
