@@ -661,7 +661,7 @@ Mult <- function(x, y) {
     storage.mode(x) <- "double"
     storage.mode(y) <- "double"
 
-    ret <- .Call("R_Mult", x, y, as.integer(N), 
+    ret <- .Call("R_ltMatrices_Mult", x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(diag))
     
     rownames(ret) <- dn[[2L]]
@@ -696,7 +696,7 @@ int i, j;
 
 @d mult
 @{
-SEXP R_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
+SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
 
     SEXP ans;
     double *dans, *dy = REAL(y);
