@@ -129,43 +129,6 @@ In other applications, the Cholesky factor might also depend on $i$ in some
 structured way.
 
 
-\section{Algorithm}
-
-For each $i = 1, \dots, N$, do
-
-\begin{enumerate}
-  \item Input $\mC_i$, $\avec_i$, $\bvec_i$, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$.
-
-  \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
-
-  \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
-\Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
-
-  \item Repeat
-
-    \begin{enumerate}
-
-      \item Generate uniform $w_1, \dots, w_{\J - 1} \in [0, 1]$.
-
-      \item For $j = 2, \dots, J$ set 
-        \begin{eqnarray*}
-            y_{j - 1} & = & \Phi^{-1}\left(d_{j - 1} + w_{j - 1} (e_{j - 1} - d_{j - 1})\right) \\
-            x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j \\
-            d_j & = & \Phi\left(a^{(i)}_j - x_{j - 1}\right) \\
-            e_j & = & \Phi\left(b^{(i)}_j - x_{j - 1}\right) \\
-            f_j & = & (e_j - d_j) f_{j - 1}.
-       \end{eqnarray*}
-
-      \item Set $\text{intsum} = \text{intsum} + f_\J$, $\text{varsum} = \text{varsum} + f^2_\J$, $M = M + 1$, 
-            and $\text{error} = \sqrt{(\text{varsum}/M - (\text{intsum}/M)^2) / M}$.
-    
-      \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
-
-    \end{enumerate}
-  \item Output $\hat{p}_i = \text{intsum} / M$.
-
-\end{enumerate}
-
 \chapter{Lower Triangular Matrices}
 
 @o ltMatrices.R -cp
@@ -1130,107 +1093,12 @@ chk(d, diagonals(Tcrossprod(lxd)))
 
 \chapter{Prototyping}
 
-The algorithm needs fast functions for evaluating $\Phi(x)$ and
-$\Phi^{-1}(p)$. We rely on
-\texttt{http://dx.doi.org/10.12988/ams.2014.45338}
-and use
-
-\begin{figure}
-<<pqnorm, fig = TRUE, pdf = TRUE>>=
-pn <- function(x) {
-    ret <- 2^(-22^(1 - 41^(abs(x) / 10)))
-    ifelse(x > 0, ret, 1 - ret)
-}
-
-qn <- function(p) {
-    ret <- 10 / log(41) * log1p(-(log(- log(pmax(p, 1 - p)) / log(2))) / log(22))
-    ifelse(p > .5, ret, -ret)
-}
-
-layout(matrix(1:2, nrow = 1))
-x <- -40:40 / 10
-a <- 1:99 / 100
-plot(x, pnorm(x))
-lines(x, pn(x))
-plot(a, qnorm(a))
-lines(a, qn(a))
-@@
-\end{figure}
-
 @o prototype.R -cp
 @{
 @<pMVN2@>
 @<pMVN3@>
 @}
 
-Step 1
-
-@d input checks
-@{
-stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
-
-stopifnot(inherits(chol, "ltMatrices"))
-chol <- ltMatrices(chol, trans = TRUE, byrow = TRUE)
-d <- dim(chol)
-### allow single matrix C
-N <- ifelse(d[1L] == 1, ncol(lower), d[1L])
-J <- d[2L]
-
-stopifnot(nrow(lower) == J && ncol(lower) == N)
-stopifnot(nrow(upper) == J && ncol(upper) == N)
-if (is.matrix(mean))
-    stopifnot(nrow(mean) == J && ncol(mean) == N)
-
-lower <- lower - mean
-upper <- upper - mean
-@}
-
-Step 2
-
-@d standardise
-@{
-if (attr(chol, "diag")) {
-    ### diagonals returns J x N and lower/upper are J x N, so
-    ### elementwise standardisation is simple
-    dchol <- diagonals(chol)
-    ac <- lower / c(dchol)
-    bc <- upper / c(dchol)
-    ### CHECK if dimensions are correct
-    C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
-    C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
-} else {
-    ac <- lower
-    bc <- upper
-    C <- ltMatrices(chol, byrow = TRUE, trans = TRUE)
-}
-uC <- unclass(C)
-@}
-
-Step 3 / 4
-
-@d inner loop
-@{
-d <- pnorm(ac[1,])
-e <- pnorm(bc[1,])
-f <- e - d
-y <- matrix(0, nrow = N, ncol = J - 1)
-start <- 1
-
-for (i in 2:J) {
-    idx <- start:((start - 1) + (i - 1))
-    start <- max(idx) + 1
-    tmp <- d + w[i - 1, k] * (e - d)
-    tmp <- pmax(.Machine$double.eps, tmp)
-    tmp <- pmin(1 - .Machine$double.eps, tmp)
-    y[,i - 1] <- qnorm(tmp)
-    x <- rowSums(t(uC)[,idx ,drop = FALSE] * y[,1:(i - 1)])
-    d <- pnorm(ac[i,] - x)
-    e <- pnorm(bc[i,] - x)
-    f <- (e - d) * f
-}
-intsum <- intsum + f
-varsum <- varsum + f^2
-@}
 
 @d pMVN2
 @{
@@ -1267,7 +1135,6 @@ lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 2 + matrix(runif(N * J), nrow = J)
 
-#pMVN(a, b, chol = lx, M = 25000)
 pMVN2(a, b, chol = lx)
 @@
 
@@ -1278,62 +1145,135 @@ pMVN2(a, b, chol = lx)
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <Rconfig.h>
-@<pnqn@>
 @<pnorm fast@>
 @<R pMVN@>
 @}
 
-@d pnqn
+
+\section{Algorithm}
+
+For each $i = 1, \dots, N$, do
+
+\begin{enumerate}
+  \item Input $\mC_i$, $\avec_i$, $\bvec_i$, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$.
+
+@d input checks
 @{
-const double tenlog41 = 10 / log(41);
-const double log2_ = log(2);
-const double log22 = log(22);
+stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-double pn (double x) {
-    double tmp = (x > 0 ? x : - x);
-    tmp = R_pow(2.0, -R_pow(22.0, 1 - R_pow(41.0, tmp / 10)));
-    return(x > 0 ? tmp : 1 - tmp);
-}
+stopifnot(inherits(chol, "ltMatrices"))
+chol <- ltMatrices(chol, trans = TRUE, byrow = TRUE)
+d <- dim(chol)
+### allow single matrix C
+N <- ifelse(d[1L] == 1, ncol(lower), d[1L])
+J <- d[2L]
 
-double qn (double a) {
-//    if (a < .1 || a > .9)
-        return(qnorm(a, 0.0, 1.0, 1, 0));
-    double ret = (a > .5 ? log1p(-log(-log(a) / log2_) / log22) : log1p(-log(-log1p(- a) / log2_) / log22));
-    return(a > .5, tenlog41 * ret, - tenlog41 * ret);
-}
+stopifnot(nrow(lower) == J && ncol(lower) == N)
+stopifnot(nrow(upper) == J && ncol(upper) == N)
+if (is.matrix(mean))
+    stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+lower <- lower - mean
+upper <- upper - mean
 @}
 
-@d pnorm fast
+
+  \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
+
+
+@d standardise
 @{
-/* see https://ssrn.com/abstract=2842681 */
-const double g2 =  -0.0150234471495426236132;
-const double g4 = 0.000666098511701018747289;
-const double g6 = 5.07937324518981103694e-06;
-const double g8 = -2.92345273673194627762e-06;
-const double g10 = 1.34797733516989204361e-07;
-const double m2dpi = -2.0 / M_PI; //3.141592653589793115998;
+if (attr(chol, "diag")) {
+    ### diagonals returns J x N and lower/upper are J x N, so
+    ### elementwise standardisation is simple
+    dchol <- diagonals(chol)
+    ### zero diagonals not allowed
+    stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
+    ac <- lower / c(dchol)
+    bc <- upper / c(dchol)
+    ### CHECK if dimensions are correct
+    C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
+    C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
+} else {
+    ac <- lower
+    bc <- upper
+    C <- ltMatrices(chol, byrow = TRUE, trans = TRUE)
+}
+uC <- unclass(C)
+@}
 
-double C_pnorm_fast (double x, double m) {
 
-    double tmp, ret;
-    double x2, x4, x6, x8, x10;
+  \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
+\Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
 
-    if (R_FINITE(x)) {
-        x = x - m;
-        x2 = x * x;
-        x4 = x2 * x2;
-        x6 = x4 * x2;
-        x8 = x6 * x2;
-        x10 = x8 * x2;
-        tmp = 1 + g2 * x2 + g4 * x4 + g6 * x6  + g8 * x8 + g10 * x10;
-        tmp = m2dpi * x2 * tmp;
-        ret = .5 + ((x > 0) - (x < 0)) * sqrt(1 - exp(tmp)) / 2.0;
+
+@d initialisation
+@{
+d0 = C_pnorm_fast(da[0], 0.0);
+e0 = C_pnorm_fast(db[0], 0.0);
+emd0 = e0 - d0;
+f0 = emd0;
+intsum[i] = 0.0;
+varsum[i] = 0.0;
+@}
+
+  \item Repeat
+
+    \begin{enumerate}
+
+      \item Generate uniform $w_1, \dots, w_{\J - 1} \in [0, 1]$.
+
+      \item For $j = 2, \dots, J$ set 
+        \begin{eqnarray*}
+            y_{j - 1} & = & \Phi^{-1}\left(d_{j - 1} + w_{j - 1} (e_{j - 1} - d_{j - 1})\right) \\
+            x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j \\
+            d_j & = & \Phi\left(a^{(i)}_j - x_{j - 1}\right) \\
+            e_j & = & \Phi\left(b^{(i)}_j - x_{j - 1}\right) \\
+            f_j & = & (e_j - d_j) f_{j - 1}.
+       \end{eqnarray*}
+
+
+@d inner loop
+@{
+for (j = 1; j < iJ; j++) {
+    tmp = d + dW[j - 1] * emd;
+    if (tmp < dtol) {
+        y[j - 1] = q0;
     } else {
-        ret = (x > 0 ? 1.0 : 0.0);
+        if (tmp > mdtol)
+            y[j - 1] = -q0;
+        else
+            y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
     }
-    return(ret);
+    x = 0.0;
+    for (k = 0; k < j; k++)
+        x += dC[start + k] * y[k];
+    start += j;
+    d = C_pnorm_fast(da[j], x);
+    e = C_pnorm_fast(db[j], x);
+    emd = e - d;
+    f *= emd;
 }
 @}
+
+
+      \item Set $\text{intsum} = \text{intsum} + f_\J$, $\text{varsum} = \text{varsum} + f^2_\J$, $M = M + 1$, 
+            and $\text{error} = \sqrt{(\text{varsum}/M - (\text{intsum}/M)^2) / M}$.
+
+@d increment
+@{
+intsum[i] += f;
+varsum[i] += f * f;
+@}
+    
+      \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
+
+    \end{enumerate}
+  \item Output $\hat{p}_i = \text{intsum} / M$.
+
+\end{enumerate}
+
+
 
 @d R pMVN
 @{
@@ -1342,7 +1282,7 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     SEXP ans;
     double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, emd0, f0;
+    double d0, e0, emd0, f0, q0;
     int p;
 
     int iM = INTEGER(M)[0]; 
@@ -1365,14 +1305,11 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     db = REAL(b);
     dC = REAL(C);
 
+    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
+
     for (int i = 0; i < iN; i++) {
 
-        d0 = C_pnorm_fast(da[0], 0.0);
-        e = C_pnorm_fast(db[0], 0.0);
-        emd0 = e - d0;
-        f0 = emd0;
-        intsum[i] = 0.0;
-        varsum[i] = 0.0;
+        @<initialisation@>
 
         dW = REAL(W);
 
@@ -1383,10 +1320,9 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
             emd = emd0;
             start = 0;
 
-            @<C inner loop@>
+            @<inner loop@>
 
-            intsum[i] += f;
-            varsum[i] += f * f;
+            @<increment@>
 
             dW = dW + (iJ - 1);
         }
@@ -1400,24 +1336,6 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
     UNPROTECT(1);
     return(ans);
-}
-@}
-
-@d C inner loop
-@{
-for (j = 1; j < iJ; j++) {
-    tmp = d + dW[j - 1] * emd;
-    if (tmp < dtol) tmp = dtol;
-    if (tmp > mdtol) tmp = mdtol;
-    y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
-    x = 0.0;
-    for (k = 0; k < j; k++)
-        x += dC[start + k] * y[k];
-    start += j;
-    d = C_pnorm_fast(da[j], x);
-    e = C_pnorm_fast(db[j], x);
-    emd = e - d;
-    f = emd * f;
 }
 @}
 
@@ -1464,6 +1382,40 @@ all.equal(p3, p2)
 cbind(p2, p3)
 
 @@
+
+
+@d pnorm fast
+@{
+/* see https://ssrn.com/abstract=2842681 */
+const double g2 =  -0.0150234471495426236132;
+const double g4 = 0.000666098511701018747289;
+const double g6 = 5.07937324518981103694e-06;
+const double g8 = -2.92345273673194627762e-06;
+const double g10 = 1.34797733516989204361e-07;
+const double m2dpi = -2.0 / M_PI; //3.141592653589793115998;
+
+double C_pnorm_fast (double x, double m) {
+
+    double tmp, ret;
+    double x2, x4, x6, x8, x10;
+
+    if (R_FINITE(x)) {
+        x = x - m;
+        x2 = x * x;
+        x4 = x2 * x2;
+        x6 = x4 * x2;
+        x8 = x6 * x2;
+        x10 = x8 * x2;
+        tmp = 1 + g2 * x2 + g4 * x4 + g6 * x6  + g8 * x8 + g10 * x10;
+        tmp = m2dpi * x2 * tmp;
+        ret = .5 + ((x > 0) - (x < 0)) * sqrt(1 - exp(tmp)) / 2.0;
+    } else {
+        ret = (x > 0 ? 1.0 : 0.0);
+    }
+    return(ret);
+}
+@}
+
 
 \chapter{Maximum-likelihood Example}
 
