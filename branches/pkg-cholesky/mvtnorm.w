@@ -1213,8 +1213,9 @@ d0 = C_pnorm_fast(da[0], 0.0);
 e0 = C_pnorm_fast(db[0], 0.0);
 emd0 = e0 - d0;
 f0 = emd0;
-intsum[i] = 0.0;
-varsum[i] = 0.0;
+if (!RlogLik)
+    intsum[0] = 0.0;
+varsum[0] = 0.0;
 @}
 
   \item Repeat
@@ -1262,8 +1263,12 @@ for (j = 1; j < iJ; j++) {
 
 @d increment
 @{
-intsum[i] += f;
-varsum[i] += f * f;
+if (RlogLik) {
+    varsum[0] += f;
+} else {
+    intsum[0] += f;
+    varsum[0] += f * f;
+}
 @}
     
       \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
@@ -1277,13 +1282,15 @@ varsum[i] += f * f;
 
 @d R pMVN
 @{
-SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
+SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0;
-    int p;
+    double d0, e0, emd0, f0, q0, l0, lM;
+    int p, len;
+
+    Rboolean RlogLik = asLogical(logLik);
 
     int iM = INTEGER(M)[0]; 
     int iN = INTEGER(N)[0]; 
@@ -1297,15 +1304,18 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
-    PROTECT(ans = allocMatrix(REALSXP, iN, 2));
+    len = (RlogLik ? 1 : iN);
+    PROTECT(ans = allocMatrix(REALSXP, len, 2));
     intsum = REAL(ans);
-    varsum = intsum + iN;
+    varsum = intsum + len;
 
     da = REAL(a);
     db = REAL(b);
     dC = REAL(C);
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
+    l0 = log(dtol);
+    lM = log((double) iM);
 
     for (int i = 0; i < iN; i++) {
 
@@ -1329,6 +1339,14 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
 
         da = da + iJ;
         db = db + iJ;
+
+        if (RlogLik) {
+            tmp = (varsum[0] < dtol ? l0 : log(varsum[0]));
+            intsum[0] += tmp - lM;
+        } else {
+            intsum = intsum + 1L;
+            varsum = varsum + 1L;
+        }
         /* constant C */
         if (p > 0)
             dC = dC + p;
@@ -1348,18 +1366,13 @@ pMVN3 <- function(lower, upper, mean = 0, chol, logLik = FALSE, M = 10000,
 
     @<standardise@>
 
-    ret <- .Call("R_pMVN", ac, bc, unclass(C), N, J, w, ncol(w), .Machine$double.eps);
+    ret <- .Call("R_pMVN", ac, bc, unclass(C), N, J, w, ncol(w), .Machine$double.eps, as.logical(logLik));
+    if (logLik) return(ret[,1])
+
+    M <- ncol(w)
     intsum <- ret[,1]
     varsum <- ret[,2]
 
-    M <- ncol(w)
-    .log <- function (x) 
-{
-    ret <- log(pmax(.Machine$double.eps, x))
-    dim(ret) <- dim(x)
-    ret
-}
-    if (logLik) return(sum(.log(intsum) - log(M)))
     ret <- intsum / M
     error <- 2.5 * sqrt((varsum / M - ret^2) / M)
     attr(ret, "error") <- error
@@ -1446,9 +1459,8 @@ ll <- function(parm) {
 
 ll(prm)
 
-system.time(replicate(100, sum(log(pMVN2(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps =
-0))))))
-system.time(replicate(100, sum(log(pMVN3(a, b, chol = lx, w = W)))))
+sum(log(pMVN2(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))))
+sum(log(pMVN3(a, b, chol = lx, w = W)))
 
 op <- optim(prm, fn = ll)
 op$value
