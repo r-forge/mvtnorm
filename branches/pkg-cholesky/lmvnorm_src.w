@@ -1316,7 +1316,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 @d output
 @{
-dans[0] += (intsum < dtol ? l0 : log(intsum)) - lM;
+dans[0] = (intsum < dtol ? l0 : log(intsum)) - lM;
 if (!RlogLik)
     dans += 1L;
 @}
@@ -1418,17 +1418,17 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
             @<increment@>
 
             if (W != R_NilValue)
-                dW = dW + (iJ - 1);
+                dW += iJ - 1;
         }
 
-        da = da + iJ;
-        db = db + iJ;
+        da += iJ;
+        db += iJ;
 
         @<output@>
 
-        /* constant C */
+        /* constant C? p == 0*/
         if (p > 0)
-            dC = dC + p;
+            dC += p;
     }
 
     if (W == R_NilValue)
