@@ -3,8 +3,8 @@
 %% packages
 \usepackage{amsfonts,amstext,amsmath,amssymb,amsthm}
 
-%\VignetteIndexEntry{Parallel pmvnorm()}
-%\VignetteDepends{mvtnorm}
+%\VignetteIndexEntry{Multivariate Normal Log-likelihoods}
+%\VignetteDepends{mvtnorm,randtoolbox}
 %\VignetteKeywords{multivariate normal distribution}
 %\VignettePackage{mvtnorm}
 

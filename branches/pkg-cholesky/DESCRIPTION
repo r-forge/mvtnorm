@@ -16,5 +16,6 @@ Description: Computes multivariate normal and t probabilities, quantiles,
   random deviates and densities.
 Imports: stats, methods
 Depends: R(>= 3.5.0)
+Suggests: randtoolbox
 License: GPL-2
 URL: http://mvtnorm.R-forge.R-project.org
