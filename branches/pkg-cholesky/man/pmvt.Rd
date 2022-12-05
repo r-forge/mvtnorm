@@ -11,7 +11,7 @@
 \usage{
 pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
      df=1, corr=NULL, sigma=NULL, algorithm = GenzBretz(),
-     type = c("Kshirsagar", "shifted"), keepAttr=TRUE, ...)
+     type = c("Kshirsagar", "shifted"), keepAttr=TRUE, seed = NULL, ...)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -45,6 +45,8 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{keepAttr}{\code{\link{logical}} indicating if
     \code{\link{attributes}} such as \code{error} and \code{msg} should be
     attached to the return value.  The default, \code{TRUE} is back compatible.}
+  \item{seed}{an object specifying if and how the random number generator
+          should be initialized, see \code{\link[stats]{simulate}}. }
   \item{...}{additional parameters (currently given to \code{GenzBretz} for
               backward compatibility issues). }
 }

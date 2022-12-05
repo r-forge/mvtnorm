@@ -48,6 +48,7 @@ static const R_CallMethodDef callMethods[] = {
     {"R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve, 5},
     {"R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod , 5},
     {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
+    {"R_lmvnorm", (DL_FUNC) &R_lmvnorm, 9},
     {NULL, NULL, 0}
 };
 

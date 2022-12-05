@@ -100,8 +100,21 @@ checkmvArgs <- function(lower, upper, mean, corr, sigma)
 
 
 pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL, sigma=NULL,
-                    algorithm = GenzBretz(), keepAttr=TRUE, ...)
+                    algorithm = GenzBretz(), keepAttr=TRUE, seed = NULL, ...)
 {
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
+
     carg <- checkmvArgs(lower=lower, upper=upper, mean=mean, corr=corr,
                         sigma=sigma)
     if (!is.null(carg$corr)) {
@@ -139,8 +152,21 @@ pmvnorm <- function(lower=-Inf, upper=Inf, mean=rep(0, length(lower)), corr=NULL
 pmvt <- function(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
                  df=1, corr=NULL, sigma=NULL,
                  algorithm = GenzBretz(),
-                 type = c("Kshirsagar", "shifted"), keepAttr=TRUE, ...)
+                 type = c("Kshirsagar", "shifted"), keepAttr=TRUE, seed = NULL, ...)
 {
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
+
     type <- match.arg(type)
     carg <- checkmvArgs(lower=lower, upper=upper, mean=delta, corr=corr,
                         sigma=sigma)
@@ -389,8 +415,21 @@ qmvnorm <- function(p, interval = NULL,
                     tail = c("lower.tail", "upper.tail", "both.tails"),
                     mean = 0, corr = NULL, sigma = NULL, algorithm =
                     GenzBretz(),
-                    ptol = 0.001, maxiter = 500, trace = FALSE, ...)
+                    ptol = 0.001, maxiter = 500, trace = FALSE, seed = NULL, ...)
 {
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
+
     if (length(p) != 1 || p < 0 || p > 1)
         stop(sQuote("p"), " is not a double between zero and one")
 
@@ -467,7 +506,20 @@ qmvt <- function(p, interval = NULL,
                  df = 1, delta = 0, corr = NULL, sigma = NULL,
                  algorithm = GenzBretz(),
                  type = c("Kshirsagar", "shifted"),
-                 ptol = 0.001, maxiter = 500, trace = FALSE, ...) {
+                 ptol = 0.001, maxiter = 500, trace = FALSE, seed = NULL, ...) 
+{
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
 
     if (length(p) != 1 || (p <= 0 || p >= 1))
         stop(sQuote("p"), " is not a double between zero and one")

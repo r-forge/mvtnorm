@@ -75,7 +75,7 @@ urlcolor={linkcolor}%
 
 \author{Torsten Hothorn \\ Universit\"at Z\"urich}
 
-\title{Vectorised \cmd{pmvnorm} in the \pkg{mvtnorm} Package}
+\title{Multivariate Normal Log-likelihoods in the \pkg{mvtnorm} Package}
 
 \begin{document}
 
@@ -108,11 +108,11 @@ along with \pkg{mvtnorm}.  If not, see <http://www.gnu.org/licenses/>.
 
 This document describes an implementation of \cite{numerical-:1992} for the  evaluation of
 $N$ multivariate $\J$-dimensional normal probabilities
-\begin{eqnarray*}
+\begin{eqnarray} \label{pmvnorm}
 p_i(\mC_i \mid \avec_i, \bvec_i) = \Prob(\avec_i < \rY_i \le \bvec_i \mid \mC_i ) 
   = (2 \pi)^{-\frac{\J}{2}} \text{det}(\mC_i)^{-\frac{1}{2}} 
     \int_{\avec_i}^{\bvec_i} \exp\left(-\frac{1}{2} \yvec^\top \mC_i^{-\top} \mC_i^{-1} \yvec\right) \, d \yvec
-\end{eqnarray*}
+\end{eqnarray}
 where $\avec_i = (a^{(i)}_1, \dots, a^{(i)}_\J)^\top \in \R^\J$ and 
 $\bvec_i = (b^{(i)}_1, \dots, b^{(i)}_\J)^\top \in \R^\J$ are integration
 limits, $\mC_i = (c^{(i)}_{j\jmath}) \in \R^{\J \times
@@ -133,6 +133,7 @@ structured way.
 
 @o ltMatrices.R -cp
 @{
+@<R Header@>
 @<ltMatrices@>
 @<dim ltMatrices@>
 @<dimnames ltMatrices@>
@@ -149,6 +150,7 @@ structured way.
 
 @o ltMatrices.c -cc
 @{
+@<C Header@>
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
@@ -1105,17 +1107,17 @@ chk(d, diagonals(Tcrossprod(lxd)))
 @@
 
 
-\chapter{Prototyping}
+\chapter{Multivariate Normal Log-likelihoods}
 
-@o prototype.R -cp
-@{
-@<lmvnormR@>
-@<lmvnorm@>
-@}
+We now discuss code for evaluating the log-likelihood
+\begin{eqnarray*}
+\sum_{i = 1}^N \log(p_i(\mC_i \mid \avec_i, \bvec_i))
+\end{eqnarray*}
 
+This is relatively simple to achieve using \code{pmvnorm}:
 
-@d lmvnormR
-@{
+<<lmvnorm_R>>=
+library("mvtnorm")
 lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
     @<input checks@>
@@ -1138,12 +1140,18 @@ lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
     ret
 }
-@}
+@@
 
-<<ex-lmvnorm>>=
-library("mvtnorm")
-source("prototype.R")
-source("ltMatrices.R")
+However, the underlying \code{FORTRAN} code first computes the Cholesky
+factor based on the covariance matrix, which is clearly a waste of time.
+Repeated calls to \code{FORTRAN} also cost some time. The code implements a
+specific form of quasi-Monte-Carlo integration without allowing the user to
+change the scheme (or to fall-back to simple Monte-Carlo). We therefore
+implement our own, and simplistic version, with the aim to speed-things up
+such that maximum-likelihood estimation becomes a bit faster.
+
+Let's look at an example first. This code estimates $p_1, \dots, p_5$
+<<ex-lmvnorm_R>>=
 J <- 5
 N <- 10
 
@@ -1156,8 +1164,18 @@ b <- a + 2 + matrix(runif(N * J), nrow = J)
 lmvnormR(a, b, chol = lx, logLik = FALSE)
 @@
 
+
+\section{Algorithm}
+
+@o lmvnorm.R -cp
+@{
+@<R Header@>
+@<lmvnorm@>
+@}
+
 @o lmvnorm.c -cc
 @{
+@<C Header@>
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
@@ -1167,8 +1185,9 @@ lmvnormR(a, b, chol = lx, logLik = FALSE)
 @<R lmvnorm@>
 @}
 
-
-\section{Algorithm}
+We implement the algorithm described by \cite{numerical-:1992}. The key
+point here is that the original $\J$-dimensional problem~(\ref{pmvnorm}) is transformed into
+an integral over $[0, 1]^{\J - 1}$.
 
 For each $i = 1, \dots, N$, do
 
@@ -1231,7 +1250,7 @@ d0 = C_pnorm_fast(da[0], 0.0);
 e0 = C_pnorm_fast(db[0], 0.0);
 emd0 = e0 - d0;
 f0 = emd0;
-ret = 0.0;
+intsum = 0.0;
 @}
 
   \item Repeat
@@ -1284,17 +1303,63 @@ for (j = 1; j < iJ; j++) {
 
 @d increment
 @{
-ret += f;
+intsum += f;
 @}
+
+We refrain from early stopping and error estimation. 
     
       \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
 
     \end{enumerate}
   \item Output $\hat{p}_i = \text{intsum} / M$.
 
+We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
+
+@d output
+@{
+dans[0] += (intsum < dtol ? l0 : log(intsum)) - lM;
+if (!RlogLik)
+    dans += 1L;
+@}
+
 \end{enumerate}
 
+It turned out that calls to \code{pnorm} are expensive, so a slightly faster
+alternative is used
 
+@d pnorm fast
+@{
+/* see https://ssrn.com/abstract=2842681 */
+const double g2 =  -0.0150234471495426236132;
+const double g4 = 0.000666098511701018747289;
+const double g6 = 5.07937324518981103694e-06;
+const double g8 = -2.92345273673194627762e-06;
+const double g10 = 1.34797733516989204361e-07;
+const double m2dpi = -2.0 / M_PI; //3.141592653589793115998;
+
+double C_pnorm_fast (double x, double m) {
+
+    double tmp, ret;
+    double x2, x4, x6, x8, x10;
+
+    if (R_FINITE(x)) {
+        x = x - m;
+        x2 = x * x;
+        x4 = x2 * x2;
+        x6 = x4 * x2;
+        x8 = x6 * x2;
+        x10 = x8 * x2;
+        tmp = 1 + g2 * x2 + g4 * x4 + g6 * x6  + g8 * x8 + g10 * x10;
+        tmp = m2dpi * x2 * tmp;
+        ret = .5 + ((x > 0) - (x < 0)) * sqrt(1 - exp(tmp)) / 2.0;
+    } else {
+        ret = (x > 0 ? 1.0 : 0.0);
+    }
+    return(ret);
+}
+@}
+
+We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
@@ -1303,7 +1368,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, lM, ret;
+    double d0, e0, emd0, f0, q0, l0, lM, intsum;
     int p, len;
 
     Rboolean RlogLik = asLogical(logLik);
@@ -1360,10 +1425,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
         da = da + iJ;
         db = db + iJ;
 
-        dans[0] += (ret < dtol ? l0 : log(ret)) - lM;
-
-        if (!RlogLik)
-            dans += 1L;
+        @<output@>
 
         /* constant C */
         if (p > 0)
@@ -1378,10 +1440,25 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 }
 @}
 
+The \proglang{R} user interface consists of some checks and a call to
+\proglang{C}
+
 @d lmvnorm
 @{
 lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000, 
-                    w = NULL, ...) {
+                    w = NULL, seed = NULL) {
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
 
     @<input checks@>
 
@@ -1402,88 +1479,74 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000,
 
 
 <<ex-lmvnorm>>= )
+source("lmvnorm.R")
 dyn.load("lmvnorm.so")
 
 M <- 10000
 set.seed(29)
-W <- matrix(runif(M * (J - 1)), ncol = M)
-system.time(p2 <- lmvnormR(a, b, chol = lx, logLik = FALSE, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0)))
-system.time(p3 <- exp(lmvnorm(a, b, chol = lx,  w = W, logLik = FALSE)))
-set.seed(29)
-system.time(p4 <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE)))
 
-library("randtoolbox")
-W <- t(halton(M, dim = J - 1))
+if (require("randtoolbox")) {
+    ### quasi-Monte-Carlo
+    W <- t(halton(M, dim = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * (J - 1)), ncol = M)
+}
 
-p5 <- exp(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE))
+### Genz & Bretz, 2001, without early stopping
+pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
+                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+### Genz 1992 with quasi-Monte-Carlo
+pGq <- exp(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE))
+### Genz 1992, original Monte-Carlo
+pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
 
-p2
-p3
-p4
-p5
-
-all.equal(p3, p2)
-
-cbind(p2, p3, p4, p5)
-
+cbind(pGB, pGq, pG)
 @@
 
-
-@d pnorm fast
-@{
-/* see https://ssrn.com/abstract=2842681 */
-const double g2 =  -0.0150234471495426236132;
-const double g4 = 0.000666098511701018747289;
-const double g6 = 5.07937324518981103694e-06;
-const double g8 = -2.92345273673194627762e-06;
-const double g10 = 1.34797733516989204361e-07;
-const double m2dpi = -2.0 / M_PI; //3.141592653589793115998;
-
-double C_pnorm_fast (double x, double m) {
-
-    double tmp, ret;
-    double x2, x4, x6, x8, x10;
-
-    if (R_FINITE(x)) {
-        x = x - m;
-        x2 = x * x;
-        x4 = x2 * x2;
-        x6 = x4 * x2;
-        x8 = x6 * x2;
-        x10 = x8 * x2;
-        tmp = 1 + g2 * x2 + g4 * x4 + g6 * x6  + g8 * x8 + g10 * x10;
-        tmp = m2dpi * x2 * tmp;
-        ret = .5 + ((x > 0) - (x < 0)) * sqrt(1 - exp(tmp)) / 2.0;
-    } else {
-        ret = (x > 0 ? 1.0 : 0.0);
-    }
-    return(ret);
-}
-@}
-
+The three versions agree nicely.
 
 \chapter{Maximum-likelihood Example}
 
-<<ex-ML, eval = TRUE>>=
+We now discuss how this infrastructure can be used to estimate the Cholesky
+factor of a multivariate normal in the presence of interval-censored
+observations.
+
+We first generate data, where \code{prm} are the true parameters
+<<ex-ML-data>>=
 N <- 250
 J <- 4
 L <- matrix(prm <- runif(J * (J + 1) / 2), ncol = 1L)
 lx <- ltMatrices(L, diag = TRUE, byrow = TRUE, trans = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
-
 Y <- Mult(lx, Z)
 Y <- Y - rowMeans(Y)
-
-(S <- var(t(Y)))
-Tcrossprod(lx[1,])
-
-lhat <- chol(S)[upper.tri(S, diag = TRUE)]
-
 a <- Y - runif(N * J, max = .1)
 b <- Y + runif(N * J, max = .1)
+@@
 
+The interval-censoring is represented by \code{a} and \code{b}. The true
+covariance matrix can be estimate from the uncensored data as
+
+<<ex-ML-vcov>>=
+(S <- var(t(Y)))
+Tcrossprod(lx[1,])
+lhat <- chol(S)[upper.tri(S, diag = TRUE)]
+@@
+
+We now define the log-likelihood function. It is important to use weights
+via the \code{w} argument (or to set the \code{seed}) such that only the
+candidate parameters \code{parm} change with repeated calls to \code{ll}.
+
+<<ex-ML-ll, eval = TRUE>>=
 M <- 500
-W <- matrix(runif(M * (J - 1)), ncol = M)
+if (require("randtoolbox")) {
+    ### quasi-Monte-Carlo
+    W <- t(halton(M, dim = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * (J - 1)), ncol = M)
+}
 
 ll <- function(parm) {
 
@@ -1491,20 +1554,78 @@ ll <- function(parm) {
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
      -lmvnorm(lower = a, upper = b, chol = C, w = W, logLik = TRUE)
 }
+@@
 
+We can check the correctness of our log-likelihood function
+<<ex-ML-check>>=
 ll(prm)
 ll(lhat)
-
 lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 lmvnorm(a, b, chol = lx, w = W)
+@@
 
+Finally, we can hand-over to \code{optim} for the unconstrained optimisation
+and compare the estimates with the true values and the estimates obtained
+from the uncensored observations.
+
+<<ex-ML>>=
 op <- optim(lhat, fn = ll)
-op$value
-
-cbind(prm, op$par, chol(S)[upper.tri(S, diag = TRUE)])
+op$value ## compare with 
+ll(prm)
+cbind(true = prm, est_int = op$par, est_raw = chol(S)[upper.tri(S, diag = TRUE)])
 @@
 
 \chapter{Package Infrastructure}
+
+@d R Header
+@{
+###    Copyright (C) 2022- Torsten Hothorn
+###
+###    This file is part of the 'mvtnorm' R add-on package.
+###
+###    'mvtnorm' is free software: you can redistribute it and/or modify
+###    it under the terms of the GNU General Public License as published by
+###    the Free Software Foundation, version 2.
+###
+###    'mvtnorm' is distributed in the hope that it will be useful,
+###    but WITHOUT ANY WARRANTY; without even the implied warranty of
+###    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+###    GNU General Public License for more details.
+###
+###    You should have received a copy of the GNU General Public License
+###    along with 'mvtnorm'.  If not, see <http://www.gnu.org/licenses/>.
+###
+###
+###    DO NOT EDIT THIS FILE
+###
+###    Edit 'lmvnorm.w' and run 'nuweb -r lmvnorm.w'
+@}
+
+@d C Header
+@{
+/*
+    Copyright (C) 2022- Torsten Hothorn
+
+    This file is part of the 'mvtnorm' R add-on package.
+
+    'mvtnorm' is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, version 2.
+
+    'mvtnorm' is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with 'mvtnorm'.  If not, see <http://www.gnu.org/licenses/>.
+
+
+    DO NOT EDIT THIS FILE
+
+    Edit 'lmvnorm.w' and run 'nuweb -r lmvnorm.w'
+*/
+@}
 
 
 \chapter*{Index}

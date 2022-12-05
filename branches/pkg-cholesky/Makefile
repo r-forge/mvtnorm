@@ -10,6 +10,8 @@ mvtnorm.Rnw:	mvtnorm.w
 #	mv *def src
 	cp ltMatrices.R R
 	cp ltMatrices.c src
+	cp lmvnorm.c src
+	cp lmvnorm.R R
 #	mv *.Rd man
 
 mvtnorm.R: mvtnorm.Rnw

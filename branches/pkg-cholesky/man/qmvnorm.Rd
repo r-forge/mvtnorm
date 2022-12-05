@@ -13,7 +13,7 @@ finding algorithm described in Bornkamp (2018).
 qmvnorm(p, interval = NULL, tail = c("lower.tail", 
         "upper.tail", "both.tails"), mean = 0, corr = NULL, 
         sigma = NULL, algorithm = GenzBretz(),
-        ptol = 0.001, maxiter = 500, trace = FALSE, ...)
+        ptol = 0.001, maxiter = 500, trace = FALSE, seed = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -44,6 +44,8 @@ qmvnorm(p, interval = NULL, tail = c("lower.tail",
     for the predicted quantile is inside [p-ptol, p+ptol]. \code{maxiter} is the
     maximum number of iterations for the root finding algorithm. \code{trace}
     prints the iterations of the root finder.}
+  \item{seed}{an object specifying if and how the random number generator
+          should be initialized, see \code{\link[stats]{simulate}}.}
   \item{...}{ additional parameters to be passed to 
               \code{\link{GenzBretz}}.}
 }
