@@ -1109,14 +1109,14 @@ chk(d, diagonals(Tcrossprod(lxd)))
 
 @o prototype.R -cp
 @{
-@<pMVN2@>
-@<pMVN3@>
+@<lmvnormR@>
+@<lmvnorm@>
 @}
 
 
-@d pMVN2
+@d lmvnormR
 @{
-pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
+lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
     @<input checks@>
 
@@ -1132,11 +1132,15 @@ pMVN2 <- function(lower, upper, mean = 0, chol, M = 10000, ...) {
         error[i] <- attr(tmp, "error")
     }
     attr(ret, "error") <- error
+
+    if (logLik)
+        return(sum(log(pmax(ret, .Machine$double.eps))))
+
     ret
 }
 @}
 
-<<ex-pMVN>>=
+<<ex-lmvnorm>>=
 library("mvtnorm")
 source("prototype.R")
 source("ltMatrices.R")
@@ -1149,10 +1153,10 @@ lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 2 + matrix(runif(N * J), nrow = J)
 
-pMVN2(a, b, chol = lx)
+lmvnormR(a, b, chol = lx, logLik = FALSE)
 @@
 
-@o pMVN.c -cc
+@o lmvnorm.c -cc
 @{
 #include <R.h>
 #include <Rmath.h>
@@ -1160,7 +1164,7 @@ pMVN2(a, b, chol = lx)
 #include <Rdefines.h>
 #include <Rconfig.h>
 @<pnorm fast@>
-@<R pMVN@>
+@<R lmvnorm@>
 @}
 
 
@@ -1227,9 +1231,7 @@ d0 = C_pnorm_fast(da[0], 0.0);
 e0 = C_pnorm_fast(db[0], 0.0);
 emd0 = e0 - d0;
 f0 = emd0;
-if (!RlogLik)
-    intsum[0] = 0.0;
-varsum[0] = 0.0;
+ret = 0.0;
 @}
 
   \item Repeat
@@ -1282,12 +1284,7 @@ for (j = 1; j < iJ; j++) {
 
 @d increment
 @{
-if (RlogLik) {
-    varsum[0] += f;
-} else {
-    intsum[0] += f;
-    varsum[0] += f * f;
-}
+ret += f;
 @}
     
       \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
@@ -1299,14 +1296,14 @@ if (RlogLik) {
 
 
 
-@d R pMVN
+@d R lmvnorm
 @{
-SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik) {
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik) {
 
     SEXP ans;
-    double *da, *db, *dC, *dW, *intsum, *varsum, dtol = REAL(tol)[0];
+    double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, lM;
+    double d0, e0, emd0, f0, q0, l0, lM, ret;
     int p, len;
 
     Rboolean RlogLik = asLogical(logLik);
@@ -1324,9 +1321,8 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SE
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
     len = (RlogLik ? 1 : iN);
-    PROTECT(ans = allocMatrix(REALSXP, len, 2));
-    intsum = REAL(ans);
-    varsum = intsum + len;
+    PROTECT(ans = allocVector(REALSXP, len));
+    dans = REAL(ans);
 
     da = REAL(a);
     db = REAL(b);
@@ -1364,13 +1360,11 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SE
         da = da + iJ;
         db = db + iJ;
 
-        if (RlogLik) {
-            tmp = (varsum[0] < dtol ? l0 : log(varsum[0]));
-            intsum[0] += tmp - lM;
-        } else {
-            intsum = intsum + 1L;
-            varsum = varsum + 1L;
-        }
+        dans[0] += (ret < dtol ? l0 : log(ret)) - lM;
+
+        if (!RlogLik)
+            dans += 1L;
+
         /* constant C */
         if (p > 0)
             dC = dC + p;
@@ -1384,10 +1378,10 @@ SEXP R_pMVN(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SE
 }
 @}
 
-@d pMVN3
+@d lmvnorm
 @{
-pMVN3 <- function(lower, upper, mean = 0, chol, logLik = FALSE, M = 10000, 
-                  w = NULL, ...) {
+lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000, 
+                    w = NULL, ...) {
 
     @<input checks@>
 
@@ -1400,39 +1394,37 @@ pMVN3 <- function(lower, upper, mean = 0, chol, logLik = FALSE, M = 10000,
         storage.mode(w) <- "double"
     }
 
-    ret <- .Call("R_pMVN", ac, bc, unclass(C), as.integer(N), 
+    ret <- .Call("R_lmvnorm", ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), .Machine$double.eps, as.logical(logLik));
-    if (logLik) return(ret[,1])
-
-    intsum <- ret[,1]
-    varsum <- ret[,2]
-
-    ret <- intsum / M
-    error <- 2.5 * sqrt((varsum / M - ret^2) / M)
-    attr(ret, "error") <- error
-    ret
+    return(ret)
 }
 @}
 
 
-<<ex-pMVN3>>= )
-dyn.load("pMVN.so")
+<<ex-lmvnorm>>= )
+dyn.load("lmvnorm.so")
 
 M <- 10000
 set.seed(29)
 W <- matrix(runif(M * (J - 1)), ncol = M)
-system.time(p2 <- pMVN2(a, b, chol = lx,  algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0)))
-system.time(p3 <- pMVN3(a, b, chol = lx,  w = W))
+system.time(p2 <- lmvnormR(a, b, chol = lx, logLik = FALSE, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0)))
+system.time(p3 <- exp(lmvnorm(a, b, chol = lx,  w = W, logLik = FALSE)))
 set.seed(29)
-system.time(p4 <- pMVN3(a, b, chol = lx, w = NULL, M = M))
+system.time(p4 <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE)))
+
+library("randtoolbox")
+W <- t(halton(M, dim = J - 1))
+
+p5 <- exp(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE))
 
 p2
 p3
 p4
+p5
 
 all.equal(p3, p2)
 
-cbind(p2, p3, p4)
+cbind(p2, p3, p4, p5)
 
 @@
 
@@ -1497,14 +1489,14 @@ ll <- function(parm) {
 
      C <- matrix(parm, ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-     -pMVN3(lower = a, upper = b, chol = C, w = W, logLik = TRUE)
+     -lmvnorm(lower = a, upper = b, chol = C, w = W, logLik = TRUE)
 }
 
 ll(prm)
 ll(lhat)
 
-sum(log(pMVN2(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))))
-sum(log(pMVN3(a, b, chol = lx, w = W)))
+lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+lmvnorm(a, b, chol = lx, w = W)
 
 op <- optim(lhat, fn = ll)
 op$value
