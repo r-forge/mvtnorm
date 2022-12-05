@@ -2,7 +2,7 @@
 lmvnorm_src.Rnw:	lmvnorm_src.w
 	nuweb -r lmvnorm_src.w
 	R CMD SHLIB ltMatrices.c
-	R CMD SHLIB lmvnorm_src.c
+	R CMD SHLIB lmvnorm.c
 	mv lmvnorm_src.tex lmvnorm_src.Rnw
 #	mv *.h src
 #	mv *.c src
@@ -27,7 +27,7 @@ lmvnorm_src.pdf:	lmvnorm_src.tex
 	### sort-out page numbers
 	nuweb -r lmvnorm_src.w
 	R CMD SHLIB ltMatrices.c
-	R CMD SHLIB lmvnorm_src.c
+	R CMD SHLIB lmvnorm.c
 	mv lmvnorm_src.tex lmvnorm_src.Rnw
 	R CMD Sweave lmvnorm_src.Rnw
 	pdflatex lmvnorm_src.tex

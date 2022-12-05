@@ -24,4 +24,6 @@ S3method("dim", "syMatrices")
 S3method("dimnames", "syMatrices")
 S3method("names", "syMatrices")
 S3method("solve", "ltMatrices")
-
+S3method("diagonals", "ltMatrices")
+S3method("diagonals", "syMatrices")
+S3method("diagonals", "matrix")
