@@ -767,7 +767,7 @@ all $i = 1, \dots, N$.
 \xvec_N)$ of solutions.
 
 If \code{y} is not given, $\mC_i^{-1}$ is returned in transposed
-column-major order (matrix of dimension $\J (\J 1 1) / 2  \times N$). If
+column-major order (matrix of dimension $\J (\J \pm 1) / 2  \times N$). If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
 @d solve
@@ -1535,7 +1535,7 @@ via the \code{w} argument (or to set the \code{seed}) such that only the
 candidate parameters \code{parm} change with repeated calls to \code{ll}.
 
 <<ex-ML-ll, eval = TRUE>>=
-M <- 500
+M <- 500 ### faster for vignette
 if (require("randtoolbox")) {
     ### quasi-Monte-Carlo
     W <- t(halton(M, dim = J - 1))
@@ -1555,7 +1555,6 @@ ll <- function(parm) {
 We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 ll(prm)
-ll(lhat)
 lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 lmvnorm(a, b, chol = lx, w = W)
 @@
@@ -1568,7 +1567,7 @@ from the uncensored observations.
 op <- optim(lhat, fn = ll)
 op$value ## compare with 
 ll(prm)
-cbind(true = prm, est_int = op$par, est_raw = chol(S)[upper.tri(S, diag = TRUE)])
+cbind(true = prm, est_int = op$par, est_raw = lhat)
 @@
 
 \chapter{Package Infrastructure}
@@ -1634,9 +1633,9 @@ cbind(true = prm, est_int = op$par, est_raw = chol(S)[upper.tri(S, diag = TRUE)]
 
 @m
 
-\section*{Identifiers}
-
-@u
+%\section*{Identifiers}
+%
+%@u
 
 \bibliographystyle{plainnat}
 \bibliography{\Sexpr{gsub("\\.bib", "", system.file("litdb.bib", package = "mvtnorm"))}}
