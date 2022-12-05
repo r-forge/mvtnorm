@@ -1,9 +1,9 @@
 
-mvtnorm.Rnw:	mvtnorm.w
-	nuweb -r mvtnorm.w
+lmvnorm_src.Rnw:	lmvnorm_src.w
+	nuweb -r lmvnorm_src.w
 	R CMD SHLIB ltMatrices.c
-	R CMD SHLIB lmvnorm.c
-	mv mvtnorm.tex mvtnorm.Rnw
+	R CMD SHLIB lmvnorm_src.c
+	mv lmvnorm_src.tex lmvnorm_src.Rnw
 #	mv *.h src
 #	mv *.c src
 #	mv Makevars src
@@ -14,36 +14,36 @@ mvtnorm.Rnw:	mvtnorm.w
 	cp lmvnorm.R R
 #	mv *.Rd man
 
-mvtnorm.R: mvtnorm.Rnw
-	Stangle mvtnorm.Rnw
-#	mv mvtnorm.R tests
+lmvnorm_src.R: lmvnorm_src.Rnw
+	Stangle lmvnorm_src.Rnw
+#	mv lmvnorm_src.R tests
 
-mvtnorm.tex:	mvtnorm.Rnw
-	R CMD Sweave mvtnorm.Rnw
+lmvnorm_src.tex:	lmvnorm_src.Rnw
+	R CMD Sweave lmvnorm_src.Rnw
 	
-mvtnorm.pdf:	mvtnorm.tex
-	texi2dvi --pdf mvtnorm.tex
+lmvnorm_src.pdf:	lmvnorm_src.tex
+	texi2dvi --pdf lmvnorm_src.tex
 	### NEED to run nuweb TWICE to
 	### sort-out page numbers
-	nuweb -r mvtnorm.w
+	nuweb -r lmvnorm_src.w
 	R CMD SHLIB ltMatrices.c
-	R CMD SHLIB lmvnorm.c
-	mv mvtnorm.tex mvtnorm.Rnw
-	R CMD Sweave mvtnorm.Rnw
-	pdflatex mvtnorm.tex
-	pdflatex mvtnorm.tex
-	# cp mvtnorm.Rnw vignettes
+	R CMD SHLIB lmvnorm_src.c
+	mv lmvnorm_src.tex lmvnorm_src.Rnw
+	R CMD Sweave lmvnorm_src.Rnw
+	pdflatex lmvnorm_src.tex
+	pdflatex lmvnorm_src.tex
+	cp lmvnorm_src.Rnw vignettes
 
-all:	mvtnorm.pdf
+all:	lmvnorm_src.pdf
 
 clean:	
 	./cleanup
 	rm -rf *~
-	rm -rf mvtnorm*.pdf
-	rm -rf mvtnorm.R
-	texclean mvtnorm
-	rm -rf mvtnorm.tex
-	rm -rf mvtnorm.Rnw
+	rm -rf lmvnorm_src*.pdf
+	rm -rf lmvnorm_src.R
+	texclean lmvnorm_src
+	rm -rf lmvnorm_src.tex
+	rm -rf lmvnorm_src.Rnw
 	rm -rf *.c
 	rm -rf *.h
 	rm -rf *.o
@@ -60,6 +60,6 @@ clean:
 #	rm -rf src/*
 #	rm -rf R/*
 #	rm -rf man/*
-#	rm -rf vignettes/mvtnorm.Rnw
-#	rm -rf tests/mvtnorm.R*
+#	rm -rf vignettes/lmvnorm_src.Rnw
+#	rm -rf tests/lmvnorm_src.R*
 	
