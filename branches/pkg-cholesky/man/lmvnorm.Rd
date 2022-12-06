@@ -29,7 +29,7 @@ estimated errors is NOT implemented.
 }
   \item{w}{an optional matrix of weights. This allows to replace the default
 Monte-Carlo procedure (Genz, 1992) with a quasi-Monte-Carlo approach (Genz &
-Bretz, 2001). Note that the same weights for evaluating the
+Bretz, 2002). Note that the same weights for evaluating the
 multivariate normal probability are used for all observations when \code{w}
 is specified. If \code{w} is \code{NULL}, different uniform numbers are
 drawn for each observation.
@@ -44,8 +44,11 @@ drawn for each observation.
   \code{chol} over boxes defined by \code{lower} and \code{upper}. By
   default, the log-likelihood is returned.
 
-  Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2001)
-  integration is implemented.
+  Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2002)
+  integration is implemented, the latter with weights obtained from package
+  \pkg{randtoolbox}.
+
+  Details can be found in the \code{lmvnorm_src} package vignette.
 
 }
 \value{
@@ -79,7 +82,7 @@ The log-likelihood (\code{likLik = TRUE}) or the individual contributions to the
 
   ### plain Monte-Carlo (Genz, 1992)
   w <- NULL
-  ### quasi-Monte-Carlo (Genz & Bretz, 2001, but with different weights)
+  ### quasi-Monte-Carlo (Genz & Bretz, 2002, but with different weights)
   if (require("randtoolbox")) w <- t(halton(25000, J - 1))
 
   ### log-likelihood

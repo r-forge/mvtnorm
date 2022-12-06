@@ -52,15 +52,19 @@ if \code{TRUE}.
 }
   \item{a}{object of class \code{ltMatrices}.
 }
-  \item{y}{matrix
+  \item{y}{matrix with \eqn{J} rows.
 }
-  \item{b}{matrix
+  \item{b}{matrix with \eqn{J} rows.
 }
   \item{\dots}{additional arguments, currently ignored.
 }
 }
 \details{
-TBD
+\code{ltMatrices} interprets a matrix as lower triangular elements of
+multiple lower triangular matrices. The corresponding class can be used to
+store such matrices efficiently. Matrix multiplications, solutions to linear
+systems, explicite inverses, and crossproducs can be computed based on such
+objects. Details can be found in the \code{lmvnorm_src} package vignette.
 }
 \value{
 The constructor \code{ltMatrices} returns objects of class \code{ltMatrices}
@@ -68,8 +72,8 @@ with corresponding methods.
 }
 \examples{
 
-  J <- 4
-  N <- 2
+  J <- 4L
+  N <- 2L
   dm <- paste0("d", 1:J)
   xm <- paste0("x", 1:N)
   (C <- ltMatrices(matrix(runif(N * J * (J + 1) / 2), 
