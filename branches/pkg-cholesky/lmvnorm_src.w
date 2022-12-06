@@ -686,14 +686,16 @@ int iJ = INTEGER(J)[0];
 /* C contains diagonal elements */
 Rboolean Rdiag = asLogical(diag);
 /* p = J * (J - 1) / 2 + diag * J */
-int p, len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
+int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;@}
+@d C length
+@{
+int p;
 if (LENGTH(C) == len)
     /* C is constant for i = 1, ..., N */
     p = 0;
 else 
     /* C contains C_1, ...., C_N */
     p = len;
-int i, j;
 @}
 
 @d mult
@@ -702,9 +704,11 @@ SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
 
     SEXP ans;
     double *dans, *dy = REAL(y);
-    int k, start;
+    int i, j, k, start;
 
     @<RC input@>
+
+    @<C length@>
 
     PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
     dans = REAL(ans);
@@ -784,9 +788,11 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
 
     SEXP ans, ansx;
     double *dans, *dansx, *dy;
-    int k, info, nrow, ncol, jj, idx, ONE = 1;
+    int i, j, k, info, nrow, ncol, jj, idx, ONE = 1;
 
     @<RC input@>
+
+    @<C length@>
 
     char di, lo = 'L', tr = 'N';
     if (Rdiag) {
@@ -800,7 +806,7 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
     @<setup memory@>
     
     /* loop over matrices, ie columns of C  / y */    
-    for (int i = 0; i < iN; i++) {
+    for (i = 0; i < iN; i++) {
 
         @<copy elements@>
 
@@ -827,6 +833,9 @@ ncol = (p > 0 ? iN : 1);
 PROTECT(ans = allocMatrix(REALSXP, nrow, ncol));
 dans = REAL(ans);
 
+ansx = ans;
+dansx = dans;
+dy = dans;
 if (y != R_NilValue) {
     dy = REAL(y);
     PROTECT(ansx = allocMatrix(REALSXP, iJ, iN));
@@ -876,7 +885,7 @@ if (y == R_NilValue) {
         error("Cannot solve ltmatices");
 } else {
     /* solve linear system */
-    F77_CALL(dtpsv)(&lo, &tr, &di, &iJ, dans, dansx, &ONE FCONE FCONE);
+    F77_CALL(dtpsv)(&lo, &tr, &di, &iJ, dans, dansx, &ONE FCONE FCONE FCONE);
     dansx += iJ;
     dy += iJ;
 }
@@ -980,7 +989,7 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only)
 
     SEXP ans;
     double *dans;
-    int n, k, ix, nrow;
+    int i, j, n, k, ix, nrow;
 
     @<RC input@>
 
@@ -1403,6 +1412,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     da = REAL(a);
     db = REAL(b);
     dC = REAL(C);
+    dW = REAL(C);
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
     l0 = log(dtol);
