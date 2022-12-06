@@ -1168,7 +1168,9 @@ x <- matrix(runif(N * J * (J + 1) / 2), ncol = N)
 lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
 
 a <- matrix(runif(N * J), nrow = J) - 2
+a[sample(J * N)[1:2]] <- -Inf
 b <- a + 2 + matrix(runif(N * J), nrow = J)
+b[sample(J * N)[1:2]] <- Inf
 
 lmvnormR(a, b, chol = lx, logLik = FALSE)
 @@
