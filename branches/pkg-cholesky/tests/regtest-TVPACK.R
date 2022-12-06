@@ -11,7 +11,7 @@ pmvt.. <- function(df, algorithm)
 dfs <- 1:9
 pmvt_TV.7 <- replicate(7, pmvt..(dfs, TVPACK()))
 
-stopifnot(pmvt_TV.7 == pmvt_TV.7[,1])
+stopifnot(identical(unique(c(pmvt_TV.7 - pmvt_TV.7[,1])), 0))
 (pmvt.TV. <- pmvt_TV.7[,1])
 (pmvt.TV  <- pmvt..(dfs, TVPACK(1e-14)))# has no effect here
 all.equal(max(abs(pmvt.TV - pmvt.TV.)), 0) ## all 0 {unexpectedly ??}

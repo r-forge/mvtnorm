@@ -88,16 +88,16 @@ stopifnot(all.equal(round(a, 3), round(b, 3)))
 
 # cases where the support is the empty set tried to compute something.
 # spotted by Peter Thomson <peter@statsresearch.co.nz>
-stopifnot(pmvnorm(upper=c(-Inf,1)) == 0)
-stopifnot(pmvnorm(lower=c(Inf,1)) == 0)
-stopifnot(pmvnorm(lower=c(-2,0),upper=c(-1,1),corr=matrix(rep(1,4),2,2)) == 0)
+stopifnot(identical(c(pmvnorm(upper=c(-Inf,1))), 0))
+stopifnot(identical(c(pmvnorm(lower=c(Inf,1))), 0))
+stopifnot(identical(c(pmvnorm(lower=c(-2,0),upper=c(-1,1),corr=matrix(rep(1,4),2,2))), 0))
 
 # bugged Fritz (long time ago)
-stopifnot(all.equal(pmvnorm(-Inf, c(Inf, 0), 0, diag(2)),
-		    pmvnorm(-Inf, c(Inf, 0), 0)))
+stopifnot(identical(c(pmvnorm(-Inf, c(Inf, 0), 0, diag(2))),
+		    c(pmvnorm(-Inf, c(Inf, 0), 0))))
 
 # this is a bug in `mvtdst' nobody was able to fix yet :-(
-stopifnot(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0)) == 1)
+stopifnot(identical(c(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
 
 ### check for correct random seed initialization
 ### problem reported by Karen Conneely <conneely@umich.edu>
@@ -172,15 +172,15 @@ stopifnot(all.equal(a, pnorm(2, sd=sqrt(.5))))
 
 # cases where the support is the empty set tried to compute something.
 # spotted by Peter Thomson <peter@statsresearch.co.nz>
-stopifnot(pmvnormM(upper=c(-Inf,1)) == 0)
-stopifnot(pmvnormM(lower=c(Inf,1)) == 0)
+stopifnot(identical(c(pmvnormM(upper=c(-Inf,1))), 0))
+stopifnot(identical(c(pmvnormM(lower=c(Inf,1))), 0))
 
 # bugged Fritz (long time ago)
 stopifnot(all.equal(pmvnormM(-Inf, c(Inf, 0), 0, diag(2)),
 		    pmvnormM(-Inf, c(Inf, 0), 0)))
 
 # this is a bug in `mvtdst' nobody was able to fix yet :-(
-stopifnot(pmvnormM(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0)) == 1)
+stopifnot(identical(c(pmvnormM(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
 
 ### check for correct random seed initialization
 ### problem reported by Karen Conneely <conneely@umich.edu>
@@ -216,7 +216,7 @@ for (i in 1:iters) {
 stopifnot(all.equal(p, ptmp))
 
 ### was == 1; spotted by Alex Lenkoski <lenkoski@stat.washington.edu>
-stopifnot(pmvnorm(c(-Inf, -Inf, 0, 0)) == 0.25)
+stopifnot(identical(c(pmvnorm(c(-Inf, -Inf, 0, 0))), 0.25))
 
 #############################
 ## testing rmvt und pmvt
