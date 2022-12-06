@@ -2,6 +2,10 @@ invisible(options(echo = TRUE))
 library("mvtnorm")
 set.seed(290875)
 
+chk <- function(...) isTRUE(all.equal(...))
+
+# source("lmvnorm-Ex.R")
+
 # correlation matrices for unequal variances were wrong
 # from Pamela Ohman-Strickland <ohmanpa@UMDNJ.EDU>
 
@@ -88,16 +92,16 @@ stopifnot(all.equal(round(a, 3), round(b, 3)))
 
 # cases where the support is the empty set tried to compute something.
 # spotted by Peter Thomson <peter@statsresearch.co.nz>
-stopifnot(identical(c(pmvnorm(upper=c(-Inf,1))), 0))
-stopifnot(identical(c(pmvnorm(lower=c(Inf,1))), 0))
-stopifnot(identical(c(pmvnorm(lower=c(-2,0),upper=c(-1,1),corr=matrix(rep(1,4),2,2))), 0))
+stopifnot(chk(c(pmvnorm(upper=c(-Inf,1))), 0))
+stopifnot(chk(c(pmvnorm(lower=c(Inf,1))), 0))
+stopifnot(chk(c(pmvnorm(lower=c(-2,0),upper=c(-1,1),corr=matrix(rep(1,4),2,2))), 0))
 
 # bugged Fritz (long time ago)
-stopifnot(identical(c(pmvnorm(-Inf, c(Inf, 0), 0, diag(2))),
+stopifnot(chk(c(pmvnorm(-Inf, c(Inf, 0), 0, diag(2))),
 		    c(pmvnorm(-Inf, c(Inf, 0), 0))))
 
 # this is a bug in `mvtdst' nobody was able to fix yet :-(
-stopifnot(identical(c(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
+stopifnot(chk(c(pmvnorm(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
 
 ### check for correct random seed initialization
 ### problem reported by Karen Conneely <conneely@umich.edu>
@@ -172,15 +176,15 @@ stopifnot(all.equal(a, pnorm(2, sd=sqrt(.5))))
 
 # cases where the support is the empty set tried to compute something.
 # spotted by Peter Thomson <peter@statsresearch.co.nz>
-stopifnot(identical(c(pmvnormM(upper=c(-Inf,1))), 0))
-stopifnot(identical(c(pmvnormM(lower=c(Inf,1))), 0))
+stopifnot(chk(c(pmvnormM(upper=c(-Inf,1))), 0))
+stopifnot(chk(c(pmvnormM(lower=c(Inf,1))), 0))
 
 # bugged Fritz (long time ago)
 stopifnot(all.equal(pmvnormM(-Inf, c(Inf, 0), 0, diag(2)),
 		    pmvnormM(-Inf, c(Inf, 0), 0)))
 
 # this is a bug in `mvtdst' nobody was able to fix yet :-(
-stopifnot(identical(c(pmvnormM(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
+stopifnot(chk(c(pmvnormM(lo=c(-Inf,-Inf), up=c(Inf,Inf), mean=c(0,0))), 1))
 
 ### check for correct random seed initialization
 ### problem reported by Karen Conneely <conneely@umich.edu>
@@ -216,7 +220,7 @@ for (i in 1:iters) {
 stopifnot(all.equal(p, ptmp))
 
 ### was == 1; spotted by Alex Lenkoski <lenkoski@stat.washington.edu>
-stopifnot(identical(c(pmvnorm(c(-Inf, -Inf, 0, 0))), 0.25))
+stopifnot(chk(c(pmvnorm(c(-Inf, -Inf, 0, 0))), 0.25))
 
 #############################
 ## testing rmvt und pmvt
@@ -336,7 +340,7 @@ L
 (Sig <- tcrossprod(L))
 set.seed(123)
 fx <- dmvnorm(rbind(0, 1:4, matrix(rnorm(4*10), ncol=4)), sigma = Sig)
-stopifnot(identical(fx, c(Inf, rep(0, 1+10))))
+stopifnot(chk(fx, c(Inf, rep(0, 1+10))))
 ## gave NaN for a long time, then error, then NaN, now we have converged ;-)
 
 ### NaN spotted by David Charles Airey <airey_david_charles@lilly.com>
@@ -518,9 +522,9 @@ f <- function() {
 
 ### check tail with new quantile algorithm
 p <- .95
-stopifnot(identical(round(qmvnorm(p, sigma = diag(3), tail = "upper")$quantile, 2),
+stopifnot(chk(round(qmvnorm(p, sigma = diag(3), tail = "upper")$quantile, 2),
           round(qnorm(p^(1/3), lower = FALSE), 2)))
-stopifnot(identical(round(qmvnorm(p, sigma = diag(3), tail = "lower")$quantile, 2),
+stopifnot(chk(round(qmvnorm(p, sigma = diag(3), tail = "lower")$quantile, 2),
           round(qnorm(p^(1/3), lower = TRUE), 2)))
 set.seed(29)
 p <- .95
