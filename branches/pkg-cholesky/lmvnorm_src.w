@@ -666,7 +666,8 @@ Mult <- function(x, y) {
                  as.integer(d[2L]), as.logical(diag))
     
     rownames(ret) <- dn[[2L]]
-    colnames(ret) <- dn[[1L]]
+    if (length(dn[[1L]]) == N)
+        colnames(ret) <- dn[[1L]]
     return(ret)
 }
 @}
@@ -744,6 +745,12 @@ a <- Mult(lxd, y)
 A <- as.array(lxd)
 b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
 chk(a, t(b), check.attributes = FALSE)
+
+### recycle C
+chk(Mult(lxn[rep(1, N),], y), Mult(lxn[1,], y), check.attributes = FALSE)
+
+### recycle y
+chk(Mult(lxn, y[,1]), Mult(lxn, y[,rep(1, N)]))
 
 ### tcrossprod as multiplication
 i <- sample(1:N)[1]
@@ -953,6 +960,9 @@ chk(solve(lxd, y), Mult(solve(lxd), y))
 ### recycle C
 chk(solve(lxn[1,], y), as.array(solve(lxn[1,]))[,,1] %*% y)
 chk(solve(lxn[rep(1, N),], y), solve(lxn[1,], y), check.attributes = FALSE)
+
+### recycle y
+chk(solve(lxn, y[,1]), solve(lxn, y[,rep(1, N)]))
 @@
 
 \section{Crossproducts}
