@@ -1,6 +1,8 @@
 
 #include "mvtnorm.h"
 #include <R_ext/Rdynload.h>
+#include <R_ext/Visibility.h>
+
 
 void C_mvtdst(int *n, int *nu, double *lower, double *upper,
               int *infin, double *corr, double *delta,
@@ -40,11 +42,11 @@ static const R_CMethodDef cMethods[] = {
                                            REALSXP, REALSXP, INTSXP, INTSXP}}, 
     {"C_tvtlr", (DL_FUNC) &C_tvtlr, 5, (R_NativePrimitiveArgType[13]){INTSXP, REALSXP, REALSXP, REALSXP, REALSXP}},
     {"C_bvtlr", (DL_FUNC) &C_bvtlr, 5, (R_NativePrimitiveArgType[13]){INTSXP, REALSXP, REALSXP, REALSXP, REALSXP}},
-    {NULL, NULL, 0}
+    {NULL, NULL, 0, NULL}
 };
 
 static const R_CallMethodDef callMethods[] = {
-    {"C_miwa", (DL_FUNC) &C_miwa, 5},
+    {"R_miwa", (DL_FUNC) &R_miwa, 5},
     {"R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve, 5},
     {"R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod , 5},
     {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
@@ -53,9 +55,15 @@ static const R_CallMethodDef callMethods[] = {
 };
 
 
-void R_init_mvtnorm(DllInfo *dll)
+void attribute_visible R_init_mvtnorm(DllInfo *dll)
 {
     R_registerRoutines(dll, cMethods, callMethods, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
+    R_forceSymbols(dll, TRUE);
     R_RegisterCCallable("mvtnorm", "C_mvtdst", (DL_FUNC) &C_mvtdst);
+    R_RegisterCCallable("mvtnorm", "R_miwa", (DL_FUNC) &R_miwa);
+    R_RegisterCCallable("mvtnorm", "R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve);
+    R_RegisterCCallable("mvtnorm", "R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod);
+    R_RegisterCCallable("mvtnorm", "R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult);
+    R_RegisterCCallable("mvtnorm", "R_lmvnorm", (DL_FUNC) &R_lmvnorm);
 }

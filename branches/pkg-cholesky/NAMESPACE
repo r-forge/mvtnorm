@@ -1,5 +1,5 @@
 
-useDynLib(mvtnorm, .registration = TRUE)
+useDynLib(mvtnorm, .registration = TRUE, .fixes = "mvtnorm_")
 
 importFrom("stats",
 	   pnorm, qnorm, rnorm, runif,

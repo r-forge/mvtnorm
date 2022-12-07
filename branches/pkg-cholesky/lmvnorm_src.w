@@ -662,7 +662,7 @@ Mult <- function(x, y) {
     storage.mode(x) <- "double"
     storage.mode(y) <- "double"
 
-    ret <- .Call("R_ltMatrices_Mult", x, y, as.integer(N), 
+    ret <- .Call(mvtnorm_R_ltMatrices_Mult, x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(diag))
     
     rownames(ret) <- dn[[2L]]
@@ -924,7 +924,7 @@ solve.ltMatrices <- function(a, b, ...) {
         N <- ifelse(d[1L] == 1, ncol(b), d[1L])
         stopifnot(ncol(b) == N)
         storage.mode(b) <- "double"
-        ret <- .Call("R_ltMatrices_solve", x, b, 
+        ret <- .Call(mvtnorm_R_ltMatrices_solve, x, b, 
                      as.integer(N), as.integer(J), as.logical(diag))
         if (d[1L] == N) {
             colnames(ret) <- dn[[1L]]
@@ -935,7 +935,7 @@ solve.ltMatrices <- function(a, b, ...) {
         return(ret)
     }
 
-    ret <- try(.Call("R_ltMatrices_solve", x, NULL,
+    ret <- try(.Call(mvtnorm_R_ltMatrices_solve, x, NULL,
                      as.integer(ncol(x)), as.integer(J), as.logical(diag)))
     colnames(ret) <- dn[[1L]]
 
@@ -1089,7 +1089,7 @@ Tcrossprod <- function(x, diag_only = FALSE) {
     N <- d[1L]
     storage.mode(x) <- "double"
 
-    ret <- .Call("R_ltMatrices_tcrossprod", x, as.integer(N), as.integer(J), 
+    ret <- .Call(mvtnorm_R_ltMatrices_tcrossprod, x, as.integer(N), as.integer(J), 
                  as.logical(diag), as.logical(diag_only))
     colnames(ret) <- dn[[1L]]
     if (diag_only) {
@@ -1492,7 +1492,7 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000,
         storage.mode(w) <- "double"
     }
 
-    ret <- .Call("R_lmvnorm", ac, bc, unclass(C), as.integer(N), 
+    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), .Machine$double.eps, as.logical(logLik));
     return(ret)
 }

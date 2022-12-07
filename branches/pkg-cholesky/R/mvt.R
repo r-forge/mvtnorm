@@ -624,7 +624,7 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corrF, delta)
     upper[ isInf(upper)] <- 0
 
     error <- 0; value <- 0; inform <- 0
-    .C(C_mvtdst,
+    .C(mvtnorm_C_mvtdst,
        N = as.integer(n),
        NU = as.integer(df),
        LOWER = as.double(lower),
@@ -663,11 +663,11 @@ probval.Miwa <- function(x, n, df, lower, upper, infin, corr, delta)
         upper[abs(infin) == 1L] <- x$maxval
     }
 
-    p <- .Call(C_miwa, steps = as.integer(x$steps),
-                         corr = as.double(corr),
-                         upper = as.double(upper),
-                         lower = as.double(lower),
-                         infin = as.integer(infin))
+    p <- .Call(mvtnorm_R_miwa, steps = as.integer(x$steps),
+                               corr = as.double(corr),
+                               upper = as.double(upper),
+                               lower = as.double(lower),
+                               infin = as.integer(infin))
     list(value = p, inform = 0, error = NA)
 }
 
