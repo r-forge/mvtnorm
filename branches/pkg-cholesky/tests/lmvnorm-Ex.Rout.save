@@ -43,8 +43,8 @@ Type 'q()' to quit R.
 +     args$chol <- Chol
 +     
 +     M <- algorithm$maxpts
-+     if (require("randtoolbox")) {
-+         w <- t(halton(M, length(args$lower) - 1))
++     if (require("qrng")) {
++         w <- t(ghalton(M, d = length(args$lower) - 1))
 +     } else {
 +         w <- NULL
 +     }
@@ -178,10 +178,8 @@ attr(,"msg")
 > upper <- rexp(3, 1)
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl)
-Loading required package: randtoolbox
-Loading required package: rngWELL
-This is randtoolbox. For an overview, type 'help("randtoolbox")'.
-[1] 0.7733959
+Loading required package: qrng
+[1] 0.7733948
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK())
 [1] 0.7733949
@@ -194,11 +192,11 @@ attr(,"msg")
 
 > pmvnorm(lower = lower, upper = rep(Inf, 3), corr = corr, 
 +     algorithm = ctrl)
-[1] 0.08740315
+[1] 0.07507118
 
 > pmvnorm(lower = lower, upper = rep(Inf, 3), corr = corr, 
 +     algorithm = TVPACK())
-[1] 0.08740329
+[1] 0.07507119
 attr(,"error")
 [1] 1e-06
 attr(,"msg")
@@ -210,11 +208,11 @@ attr(,"msg")
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl, 
 +     mean = delt)
-[1] 0.3499066
+[1] 0.3986757
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK(), 
 +     mean = delt)
-[1] 0.3499063
+[1] 0.3986758
 attr(,"error")
 [1] 1e-06
 attr(,"msg")
@@ -228,14 +226,14 @@ attr(,"msg")
 > df <- rpois(1, runif(1, 0, 20))
 
 > pmvt(upper = upper, corr = corr, df = df, algorithm = ctrl)
-[1] 0.5006143
+[1] 0.4565892
 attr(,"error")
 [1] 1e-15
 attr(,"msg")
 [1] "Normal Completion"
 
 > pmvt(upper = upper, corr = corr, df = df, algorithm = TVPACK())
-[1] 0.5006143
+[1] 0.4565892
 attr(,"error")
 [1] NA
 attr(,"msg")
@@ -243,7 +241,7 @@ attr(,"msg")
 
 > pmvt(lower = -upper, upper = rep(Inf, 2), corr = corr, 
 +     df = df, algorithm = ctrl)
-[1] 0.5006143
+[1] 0.4565892
 attr(,"error")
 [1] 1e-15
 attr(,"msg")
@@ -251,7 +249,7 @@ attr(,"msg")
 
 > pmvt(lower = -upper, upper = rep(Inf, 2), corr = corr, 
 +     df = df, algorithm = TVPACK())
-[1] 0.5006143
+[1] 0.4565892
 attr(,"error")
 [1] NA
 attr(,"msg")
@@ -263,11 +261,11 @@ attr(,"msg")
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl, 
 +     mean = delt)
-[1] 0.3494263
+[1] 0.320247
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK(), 
 +     mean = delt)
-[1] 0.3494266
+[1] 0.320247
 attr(,"error")
 [1] NA
 attr(,"msg")
@@ -279,14 +277,14 @@ attr(,"msg")
 > upper <- rexp(2, 1)
 
 > pmvnorm(upper = upper, corr = corr, algorithm = Miwa(steps = 128))
-[1] 0.3501812
+[1] 0.4466655
 attr(,"error")
 [1] NA
 attr(,"msg")
 [1] "Normal Completion"
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK())
-[1] 0.3501812
+[1] 0.4466655
 attr(,"error")
 [1] NA
 attr(,"msg")
@@ -300,14 +298,14 @@ attr(,"msg")
 > ctrl <- Miwa(steps = 128)
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl)
-[1] 0.4009144
+[1] 0.4499242
 attr(,"error")
 [1] NA
 attr(,"msg")
 [1] "Normal Completion"
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK())
-[1] 0.4009144
+[1] 0.4499242
 attr(,"error")
 [1] 1e-06
 attr(,"msg")
@@ -365,15 +363,15 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-Inf, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9500449
+[1] 0.9499712
 
 > qu <- qmvt(0.95, df = df, corr = corr, tail = "both.tails")$quantile
 
 > pmvt(lower = rep(-qu, dim), upper = rep(qu, dim), 
 +     corr = corr, df = df)
-[1] 0.9501017
+[1] 0.9500024
 attr(,"error")
-[1] 0.0001557036
+[1] 0.0001403885
 attr(,"msg")
 [1] "Normal Completion"
 
@@ -381,15 +379,15 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-qu, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9500064
+[1] 0.9500036
 
 > qu <- qmvt(0.95, df = df, corr = corr, tail = "upper.tail")$quantile
 
 > pmvt(lower = rep(qu, dim), upper = rep(Inf, dim), 
 +     corr = corr, df = df)
-[1] 0.9500176
+[1] 0.9499675
 attr(,"error")
-[1] 0.0001302458
+[1] 0.0001052159
 attr(,"msg")
 [1] "Normal Completion"
 
@@ -397,16 +395,16 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(qu, dim), upper = rep(Inf, dim), 
 +     corr = corr)
-[1] 0.9499636
+[1] 0.9500208
 
 > qu <- qmvt(0.95, df = df, corr = corr, interval = c(0, 
 +     10))$quantile
 
 > pmvt(lower = rep(-Inf, dim), upper = rep(qu, dim), 
 +     corr = corr, df = df)
-[1] 0.9499176
+[1] 0.950041
 attr(,"error")
-[1] 8.437435e-05
+[1] 0.000113758
 attr(,"msg")
 [1] "Normal Completion"
 
@@ -414,7 +412,7 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-Inf, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9500193
+[1] 0.9499732
 > try(source("bugfix-tests.R", echo = TRUE))
 
 > invisible(options(echo = TRUE))
@@ -437,7 +435,7 @@ attr(,"msg")
 
 > pmvnorm(lower = c(-a, slo), upper = c(a, shi), mean = c(mu, 
 +     2 * mu), sigma = sig)
-[1] 0.04211035
+[1] 0.04210632
 
 > n <- 5
 
@@ -599,9 +597,9 @@ attr(,"msg")
 +     corr = cr)
 
 > b
-[1] 0.2892721
+[1] 0.2892618
 attr(,"error")
-[1] 6.703972e-05
+[1] 0.000110303
 attr(,"msg")
 [1] "Normal Completion"
 
@@ -1087,4 +1085,4 @@ In addition: Warning messages:
 > 
 > proc.time()
    user  system elapsed 
- 14.346   0.204  14.546 
+ 19.330   0.283  19.633 

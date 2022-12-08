@@ -83,7 +83,7 @@ The log-likelihood (\code{likLik = TRUE}) or the individual contributions to the
   ### plain Monte-Carlo (Genz, 1992)
   w <- NULL
   ### quasi-Monte-Carlo (Genz & Bretz, 2002, but with different weights)
-  if (require("randtoolbox")) w <- t(halton(25000, J - 1))
+  if (require("qrng")) w <- t(ghalton(25000, J - 1))
 
   ### log-likelihood
   lmvnorm(lower = lwr, upper = upr, chol = C, w = w)

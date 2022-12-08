@@ -26,8 +26,8 @@ pmvnorm <- function(lower = -Inf, upper = Inf, mean = rep(0, length(lower)),
     args$chol <- Chol
     
     M <- algorithm$maxpts
-    if (require("randtoolbox")) {
-        w <- t(halton(M, length(args$lower) - 1))
+    if (require("qrng")) {
+        w <- t(ghalton(M, d = length(args$lower) - 1))
     } else {
         w <- NULL
     }
