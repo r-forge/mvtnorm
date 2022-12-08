@@ -1273,7 +1273,8 @@ if (attr(chol, "diag")) {
     bc <- upper / c(dchol)
     ### CHECK if dimensions are correct
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
-    C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
+    if (J > 1) ### else: univariate problem; C is no longer used
+        C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
 } else {
     ac <- lower
     bc <- upper
@@ -1293,7 +1294,7 @@ d0 = C_pnorm_fast(da[0], 0.0);
 e0 = C_pnorm_fast(db[0], 0.0);
 emd0 = e0 - d0;
 f0 = emd0;
-intsum = 0.0;
+intsum = (iJ > 1 ? 0.0 : f0);
 @}
 
   \item Repeat
@@ -1435,11 +1436,18 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     da = REAL(a);
     db = REAL(b);
     dC = REAL(C);
-    dW = REAL(C);
+    dW = REAL(C); // make -Wmaybe-uninitialized happy
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
     l0 = log(dtol);
-    lM = log((double) iM);
+
+    /* univariate problem */
+    if (iJ == 1) {
+        iM = 0; 
+        lM = 0.0;
+    } else {
+        lM = log((double) iM);
+    }
 
     if (W == R_NilValue)
         GetRNGstate();
@@ -1545,7 +1553,28 @@ pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
 cbind(pGB, pGq, pG)
 @@
 
-The three versions agree nicely.
+The three versions agree nicely. We now check if the code also works for
+univariate problems
+
+<<ex-uni>>=
+### test univariate problem
+### call pmvnorm
+pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE, 
+                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+### call lmvnorm
+pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE))
+### ground truth
+ptr <- pnorm(b[1,] / unclass(lx[,1])) - pnorm(a[1,] / unclass(lx[,1]))
+
+cbind(c(ptr), pGB, pGq)
+@@
+
+The reason for small numerical differences is that \code{pmvnorm}
+also uses \code{pnorm} but \code{lmvnorm} relies on our faster (but a bit
+less accurate) version \code{C\_pnorm\_fast}.
+
+
+
 
 \chapter{Maximum-likelihood Example}
 
