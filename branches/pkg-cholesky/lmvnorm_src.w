@@ -1402,6 +1402,9 @@ double C_pnorm_fast (double x, double m) {
 }
 @}
 
+We allow a new set of weights for each observation or one set for all
+observations. In the former case, the number of columns is $M \times N$ and
+in the latter just $M$.
 
 @d W length
 @{
@@ -1513,7 +1516,8 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 @}
 
 The \proglang{R} user interface consists of some checks and a call to
-\proglang{C}
+\proglang{C}. Note that we need to specify both \code{w} and \code{M} in
+case we want a new set of weights for each observation.
 
 @d lmvnorm
 @{
@@ -1565,17 +1569,17 @@ set.seed(29)
 
 if (require("qrng")) {
     ### quasi-Monte-Carlo
-    W <- t(ghalton(M, d = J - 1))
+    W <- t(ghalton(M * N, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), ncol = M)
+    W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
 
 ### Genz & Bretz, 2001, without early stopping
 pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 ### Genz 1992 with quasi-Monte-Carlo
-pGq <- exp(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE))
+pGq <- exp(lmvnorm(a, b, chol = lx, w = W, m = M, logLik = FALSE))
 ### Genz 1992, original Monte-Carlo
 pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
 
@@ -1620,8 +1624,8 @@ lx <- ltMatrices(L, diag = TRUE, byrow = TRUE, trans = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 Y <- Mult(lx, Z)
 Y <- Y - rowMeans(Y)
-a <- Y - runif(N * J, max = .1)
-b <- Y + runif(N * J, max = .1)
+a <- Y - runif(N * J, min = .1, max = .5)
+b <- Y + runif(N * J, min = .1, max = .5)
 @@
 
 The interval-censoring is represented by \code{a} and \code{b}. The true
@@ -1644,10 +1648,8 @@ lGB <- sapply(M, function(m) {
     return(c(st["user.self"], ll = ret))
 })
 lH <- sapply(M, function(m) {
-    W <- replicate(N, t(ghalton(m, d = J - 1)))
-    W <- t(ghalton(m, d = J - 1))
-    W <- matrix(W, nrow = J - 1) ### one new seq for each obs
-    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
+    W <- t(ghalton(m * N, d = J - 1))
+    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 layout(matrix(1:2, nrow = 1))
@@ -1666,17 +1668,17 @@ candidate parameters \code{parm} change with repeated calls to \code{ll}.
 M <- 1000 ### faster for vignette
 if (require("qrng")) {
     ### quasi-Monte-Carlo
-    W <- t(ghalton(M, d = J - 1))
+    W <- t(ghalton(M * N, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), ncol = M)
+    W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
 
 ll <- function(parm) {
 
      C <- matrix(parm, ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-     -lmvnorm(lower = a, upper = b, chol = C, w = W, logLik = TRUE)
+     -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
 
@@ -1684,8 +1686,8 @@ We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 ll(prm)
 lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-(llprm <- lmvnorm(a, b, chol = lx, w = W))
-chk(llprm, sum(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE)))
+(llprm <- lmvnorm(a, b, chol = lx, w = W, M = M))
+chk(llprm, sum(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE)))
 @@
 
 Finally, we can hand-over to \code{optim} for the unconstrained optimisation
