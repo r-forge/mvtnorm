@@ -1368,11 +1368,11 @@ if (!RlogLik)
 \end{enumerate}
 
 It turned out that calls to \code{pnorm} are expensive, so a slightly faster
-alternative is used
+alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} is used
 
 @d pnorm fast
 @{
-/* see https://ssrn.com/abstract=2842681 */
+/* see https://doi.org/10.2139/ssrn.2842681  */
 const double g2 =  -0.0150234471495426236132;
 const double g4 = 0.000666098511701018747289;
 const double g6 = 5.07937324518981103694e-06;
