@@ -1361,7 +1361,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 @d output
 @{
-dans[0] = (intsum < dtol ? l0 : log(intsum)) - lM;
+dans[0] += (intsum < dtol ? l0 : log(intsum)) - lM;
 if (!RlogLik)
     dans += 1L;
 @}
@@ -1432,6 +1432,8 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     len = (RlogLik ? 1 : iN);
     PROTECT(ans = allocVector(REALSXP, len));
     dans = REAL(ans);
+    for (int i = 0; i < len; i++)
+        dans[i] = 0.0;
 
     da = REAL(a);
     db = REAL(b);
@@ -1604,15 +1606,51 @@ Tcrossprod(lx[1,])
 lhat <- chol(S)[upper.tri(S, diag = TRUE)]
 @@
 
+Let's do some sanity and performance checks first.
+
+\begin{figure}
+<<ex-ML-chk, fig = TRUE, pdf = TRUE>>=
+M <- 1:25 * 100
+lGB <- sapply(M, function(m) {
+    st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = m, abseps = 0, releps = 0)))
+    return(c(st["user.self"], ll = ret))
+})
+lT <- sapply(M, function(m) {
+    W <- t(torus(m, dim = J - 1))
+    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
+    return(c(st["user.self"], ll = ret))
+})
+lS <- sapply(M, function(m) {
+    W <- t(sobol(m, dim = J - 1))
+    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
+    return(c(st["user.self"], ll = ret))
+})
+lH <- sapply(M, function(m) {
+    W <- t(halton(m, dim = J - 1))
+    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
+    return(c(st["user.self"], ll = ret))
+})
+layout(matrix(1:2, nrow = 1))
+plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lT["ll",])))
+points(M, lT["ll",], col = "red")
+points(M, lS["ll",], col = "blue")
+points(M, lH["ll",], col = "green")
+plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])))
+lines(M, lT["user.self",], col = "red")
+lines(M, lS["user.self",], col = "blue")
+lines(M, lH["user.self",], col = "green")
+@@
+\end{figure}
+
 We now define the log-likelihood function. It is important to use weights
 via the \code{w} argument (or to set the \code{seed}) such that only the
 candidate parameters \code{parm} change with repeated calls to \code{ll}.
 
 <<ex-ML-ll, eval = TRUE>>=
-M <- 500 ### faster for vignette
+M <- 1000 ### faster for vignette
 if (require("randtoolbox")) {
     ### quasi-Monte-Carlo
-    W <- t(halton(M, dim = J - 1))
+    W <- t(torus(M, dim = J - 1))
 } else {
     ### Monte-Carlo
     W <- matrix(runif(M * (J - 1)), ncol = M)
@@ -1630,7 +1668,8 @@ We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 ll(prm)
 lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-lmvnorm(a, b, chol = lx, w = W)
+(llprm <- lmvnorm(a, b, chol = lx, w = W))
+chk(llprm, sum(lmvnorm(a, b, chol = lx, w = W, logLik = FALSE)))
 @@
 
 Finally, we can hand-over to \code{optim} for the unconstrained optimisation
