@@ -535,12 +535,13 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
                               names = dn[[2L]][j]))
         }
         L <- diag(0L, nrow = J)
+        Jp <- sum(upper.tri(L, diag = diag))
         if (byrow) {
-            L[upper.tri(L, diag = diag)] <- 1:ncol(x)
+            L[upper.tri(L, diag = diag)] <- 1:Jp
             L <- L[j, j, drop = FALSE]
             L <- L[upper.tri(L, diag = diag)]
         } else {
-            L[lower.tri(L, diag = diag)] <- 1:ncol(x)
+            L[lower.tri(L, diag = diag)] <- 1:Jp
             L <- L[j, j, drop = FALSE]
             L <- L[lower.tri(L, diag = diag)]
         }
@@ -589,6 +590,23 @@ chk(a, b)
 a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 2:4])
 b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 2:4, 1:2]
 chk(a, b)
+
+### with trans
+a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, 2:4])
+b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, 2:4])
+b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, 2:4])
+b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, 2:4])
+b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
+chk(a, b)
 @@
 
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
@@ -613,6 +631,10 @@ diagonals.ltMatrices <- function(x, ...) {
         rownames(ret) <- dn[[2L]]
         return(ret)
     } else {
+        if (J == 1L) {
+            if (trans) return(x)
+            return(t(x))
+        }
         if (byrow)
             idx <- cumsum(c(1, 2:J))
         else
@@ -1162,7 +1184,8 @@ lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
 However, the underlying \code{FORTRAN} code first computes the Cholesky
 factor based on the covariance matrix, which is clearly a waste of time.
-Repeated calls to \code{FORTRAN} also cost some time. The code implements a
+Repeated calls to \code{FORTRAN} also cost some time. The code \citep[based
+on and evaluated in][]{Genz_Bretz_2002} implements a
 specific form of quasi-Monte-Carlo integration without allowing the user to
 change the scheme (or to fall-back to simple Monte-Carlo). We therefore
 implement our own, and simplistic version, with the aim to speed-things up
