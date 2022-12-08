@@ -4,7 +4,7 @@
 \usepackage{amsfonts,amstext,amsmath,amssymb,amsthm}
 
 %\VignetteIndexEntry{Multivariate Normal Log-likelihoods}
-%\VignetteDepends{mvtnorm,randtoolbox}
+%\VignetteDepends{mvtnorm,qrng}
 %\VignetteKeywords{multivariate normal distribution}
 %\VignettePackage{mvtnorm}
 
@@ -1642,13 +1642,14 @@ Let's do some sanity and performance checks first.
 \begin{figure}
 <<ex-ML-chk, fig = TRUE, pdf = TRUE>>=
 M <- 1:25 * 100
-library("qrng")
 lGB <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
 lH <- sapply(M, function(m) {
-    W <- t(ghalton(m * N, d = J - 1))
+    W <- NULL
+    if (require("qrng"))
+        W <- t(ghalton(m * N, d = J - 1))
     st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
@@ -1680,6 +1681,12 @@ ll <- function(parm) {
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
      -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
 }
+
+ll2 <- function(parm) {
+     C <- matrix(parm, ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+     -lmvnorm(lower = a, upper = b, chol = C, w = NULL, M = M / 2, logLik = TRUE)
+}
 @@
 
 We can check the correctness of our log-likelihood function
@@ -1698,7 +1705,8 @@ from the uncensored observations.
 op <- optim(lhat, fn = ll)
 op$value ## compare with 
 ll(prm)
-cbind(true = prm, est_int = op$par, est_raw = lhat)
+op2 <- optim(lhat, fn = ll2)
+cbind(true = prm, est_int = op$par, est_raw = lhat, est_int2 = op2$par)
 @@
 
 \chapter{Package Infrastructure}
