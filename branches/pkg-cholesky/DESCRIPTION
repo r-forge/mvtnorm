@@ -18,6 +18,6 @@ Description: Computes multivariate normal and t probabilities, quantiles,
   multiple lower triangular matrices have been implemented.
 Imports: stats, methods
 Depends: R(>= 3.5.0)
-Suggests: randtoolbox
+Suggests: qrng
 License: GPL-2
 URL: http://mvtnorm.R-forge.R-project.org

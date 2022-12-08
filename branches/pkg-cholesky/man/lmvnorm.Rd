@@ -8,7 +8,7 @@
     interval-censored observations from a multivariate normal.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000, w = NULL, seed = NULL)
+lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL)
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation).

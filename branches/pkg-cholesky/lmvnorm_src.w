@@ -719,7 +719,6 @@ else
     /* C contains C_1, ...., C_N */
     p = len;
 @}
-
 @d mult
 @{
 SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
@@ -1403,6 +1402,22 @@ double C_pnorm_fast (double x, double m) {
 }
 @}
 
+
+@d W length
+@{
+int pW = 0;
+if (W != R_NilValue) {
+    if (LENGTH(W) == (iJ - 1) * iM) {
+        pW = 0;
+    } else {
+        if (LENGTH(W) != (iJ - 1) * iN * iM)
+            error("Length of W incorrect");
+        pW = 1;
+    }
+    dW = REAL(W);
+}
+@}
+
 We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
@@ -1421,10 +1436,17 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     int iN = INTEGER(N)[0]; 
     int iJ = INTEGER(J)[0]; 
 
+    da = REAL(a);
+    db = REAL(b);
+    dC = REAL(C);
+    dW = REAL(C); // make -Wmaybe-uninitialized happy
+
     if (LENGTH(C) == iJ * (iJ - 1) / 2)
         p = 0;
     else 
         p = LENGTH(C) / iN;
+
+    @<W length@>
 
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
@@ -1435,10 +1457,6 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     for (int i = 0; i < len; i++)
         dans[i] = 0.0;
 
-    da = REAL(a);
-    db = REAL(b);
-    dC = REAL(C);
-    dW = REAL(C); // make -Wmaybe-uninitialized happy
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
     l0 = log(dtol);
@@ -1458,7 +1476,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 
         @<initialisation@>
 
-        if (W != R_NilValue)
+        if (W != R_NilValue && pW == 0)
             dW = REAL(W);
 
         for (int m = 0; m < iM; m++) {
@@ -1499,8 +1517,9 @@ The \proglang{R} user interface consists of some checks and a call to
 
 @d lmvnorm
 @{
-lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000, 
+lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL) {
+
 
     ### from stats:::simulate.lm
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
@@ -1521,8 +1540,16 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000,
     if (!is.null(w)) {
         stopifnot(is.matrix(w))
         stopifnot(nrow(w) == J - 1)
-        M <- ncol(w)
+        if (is.null(M))
+            M <- ncol(w)
+        stopifnot(ncol(w) %in% c(M, M * N))
         storage.mode(w) <- "double"
+    } else {
+        if (J > 1) {
+            if (is.null(M)) stop("either w or M must be specified")
+        } else {
+            M <- 1L
+        }
     }
 
     ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
@@ -1536,9 +1563,9 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = 25000,
 M <- 10000
 set.seed(29)
 
-if (require("randtoolbox")) {
+if (require("qrng")) {
     ### quasi-Monte-Carlo
-    W <- t(halton(M, dim = J - 1))
+    W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
     W <- matrix(runif(M * (J - 1)), ncol = M)
@@ -1611,34 +1638,23 @@ Let's do some sanity and performance checks first.
 \begin{figure}
 <<ex-ML-chk, fig = TRUE, pdf = TRUE>>=
 M <- 1:25 * 100
+library("qrng")
 lGB <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
-lT <- sapply(M, function(m) {
-    W <- t(torus(m, dim = J - 1))
-    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
-    return(c(st["user.self"], ll = ret))
-})
-lS <- sapply(M, function(m) {
-    W <- t(sobol(m, dim = J - 1))
-    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
-    return(c(st["user.self"], ll = ret))
-})
 lH <- sapply(M, function(m) {
-    W <- t(halton(m, dim = J - 1))
+    W <- replicate(N, t(ghalton(m, d = J - 1)))
+    W <- t(ghalton(m, d = J - 1))
+    W <- matrix(W, nrow = J - 1) ### one new seq for each obs
     st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W))
     return(c(st["user.self"], ll = ret))
 })
 layout(matrix(1:2, nrow = 1))
-plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lT["ll",])))
-points(M, lT["ll",], col = "red")
-points(M, lS["ll",], col = "blue")
-points(M, lH["ll",], col = "green")
+plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])))
+points(M, lH["ll",], col = "red")
 plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])))
-lines(M, lT["user.self",], col = "red")
-lines(M, lS["user.self",], col = "blue")
-lines(M, lH["user.self",], col = "green")
+lines(M, lH["user.self",], col = "red")
 @@
 \end{figure}
 
@@ -1648,9 +1664,9 @@ candidate parameters \code{parm} change with repeated calls to \code{ll}.
 
 <<ex-ML-ll, eval = TRUE>>=
 M <- 1000 ### faster for vignette
-if (require("randtoolbox")) {
+if (require("qrng")) {
     ### quasi-Monte-Carlo
-    W <- t(torus(M, dim = J - 1))
+    W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
     W <- matrix(runif(M * (J - 1)), ncol = M)
