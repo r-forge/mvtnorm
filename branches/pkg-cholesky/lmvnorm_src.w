@@ -86,7 +86,7 @@ urlcolor={linkcolor}%
 \chapter*{Licence}
 
 {\setlength{\parindent}{0cm}
-Copyright (C) 2022 Torsten Hothorn \\
+Copyright (C) 2022-- Torsten Hothorn \\
 
 This file is part of the \pkg{mvtnorm} \proglang{R} add-on package. \\
 
@@ -106,7 +106,8 @@ along with \pkg{mvtnorm}.  If not, see <http://www.gnu.org/licenses/>.
 \chapter{Introduction}
 \pagenumbering{arabic}
 
-This document describes an implementation of \cite{numerical-:1992} for the  evaluation of
+This document describes an implementation of \cite{numerical-:1992} and,
+partially, of \cite{Genz_Bretz_2002}, for the  evaluation of
 $N$ multivariate $\J$-dimensional normal probabilities
 \begin{eqnarray} \label{pmvnorm}
 p_i(\mC_i \mid \avec_i, \bvec_i) = \Prob(\avec_i < \rY_i \le \bvec_i \mid \mC_i ) 
@@ -128,8 +129,25 @@ observations $\rY_1, \dots, \rY_\J$ (encoded by $\avec$ and $\bvec$) via maximum
 In other applications, the Cholesky factor might also depend on $i$ in some
 structured way.
 
+Function \code{pmvnorm} in package \code{mvtnorm} computes $p_i$ based on
+the covariance matrix $\mC_i \mC_i^\top$. However, the Cholesky $\mC_i$ is
+computed in \proglang{FORTRAN}. Function \code{pmvnorm} is not vectorised
+over $i = 1, \dots, N$ and thus separate calls to this function are
+necessary in order to compute likelihood contributions.
 
-\chapter{Lower Triangular Matrices}
+The implementation described here is expected to be inferior to Alan Genz'
+original \code{FORTRAN} code when accuracy for single $p_i$ matters. We cut
+some corners aiming at efficient computation of the log-likelihood $\sum_{i
+= 1}^N \log(p_i)$.
+
+The document first describes infrastructure, that is, a class and useful
+methods, for dealing with multiple lower triangular matrices $\mC_i, i = 1, \dots,
+N$ in Chapter~\ref{ltMatrices}. The multivariate normal log-likelihood is
+implemented as outlined in Chapter~\ref{lmvnorm}. An example demonstrating
+maximum-likelihood estimation of Cholesky factors in the presence of
+interval-censored observations is discussed last in Chapter~\ref{ML}.
+
+\chapter{Lower Triangular Matrices} \label{ltMatrices}
 
 @o ltMatrices.R -cp
 @{
@@ -183,7 +201,7 @@ either in row or column-major order:
 \begin{eqnarray*}
  \mC & = & \begin{pmatrix}
  c_{11} & & & & 0\\
- c_{21}\ & c_{22} \\
+ c_{21} & c_{22} \\
  c_{31} & c_{32} & c_{33} \\
  \vdots & \vdots & & \ddots & \\
  c_{J1} & c_{J2} & \ldots & &  c_{JJ}
@@ -291,7 +309,7 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, trans = FALSE, names
 
 Symmetric matrices are represented by lower triangular matrix objects, but
 we change the class from \code{ltMatrices} to \code{syMatrices} (which
-disables all functionality except printing).
+disables all functionality except printing and coersion to arrays).
 
 The dimensions of such an object are always $N \times \J \times \J$
 (regardless or \code{byrow} and \code{trans}), and are given by
@@ -318,7 +336,7 @@ dimnames.ltMatrices <- function(x) {
 dimnames.syMatrices <- dimnames.ltMatrices
 @}
 
-The names identifying rows and columns in $\mC$ are
+The names identifying rows and columns in each $\mC_i$ are
 
 @d names ltMatrices
 @{
@@ -359,6 +377,8 @@ dimnames(lxd)
 class(lxn) <- "syMatrices"
 lxn
 @@
+
+\section{Printing}
 
 For pretty printing, we coerse object of class \code{ltMatrices} to
 \code{array}. The method has an \code{symmetric} argument forcing the lower
@@ -415,9 +435,11 @@ print.syMatrices <- function(x, ...)
 @}
 
 
+\section{Reordering}
+
 It is sometimes convenient to have access to lower triangular matrices in
 either column- or row major order and this little helper function switches
-between the two forms.
+between the two forms
 
 @d reorder ltMatrices
 @{
@@ -454,6 +476,9 @@ between the two forms.
 }
 @}
 
+We can check if this works by switching back and forth between column-major
+and row-major order
+
 <<ex-reorder>>=
 ## constructor + .reorder + as.array
 a <- as.array(ltMatrices(xn, byrow = TRUE))
@@ -475,7 +500,7 @@ chk(a, b)
 
 The internal representation as $N \times \J (\J + 1) / 2$ matrix to a matrix
 of dimensions $\J (\J + 1) / 2 \times N$ can be changed as well (NOTE that
-this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!).
+this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!)
 
 @d transpose ltMatrices
 @{
@@ -492,6 +517,8 @@ this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!).
                       trans = !trans, names = dn[[2L]]))
 }
 @}
+
+which works as advertised
 
 <<ex-trans>>=
 ## constructor + .reorder + as.array
@@ -511,6 +538,8 @@ a <- as.array(ltMatrices(xd, trans = FALSE, diag = TRUE))
 b <- as.array(ltMatrices(ltMatrices(xd, trans = FALSE, diag = TRUE), trans = TRUE))
 chk(a, b)
 @@
+
+\section{Subsetting}
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
 rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
@@ -573,6 +602,10 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
 }
 @}
 
+We check if this works by first subsetting the \code{ltMatrices} object.
+Second, we coerse the object to an array and do the subset for the latter
+object. Both results must agree.
+
 <<ex-subset>>=
 ## subset
 a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, 2:4])
@@ -609,10 +642,12 @@ b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[2:4, 2
 chk(a, b)
 @@
 
+\section{Diagonal Elements}
+
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
 always returned as an $\J \times N$ matrix (regardless of \code{trans}).
 The reason is that \code{ltMatrices} with \code{trans = TRUE} can be
-standardized elementwise without transposing objects.
+standardized elementwise without transposing objects
 
 @d diagonals ltMatrices
 @{
@@ -708,7 +743,13 @@ int iJ = INTEGER(J)[0];
 /* C contains diagonal elements */
 Rboolean Rdiag = asLogical(diag);
 /* p = J * (J - 1) / 2 + diag * J */
-int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;@}
+int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
+@}
+
+We also allow $\mC_i$ to be constant ($N$ is then determined from
+\code{ncol(y)}). The following fragment ensures that we only loop over
+$\mC_i$ if \code{dim(x)[1L] > 1}
+
 @d C length
 @{
 int p;
@@ -719,6 +760,9 @@ else
     /* C contains C_1, ...., C_N */
     p = len;
 @}
+
+The \proglang{C} workhorse is now
+
 @d mult
 @{
 SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
@@ -756,6 +800,8 @@ SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
     return(ans);
 }
 @}
+
+Some checks
 
 <<ex-mult>>=
 lxn <- ltMatrices(xn, byrow = TRUE)
@@ -801,48 +847,6 @@ all $i = 1, \dots, N$.
 If \code{y} is not given, $\mC_i^{-1}$ is returned in transposed
 column-major order (matrix of dimension $\J (\J \pm 1) / 2  \times N$). If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
-
-@d solve
-@{
-SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
-{
-
-    SEXP ans, ansx;
-    double *dans, *dansx, *dy;
-    int i, j, k, info, nrow, ncol, jj, idx, ONE = 1;
-
-    @<RC input@>
-
-    @<C length@>
-
-    char di, lo = 'L', tr = 'N';
-    if (Rdiag) {
-        /* non-unit diagonal elements */
-        di = 'N';
-    } else {
-        /* unit diagonal elements */
-        di = 'U';
-    }
-
-    @<setup memory@>
-    
-    /* loop over matrices, ie columns of C  / y */    
-    for (i = 0; i < iN; i++) {
-
-        @<copy elements@>
-
-        @<call Lapack@>
-
-        /* next matrix */
-        if (p > 0) {
-            dans += nrow;
-            dC += p;
-        }
-    }
-
-    @<return objects@>
-}
-@}
 
 @d setup memory
 @{
@@ -924,6 +928,52 @@ if (y == R_NilValue) {
 }
 @}
 
+We finally put everything together in a dedicated \proglang{C} function
+
+@d solve
+@{
+SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
+{
+
+    SEXP ans, ansx;
+    double *dans, *dansx, *dy;
+    int i, j, k, info, nrow, ncol, jj, idx, ONE = 1;
+
+    @<RC input@>
+
+    @<C length@>
+
+    char di, lo = 'L', tr = 'N';
+    if (Rdiag) {
+        /* non-unit diagonal elements */
+        di = 'N';
+    } else {
+        /* unit diagonal elements */
+        di = 'U';
+    }
+
+    @<setup memory@>
+    
+    /* loop over matrices, ie columns of C  / y */    
+    for (i = 0; i < iN; i++) {
+
+        @<copy elements@>
+
+        @<call Lapack@>
+
+        /* next matrix */
+        if (p > 0) {
+            dans += nrow;
+            dC += p;
+        }
+    }
+
+    @<return objects@>
+}
+@}
+
+with \proglang{R} interface
+
 @d solve ltMatrices
 @{
 solve.ltMatrices <- function(a, b, ...) {
@@ -971,6 +1021,8 @@ solve.ltMatrices <- function(a, b, ...) {
 }
 @}
 
+and some checks
+
 <<ex-solve>>=
 ## solve
 A <- as.array(lxn)
@@ -1002,34 +1054,8 @@ Compute $\mC_i \mC_i^\top$ or $\text{diag}(\mC_i \mC_i^\top)$
 matrices, so we store them as a lower triangular matrix using a different
 class name \code{syMatrices}.
 
-@d tcrossprod
-@{
-#define IDX(i, j, n, d) ((i) >= (j) ? (n) * ((j) - 1) - ((j) - 2) * ((j) - 1)/2 + (i) - (j) - (!d) * (j) : 0)
-
-SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
-
-    SEXP ans;
-    double *dans;
-    int i, j, n, k, ix, nrow;
-
-    @<RC input@>
-
-    Rboolean Rdiag_only = asLogical(diag_only);
-
-    if (Rdiag_only) {
-
-        @<tcrossprod diagonal only@>
-
-    } else {
-
-        @<tcrossprod full@>
-
-    }
-    UNPROTECT(1);
-    return(ans);
-}
-
-@}
+We differentiate between computation of the diagonal elements of the
+crossproduct
 
 @d tcrossprod diagonal only
 @{
@@ -1052,6 +1078,8 @@ for (n = 0; n < iN; n++) {
     dC += len;
 }
 @}
+
+and computation of the full $\J \times \J$ crossproduct matrix
 
 @d tcrossprod full
 @{
@@ -1085,6 +1113,38 @@ for (n = 0; n < INTEGER(N)[0]; n++) {
     dC += len;
 }
 @}
+
+and put both cases together
+
+@d tcrossprod
+@{
+#define IDX(i, j, n, d) ((i) >= (j) ? (n) * ((j) - 1) - ((j) - 2) * ((j) - 1)/2 + (i) - (j) - (!d) * (j) : 0)
+
+SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
+
+    SEXP ans;
+    double *dans;
+    int i, j, n, k, ix, nrow;
+
+    @<RC input@>
+
+    Rboolean Rdiag_only = asLogical(diag_only);
+
+    if (Rdiag_only) {
+
+        @<tcrossprod diagonal only@>
+
+    } else {
+
+        @<tcrossprod full@>
+
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+with \proglang{R} interface
 
 @d tcrossprod ltMatrices
 @{
@@ -1124,10 +1184,15 @@ Tcrossprod <- function(x, diag_only = FALSE) {
 }
 @}
 
+We could have created yet another generic \code{tcrossprod}, but
+\code{base::tcrossprod} is more general and, because speed is an issue, we
+don't want to waste time on methods dispatch.
+
 <<ex-tcrossprod>>=
-## tcrossprod
+## Tcrossprod
 a <- as.array(Tcrossprod(lxn))
-b <- array(apply(as.array(lxn), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxn)))
+b <- array(apply(as.array(lxn), 3L, function(x) tcrossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxn)))
 chk(a, b, check.attributes = FALSE)
 
 # diagonal elements only
@@ -1136,7 +1201,8 @@ chk(d, apply(a, 3, diag))
 chk(d, diagonals(Tcrossprod(lxn)))
 
 a <- as.array(Tcrossprod(lxd))
-b <- array(apply(as.array(lxd), 3L, function(x) tcrossprod(x), simplify = TRUE), dim = rev(dim(lxd)))
+b <- array(apply(as.array(lxd), 3L, function(x) tcrossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxd)))
 chk(a, b, check.attributes = FALSE)
 
 # diagonal elements only
@@ -1146,14 +1212,15 @@ chk(d, diagonals(Tcrossprod(lxd)))
 @@
 
 
-\chapter{Multivariate Normal Log-likelihoods}
+\chapter{Multivariate Normal Log-likelihoods} \label{lmvnorm}
 
 We now discuss code for evaluating the log-likelihood
 \begin{eqnarray*}
 \sum_{i = 1}^N \log(p_i(\mC_i \mid \avec_i, \bvec_i))
 \end{eqnarray*}
 
-This is relatively simple to achieve using \code{pmvnorm}:
+This is relatively simple to achieve using the existing \code{pmvnorm}, so a
+prototype might look like
 
 <<lmvnorm_R>>=
 library("mvtnorm")
@@ -1203,9 +1270,10 @@ a[sample(J * N)[1:2]] <- -Inf
 b <- a + 2 + matrix(runif(N * J), nrow = J)
 b[sample(J * N)[1:2]] <- Inf
 
-lmvnormR(a, b, chol = lx, logLik = FALSE)
+(phat <- c(lmvnormR(a, b, chol = lx, logLik = FALSE)))
 @@
 
+We want to achieve the same result a bit more general and a bit faster.
 
 \section{Algorithm}
 
@@ -1234,7 +1302,7 @@ an integral over $[0, 1]^{\J - 1}$.
 For each $i = 1, \dots, N$, do
 
 \begin{enumerate}
-  \item Input $\mC_i$, $\avec_i$, $\bvec_i$, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$.
+  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$ \code{upper}, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
 @d input checks
 @{
@@ -1273,7 +1341,8 @@ if (attr(chol, "diag")) {
     ### CHECK if dimensions are correct
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     if (J > 1) ### else: univariate problem; C is no longer used
-        C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], byrow = TRUE, trans = TRUE, diag = FALSE)
+        C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], 
+                        byrow = TRUE, trans = TRUE, diag = FALSE)
 } else {
     ac <- lower
     bc <- upper
@@ -1311,6 +1380,8 @@ intsum = (iJ > 1 ? 0.0 : f0);
             f_j & = & (e_j - d_j) f_{j - 1}.
        \end{eqnarray*}
 
+We either generate $w_{j - 1}$ on the fly or use pre-computed weights
+(\code{w}).
 
 @d inner loop
 @{
@@ -1421,6 +1492,44 @@ if (W != R_NilValue) {
 }
 @}
 
+@d dimensions
+@{
+int iM = INTEGER(M)[0]; 
+int iN = INTEGER(N)[0]; 
+int iJ = INTEGER(J)[0]; 
+
+da = REAL(a);
+db = REAL(b);
+dC = REAL(C);
+dW = REAL(C); // make -Wmaybe-uninitialized happy
+
+if (LENGTH(C) == iJ * (iJ - 1) / 2)
+    p = 0;
+else 
+    p = LENGTH(C) / iN;
+@}
+
+@d setup return object
+@{
+len = (RlogLik ? 1 : iN);
+PROTECT(ans = allocVector(REALSXP, len));
+dans = REAL(ans);
+for (int i = 0; i < len; i++)
+    dans[i] = 0.0;
+@}
+
+The case $\J = 1$ does not loop over $M$
+
+@d univariate problem
+@{
+if (iJ == 1) {
+    iM = 0; 
+    lM = 0.0;
+} else {
+    lM = log((double) iM);
+}
+@}
+
 We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
@@ -1435,42 +1544,19 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 
     Rboolean RlogLik = asLogical(logLik);
 
-    int iM = INTEGER(M)[0]; 
-    int iN = INTEGER(N)[0]; 
-    int iJ = INTEGER(J)[0]; 
-
-    da = REAL(a);
-    db = REAL(b);
-    dC = REAL(C);
-    dW = REAL(C); // make -Wmaybe-uninitialized happy
-
-    if (LENGTH(C) == iJ * (iJ - 1) / 2)
-        p = 0;
-    else 
-        p = LENGTH(C) / iN;
+    @<dimensions@>
 
     @<W length@>
 
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
 
-    len = (RlogLik ? 1 : iN);
-    PROTECT(ans = allocVector(REALSXP, len));
-    dans = REAL(ans);
-    for (int i = 0; i < len; i++)
-        dans[i] = 0.0;
-
+    @<setup return object@>
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
     l0 = log(dtol);
 
-    /* univariate problem */
-    if (iJ == 1) {
-        iM = 0; 
-        lM = 0.0;
-    } else {
-        lM = log((double) iM);
-    }
+    @<univariate problem@>
 
     if (W == R_NilValue)
         GetRNGstate();
@@ -1562,6 +1648,21 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 }
 @}
 
+Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
+iterations)
+<<ex-again>>=
+phat
+exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
+@@
+
+Next generate some data and compare our implementation to \code{pmvnorm}
+using quasi-Monte-Carlo integration. The \code{pmvnorm}
+function uses randomized Korobov rules.
+The experiment here applies generalised Halton sequences. Plain Monte-Carlo
+(\code{w = NULL}) will also work but produces more variable results. Results
+will depend a lot on appropriate choices and it is the users'
+responsibility to make sure things work as intended. If you are unsure, you
+should use \code{pmvnorm} which provides a well-tested configuration.
 
 <<ex-lmvnorm>>= )
 M <- 10000
@@ -1575,11 +1676,11 @@ if (require("qrng")) {
     W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
 
-### Genz & Bretz, 2001, without early stopping
+### Genz & Bretz, 2001, without early stopping (really?)
 pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 ### Genz 1992 with quasi-Monte-Carlo
-pGq <- exp(lmvnorm(a, b, chol = lx, w = W, m = M, logLik = FALSE))
+pGq <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
 ### Genz 1992, original Monte-Carlo
 pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
 
@@ -1609,7 +1710,7 @@ less accurate) version \code{C\_pnorm\_fast}.
 
 
 
-\chapter{Maximum-likelihood Example}
+\chapter{Maximum-likelihood Example} \label{ML}
 
 We now discuss how this infrastructure can be used to estimate the Cholesky
 factor of a multivariate normal in the presence of interval-censored
@@ -1637,13 +1738,15 @@ Tcrossprod(lx[1,])
 lhat <- chol(S)[upper.tri(S, diag = TRUE)]
 @@
 
-Let's do some sanity and performance checks first.
+Let's do some sanity and performance checks first. For different values of
+$M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
+\code{lmvnormR}) and the simplified implementation
 
-\begin{figure}
-<<ex-ML-chk, fig = TRUE, pdf = TRUE>>=
-M <- 1:25 * 100
+<<ex-ML-chk>>=
+M <- 1:10 * 500
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = m, abseps = 0, releps = 0)))
+    st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = 
+                                      GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
 lH <- sapply(M, function(m) {
@@ -1653,12 +1756,21 @@ lH <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
-layout(matrix(1:2, nrow = 1))
-plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])))
-points(M, lH["ll",], col = "red")
-plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])))
-lines(M, lH["user.self",], col = "red")
 @@
+The evaluated log-likelihood and corresponding timings are given in
+Figure~\ref{lleval}.
+
+\begin{figure}
+<<ex-ML-fig, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
+layout(matrix(1:2, nrow = 1))
+plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])), ylab = "Log-likelihood")
+points(M, lH["ll",], pch = 4)
+plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])), ylab = "Time (in sec)")
+points(M, lH["user.self",], pch = 4)
+legend("bottomright", legend = c("pmvnorm", "lmvnorm"), pch = c(1, 4), bty = "n")
+@@
+\caption{Evaluated log-likelihoods (left) and timings (right).
+\label{lleval}}
 \end{figure}
 
 We now define the log-likelihood function. It is important to use weights
@@ -1674,18 +1786,11 @@ if (require("qrng")) {
     ### Monte-Carlo
     W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
-
 ll <- function(parm) {
 
      C <- matrix(parm, ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
      -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
-}
-
-ll2 <- function(parm) {
-     C <- matrix(parm, ncol = 1L)
-     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-     -lmvnorm(lower = a, upper = b, chol = C, w = NULL, M = M / 2, logLik = TRUE)
 }
 @@
 
@@ -1702,11 +1807,10 @@ and compare the estimates with the true values and the estimates obtained
 from the uncensored observations.
 
 <<ex-ML>>=
-op <- optim(lhat, fn = ll)
+op <- optim(lhat, fn = ll, method = "BFGS")
 op$value ## compare with 
 ll(prm)
-op2 <- optim(lhat, fn = ll2)
-cbind(true = prm, est_int = op$par, est_raw = lhat, est_int2 = op2$par)
+cbind(true = prm, est_int = op$par, est_raw = lhat)
 @@
 
 \chapter{Package Infrastructure}
