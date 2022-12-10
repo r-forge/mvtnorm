@@ -1666,8 +1666,6 @@ should use \code{pmvnorm} which provides a well-tested configuration.
 
 <<ex-lmvnorm>>= )
 M <- 10000
-set.seed(29)
-
 if (require("qrng")) {
     ### quasi-Monte-Carlo
     W <- t(ghalton(M * N, d = J - 1))
@@ -1743,7 +1741,7 @@ $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
 \code{lmvnormR}) and the simplified implementation
 
 <<ex-ML-chk>>=
-M <- 1:10 * 500
+M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = 
                                       GenzBretz(maxpts = m, abseps = 0, releps = 0)))
