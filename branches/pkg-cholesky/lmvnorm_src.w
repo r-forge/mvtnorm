@@ -1757,8 +1757,9 @@ Next we add some interval-censoring represented by \code{a} and \code{b}.
 
 <<ex-ML-cens>>=
 sds <- sqrt(c(Tcrossprod(lt, diag_only = TRUE)))
-a <- Y - runif(J * N, min = .5) * sds
-b <- Y + runif(J * N, min = .5) * sds
+rint <- runif(J * N, min = .5) * sds
+a <- Y - rint
+b <- Y + rint
 @@
 
 The true covariance matrix $\Sigma$ can be estimate from the uncensored data as
@@ -1787,7 +1788,8 @@ lH <- sapply(M, function(m) {
 })
 @@
 The evaluated log-likelihood and corresponding timings are given in
-Figure~\ref{lleval}.
+Figure~\ref{lleval}. It seems that for $M = 3000$, results are reasonably
+stable.
 
 \begin{figure}
 <<ex-ML-fig, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
@@ -1807,7 +1809,7 @@ via the \code{w} argument (or to set the \code{seed}) such that only the
 candidate parameters \code{parm} change with repeated calls to \code{ll}.
 
 <<ex-ML-ll, eval = TRUE>>=
-M <- 1000 ### faster for vignette
+M <- 3000 
 if (require("qrng")) {
     ### quasi-Monte-Carlo
     W <- t(ghalton(M * N, d = J - 1))
@@ -1816,7 +1818,6 @@ if (require("qrng")) {
     W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
 ll <- function(parm) {
-
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
      -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
