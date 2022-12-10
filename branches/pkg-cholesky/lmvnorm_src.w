@@ -68,7 +68,9 @@ urlcolor={linkcolor}%
 \newcommand{\bvec}{\mathbf{b}}
 \newcommand{\xvec}{\mathbf{x}}
 \newcommand{\rY}{\mathbf{Y}}
+\newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
+\newcommand{\mI}{\mathbf{I}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
 
@@ -1714,26 +1716,55 @@ We now discuss how this infrastructure can be used to estimate the Cholesky
 factor of a multivariate normal in the presence of interval-censored
 observations.
 
-We first generate data, where \code{prm} are the true parameters
-<<ex-ML-data>>=
-N <- 250
+We first generate a covariance matrix $\Sigma = \mC \mC^\top$ and extract the Cholesky factor
+$\mC$
+<<ex-ML-dgp>>=
 J <- 4
-L <- matrix(prm <- runif(J * (J + 1) / 2), ncol = 1L)
-lx <- ltMatrices(L, diag = TRUE, byrow = TRUE, trans = TRUE)
-Z <- matrix(rnorm(N * J), nrow = J)
-Y <- Mult(lx, Z)
-Y <- Y - rowMeans(Y)
-a <- Y - runif(N * J, min = .1, max = .5)
-b <- Y + runif(N * J, min = .1, max = .5)
+R <- diag(J)
+R[1,2] <- R[2,1] <- .25
+R[1,3] <- R[3,1] <- .5
+R[2,4] <- R[4,2] <- .75
+(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)))
+(C <- t(chol(Sigma)))
 @@
 
-The interval-censoring is represented by \code{a} and \code{b}. The true
-covariance matrix can be estimate from the uncensored data as
+We know represent this matrix as \code{ltMatrices} object
+<<ex-ML-C>>=
+prm <- C[lower.tri(C, diag = TRUE)]
+lt <- ltMatrices(matrix(prm, ncol = 1L), 
+                 diag = TRUE,    ### has diagonal elements
+                 byrow = FALSE,  ### prm is column-major
+                 trans = TRUE)   ### store as J * (J + 1) / 2 x 1
+lt <- ltMatrices(lt, 
+                 byrow = TRUE,   ### convert to row-major
+                 trans = TRUE)   ### keep dimensions
+chk(C, as.array(lt)[,,1], check.attributes = FALSE)
+chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
+@@
+
+We now generate some data from $\N_\J(\mathbf{0}_\J, \Sigma)$. We first sample
+from $\rZ \sim \N_\J(\mathbf{0}_\J, \mI_\J)$ and then $\rY = \mC \rZ \sim
+\N_\J(\mathbf{0}_\J, \mC \mC^\top)$
+
+<<ex-ML-data>>=
+N <- 100
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- Mult(lt, Z)
+Y <- Y - rowMeans(Y)
+@@
+
+Next we add some interval-censoring represented by \code{a} and \code{b}. 
+
+<<ex-ML-cens>>=
+sds <- sqrt(c(Tcrossprod(lt, diag_only = TRUE)))
+a <- Y - runif(J * N, min = .5) * sds
+b <- Y + runif(J * N, min = .5) * sds
+@@
+
+The true covariance matrix $\Sigma$ can be estimate from the uncensored data as
 
 <<ex-ML-vcov>>=
-(S <- var(t(Y)))
-Tcrossprod(lx[1,])
-lhat <- chol(S)[upper.tri(S, diag = TRUE)]
+(Shat <- var(t(Y)))
 @@
 
 Let's do some sanity and performance checks first. For different values of
@@ -1743,7 +1774,7 @@ $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
 <<ex-ML-chk>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lmvnormR(a, b, chol = lx, algorithm = 
+    st <- system.time(ret <- lmvnormR(a, b, chol = lt, algorithm = 
                                       GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
@@ -1751,7 +1782,7 @@ lH <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng"))
         W <- t(ghalton(m * N, d = J - 1))
-    st <- system.time(ret <- lmvnorm(a, b, chol = lx, w = W, M = m))
+    st <- system.time(ret <- lmvnorm(a, b, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 @@
@@ -1786,7 +1817,7 @@ if (require("qrng")) {
 }
 ll <- function(parm) {
 
-     C <- matrix(parm, ncol = 1L)
+     C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
      -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
 }
@@ -1794,21 +1825,34 @@ ll <- function(parm) {
 
 We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
-ll(prm)
-lmvnormR(a, b, chol = lx, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-(llprm <- lmvnorm(a, b, chol = lx, w = W, M = M))
-chk(llprm, sum(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE)))
+ll(unclass(lt))
+lmvnormR(a, b, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+(llprm <- lmvnorm(a, b, chol = lt, w = W, M = M))
+chk(llprm, sum(lmvnorm(a, b, chol = lt, w = W, M = M, logLik = FALSE)))
 @@
 
-Finally, we can hand-over to \code{optim} for the unconstrained optimisation
-and compare the estimates with the true values and the estimates obtained
-from the uncensored observations.
+Finally, we can hand-over to \code{optim}. Because we need $\text{diag}(\mC) >
+0$, we use box constraints and \code{method = "L-BFGS-B"}. We start with the
+true $\mC$
 
 <<ex-ML>>=
-op <- optim(lhat, fn = ll, method = "BFGS")
+lwr <- rep(-Inf, J * (J + 1) / 2)
+lwr[cumsum(c(1, 2:J))] <- 0.1
+
+op <- optim(lt, fn = ll, method = "L-BFGS-B", lower = lwr, control = list(trace = TRUE))
+
 op$value ## compare with 
-ll(prm)
-cbind(true = prm, est_int = op$par, est_raw = lhat)
+ll(lt)
+op$par   ## compare with
+lt
+@@
+
+We can also compare the results on the scale of the covariance matrix
+
+<<ex-ML-Shat>>=
+Tcrossprod(lt)		### true Sigma
+Tcrossprod(op$par)      ### interval-censored obs
+Shat                    ### "exact" obs
 @@
 
 \chapter{Package Infrastructure}
