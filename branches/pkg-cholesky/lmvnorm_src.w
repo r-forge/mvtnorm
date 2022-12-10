@@ -70,6 +70,7 @@ urlcolor={linkcolor}%
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
+\newcommand{\mL}{\mathbf{L}}
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
@@ -1216,8 +1217,9 @@ chk(d, diagonals(Tcrossprod(lxd)))
 \section{Application Example}
 
 Let's say we have $\rY_i \sim \N_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
-for $i = 1, \dots, N$ and we know the Cholesky factors $\mC^{-1}$ of the $N$
-precision matrices $\mC^{-1} \mC^{-\top}$.
+for $i = 1, \dots, N$ and we know the Cholesky factors $\mL_i = \mC_i^{-1}$ of the $N$
+precision matrices $\Sigma^{-1} = \mL_i \mL_i^{\top}$. We generate $\rY_i = \mL_i^{-1}
+\rZ_i$ from $\rZ_i \sim \N_\J(\mathbf{0}_\J, \mI_\J)$.
 Evaluating the corresponding log-likelihood is now straightforward and fast,
 compared to repeated calls to \code{dmvnorm}
 
