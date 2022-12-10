@@ -1213,6 +1213,28 @@ chk(d, apply(a, 3, diag))
 chk(d, diagonals(Tcrossprod(lxd)))
 @@
 
+\section{Application Example}
+
+Let's say we have $\rY_i \sim \N_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
+for $i = 1, \dots, N$ and we know the Cholesky factors $\mC^{-1}$ of the $N$
+precision matrices $\mC^{-1} \mC^{-\top}$.
+Evaluating the corresponding log-likelihood is now straightforward and fast,
+compared to repeated calls to \code{dmvnorm}
+
+<<ex-MV>>=
+N <- 1000
+J <- 50
+lt <- ltMatrices(matrix(runif(N * J * (J + 1) / 2) + 1, ncol = N), 
+                 diag = TRUE, byrow = FALSE, trans = TRUE)
+Z <- matrix(rnorm(N * J), ncol = N)
+Y <- solve(lt, Z)
+system.time(ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt))))
+
+system.time(S <- as.array(Tcrossprod(solve(lt))))
+system.time(ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE))))
+chk(ll1, ll2)
+@@
+
 
 \chapter{Multivariate Normal Log-likelihoods} \label{lmvnorm}
 
@@ -1770,7 +1792,11 @@ The true covariance matrix $\Sigma$ can be estimate from the uncensored data as
 
 Let's do some sanity and performance checks first. For different values of
 $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
-\code{lmvnormR}) and the simplified implementation
+\code{lmvnormR}) and the simplified implementation. The comparion is a bit
+unfair, because we do not add the time needed to setup Halton sequences, but
+we would do this only once and use the stored values for repeated
+evaluations of a log-likelihood (because the optimiser expects a
+deterministic function to be optimised)
 
 <<ex-ML-chk>>=
 M <- floor(exp(0:25/10) * 1000)
@@ -1787,8 +1813,8 @@ lH <- sapply(M, function(m) {
     return(c(st["user.self"], ll = ret))
 })
 @@
-The evaluated log-likelihood and corresponding timings are given in
-Figure~\ref{lleval}. It seems that for $M = 3000$, results are reasonably
+The evaluated log-likelihoods and corresponding timings are given in
+Figure~\ref{lleval}. It seems that for $M \ge 3000$, results are reasonably
 stable.
 
 \begin{figure}

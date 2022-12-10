@@ -13,9 +13,10 @@ Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Torsten", "Hothorn", role = c("aut", "cre"),
                     email = "Torsten.Hothorn@R-project.org", comment = c(ORCID = "0000-0001-8301-0471")))
 Description: Computes multivariate normal and t probabilities, quantiles,
-  random deviates, and densities. Interval-censored log-likelihoods for Gaussian copulae parameterised 
-  by Cholesky factors of covariance matrices are implemented in addition. Methods for a class representing 
-  multiple lower triangular matrices have been implemented.
+  random deviates, and densities. Interval-censored log-likelihoods for Gaussian 
+  copulae parameterised by Cholesky factors of covariance matrices are implemented 
+  in addition. Methods for a class representing multiple lower triangular matrices 
+  are available.
 Imports: stats, methods
 Depends: R(>= 3.5.0)
 Suggests: qrng
