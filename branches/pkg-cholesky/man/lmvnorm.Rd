@@ -11,9 +11,9 @@
 lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL)
 }
 \arguments{
-  \item{lower}{matrix of lower limits (one column for each observation).
+  \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).
 }
-  \item{upper}{matrix of upper limits (one column for each observation).
+  \item{upper}{matrix of upper limits (one column for each observation, \eqn{J} rows).
 }
   \item{mean}{matrix of means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}).
@@ -27,11 +27,13 @@ otherwise the individual contributions to the sum are returned.
   \item{M}{number of iterations, early stopping based on
 estimated errors is NOT implemented.
 }
-  \item{w}{an optional matrix of weights. This allows to replace the default
+  \item{w}{an optional matrix of weights with \eqn{J - 1} rows. This allows to replace the default
 Monte-Carlo procedure (Genz, 1992) with a quasi-Monte-Carlo approach (Genz &
 Bretz, 2002). Note that the same weights for evaluating the
-multivariate normal probability are used for all observations when \code{w}
-is specified. If \code{w} is \code{NULL}, different uniform numbers are
+multivariate normal probability are used for all observations when
+\code{ncol(w) == M} is specified. If \code{ncol(w) == ncol(lower) * M}, each
+likelihood contribution is evaluated on the corresponding sub-matrix.
+If \code{w} is \code{NULL}, different uniform numbers are
 drawn for each observation.
 }
   \item{seed}{an object specifying if and how the random number generator
@@ -45,10 +47,12 @@ drawn for each observation.
   default, the log-likelihood is returned.
 
   Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2002)
-  integration is implemented, the latter with weights obtained from package
-  \pkg{randtoolbox}.
+  integration is implemented, the latter with weights obtained, for example,
+  from packages \pkg{qrng} or \pkg{randtoolbox}. It is the responsibility of
+  the user to ensure a meaningful lattice is used. In case of doubt, use
+  plain Monte-Carlo (\code{w = NULL}) or \code{\link{pmvnorm}}.
 
-  Details can be found in the \code{lmvnorm_src} package vignette.
+  More details can be found in the \code{lmvnorm_src} package vignette.
 
 }
 \value{
@@ -82,14 +86,15 @@ The log-likelihood (\code{likLik = TRUE}) or the individual contributions to the
 
   ### plain Monte-Carlo (Genz, 1992)
   w <- NULL
+  M <- 25000
   ### quasi-Monte-Carlo (Genz & Bretz, 2002, but with different weights)
-  if (require("qrng")) w <- t(ghalton(25000, J - 1))
+  if (require("qrng")) w <- t(ghalton(M * N, J - 1))
 
   ### log-likelihood
-  lmvnorm(lower = lwr, upper = upr, chol = C, w = w)
+  lmvnorm(lower = lwr, upper = upr, chol = C, w = w, M = M)
   
   ### compare with pmvnorm
-  exp(lmvnorm(lower = lwr, upper = upr, chol = C, logLik = FALSE, w = w))
+  exp(lmvnorm(lower = lwr, upper = upr, chol = C, logLik = FALSE, w = w, M = M))
   sapply(1:N, function(i) pmvnorm(lower = lwr[,i], upper = upr[,i], sigma = S))
 
 }

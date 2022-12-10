@@ -63,7 +63,7 @@ if \code{TRUE}.
 \code{ltMatrices} interprets a matrix as lower triangular elements of
 multiple lower triangular matrices. The corresponding class can be used to
 store such matrices efficiently. Matrix multiplications, solutions to linear
-systems, explicite inverses, and crossproducs can be computed based on such
+systems, explicite inverses, and crossproducts can be computed based on such
 objects. Details can be found in the \code{lmvnorm_src} package vignette.
 }
 \value{

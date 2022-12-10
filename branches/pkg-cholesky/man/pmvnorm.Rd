@@ -18,7 +18,9 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n less than 1000. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the
-                problem is standardized. If neither \code{corr} nor
+                problem is standardized internally. If \code{corr} is given,
+                it is assumed that appropriate standardization was performed
+                by the user.  If neither \code{corr} nor
                 \code{sigma} is given, the identity matrix is used
                 for \code{sigma}. }
   \item{algorithm}{ an object of class \code{\link{GenzBretz}},
