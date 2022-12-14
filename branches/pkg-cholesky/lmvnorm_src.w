@@ -1894,6 +1894,38 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 }
 @}
 
+<<ex-score>>=
+J <- 5
+N <- 4
+
+S <- crossprod(matrix(runif(J^2), nrow = J))
+prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
+
+x <- matrix(prm, ncol = 1)
+lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+
+a <- matrix(runif(N * J), nrow = J) - 2
+b <- a + 4
+
+M <- 100
+W <- matrix(runif(M * (J - 1)), ncol = M)
+
+phat <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+
+p <- unclass(lx)
+fc <- function(prm, i) {
+    L <- ltMatrices(matrix(prm, ncol = 1), byrow = TRUE, trans = TRUE, diag = TRUE)
+    lmvnorm(a, b, chol = L, w = W, M = M)
+}
+
+S <- smvnorm(a, b, chol = lx, w = W, M = M)
+
+chk(phat, S$logLik)
+
+if (require("numDeriv"))
+    print(max(abs(grad(fc, p) - rowSums(S$score))))
+@@
+
 Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
 iterations)
 <<ex-again>>=
@@ -2084,11 +2116,20 @@ Finally, we can hand-over to \code{optim}. Because we need $\text{diag}(\mC) >
 0$, we use box constraints and \code{method = "L-BFGS-B"}. We start with the
 true $\mC$
 
+<<ex-ML-sc>>=
+sc <- function(parm) {
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+    ret <- smvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
+    return(-rowSums(ret$score))
+}
+@@
+
 <<ex-ML>>=
 lwr <- rep(-Inf, J * (J + 1) / 2)
 lwr[cumsum(c(1, 2:J))] <- 0.1
 
-op <- optim(lt, fn = ll, method = "L-BFGS-B", lower = lwr, control = list(trace = TRUE))
+op <- optim(lt, fn = ll, gr = sc, method = "L-BFGS-B", lower = lwr, control = list(trace = TRUE))
 
 op$value ## compare with 
 ll(lt)
