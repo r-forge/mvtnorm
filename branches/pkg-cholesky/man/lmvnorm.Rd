@@ -8,7 +8,7 @@
     interval-censored observations from a multivariate normal.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL)
+lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps)
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).
@@ -39,6 +39,9 @@ drawn for each observation.
   \item{seed}{an object specifying if and how the random number generator
           should be initialized, see \code{\link[stats]{simulate}}. Only 
           applied when \code{w} is \code{NULL}.
+}
+  \item{tol}{tolerance limit, values smaller than \code{tol} are interpreted
+as zero.
 }
 }
 \details{

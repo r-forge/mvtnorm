@@ -1636,7 +1636,7 @@ case we want a new set of weights for each observation.
 @d lmvnorm
 @{
 lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL) {
+                    w = NULL, seed = NULL, tol = .Machine$double.eps) {
 
 
     ### from stats:::simulate.lm
@@ -1671,7 +1671,8 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
     }
 
     ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
-                 as.integer(J), w, as.integer(M), .Machine$double.eps, as.logical(logLik));
+                 as.integer(J), w, as.integer(M), as.double(tol), 
+                 as.logical(logLik));
     return(ret)
 }
 @}
@@ -1679,7 +1680,7 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 @d smvnorm
 @{
 smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL) {
+                    w = NULL, seed = NULL, tol = sqrt(.Machine$double.eps)) {
 
 
     ### from stats:::simulate.lm
@@ -1714,7 +1715,25 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
     }
 
     ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.integer(N), 
-                 as.integer(J), w, as.integer(M), sqrt(.Machine$double.eps));
+                 as.integer(J), w, as.integer(M), as.double(tol));
+
+    ll <- log(pmax(ret[1L,], tol)) - log(M)
+
+    m <- matrix(ret[1L,], nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
+
+    ret <- ret[-1L,,drop = FALSE] / m
+
+    if (attr(chol, "diag")) {
+        idx <- cumsum(c(1, 2:J))
+        ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
+        ret[idx,] <- -ret[idx,]
+    }
+
+    if (logLik) {
+        ret <- list(logLik = ll, score = ret)
+        return(ret)
+    }
+    
     return(ret)
 }
 @}
