@@ -1760,13 +1760,15 @@ for (j = 1; j < iJ; j++) {
 
     ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
 
-    idx = (j - 1) * j / 2;
-    yprime[idx * (iJ - 1) + (j - 1)] = dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]);
+    for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+    for (idx = 0; idx < (j + 1) * j / 2; idx++) {
+        yprime[idx * (iJ - 1) + (j - 1)] = ytmp * (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
+    }
 
     x = 0.0;
     for (k = 0; k < j; k++) {
         x += dC[start + k] * y[k];
-        yprime[(start + k + j) * (iJ - 1) + (j - 1)] = y[k];
     }
 
     d = C_pnorm_fast(da[j], x);
@@ -1785,15 +1787,15 @@ for (j = 1; j < iJ; j++) {
     eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (db[j] - x);
     fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 
-    for (k = 0; k < j; k++) {
-        ktmp = k * (k + 1) / 2;
-        for (int kk = 0; kk <= k; kk++) {
-            idx = ktmp + kk;
-            yprime[idx * (iJ - 1) + k] *= ytmp;
-            dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * dC[start + k] * yprime[idx * (iJ - 1) + k];
-            eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * dC[start + k] * yprime[idx * (iJ - 1) + k];
-            fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
-        }
+    for (idx = 0; idx < j * (j + 1) / 2; idx++) {
+        xx = 0.0;
+        for (k = 0; k < j; k++)
+            xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
+
+        dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * xx;
+        eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * xx;
+        
+        fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
     }
 
     f *= emd;
@@ -1828,7 +1830,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
     int Jp = iJ * (iJ + 1) / 2;
-    double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp], Wtmp, ytmp, ktmp;
+    double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp], Wtmp, ytmp, ktmp, xx;
 
     PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
     dans = REAL(ans);
