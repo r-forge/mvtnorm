@@ -1307,6 +1307,7 @@ We want to achieve the same result a bit more general and a bit faster.
 @{
 @<R Header@>
 @<lmvnorm@>
+@<smvnorm@>
 @}
 
 @o lmvnorm.c -cc
@@ -1319,6 +1320,7 @@ We want to achieve the same result a bit more general and a bit faster.
 #include <Rconfig.h>
 @<pnorm fast@>
 @<R lmvnorm@>
+@<R smvnorm@>
 @}
 
 We implement the algorithm described by \cite{numerical-:1992}. The key
@@ -1671,6 +1673,203 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
     ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), .Machine$double.eps, as.logical(logLik));
     return(ret)
+}
+@}
+
+@d smvnorm
+@{
+smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
+                    w = NULL, seed = NULL) {
+
+
+    ### from stats:::simulate.lm
+    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+        runif(1)
+    if (is.null(seed)) 
+        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+    else {
+        R.seed <- get(".Random.seed", envir = .GlobalEnv)
+        set.seed(seed)
+        RNGstate <- structure(seed, kind = as.list(RNGkind()))
+        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+    }
+
+    @<input checks@>
+
+    @<standardise@>
+
+    if (!is.null(w)) {
+        stopifnot(is.matrix(w))
+        stopifnot(nrow(w) == J - 1)
+        if (is.null(M))
+            M <- ncol(w)
+        stopifnot(ncol(w) %in% c(M, M * N))
+        storage.mode(w) <- "double"
+    } else {
+        if (J > 1) {
+            if (is.null(M)) stop("either w or M must be specified")
+        } else {
+            M <- 1L
+        }
+    }
+
+    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.integer(N), 
+                 as.integer(J), w, as.integer(M), sqrt(.Machine$double.eps));
+    return(ret)
+}
+@}
+
+
+@d score inner loop
+@{
+for (j = 1; j < iJ; j++) {
+    if (W == R_NilValue) {
+        Wtmp = unif_rand();
+    } else {
+        Wtmp = dW[j - 1];
+    }
+    tmp = d + dW[j - 1] * emd;
+
+    if (tmp < dtol) {
+        y[j - 1] = q0;
+    } else {
+        if (tmp > mdtol)
+            y[j - 1] = -q0;
+        else
+            y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
+    }
+
+    ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
+
+    idx = (j - 1) * j / 2;
+    yprime[idx * (iJ - 1) + (j - 1)] = dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]);
+
+    x = 0.0;
+    for (k = 0; k < j; k++) {
+        x += dC[start + k] * y[k];
+        yprime[(start + k + j) * (iJ - 1) + (j - 1)] = y[k];
+    }
+
+    d = C_pnorm_fast(da[j], x);
+    e = C_pnorm_fast(db[j], x);
+    emd = e - d;
+
+    for (k = 0; k < j; k++) {
+        idx = start + j + k;
+        dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * y[k];
+        eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * y[k];
+        fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+    }
+
+    idx = (j + 1) * (j + 2) / 2 - 1;
+    dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (da[j] - x);
+    eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (db[j] - x);
+    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+
+    for (k = 0; k < j; k++) {
+        ktmp = k * (k + 1) / 2;
+        for (int kk = 0; kk <= k; kk++) {
+            idx = ktmp + kk;
+            yprime[idx * (iJ - 1) + k] *= ytmp;
+            dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * dC[start + k] * yprime[idx * (iJ - 1) + k];
+            eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * dC[start + k] * yprime[idx * (iJ - 1) + k];
+            fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
+        }
+    }
+
+    f *= emd;
+   
+    start += j;
+
+}
+@}
+
+
+@d score output
+@{
+dans[0] += f;
+for (j = 0; j < Jp; j++)
+    dans[j + 1] += fprime[j];
+@}
+
+@d R smvnorm
+@{
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
+
+    SEXP ans;
+    double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
+    double mdtol = 1.0 - dtol;
+    double d0, e0, emd0, f0, q0, l0, intsum, lM;
+    int p, len, idx;
+
+    @<dimensions@>
+
+    @<W length@>
+
+    int start, j, k;
+    double tmp, e, d, f, emd, x, y[iJ - 1];
+    int Jp = iJ * (iJ + 1) / 2;
+    double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp], Wtmp, ytmp, ktmp;
+
+    PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
+    dans = REAL(ans);
+    for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
+
+    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
+
+    @<univariate problem@>
+
+    if (W == R_NilValue)
+        GetRNGstate();
+
+    for (int i = 0; i < iN; i++) {
+
+        @<initialisation@>
+
+        dans[0] = intsum;
+
+        dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
+        eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
+        fprime[0] = eprime[0] - dprime[0];
+
+        if (W != R_NilValue && pW == 0)
+            dW = REAL(W);
+
+        for (int m = 0; m < iM; m++) {
+
+            d = d0;
+            f = f0;
+            emd = emd0;
+            start = 0;
+
+            dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
+            eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
+            fprime[0] = eprime[0] - dprime[0];
+
+            @<score inner loop@>
+
+            @<score output@>
+
+            if (W != R_NilValue)
+                dW += iJ - 1;
+        }
+
+        da += iJ;
+        db += iJ;
+
+        dans += Jp + 1;
+
+
+        /* constant C? p == 0*/
+        if (p > 0)
+            dC += p;
+    }
+
+    if (W == R_NilValue)
+        PutRNGstate();
+
+    UNPROTECT(1);
+    return(ans);
 }
 @}
 

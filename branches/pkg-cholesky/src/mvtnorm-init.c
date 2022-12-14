@@ -51,6 +51,7 @@ static const R_CallMethodDef callMethods[] = {
     {"R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod , 5},
     {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
     {"R_lmvnorm", (DL_FUNC) &R_lmvnorm, 9},
+    {"R_smvnorm", (DL_FUNC) &R_smvnorm, 8},
     {NULL, NULL, 0}
 };
 
@@ -66,4 +67,5 @@ void attribute_visible R_init_mvtnorm(DllInfo *dll)
     R_RegisterCCallable("mvtnorm", "R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod);
     R_RegisterCCallable("mvtnorm", "R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult);
     R_RegisterCCallable("mvtnorm", "R_lmvnorm", (DL_FUNC) &R_lmvnorm);
+    R_RegisterCCallable("mvtnorm", "R_smvnorm", (DL_FUNC) &R_smvnorm);
 }
