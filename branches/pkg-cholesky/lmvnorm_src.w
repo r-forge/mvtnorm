@@ -1974,22 +1974,24 @@ been computed
 
 @d post differentiate
 @{
+if (J == 1) {
+    idx <- 1L
+} else {
+    idx <- cumsum(c(1, 2:J))
+}
 if (attr(chol, "diag")) {
-    if (J == 1) {
-        idx <- 1L
-    } else {
-        idx <- cumsum(c(1, 2:J))
-    }
     ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
     ret[idx,] <- -ret[idx,]
+} else {
+    ### remove scores for constant diagonal elements
+    ret <- ret[-idx, drop = FALSE]    
 }
 @}
 
 @d smvnorm
 @{
 smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = sqrt(.Machine$double.eps)) {
-
+                    w = NULL, seed = NULL, tol = .Machine$double.eps) {
 
     @<init random seed, reset on exit@>
 
