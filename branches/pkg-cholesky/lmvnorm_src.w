@@ -1439,6 +1439,12 @@ e = C_pnorm_fast(db[j], x);
 emd = e - d;
 @}
 
+@d update f
+@{
+start += j;
+f *= emd;
+@}
+
 @d inner loop
 @{
 for (j = 1; j < iJ; j++) {
@@ -1449,8 +1455,7 @@ for (j = 1; j < iJ; j++) {
 
     @<update d, e@>
 
-    start += j;
-    f *= emd;
+    @<update f@>
 }
 @}
 
@@ -1817,8 +1822,7 @@ for (j = 1; j < iJ; j++) {
 
     @<update score@>
 
-    f *= emd;
-    start += j;
+    @<update f@>
 
 }
 @}
