@@ -1401,12 +1401,8 @@ intsum = (iJ > 1 ? 0.0 : f0);
 
       \item For $j = 2, \dots, J$ set 
         \begin{eqnarray*}
-            y_{j - 1} & = & \Phi^{-1}\left(d_{j - 1} + w_{j - 1} (e_{j - 1} - d_{j - 1})\right) \\
-            x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j \\
-            d_j & = & \Phi\left(a^{(i)}_j - x_{j - 1}\right) \\
-            e_j & = & \Phi\left(b^{(i)}_j - x_{j - 1}\right) \\
-            f_j & = & (e_j - d_j) f_{j - 1}.
-       \end{eqnarray*}
+            y_{j - 1} & = & \Phi^{-1}\left(d_{j - 1} + w_{j - 1} (e_{j - 1} - d_{j - 1})\right)
+        \end{eqnarray*}
 
 We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 (\code{w}).
@@ -1425,12 +1421,21 @@ if (tmp < dtol) {
 }
 @}
 
+        \begin{eqnarray*}
+            x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j
+\end{eqnarray*}
+
 @d compute x
 @{
 x = 0.0;
 for (k = 0; k < j; k++)
     x += dC[start + k] * y[k];
 @}
+
+        \begin{eqnarray*}
+            d_j & = & \Phi\left(a^{(i)}_j - x_{j - 1}\right) \\
+            e_j & = & \Phi\left(b^{(i)}_j - x_{j - 1}\right)
+        \end{eqnarray*}
 
 @d update d, e
 @{
@@ -1439,11 +1444,17 @@ e = C_pnorm_fast(db[j], x);
 emd = e - d;
 @}
 
+        \begin{eqnarray*}
+            f_j & = & (e_j - d_j) f_{j - 1}.
+       \end{eqnarray*}
+
 @d update f
 @{
 start += j;
 f *= emd;
 @}
+
+We put everything together in a loop starting with the second dimension
 
 @d inner loop
 @{
@@ -1653,47 +1664,65 @@ The \proglang{R} user interface consists of some checks and a call to
 \proglang{C}. Note that we need to specify both \code{w} and \code{M} in
 case we want a new set of weights for each observation.
 
+@d init random seed, reset on exit
+@{
+### from stats:::simulate.lm
+if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+    runif(1)
+if (is.null(seed)) 
+    RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+else {
+    R.seed <- get(".Random.seed", envir = .GlobalEnv)
+    set.seed(seed)
+    RNGstate <- structure(seed, kind = as.list(RNGkind()))
+    on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+}
+@}
+
+@d check and / or set integration weights
+@{
+if (!is.null(w)) {
+    stopifnot(is.matrix(w))
+    stopifnot(nrow(w) == J - 1)
+    if (is.null(M))
+        M <- ncol(w)
+    stopifnot(ncol(w) %in% c(M, M * N))
+    storage.mode(w) <- "double"
+} else {
+    if (J > 1) {
+        if (is.null(M)) stop("either w or M must be specified")
+    } else {
+        M <- 1L
+    }
+}
+@}
+
 @d lmvnorm
 @{
 lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps) {
 
-
-    ### from stats:::simulate.lm
-    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
-        runif(1)
-    if (is.null(seed)) 
-        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
-    else {
-        R.seed <- get(".Random.seed", envir = .GlobalEnv)
-        set.seed(seed)
-        RNGstate <- structure(seed, kind = as.list(RNGkind()))
-        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
-    }
+    @<init random seed, reset on exit@>
 
     @<input checks@>
 
     @<standardise@>
 
-    if (!is.null(w)) {
-        stopifnot(is.matrix(w))
-        stopifnot(nrow(w) == J - 1)
-        if (is.null(M))
-            M <- ncol(w)
-        stopifnot(ncol(w) %in% c(M, M * N))
-        storage.mode(w) <- "double"
-    } else {
-        if (J > 1) {
-            if (is.null(M)) stop("either w or M must be specified")
-        } else {
-            M <- 1L
-        }
-    }
+    @<check and / or set integration weights@>
 
     ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik));
     return(ret)
+}
+@}
+
+@d post differentiate
+@{
+if (attr(chol, "diag")) {
+    idx <- cumsum(c(1, 2:J))
+    ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
+    ret[idx,] <- -ret[idx,]
 }
 @}
 
@@ -1703,51 +1732,22 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
                     w = NULL, seed = NULL, tol = sqrt(.Machine$double.eps)) {
 
 
-    ### from stats:::simulate.lm
-    if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
-        runif(1)
-    if (is.null(seed)) 
-        RNGstate <- get(".Random.seed", envir = .GlobalEnv)
-    else {
-        R.seed <- get(".Random.seed", envir = .GlobalEnv)
-        set.seed(seed)
-        RNGstate <- structure(seed, kind = as.list(RNGkind()))
-        on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
-    }
+    @<init random seed, reset on exit@>
 
     @<input checks@>
 
     @<standardise@>
 
-    if (!is.null(w)) {
-        stopifnot(is.matrix(w))
-        stopifnot(nrow(w) == J - 1)
-        if (is.null(M))
-            M <- ncol(w)
-        stopifnot(ncol(w) %in% c(M, M * N))
-        storage.mode(w) <- "double"
-    } else {
-        if (J > 1) {
-            if (is.null(M)) stop("either w or M must be specified")
-        } else {
-            M <- 1L
-        }
-    }
+    @<check and / or set integration weights@>
 
     ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
-
     m <- matrix(ret[1L,], nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
-
     ret <- ret[-1L,,drop = FALSE] / m
 
-    if (attr(chol, "diag")) {
-        idx <- cumsum(c(1, 2:J))
-        ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
-        ret[idx,] <- -ret[idx,]
-    }
+    @<post differentiate@>
 
     if (logLik) {
         ret <- list(logLik = ll, score = ret)
