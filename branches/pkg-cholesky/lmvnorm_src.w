@@ -1763,8 +1763,8 @@ here due to standardisation)
 
 @d score c11
 @{
-dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
-eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
+dprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], 0.0, 1.0, 0L) * da[0] : 0);
+eprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], 0.0, 1.0, 0L) * db[0] : 0);
 fprime[0] = eprime[0] - dprime[0];
 @}
 
@@ -1773,9 +1773,7 @@ fprime[0] = eprime[0] - dprime[0];
 @d init score loop
 @{
 @<init logLik loop@>
-dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
-eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
-fprime[0] = eprime[0] - dprime[0];
+@<score c11@>
 @}
 
     \begin{enumerate}
@@ -1836,8 +1834,8 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 @d score wrt new diagonal
 @{
 idx = (j + 1) * (j + 2) / 2 - 1;
-dprime[idx] = dtmp * (da[j] - x);
-eprime[idx] = etmp * (db[j] - x);
+dprime[idx] = (R_FINITE(da[j]) ? dtmp * (da[j] - x) : 0);
+eprime[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x) : 0);
 fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 @}
 
@@ -2034,8 +2032,10 @@ lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
 
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 4
+a[2,] <- -Inf
+b[3,] <- Inf
 
-M <- 100
+M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
 lli <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
