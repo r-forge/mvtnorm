@@ -1,0 +1,673 @@
+
+> library("mvtnorm")
+
+> chk <- function(...) stopifnot(isTRUE(all.equal(...)))
+
+> set.seed(290875)
+
+> N <- 4
+
+> J <- 5
+
+> rn <- paste0("x", 1:N)
+
+> nm <- LETTERS[1:J]
+
+> Jn <- J * (J - 1)/2
+
+> xn <- matrix(runif(N * Jn), nrow = N, byrow = TRUE)
+
+> rownames(xn) <- rn
+
+> xd <- matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE)
+
+> rownames(xd) <- rn
+
+> (lxn <- ltMatrices(xn, byrow = TRUE, names = nm))
+, , x1
+
+           A         B          C         D E
+A 1.00000000 0.0000000 0.00000000 0.0000000 0
+B 0.51236601 1.0000000 0.00000000 0.0000000 0
+C 0.05847253 0.9095137 1.00000000 0.0000000 0
+D 0.39448719 0.6612143 0.23352591 1.0000000 0
+E 0.51647518 0.2979867 0.07517749 0.8182123 1
+
+, , x2
+
+          A         B         C        D E
+A 1.0000000 0.0000000 0.0000000 0.000000 0
+B 0.8590665 1.0000000 0.0000000 0.000000 0
+C 0.3744315 0.1022684 1.0000000 0.000000 0
+D 0.1165248 0.7956529 0.8930589 1.000000 0
+E 0.1948049 0.4730419 0.2377852 0.214606 1
+
+, , x3
+
+          A         B         C         D E
+A 1.0000000 0.0000000 0.0000000 0.0000000 0
+B 0.4530153 1.0000000 0.0000000 0.0000000 0
+C 0.9045608 0.9269936 1.0000000 0.0000000 0
+D 0.4490011 0.1326375 0.4153967 1.0000000 0
+E 0.9574833 0.4917481 0.7160702 0.2938002 1
+
+, , x4
+
+             A         B           C         D E
+A 1.0000000000 0.0000000 0.000000000 0.0000000 0
+B 0.4877241328 1.0000000 0.000000000 0.0000000 0
+C 0.0593045885 0.7625270 1.000000000 0.0000000 0
+D 0.0005227393 0.1995700 0.470508903 1.0000000 0
+E 0.4913541358 0.2849431 0.005961103 0.8901458 1
+
+
+> dim(lxn)
+[1] 4 5 5
+
+> dimnames(lxn)
+[[1]]
+[1] "x1" "x2" "x3" "x4"
+
+[[2]]
+[1] "A" "B" "C" "D" "E"
+
+[[3]]
+[1] "A" "B" "C" "D" "E"
+
+
+> lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE, names = nm)
+
+> dim(lxd)
+[1] 4 5 5
+
+> dimnames(lxd)
+[[1]]
+[1] "x1" "x2" "x3" "x4"
+
+[[2]]
+[1] "A" "B" "C" "D" "E"
+
+[[3]]
+[1] "A" "B" "C" "D" "E"
+
+
+> class(lxn) <- "syMatrices"
+
+> lxn
+, , x1
+
+           A         B          C         D          E
+A 1.00000000 0.5123660 0.05847253 0.3944872 0.51647518
+B 0.51236601 1.0000000 0.90951367 0.6612143 0.29798667
+C 0.05847253 0.9095137 1.00000000 0.2335259 0.07517749
+D 0.39448719 0.6612143 0.23352591 1.0000000 0.81821229
+E 0.51647518 0.2979867 0.07517749 0.8182123 1.00000000
+
+, , x2
+
+          A         B         C         D         E
+A 1.0000000 0.8590665 0.3744315 0.1165248 0.1948049
+B 0.8590665 1.0000000 0.1022684 0.7956529 0.4730419
+C 0.3744315 0.1022684 1.0000000 0.8930589 0.2377852
+D 0.1165248 0.7956529 0.8930589 1.0000000 0.2146060
+E 0.1948049 0.4730419 0.2377852 0.2146060 1.0000000
+
+, , x3
+
+          A         B         C         D         E
+A 1.0000000 0.4530153 0.9045608 0.4490011 0.9574833
+B 0.4530153 1.0000000 0.9269936 0.1326375 0.4917481
+C 0.9045608 0.9269936 1.0000000 0.4153967 0.7160702
+D 0.4490011 0.1326375 0.4153967 1.0000000 0.2938002
+E 0.9574833 0.4917481 0.7160702 0.2938002 1.0000000
+
+, , x4
+
+             A         B           C            D           E
+A 1.0000000000 0.4877241 0.059304588 0.0005227393 0.491354136
+B 0.4877241328 1.0000000 0.762527028 0.1995699527 0.284943077
+C 0.0593045885 0.7625270 1.000000000 0.4705089033 0.005961103
+D 0.0005227393 0.1995700 0.470508903 1.0000000000 0.890145786
+E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
+
+
+> a <- as.array(ltMatrices(xn, byrow = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(xn, byrow = TRUE), 
++     byrow = FALSE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, byrow = FALSE))
+
+> b <- as.array(ltMatrices(ltMatrices(xn, byrow = FALSE), 
++     byrow = TRUE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(xd, byrow = TRUE, 
++     diag = TRUE), byrow = FALSE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(xd, byrow = FALSE, 
++     diag = TRUE), byrow = TRUE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xn), trans = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(t(xn), trans = TRUE), 
++     trans = FALSE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, trans = FALSE))
+
+> b <- as.array(ltMatrices(ltMatrices(xn, trans = FALSE), 
++     trans = TRUE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xd), trans = TRUE, diag = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(t(xd), trans = TRUE, 
++     diag = TRUE), trans = FALSE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, trans = FALSE, diag = TRUE))
+
+> b <- as.array(ltMatrices(ltMatrices(xd, trans = FALSE, 
++     diag = TRUE), trans = TRUE))
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, 2:4])
+
+> b <- as.array(ltMatrices(xn, byrow = FALSE))[2:4, 
++     2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, 2:4])
+
+> b <- as.array(ltMatrices(xn, byrow = TRUE))[2:4, 2:4, 
++     1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 
++     2:4])
+
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[2:4, 
++     2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 
++     2:4])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 
++     2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, 
++     2:4])
+
+> b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[2:4, 
++     2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, 
++     2:4])
+
+> b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[2:4, 
++     2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, 
++     trans = TRUE)[1:2, 2:4])
+
+> b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, 
++     trans = TRUE))[2:4, 2:4, 1:2]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, 
++     trans = TRUE)[1:2, 2:4])
+
+> b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, 
++     trans = TRUE))[2:4, 2:4, 1:2]
+
+> chk(a, b)
+
+> all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1)
+[1] TRUE
+
+> lxn <- ltMatrices(xn, byrow = TRUE)
+
+> lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE)
+
+> y <- matrix(runif(N * J), nrow = J)
+
+> a <- Mult(lxn, y)
+
+> A <- as.array(lxn)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[, 
++     , i] %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> a <- Mult(lxd, y)
+
+> A <- as.array(lxd)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[, 
++     , i] %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> chk(Mult(lxn[rep(1, N), ], y), Mult(lxn[1, ], y), 
++     check.attributes = FALSE)
+
+> chk(Mult(lxn, y[, 1]), Mult(lxn, y[, rep(1, N)]))
+
+> i <- sample(1:N)[1]
+
+> M <- t(as.array(lxn)[, , i])
+
+> a <- sapply(1:J, function(j) Mult(lxn[i, ], M[, j, 
++     drop = FALSE]))
+
+> rownames(a) <- colnames(a) <- dimnames(lxn)[[2]]
+
+> b <- as.array(Tcrossprod(lxn[i, ]))[, , 1]
+
+> chk(a, b, check.attributes = FALSE)
+
+> A <- as.array(lxn)
+
+> a <- solve(lxn)
+
+> a <- as.array(a)
+
+> b <- array(apply(A, 3, function(x) solve(x), simplify = TRUE), 
++     dim = rev(dim(lxn)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> A <- as.array(lxd)
+
+> a <- as.array(solve(lxd))
+
+> b <- array(apply(A, 3, function(x) solve(x), simplify = TRUE), 
++     dim = rev(dim(lxd)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> chk(solve(lxn, y), Mult(solve(lxn), y))
+
+> chk(solve(lxd, y), Mult(solve(lxd), y))
+
+> chk(solve(lxn[1, ], y), as.array(solve(lxn[1, ]))[, 
++     , 1] %*% y)
+
+> chk(solve(lxn[rep(1, N), ], y), solve(lxn[1, ], y), 
++     check.attributes = FALSE)
+
+> chk(solve(lxn, y[, 1]), solve(lxn, y[, rep(1, N)]))
+
+> a <- as.array(Tcrossprod(lxn))
+
+> b <- array(apply(as.array(lxn), 3, function(x) tcrossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxn)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> d <- Tcrossprod(lxn, diag_only = TRUE)
+
+> chk(d, apply(a, 3, diag))
+
+> chk(d, diagonals(Tcrossprod(lxn)))
+
+> a <- as.array(Tcrossprod(lxd))
+
+> b <- array(apply(as.array(lxd), 3, function(x) tcrossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxd)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> d <- Tcrossprod(lxd, diag_only = TRUE)
+
+> chk(d, apply(a, 3, diag))
+
+> chk(d, diagonals(Tcrossprod(lxd)))
+
+> N <- 1000
+
+> J <- 50
+
+> lt <- ltMatrices(matrix(runif(N * J * (J + 1)/2) + 
++     1, ncol = N), diag = TRUE, byrow = FALSE, trans = TRUE)
+
+> Z <- matrix(rnorm(N * J), ncol = N)
+
+> Y <- solve(lt, Z)
+
+> system.time(ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + 
++     sum(log(diagonals(lt))))
+   user  system elapsed 
+  0.009   0.000   0.009 
+
+> system.time(S <- as.array(Tcrossprod(solve(lt))))
+   user  system elapsed 
+  0.096   0.020   0.117 
+
+> system.time(ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[, 
++     i], sigma = S[, , i], log = TRUE))))
+   user  system elapsed 
+  0.162   0.008   0.170 
+
+> chk(ll1, ll2)
+
+> library("mvtnorm")
+
+> lmvnormR <- function(lower, upper, mean = 0, chol, 
++     logLik = TRUE, ...) {
++     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
++     sto .... [TRUNCATED] 
+
+> J <- 5
+
+> N <- 10
+
+> x <- matrix(runif(N * J * (J + 1)/2), ncol = N)
+
+> lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+
+> a <- matrix(runif(N * J), nrow = J) - 2
+
+> a[sample(J * N)[1:2]] <- -Inf
+
+> b <- a + 2 + matrix(runif(N * J), nrow = J)
+
+> b[sample(J * N)[1:2]] <- Inf
+
+> (phat <- c(lmvnormR(a, b, chol = lx, logLik = FALSE)))
+ [1] 0.0000000 0.4162879 0.3521673 0.5471083 0.4547582 0.3340351 0.3177301
+ [8] 0.4333427 0.0000000 0.6454150
+
+> J <- 5
+
+> N <- 4
+
+> S <- crossprod(matrix(runif(J^2), nrow = J))
+
+> prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
+
+> x <- matrix(prm, ncol = 1)
+
+> lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+
+> a <- matrix(runif(N * J), nrow = J) - 2
+
+> b <- a + 4
+
+> a[2, ] <- -Inf
+
+> b[3, ] <- Inf
+
+> M <- 10000
+
+> W <- matrix(runif(M * (J - 1)), ncol = M)
+
+> lli <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+
+> p <- unclass(lx)
+
+> fc <- function(prm, i) {
++     L <- ltMatrices(matrix(prm, ncol = 1), byrow = TRUE, trans = TRUE, 
++         diag = TRUE)
++     lmvnorm(a, b, chol = .... [TRUNCATED] 
+
+> S <- smvnorm(a, b, chol = lx, w = W, M = M)
+
+> chk(lli, S$logLik)
+
+> if (require("numDeriv")) print(max(abs(grad(fc, p) - 
++     rowSums(S$score))))
+Loading required package: numDeriv
+[1] 2.500162e-05
+
+> exp(lli)
+[1] 0.6849296 0.6355547 0.6379405 0.6455848
+
+> exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
+[1] 0.6899237 0.6424489 0.6425409 0.6529928
+
+> M <- 10000
+
+> if (require("qrng")) {
++     W <- t(ghalton(M * N, d = J - 1))
++ } else {
++     W <- matrix(runif(M * N * (J - 1)), ncol = M)
++ }
+Loading required package: qrng
+
+> pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, algorithm = GenzBretz(maxpts = M, 
++     abseps = 0, releps = 0))
+
+> pGq <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, 
++     logLik = FALSE))
+
+> pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, 
++     logLik = FALSE))
+
+> cbind(pGB, pGq, pG)
+           pGB       pGq        pG
+[1,] 0.6889035 0.6890898 0.6884410
+[2,] 0.6393575 0.6393210 0.6382083
+[3,] 0.6419479 0.6420851 0.6473305
+[4,] 0.6514964 0.6515970 0.6480375
+
+> pGB <- lmvnormR(a[1, , drop = FALSE], b[1, , drop = FALSE], 
++     chol = lx[, 1], logLik = FALSE, algorithm = GenzBretz(maxpts = M, 
++         abse .... [TRUNCATED] 
+
+> pGq <- exp(lmvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
++     chol = lx[, 1], logLik = FALSE))
+
+> ptr <- pnorm(b[1, ]/c(unclass(lx[, 1]))) - pnorm(a[1, 
++     ]/c(unclass(lx[, 1])))
+
+> cbind(c(ptr), pGB, pGq)
+                     pGB       pGq
+[1,] 0.9883734 0.9883734 0.9883675
+[2,] 0.9881335 0.9881335 0.9881277
+[3,] 0.9762937 0.9762937 0.9762916
+[4,] 0.9895919 0.9895919 0.9895855
+
+> log(ptr)
+[1] -0.01169474 -0.01193744 -0.02399180 -0.01046261
+
+> smvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
++     chol = lx[, 1], logLik = TRUE)
+$logLik
+[1] -0.01170073 -0.01194335 -0.02399400 -0.01046908
+
+$score
+           [,1]       [,2]       [,3]        [,4]
+[1,] -0.1047536 -0.1058621 -0.1544528 -0.09903089
+
+
+> sd1 <- c(unclass(lx[, 1]))
+
+> (dnorm(b[1, ]/sd1) * b[1, ] - dnorm(a[1, ]/sd1) * 
++     a[1, ]) * (-1)/sd1^2/ptr
+[1] -0.10475294 -0.10586148 -0.15445243 -0.09903025
+
+> J <- 4
+
+> R <- diag(J)
+
+> R[1, 2] <- R[2, 1] <- 0.25
+
+> R[1, 3] <- R[3, 1] <- 0.5
+
+> R[2, 4] <- R[4, 2] <- 0.75
+
+> (Sigma <- diag(sqrt(1:J/2)) %*% R %*% diag(sqrt(1:J/2)))
+          [,1]      [,2]      [,3]    [,4]
+[1,] 0.5000000 0.1767767 0.4330127 0.00000
+[2,] 0.1767767 1.0000000 0.0000000 1.06066
+[3,] 0.4330127 0.0000000 1.5000000 0.00000
+[4,] 0.0000000 1.0606602 0.0000000 2.00000
+
+> (C <- t(chol(Sigma)))
+          [,1]       [,2]      [,3]      [,4]
+[1,] 0.7071068  0.0000000 0.0000000 0.0000000
+[2,] 0.2500000  0.9682458 0.0000000 0.0000000
+[3,] 0.6123724 -0.1581139 1.0488088 0.0000000
+[4,] 0.0000000  1.0954451 0.1651446 0.8790491
+
+> prm <- C[lower.tri(C, diag = TRUE)]
+
+> lt <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE, 
++     byrow = FALSE, trans = TRUE)
+
+> lt <- ltMatrices(lt, byrow = TRUE, trans = TRUE)
+
+> chk(C, as.array(lt)[, , 1], check.attributes = FALSE)
+
+> chk(Sigma, as.array(Tcrossprod(lt))[, , 1], check.attributes = FALSE)
+
+> N <- 100
+
+> Z <- matrix(rnorm(N * J), nrow = J)
+
+> Y <- Mult(lt, Z)
+
+> Y <- Y - rowMeans(Y)
+
+> sds <- sqrt(c(Tcrossprod(lt, diag_only = TRUE)))
+
+> rint <- runif(J * N, min = 0.5) * sds
+
+> a <- Y - rint
+
+> b <- Y + rint
+
+> (Shat <- var(t(Y)))
+           1          2          3          4
+1 0.47489583 0.25666602 0.23460693 0.06202432
+2 0.25666602 1.01591349 0.05107471 1.10275978
+3 0.23460693 0.05107471 1.13726524 0.06021459
+4 0.06202432 1.10275978 0.06021459 1.98949550
+
+> M <- 1000
+
+> if (require("qrng")) {
++     W <- t(ghalton(M * N, d = J - 1))
++ } else {
++     W <- matrix(runif(M * N * (J - 1)), ncol = M)
++ }
+
+> ll <- function(parm) {
++     C <- matrix(c(parm), ncol = 1)
++     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
++     -lmvnorm(lower = .... [TRUNCATED] 
+
+> ll(unclass(lt))
+[1] 349.7695
+
+> lmvnormR(a, b, chol = lt, algorithm = GenzBretz(maxpts = M, 
++     abseps = 0, releps = 0))
+[1] -349.7689
+
+> (llprm <- lmvnorm(a, b, chol = lt, w = W, M = M))
+[1] -349.7695
+
+> chk(llprm, sum(lmvnorm(a, b, chol = lt, w = W, M = M, 
++     logLik = FALSE)))
+
+> sc <- function(parm) {
++     C <- matrix(c(parm), ncol = 1)
++     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
++     ret <- smvnorm(l .... [TRUNCATED] 
+
+> lwr <- rep(-Inf, J * (J + 1)/2)
+
+> lwr[cumsum(c(1, 2:J))] <- 0.1
+
+> op <- optim(lt, fn = ll, gr = sc, method = "L-BFGS-B", 
++     lower = lwr, control = list(trace = TRUE))
+iter   10 value 329.692298
+final  value 329.691911 
+converged
+
+> op$value
+[1] 329.6919
+
+> ll(lt)
+[1] 349.7695
+
+> op$par
+, , 1
+
+          1          2         3   4
+1 0.6157334  0.0000000 0.0000000 0.0
+2 0.4401433  0.7746108 0.0000000 0.0
+3 0.3998032 -0.1454860 0.8389364 0.0
+4 0.1167488  1.2760912 0.1673416 0.1
+
+
+> lt
+, , 1
+
+          1          2         3         4
+1 0.7071068  0.0000000 0.0000000 0.0000000
+2 0.2500000  0.9682458 0.0000000 0.0000000
+3 0.6123724 -0.1581139 1.0488088 0.0000000
+4 0.0000000  1.0954451 0.1651446 0.8790491
+
+
+> Tcrossprod(lt)
+, , 1
+
+          1         2         3       4
+1 0.5000000 0.1767767 0.4330127 0.00000
+2 0.1767767 1.0000000 0.0000000 1.06066
+3 0.4330127 0.0000000 1.5000000 0.00000
+4 0.0000000 1.0606602 0.0000000 2.00000
+
+
+> Tcrossprod(op$par)
+, , 1
+
+           1         2          3          4
+1 0.37912761 0.2710109 0.24617221 0.07188611
+2 0.27101092 0.7937480 0.06327570 1.03986017
+3 0.24617221 0.0632757 0.88482316 0.00141216
+4 0.07188611 1.0398602 0.00141216 1.68004225
+
+
+> Shat
+           1          2          3          4
+1 0.47489583 0.25666602 0.23460693 0.06202432
+2 0.25666602 1.01591349 0.05107471 1.10275978
+3 0.23460693 0.05107471 1.13726524 0.06021459
+4 0.06202432 1.10275978 0.06021459 1.98949550
+
+ *** Run successfully completed ***
+> proc.time()
+   user  system elapsed 
+  4.132   0.100   4.229 

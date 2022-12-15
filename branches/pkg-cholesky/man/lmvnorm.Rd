@@ -1,5 +1,6 @@
 \name{lmvnorm}
 \alias{lmvnorm}
+\alias{smvnorm}
 \title{
     Multivariate Normal Log-likelihood and Score Functions
 }
