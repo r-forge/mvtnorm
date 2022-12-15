@@ -1935,9 +1935,12 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 
         @<initialisation@>
 
-        dans[0] = intsum;
-
         @<score c11@>
+
+        if (iM == 0) {
+            dans[0] = intsum;
+            dans[1] = fprime[0];
+        }
 
         if (W != R_NilValue && pW == 0)
             dW = REAL(W);
@@ -1974,7 +1977,11 @@ been computed
 @d post differentiate
 @{
 if (attr(chol, "diag")) {
-    idx <- cumsum(c(1, 2:J))
+    if (J == 1) {
+        idx <- 1L
+    } else {
+        idx <- cumsum(c(1, 2:J))
+    }
     ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
     ret[idx,] <- -ret[idx,]
 }
@@ -2104,8 +2111,13 @@ The reason for small numerical differences is that \code{pmvnorm}
 also uses \code{pnorm} but \code{lmvnorm} relies on our faster (but a bit
 less accurate) version \code{C\_pnorm\_fast}.
 
-
-
+The score function also works for univariate problems
+<<ex-uni-score>>=
+log(ptr)
+smvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = TRUE)
+sd1 <- c(unclass(lx[,1]))
+(dnorm(b[1,] / sd1) * b[1,] - dnorm(a[1,] / sd1) * a[1,]) * (-1) / sd1^2 / ptr
+@@
 
 \chapter{Maximum-likelihood Example} \label{ML}
 
