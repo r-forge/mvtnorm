@@ -1768,6 +1768,40 @@ for (idx = 0; idx < (j + 1) * j / 2; idx++) {
 }
 @}
 
+@d score wrt new off-diagonals
+@{
+dtmp = dnorm(da[j], x, 1.0, 0L);
+etmp = dnorm(db[j], x, 1.0, 0L);
+
+for (k = 0; k < j; k++) {
+    idx = start + j + k;
+    dprime[idx] = dtmp * (-1) * y[k];
+    eprime[idx] = etmp * (-1) * y[k];
+    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+}
+@}
+
+@d score wrt new diagonal
+@{
+idx = (j + 1) * (j + 2) / 2 - 1;
+dprime[idx] = dtmp * (da[j] - x);
+eprime[idx] = etmp * (db[j] - x);
+fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+@}
+
+@d update score
+@{
+for (idx = 0; idx < j * (j + 1) / 2; idx++) {
+    xx = 0.0;
+    for (k = 0; k < j; k++)
+        xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
+
+    dprime[idx] = dtmp * (-1) * xx;
+    eprime[idx] = etmp * (-1) * xx;
+    fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
+}
+@}
+
 @d score inner loop
 @{
 for (j = 1; j < iJ; j++) {
@@ -1786,34 +1820,13 @@ for (j = 1; j < iJ; j++) {
 
     @<update yprime@>
 
-    dtmp = dnorm(da[j], x, 1.0, 0L);
-    etmp = dnorm(db[j], x, 1.0, 0L);
+    @<score wrt new off-diagonals@>
 
-    for (k = 0; k < j; k++) {
-        idx = start + j + k;
-        dprime[idx] = dtmp * (-1) * y[k];
-        eprime[idx] = etmp * (-1) * y[k];
-        fprime[idx] = (eprime[idx] - dprime[idx]) * f;
-    }
+    @<score wrt new diagonal@>
 
-    idx = (j + 1) * (j + 2) / 2 - 1;
-    dprime[idx] = dtmp * (da[j] - x);
-    eprime[idx] = etmp * (db[j] - x);
-    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
-
-    for (idx = 0; idx < j * (j + 1) / 2; idx++) {
-        xx = 0.0;
-        for (k = 0; k < j; k++)
-            xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
-
-        dprime[idx] = dtmp * (-1) * xx;
-        eprime[idx] = etmp * (-1) * xx;
-        
-        fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
-    }
+    @<update score@>
 
     f *= emd;
-   
     start += j;
 
 }
