@@ -1717,6 +1717,258 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 }
 @}
 
+\section{Score Function}
+
+In addition to the log-likelihood, we would also like to have access to the
+scores with respect to $\mC_i$. Because every element of $\mC_i$ only enters
+once, the chain rule rules, so to speak.
+
+
+@d score output object
+@{
+int Jp = iJ * (iJ + 1) / 2;
+double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
+double dtmp, etmp, Wtmp, ytmp, ktmp, xx;
+
+PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
+dans = REAL(ans);
+for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
+@}
+
+For each $i = 1, \dots, N$, do
+
+\begin{enumerate}
+  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$ \code{upper}, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
+
+  \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
+
+Note: We later need derivatives wrt $c^{(i)}_{jj}$, so we compute derivates
+wrt $a^{(i)}_j$ and post differentiate later.
+
+  \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
+\Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
+
+We start initialised the score wrt to $c^{(i)}_{11}$ (the parameter is non-existent
+here due to standardisation)
+
+@d score c_11
+@{
+dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
+eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
+fprime[0] = eprime[0] - dprime[0];
+@}
+
+  \item Repeat
+
+@d init score loop
+@{
+d = d0;
+f = f0;
+emd = emd0;
+start = 0;
+dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
+eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
+fprime[0] = eprime[0] - dprime[0];
+@}
+
+    \begin{enumerate}
+
+      \item Generate uniform $w_1, \dots, w_{\J - 1} \in [0, 1]$.
+
+      \item For $j = 2, \dots, J$ set 
+        \begin{eqnarray*}
+            y_{j - 1} & = & \Phi^{-1}\left(d_{j - 1} + w_{j - 1} (e_{j - 1} - d_{j - 1})\right)
+        \end{eqnarray*}
+
+We again either generate $w_{j - 1}$ on the fly or use pre-computed weights
+(\code{w}). We first compute the scores with respect to the already existing
+parameters.
+
+@d update yprime
+@{
+ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
+
+for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+for (idx = 0; idx < (j + 1) * j / 2; idx++) {
+    yprime[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yprime[idx * (iJ - 1) + (j - 1)] *= (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
+}
+@}
+
+        \begin{eqnarray*}
+            x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j
+\end{eqnarray*}
+
+        \begin{eqnarray*}
+            d_j & = & \Phi\left(a^{(i)}_j - x_{j - 1}\right) \\
+            e_j & = & \Phi\left(b^{(i)}_j - x_{j - 1}\right)
+        \end{eqnarray*}
+
+        \begin{eqnarray*}
+            f_j & = & (e_j - d_j) f_{j - 1}.
+       \end{eqnarray*}
+
+The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
+
+@d score wrt new off-diagonals
+@{
+dtmp = dnorm(da[j], x, 1.0, 0L);
+etmp = dnorm(db[j], x, 1.0, 0L);
+
+for (k = 0; k < j; k++) {
+    idx = start + j + k;
+    dprime[idx] = dtmp * (-1) * y[k];
+    eprime[idx] = etmp * (-1) * y[k];
+    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+}
+@}
+
+and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
+
+@d score wrt new diagonal
+@{
+idx = (j + 1) * (j + 2) / 2 - 1;
+dprime[idx] = dtmp * (da[j] - x);
+eprime[idx] = etmp * (db[j] - x);
+fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+@}
+
+We next update scores for parameters introduced for smaller $j$
+
+@d update score
+@{
+for (idx = 0; idx < j * (j + 1) / 2; idx++) {
+    xx = 0.0;
+    for (k = 0; k < j; k++)
+        xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
+
+    dprime[idx] = dtmp * (-1) * xx;
+    eprime[idx] = etmp * (-1) * xx;
+    fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
+}
+@}
+
+We put everything together in a loop starting with the second dimension
+
+@d score inner loop
+@{
+for (j = 1; j < iJ; j++) {
+
+    @<compute y@>
+
+    @<compute x@>
+
+    @<update d, e@>
+
+    @<update yprime@>
+
+    @<score wrt new off-diagonals@>
+
+    @<score wrt new diagonal@>
+
+    @<update score@>
+
+    @<update f@>
+
+}
+@}
+
+      \item Set $\text{intsum} = \text{intsum} + f_\J$, $\text{varsum} = \text{varsum} + f^2_\J$, $M = M + 1$, 
+            and $\text{error} = \sqrt{(\text{varsum}/M - (\text{intsum}/M)^2) / M}$.
+
+We refrain from early stopping and error estimation. 
+    
+      \item[Until] $\text{error} < \epsilon$ or $M = M_\text{max}$
+
+    \end{enumerate}
+  \item Output $\hat{p}_i = \text{intsum} / M$.
+
+We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
+
+
+@d score output
+@{
+dans[0] += f;
+for (j = 0; j < Jp; j++)
+    dans[j + 1] += fprime[j];
+@}
+
+\end{enumerate}
+
+We put everything together in \proglang{C}
+
+@d R smvnorm
+@{
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
+
+    SEXP ans;
+    double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
+    double mdtol = 1.0 - dtol;
+    double d0, e0, emd0, f0, q0, l0, intsum, lM;
+    int p, len, idx;
+
+    @<dimensions@>
+
+    @<W length@>
+
+    int start, j, k;
+    double tmp, e, d, f, emd, x, y[iJ - 1];
+
+    @<score output object@>
+
+    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
+
+    @<univariate problem@>
+
+    if (W == R_NilValue)
+        GetRNGstate();
+
+    for (int i = 0; i < iN; i++) {
+
+        @<initialisation@>
+
+        dans[0] = intsum;
+
+        @<score c_11@>
+
+        if (W != R_NilValue && pW == 0)
+            dW = REAL(W);
+
+        for (int m = 0; m < iM; m++) {
+
+            @<init score loop@>
+
+            @<score inner loop@>
+
+            @<score output@>
+
+            if (W != R_NilValue)
+                dW += iJ - 1;
+        }
+
+        da += iJ;
+        db += iJ;
+
+        dans += Jp + 1;
+
+        /* constant C? p == 0*/
+        if (p > 0)
+            dC += p;
+    }
+
+    if (W == R_NilValue)
+        PutRNGstate();
+
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+The \proglang{R} code is now essentially identical to \code{lmvnorm},
+however, we need to undo the effect of standardisation once the scores have
+been computed
+
 @d post differentiate
 @{
 if (attr(chol, "diag")) {
@@ -1758,168 +2010,8 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 }
 @}
 
-@d update yprime
-@{
-ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
-
-for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
-
-for (idx = 0; idx < (j + 1) * j / 2; idx++) {
-    yprime[idx * (iJ - 1) + (j - 1)] = ytmp;
-    yprime[idx * (iJ - 1) + (j - 1)] *= (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
-}
-@}
-
-@d score wrt new off-diagonals
-@{
-dtmp = dnorm(da[j], x, 1.0, 0L);
-etmp = dnorm(db[j], x, 1.0, 0L);
-
-for (k = 0; k < j; k++) {
-    idx = start + j + k;
-    dprime[idx] = dtmp * (-1) * y[k];
-    eprime[idx] = etmp * (-1) * y[k];
-    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
-}
-@}
-
-@d score wrt new diagonal
-@{
-idx = (j + 1) * (j + 2) / 2 - 1;
-dprime[idx] = dtmp * (da[j] - x);
-eprime[idx] = etmp * (db[j] - x);
-fprime[idx] = (eprime[idx] - dprime[idx]) * f;
-@}
-
-@d update score
-@{
-for (idx = 0; idx < j * (j + 1) / 2; idx++) {
-    xx = 0.0;
-    for (k = 0; k < j; k++)
-        xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
-
-    dprime[idx] = dtmp * (-1) * xx;
-    eprime[idx] = etmp * (-1) * xx;
-    fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
-}
-@}
-
-@d score inner loop
-@{
-for (j = 1; j < iJ; j++) {
-
-    @<compute y@>
-
-    @<compute x@>
-
-    @<update d, e@>
-
-    @<update yprime@>
-
-    @<score wrt new off-diagonals@>
-
-    @<score wrt new diagonal@>
-
-    @<update score@>
-
-    @<update f@>
-
-}
-@}
-
-@d score output
-@{
-dans[0] += f;
-for (j = 0; j < Jp; j++)
-    dans[j + 1] += fprime[j];
-@}
-
-@d score output object
-@{
-int Jp = iJ * (iJ + 1) / 2;
-double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
-double dtmp, etmp, Wtmp, ytmp, ktmp, xx;
-
-PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
-dans = REAL(ans);
-for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
-@}
-
-@d R smvnorm
-@{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
-
-    SEXP ans;
-    double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
-    double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, intsum, lM;
-    int p, len, idx;
-
-    @<dimensions@>
-
-    @<W length@>
-
-    int start, j, k;
-    double tmp, e, d, f, emd, x, y[iJ - 1];
-
-    @<score output object@>
-
-    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
-
-    @<univariate problem@>
-
-    if (W == R_NilValue)
-        GetRNGstate();
-
-    for (int i = 0; i < iN; i++) {
-
-        @<initialisation@>
-
-        dans[0] = intsum;
-
-        dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
-        eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
-        fprime[0] = eprime[0] - dprime[0];
-
-        if (W != R_NilValue && pW == 0)
-            dW = REAL(W);
-
-        for (int m = 0; m < iM; m++) {
-
-            d = d0;
-            f = f0;
-            emd = emd0;
-            start = 0;
-
-            dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
-            eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
-            fprime[0] = eprime[0] - dprime[0];
-
-            @<score inner loop@>
-
-            @<score output@>
-
-            if (W != R_NilValue)
-                dW += iJ - 1;
-        }
-
-        da += iJ;
-        db += iJ;
-
-        dans += Jp + 1;
-
-        /* constant C? p == 0*/
-        if (p > 0)
-            dC += p;
-    }
-
-    if (W == R_NilValue)
-        PutRNGstate();
-
-    UNPROTECT(1);
-    return(ans);
-}
-@}
+Let's look at an example, where we use \code{numDeriv::grad} to check the
+results
 
 <<ex-score>>=
 J <- 5
