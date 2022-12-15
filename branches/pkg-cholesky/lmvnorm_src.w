@@ -1413,6 +1413,8 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 
 @d compute y
 @{
+Wtmp = (W == R_NilValue ? unif_rand() : dW[j - 1]);
+tmp = d + Wtmp * emd;
 if (tmp < dtol) {
     y[j - 1] = q0;
 } else {
@@ -1440,11 +1442,6 @@ emd = e - d;
 @d inner loop
 @{
 for (j = 1; j < iJ; j++) {
-    if (W == R_NilValue) {
-        tmp = d + unif_rand() * emd;
-    } else {
-        tmp = d + dW[j - 1] * emd;
-    }
 
     @<compute y@>
 
@@ -1595,7 +1592,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     @<W length@>
 
     int start, j, k;
-    double tmp, e, d, f, emd, x, y[iJ - 1];
+    double tmp, Wtmp, e, d, f, emd, x, y[iJ - 1];
 
     @<setup return object@>
 
@@ -1805,12 +1802,6 @@ for (idx = 0; idx < j * (j + 1) / 2; idx++) {
 @d score inner loop
 @{
 for (j = 1; j < iJ; j++) {
-    if (W == R_NilValue) {
-        Wtmp = unif_rand();
-    } else {
-        Wtmp = dW[j - 1];
-    }
-    tmp = d + dW[j - 1] * emd;
 
     @<compute y@>
 
