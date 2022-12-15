@@ -1411,6 +1411,32 @@ intsum = (iJ > 1 ? 0.0 : f0);
 We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 (\code{w}).
 
+@d compute y
+@{
+if (tmp < dtol) {
+    y[j - 1] = q0;
+} else {
+    if (tmp > mdtol)
+        y[j - 1] = -q0;
+    else
+        y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
+}
+@}
+
+@d compute x
+@{
+x = 0.0;
+for (k = 0; k < j; k++)
+    x += dC[start + k] * y[k];
+@}
+
+@d update d, e
+@{
+d = C_pnorm_fast(da[j], x);
+e = C_pnorm_fast(db[j], x);
+emd = e - d;
+@}
+
 @d inner loop
 @{
 for (j = 1; j < iJ; j++) {
@@ -1420,21 +1446,13 @@ for (j = 1; j < iJ; j++) {
         tmp = d + dW[j - 1] * emd;
     }
 
-    if (tmp < dtol) {
-        y[j - 1] = q0;
-    } else {
-        if (tmp > mdtol)
-            y[j - 1] = -q0;
-        else
-            y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
-    }
-    x = 0.0;
-    for (k = 0; k < j; k++)
-        x += dC[start + k] * y[k];
+    @<compute y@>
+
+    @<compute x@>
+
+    @<update d, e@>
+
     start += j;
-    d = C_pnorm_fast(da[j], x);
-    e = C_pnorm_fast(db[j], x);
-    emd = e - d;
     f *= emd;
 }
 @}
@@ -1738,6 +1756,17 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 }
 @}
 
+@d update yprime
+@{
+ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
+
+for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+for (idx = 0; idx < (j + 1) * j / 2; idx++) {
+    yprime[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yprime[idx * (iJ - 1) + (j - 1)] *= (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
+}
+@}
 
 @d score inner loop
 @{
@@ -1749,42 +1778,27 @@ for (j = 1; j < iJ; j++) {
     }
     tmp = d + dW[j - 1] * emd;
 
-    if (tmp < dtol) {
-        y[j - 1] = q0;
-    } else {
-        if (tmp > mdtol)
-            y[j - 1] = -q0;
-        else
-            y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
-    }
+    @<compute y@>
 
-    ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
+    @<compute x@>
 
-    for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
+    @<update d, e@>
 
-    for (idx = 0; idx < (j + 1) * j / 2; idx++) {
-        yprime[idx * (iJ - 1) + (j - 1)] = ytmp * (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
-    }
+    @<update yprime@>
 
-    x = 0.0;
-    for (k = 0; k < j; k++) {
-        x += dC[start + k] * y[k];
-    }
-
-    d = C_pnorm_fast(da[j], x);
-    e = C_pnorm_fast(db[j], x);
-    emd = e - d;
+    dtmp = dnorm(da[j], x, 1.0, 0L);
+    etmp = dnorm(db[j], x, 1.0, 0L);
 
     for (k = 0; k < j; k++) {
         idx = start + j + k;
-        dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * y[k];
-        eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * y[k];
+        dprime[idx] = dtmp * (-1) * y[k];
+        eprime[idx] = etmp * (-1) * y[k];
         fprime[idx] = (eprime[idx] - dprime[idx]) * f;
     }
 
     idx = (j + 1) * (j + 2) / 2 - 1;
-    dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (da[j] - x);
-    eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (db[j] - x);
+    dprime[idx] = dtmp * (da[j] - x);
+    eprime[idx] = etmp * (db[j] - x);
     fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 
     for (idx = 0; idx < j * (j + 1) / 2; idx++) {
@@ -1792,8 +1806,8 @@ for (j = 1; j < iJ; j++) {
         for (k = 0; k < j; k++)
             xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
 
-        dprime[idx] = dnorm(da[j], x, 1.0, 0L) * (-1) * xx;
-        eprime[idx] = dnorm(db[j], x, 1.0, 0L) * (-1) * xx;
+        dprime[idx] = dtmp * (-1) * xx;
+        eprime[idx] = etmp * (-1) * xx;
         
         fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
     }
@@ -1805,12 +1819,22 @@ for (j = 1; j < iJ; j++) {
 }
 @}
 
-
 @d score output
 @{
 dans[0] += f;
 for (j = 0; j < Jp; j++)
     dans[j + 1] += fprime[j];
+@}
+
+@d score output object
+@{
+int Jp = iJ * (iJ + 1) / 2;
+double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
+double dtmp, etmp, Wtmp, ytmp, ktmp, xx;
+
+PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
+dans = REAL(ans);
+for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
 @}
 
 @d R smvnorm
@@ -1829,12 +1853,8 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 
     int start, j, k;
     double tmp, e, d, f, emd, x, y[iJ - 1];
-    int Jp = iJ * (iJ + 1) / 2;
-    double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp], Wtmp, ytmp, ktmp, xx;
 
-    PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
-    dans = REAL(ans);
-    for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
+    @<score output object@>
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
 
@@ -1879,7 +1899,6 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
         db += iJ;
 
         dans += Jp + 1;
-
 
         /* constant C? p == 0*/
         if (p > 0)
@@ -1974,7 +1993,7 @@ pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = 
 ### call lmvnorm
 pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE))
 ### ground truth
-ptr <- pnorm(b[1,] / unclass(lx[,1])) - pnorm(a[1,] / unclass(lx[,1]))
+ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
 
 cbind(c(ptr), pGB, pGq)
 @@
@@ -2052,7 +2071,7 @@ we would do this only once and use the stored values for repeated
 evaluations of a log-likelihood (because the optimiser expects a
 deterministic function to be optimised)
 
-<<ex-ML-chk>>=
+<<ex-ML-chk, eval = FALSE>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnormR(a, b, chol = lt, algorithm = 
@@ -2072,7 +2091,7 @@ Figure~\ref{lleval}. It seems that for $M \ge 3000$, results are reasonably
 stable.
 
 \begin{figure}
-<<ex-ML-fig, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
+<<ex-ML-fig, eval = FALSE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
 layout(matrix(1:2, nrow = 1))
 plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])), ylab = "Log-likelihood")
 points(M, lH["ll",], pch = 4)
@@ -2089,7 +2108,7 @@ via the \code{w} argument (or to set the \code{seed}) such that only the
 candidate parameters \code{parm} change with repeated calls to \code{ll}.
 
 <<ex-ML-ll, eval = TRUE>>=
-M <- 3000 
+M <- 1000 
 if (require("qrng")) {
     ### quasi-Monte-Carlo
     W <- t(ghalton(M * N, d = J - 1))
