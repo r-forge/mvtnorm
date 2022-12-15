@@ -1395,6 +1395,14 @@ intsum = (iJ > 1 ? 0.0 : f0);
 
   \item Repeat
 
+@d init logLik loop
+@{
+d = d0;
+f = f0;
+emd = emd0;
+start = 0;
+@}
+
     \begin{enumerate}
 
       \item Generate uniform $w_1, \dots, w_{\J - 1} \in [0, 1]$.
@@ -1456,7 +1464,7 @@ f *= emd;
 
 We put everything together in a loop starting with the second dimension
 
-@d inner loop
+@d inner logLik loop
 @{
 for (j = 1; j < iJ; j++) {
 
@@ -1493,6 +1501,16 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 dans[0] += (intsum < dtol ? l0 : log(intsum)) - lM;
 if (!RlogLik)
     dans += 1L;
+@}
+
+and move on to the next observation (not that \code{p} might be 0, in case
+$\mC_i \equiv \mC$).
+
+@d move on
+@{
+da += iJ;
+db += iJ;
+dC += p;
 @}
 
 \end{enumerate}
@@ -1629,12 +1647,9 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 
         for (int m = 0; m < iM; m++) {
 
-            d = d0;
-            f = f0;
-            emd = emd0;
-            start = 0;
+            @<init logLik loop@>
 
-            @<inner loop@>
+            @<inner logLik loop@>
 
             @<increment@>
 
@@ -1642,14 +1657,9 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
                 dW += iJ - 1;
         }
 
-        da += iJ;
-        db += iJ;
-
         @<output@>
 
-        /* constant C? p == 0*/
-        if (p > 0)
-            dC += p;
+        @<move on@>
     }
 
     if (W == R_NilValue)
@@ -1751,7 +1761,7 @@ wrt $a^{(i)}_j$ and post differentiate later.
 We start initialised the score wrt to $c^{(i)}_{11}$ (the parameter is non-existent
 here due to standardisation)
 
-@d score c_11
+@d score c11
 @{
 dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
 eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
@@ -1762,10 +1772,7 @@ fprime[0] = eprime[0] - dprime[0];
 
 @d init score loop
 @{
-d = d0;
-f = f0;
-emd = emd0;
-start = 0;
+@<init logLik loop@>
 dprime[0] = dnorm(da[0], 0.0, 1.0, 0L) * da[0];
 eprime[0] = dnorm(db[0], 0.0, 1.0, 0L) * db[0];
 fprime[0] = eprime[0] - dprime[0];
@@ -1851,7 +1858,7 @@ for (idx = 0; idx < j * (j + 1) / 2; idx++) {
 
 We put everything together in a loop starting with the second dimension
 
-@d score inner loop
+@d inner score loop
 @{
 for (j = 1; j < iJ; j++) {
 
@@ -1930,7 +1937,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 
         dans[0] = intsum;
 
-        @<score c_11@>
+        @<score c11@>
 
         if (W != R_NilValue && pW == 0)
             dW = REAL(W);
@@ -1939,7 +1946,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 
             @<init score loop@>
 
-            @<score inner loop@>
+            @<inner score loop@>
 
             @<score output@>
 
@@ -1947,14 +1954,9 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
                 dW += iJ - 1;
         }
 
-        da += iJ;
-        db += iJ;
+        @<move on@>
 
         dans += Jp + 1;
-
-        /* constant C? p == 0*/
-        if (p > 0)
-            dC += p;
     }
 
     if (W == R_NilValue)
@@ -2029,7 +2031,7 @@ b <- a + 4
 M <- 100
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
-phat <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+lli <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
 
 p <- unclass(lx)
 fc <- function(prm, i) {
@@ -2039,7 +2041,7 @@ fc <- function(prm, i) {
 
 S <- smvnorm(a, b, chol = lx, w = W, M = M)
 
-chk(phat, S$logLik)
+chk(lli, S$logLik)
 
 if (require("numDeriv"))
     print(max(abs(grad(fc, p) - rowSums(S$score))))
@@ -2048,7 +2050,7 @@ if (require("numDeriv"))
 Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
 iterations)
 <<ex-again>>=
-phat
+exp(lli)
 exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
 @@
 
