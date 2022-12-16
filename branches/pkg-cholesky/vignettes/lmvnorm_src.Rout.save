@@ -363,19 +363,12 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > Y <- solve(lt, Z)
 
-> system.time(ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + 
-+     sum(log(diagonals(lt))))
-   user  system elapsed 
-  0.009   0.000   0.009 
+> ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
 
-> system.time(S <- as.array(Tcrossprod(solve(lt))))
-   user  system elapsed 
-  0.096   0.020   0.117 
+> S <- as.array(Tcrossprod(solve(lt)))
 
-> system.time(ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[, 
-+     i], sigma = S[, , i], log = TRUE))))
-   user  system elapsed 
-  0.162   0.008   0.170 
+> ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[, 
++     i], sigma = S[, , i], log = TRUE)))
 
 > chk(ll1, ll2)
 
@@ -670,4 +663,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  4.132   0.100   4.229 
+  3.915   0.087   4.001 

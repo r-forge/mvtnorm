@@ -1230,10 +1230,10 @@ lt <- ltMatrices(matrix(runif(N * J * (J + 1) / 2) + 1, ncol = N),
                  diag = TRUE, byrow = FALSE, trans = TRUE)
 Z <- matrix(rnorm(N * J), ncol = N)
 Y <- solve(lt, Z)
-system.time(ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt))))
+ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
 
-system.time(S <- as.array(Tcrossprod(solve(lt))))
-system.time(ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE))))
+S <- as.array(Tcrossprod(solve(lt)))
+ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
 @@
 
