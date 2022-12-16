@@ -1791,7 +1791,7 @@ parameters.
 
 @d update yprime
 @{
-ytmp = 1.0 / dnorm(y[j - 1], 0.0, 1.0, 0L);
+ytmp = exp(- dnorm(y[j - 1], 0.0, 1.0, 1L)); // = 1 / dnorm(y[j - 1], 0.0, 1.0, 0L)
 
 for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
 
