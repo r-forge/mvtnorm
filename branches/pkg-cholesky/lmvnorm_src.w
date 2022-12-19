@@ -2005,7 +2005,9 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
                  as.integer(J), w, as.integer(M), as.double(tol));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
-    m <- matrix(ret[1L,], nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
+    intsum <- ret[1L,]
+    intsum <- pmax(intsum, tol^(1/3) * M) ### see mlt:::..mlt_score_interval
+    m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
     ret <- ret[-1L,,drop = FALSE] / m
 
     @<post differentiate@>
