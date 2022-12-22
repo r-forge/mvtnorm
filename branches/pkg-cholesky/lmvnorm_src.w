@@ -139,14 +139,15 @@ over $i = 1, \dots, N$ and thus separate calls to this function are
 necessary in order to compute likelihood contributions.
 
 The implementation described here is expected to be inferior to Alan Genz'
-original \code{FORTRAN} code when accuracy for single $p_i$ matters. We cut
+original \proglang{FORTRAN} code when accuracy for single $p_i$ matters. We cut
 some corners aiming at efficient computation of the log-likelihood $\sum_{i
 = 1}^N \log(p_i)$.
 
 The document first describes infrastructure, that is, a class and useful
-methods, for dealing with multiple lower triangular matrices $\mC_i, i = 1, \dots,
-N$ in Chapter~\ref{ltMatrices}. The multivariate normal log-likelihood is
-implemented as outlined in Chapter~\ref{lmvnorm}. An example demonstrating
+methods, for dealing with multiple lower triangular matrices $\mC_i, i = 1,
+\dots, N$ in Chapter~\ref{ltMatrices}.  The multivariate normal
+log-likelihood, and the corresponding score function, is implemented as
+outlined in Chapter~\ref{lmvnorm}.  An example demonstrating
 maximum-likelihood estimation of Cholesky factors in the presence of
 interval-censored observations is discussed last in Chapter~\ref{ML}.
 
@@ -281,6 +282,9 @@ if (inherits(object, "ltMatrices")) {
 }
 @}
 
+It is important to specify both \code{byrow} and \code{trans}, otherwise
+the default arguments might chance the result in an unintended way.
+
 The constructor essentially attaches attributes to a matrix \code{object},
 possibly after some reordering / transposing
 
@@ -361,7 +365,7 @@ chk <- function(...) stopifnot(isTRUE(all.equal(...)))
 set.seed(290875)
 N <- 4
 J <- 5
-rn <- paste0("x", 1:N)
+rn <- paste0("C_", 1:N)
 nm <- LETTERS[1:J]
 Jn <- J * (J - 1) / 2
 ## data
@@ -1274,16 +1278,17 @@ lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 }
 @@
 
-However, the underlying \code{FORTRAN} code first computes the Cholesky
+However, the underlying \proglang{FORTRAN} code first computes the Cholesky
 factor based on the covariance matrix, which is clearly a waste of time.
-Repeated calls to \code{FORTRAN} also cost some time. The code \citep[based
+Repeated calls to \proglang{FORTRAN} also cost some time. The code \citep[based
 on and evaluated in][]{Genz_Bretz_2002} implements a
 specific form of quasi-Monte-Carlo integration without allowing the user to
 change the scheme (or to fall-back to simple Monte-Carlo). We therefore
 implement our own, and simplistic version, with the aim to speed-things up
 such that maximum-likelihood estimation becomes a bit faster.
 
-Let's look at an example first. This code estimates $p_1, \dots, p_5$
+Let's look at an example first. This code estimates $p_1, \dots, p_{10}$ for
+a $5$-dimensional normal
 <<ex-lmvnorm_R>>=
 J <- 5
 N <- 10
@@ -1330,7 +1335,8 @@ an integral over $[0, 1]^{\J - 1}$.
 For each $i = 1, \dots, N$, do
 
 \begin{enumerate}
-  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$ \code{upper}, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
+  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$
+(\code{upper}), and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
 @d input checks
 @{
@@ -1503,7 +1509,7 @@ if (!RlogLik)
     dans += 1L;
 @}
 
-and move on to the next observation (not that \code{p} might be 0, in case
+and move on to the next observation (not ethat \code{p} might be 0, in case
 $\mC_i \equiv \mC$).
 
 @d move on
@@ -1727,6 +1733,65 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 }
 @}
 
+
+Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
+iterations)
+<<ex-again>>=
+phat
+exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
+@@
+
+Next generate some data and compare our implementation to \code{pmvnorm}
+using quasi-Monte-Carlo integration. The \code{pmvnorm}
+function uses randomized Korobov rules.
+The experiment here applies generalised Halton sequences. Plain Monte-Carlo
+(\code{w = NULL}) will also work but produces more variable results. Results
+will depend a lot on appropriate choices and it is the users'
+responsibility to make sure things work as intended. If you are unsure, you
+should use \code{pmvnorm} which provides a well-tested configuration.
+
+<<ex-lmvnorm>>= )
+M <- 10000
+if (require("qrng")) {
+    ### quasi-Monte-Carlo
+    W <- t(ghalton(M * N, d = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * N * (J - 1)), ncol = M)
+}
+
+### Genz & Bretz, 2001, without early stopping (really?)
+pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
+                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+### Genz 1992 with quasi-Monte-Carlo
+pGq <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+### Genz 1992, original Monte-Carlo
+pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
+
+cbind(pGB, pGq, pG)
+@@
+
+The three versions agree nicely. We now check if the code also works for
+univariate problems
+
+<<ex-uni>>=
+### test univariate problem
+### call pmvnorm
+pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE, 
+                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+### call lmvnorm
+pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE))
+### ground truth
+ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
+
+cbind(c(ptr), pGB, pGq)
+@@
+
+The reason for small numerical differences is that \code{pmvnorm}
+also uses \code{pnorm} but \code{lmvnorm} relies on our faster (but a bit
+less accurate) version \code{C\_pnorm\_fast}.
+
+
 \section{Score Function}
 
 In addition to the log-likelihood, we would also like to have access to the
@@ -1748,12 +1813,13 @@ for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
 For each $i = 1, \dots, N$, do
 
 \begin{enumerate}
-  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$ \code{upper}, and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
+  \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$
+(\code{upper}), and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
   \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
 
 Note: We later need derivatives wrt $c^{(i)}_{jj}$, so we compute derivates
-wrt $a^{(i)}_j$ and post differentiate later.
+wrt $a^{(i)}_j$ and post-differentiate later.
 
   \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
 \Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
@@ -2058,66 +2124,11 @@ if (require("numDeriv"))
     print(max(abs(grad(fc, p) - rowSums(S$score))))
 @@
 
-Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
-iterations)
-<<ex-again>>=
-exp(lli)
-exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
-@@
-
-Next generate some data and compare our implementation to \code{pmvnorm}
-using quasi-Monte-Carlo integration. The \code{pmvnorm}
-function uses randomized Korobov rules.
-The experiment here applies generalised Halton sequences. Plain Monte-Carlo
-(\code{w = NULL}) will also work but produces more variable results. Results
-will depend a lot on appropriate choices and it is the users'
-responsibility to make sure things work as intended. If you are unsure, you
-should use \code{pmvnorm} which provides a well-tested configuration.
-
-<<ex-lmvnorm>>= )
-M <- 10000
-if (require("qrng")) {
-    ### quasi-Monte-Carlo
-    W <- t(ghalton(M * N, d = J - 1))
-} else {
-    ### Monte-Carlo
-    W <- matrix(runif(M * N * (J - 1)), ncol = M)
-}
-
-### Genz & Bretz, 2001, without early stopping (really?)
-pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
-                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-### Genz 1992 with quasi-Monte-Carlo
-pGq <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
-### Genz 1992, original Monte-Carlo
-pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
-
-cbind(pGB, pGq, pG)
-@@
-
-The three versions agree nicely. We now check if the code also works for
-univariate problems
-
-<<ex-uni>>=
-### test univariate problem
-### call pmvnorm
-pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE, 
-                algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-### call lmvnorm
-pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE))
-### ground truth
-ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
-
-cbind(c(ptr), pGB, pGq)
-@@
-
-The reason for small numerical differences is that \code{pmvnorm}
-also uses \code{pnorm} but \code{lmvnorm} relies on our faster (but a bit
-less accurate) version \code{C\_pnorm\_fast}.
-
 The score function also works for univariate problems
 <<ex-uni-score>>=
+ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
 log(ptr)
+lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE)
 smvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = TRUE)
 sd1 <- c(unclass(lx[,1]))
 (dnorm(b[1,] / sd1) * b[1,] - dnorm(a[1,] / sd1) * a[1,]) * (-1) / sd1^2 / ptr
@@ -2166,16 +2177,20 @@ Y <- Mult(lt, Z)
 Y <- Y - rowMeans(Y)
 @@
 
-Next we add some interval-censoring represented by \code{a} and \code{b}. 
+Next we add some interval-censoring represented by \code{lwr} and \code{upr}. 
 
 <<ex-ML-cens>>=
-sds <- sqrt(c(Tcrossprod(lt, diag_only = TRUE)))
-rint <- runif(J * N, min = .5) * sds
-a <- Y - rint
-b <- Y + rint
+prb <- 1:9 / 10
+ct <- sapply(sqrt(diag(Sigma)), function(s) qnorm(prb, sd = s)) 
+lwr <- upr <- Y
+for (j in 1:J) {
+    f <- cut(Y[j,], breaks = c(-Inf, ct[,j], Inf))
+    lwr[j,] <- c(-Inf, ct[,j])[f]
+    upr[j,] <- c(ct[,j], Inf)[f]
+}
 @@
 
-The true covariance matrix $\Sigma$ can be estimate from the uncensored data as
+The true covariance matrix $\Sigma$ can be estimated from the uncensored data as
 
 <<ex-ML-vcov>>=
 (Shat <- var(t(Y)))
@@ -2189,10 +2204,10 @@ we would do this only once and use the stored values for repeated
 evaluations of a log-likelihood (because the optimiser expects a
 deterministic function to be optimised)
 
-<<ex-ML-chk, eval = FALSE>>=
+<<ex-ML-chk, eval = TRUE>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lmvnormR(a, b, chol = lt, algorithm = 
+    st <- system.time(ret <- lmvnormR(lwr, upr, chol = lt, algorithm = 
                                       GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
@@ -2200,7 +2215,7 @@ lH <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng"))
         W <- t(ghalton(m * N, d = J - 1))
-    st <- system.time(ret <- lmvnorm(a, b, chol = lt, w = W, M = m))
+    st <- system.time(ret <- lmvnorm(lwr, upr, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 @@
@@ -2209,7 +2224,7 @@ Figure~\ref{lleval}. It seems that for $M \ge 3000$, results are reasonably
 stable.
 
 \begin{figure}
-<<ex-ML-fig, eval = FALSE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
+<<ex-ML-fig, eval = TRUE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
 layout(matrix(1:2, nrow = 1))
 plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])), ylab = "Log-likelihood")
 points(M, lH["ll",], pch = 4)
@@ -2223,10 +2238,12 @@ legend("bottomright", legend = c("pmvnorm", "lmvnorm"), pch = c(1, 4), bty = "n"
 
 We now define the log-likelihood function. It is important to use weights
 via the \code{w} argument (or to set the \code{seed}) such that only the
-candidate parameters \code{parm} change with repeated calls to \code{ll}.
+candidate parameters \code{parm} change with repeated calls to \code{ll}. We
+use an extremely low number of integration points \code{M}, let's see if
+this still works out.
 
 <<ex-ML-ll, eval = TRUE>>=
-M <- 1000 
+M <- 500 
 if (require("qrng")) {
     ### quasi-Monte-Carlo
     W <- t(ghalton(M * N, d = J - 1))
@@ -2237,16 +2254,16 @@ if (require("qrng")) {
 ll <- function(parm) {
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-     -lmvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
+     -lmvnorm(lower = lwr, upper = upr, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
 
 We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 ll(unclass(lt))
-lmvnormR(a, b, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-(llprm <- lmvnorm(a, b, chol = lt, w = W, M = M))
-chk(llprm, sum(lmvnorm(a, b, chol = lt, w = W, M = M, logLik = FALSE)))
+lmvnormR(lwr, upr, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+(llprm <- lmvnorm(lwr, upr, chol = lt, w = W, M = M))
+chk(llprm, sum(lmvnorm(lwr, upr, chol = lt, w = W, M = M, logLik = FALSE)))
 @@
 
 Finally, we can hand-over to \code{optim}. Because we need $\text{diag}(\mC) >
@@ -2257,19 +2274,25 @@ true $\mC$
 sc <- function(parm) {
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-    ret <- smvnorm(lower = a, upper = b, chol = C, w = W, M = M, logLik = TRUE)
+    ret <- smvnorm(lower = lwr, upper = upr, chol = C, w = W, M = M, logLik = TRUE)
     return(-rowSums(ret$score))
 }
 @@
 
 <<ex-ML>>=
-lwr <- rep(-Inf, J * (J + 1) / 2)
-lwr[cumsum(c(1, 2:J))] <- 0.1
+llim <- rep(-Inf, J * (J + 1) / 2)
+llim[cumsum(c(1, 2:J))] <- 1e-4
 
-op <- optim(lt, fn = ll, gr = sc, method = "L-BFGS-B", lower = lwr, control = list(trace = TRUE))
+op <- optim(lt, fn = ll, gr = sc, method = "L-BFGS-B", 
+            lower = llim, control = list(trace = TRUE))
 
 op$value ## compare with 
 ll(lt)
+@@
+
+We can now compare the true and estimated Cholesky factor of our covariance
+matrix
+<<ex-ML-L>>=
 op$par   ## compare with
 lt
 @@
@@ -2281,6 +2304,13 @@ Tcrossprod(lt)		### true Sigma
 Tcrossprod(op$par)      ### interval-censored obs
 Shat                    ### "exact" obs
 @@
+
+This looks reasonably close.
+
+\textbf{Warning:} Do NOT assume the choices made here (especially \code{M}
+and \code{W}) to be universally applicable. Make sure to investigate the
+accuracy depending on these parameters 
+of the log-likelihood and score function in your application.
 
 \chapter{Package Infrastructure}
 
