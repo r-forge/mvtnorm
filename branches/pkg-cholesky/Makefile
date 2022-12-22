@@ -33,7 +33,12 @@ clean:
 	rm -rf lmvnorm_src.R
 	texclean lmvnorm_src
 	rm -rf lmvnorm_src.tex
-	rm -rf lmvnorm_src.Rnw
+	rm -rf lmvnorm_src.aux
+	rm -rf lmvnorm_src.log
+	rm -rf lmvnorm_src.bbl
+	rm -rf lmvnorm_src.blg
+	rm -rf lmvnorm_src.out
+	rm -rf lmvnorm_src.toc
 	rm -rf *.c
 	rm -rf *.h
 	rm -rf *.o

@@ -2,9 +2,10 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-0 (2022-12-06)}{
+\section{Changes in Version 1.2-0 (2022-12-22)}{
   \itemize{
     \item New \code{lmvnorm} function for computing multivariate normal log-likelihoods for interval-censored observations.
+    \item New \code{smvnorm} function for computing the corresponding score function for interval-censored observations.
     \item New class \code{ltMatrices} representing multiple lower triangular matrices, with some useful methods.
     \item New package vignette \code{lmvnorm_src} describing these two new features.
     \item \code{pmvnorm}, \code{qmvnorm}, \code{pmvt}, and \code{qmvt} gain a \code{seed} argument.
@@ -13,4 +14,3 @@
     \item New \code{NEWS} file, the old file containing information up to version 1.1-3 is available as \code{NEWS.old}.
   }
 }
-
