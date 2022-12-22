@@ -4,7 +4,7 @@
 \usepackage{amsfonts,amstext,amsmath,amssymb,amsthm}
 
 %\VignetteIndexEntry{Multivariate Normal Log-likelihoods}
-%\VignetteDepends{mvtnorm,qrng}
+%\VignetteDepends{mvtnorm,qrng,numDeriv}
 %\VignetteKeywords{multivariate normal distribution}
 %\VignettePackage{mvtnorm}
 

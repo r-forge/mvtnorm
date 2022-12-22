@@ -19,6 +19,6 @@ Description: Computes multivariate normal and t probabilities, quantiles,
   are available.
 Imports: stats, methods
 Depends: R(>= 3.5.0)
-Suggests: qrng
+Suggests: qrng, numDeriv
 License: GPL-2
 URL: http://mvtnorm.R-forge.R-project.org
