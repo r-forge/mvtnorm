@@ -1509,7 +1509,7 @@ if (!RlogLik)
     dans += 1L;
 @}
 
-and move on to the next observation (not ethat \code{p} might be 0, in case
+and move on to the next observation (note that \code{p} might be 0, in case
 $\mC_i \equiv \mC$).
 
 @d move on
