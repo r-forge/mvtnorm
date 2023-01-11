@@ -1819,7 +1819,7 @@ For each $i = 1, \dots, N$, do
   \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
 
 Note: We later need derivatives wrt $c^{(i)}_{jj}$, so we compute derivates
-wrt $a^{(i)}_j$ and post-differentiate later.
+wrt $a^{(i)}_j$ and $b^{(i)}_j$ and post-differentiate later.
 
   \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
 \Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
