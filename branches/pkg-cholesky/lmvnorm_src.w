@@ -67,6 +67,7 @@ urlcolor={linkcolor}%
 \newcommand{\avec}{\mathbf{a}}
 \newcommand{\bvec}{\mathbf{b}}
 \newcommand{\xvec}{\mathbf{x}}
+\newcommand{\muvec}{\mathbf{\mu}}
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
@@ -1803,9 +1804,10 @@ once, the chain rule rules, so to speak.
 @{
 int Jp = iJ * (iJ + 1) / 2;
 double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
+double aprime[iJ], bprime[iJ], fmprime[iJ], ymprime[(iJ - 1) * iJ];
 double dtmp, etmp, Wtmp, ytmp, ktmp, xx;
 
-PROTECT(ans = allocMatrix(REALSXP, Jp + 1, iN));
+PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + iJ, iN));
 dans = REAL(ans);
 for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
 @}
@@ -1834,12 +1836,20 @@ eprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], 0.0, 1.0, 0L) * db[0] : 0);
 fprime[0] = eprime[0] - dprime[0];
 @}
 
+@d score a, b
+@{
+aprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], 0.0, 1.0, 0L) : 0);
+bprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], 0.0, 1.0, 0L) : 0);
+fmprime[0] = bprime[0] - aprime[0];
+@}
+
   \item Repeat
 
 @d init score loop
 @{
 @<init logLik loop@>
 @<score c11@>
+@<score a, b@>
 @}
 
     \begin{enumerate}
@@ -1867,6 +1877,17 @@ for (idx = 0; idx < (j + 1) * j / 2; idx++) {
 }
 @}
 
+@d update yprime for a, b
+@{
+for (k = 0; k < iJ; k++)
+    ymprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+for (idx = 0; idx < j; idx++) {
+    ymprime[idx * (iJ - 1) + (j - 1)] = ytmp;
+    ymprime[idx * (iJ - 1) + (j - 1)] *= (aprime[idx] + Wtmp * (bprime[idx] - aprime[idx]));
+}
+@}
+
         \begin{eqnarray*}
             x_{j - 1} & = & \sum_{\jmath = 1}^{j - 1} c^{(i)}_{j\jmath} y_j
 \end{eqnarray*}
@@ -1889,8 +1910,8 @@ etmp = dnorm(db[j], x, 1.0, 0L);
 
 for (k = 0; k < j; k++) {
     idx = start + j + k;
-    dprime[idx] = dtmp * (-1) * y[k];
-    eprime[idx] = etmp * (-1) * y[k];
+    dprime[idx] = dtmp * (-1.0) * y[k];
+    eprime[idx] = etmp * (-1.0) * y[k];
     fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 }
 @}
@@ -1905,6 +1926,14 @@ eprime[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x) : 0);
 fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 @}
 
+@d new score a, b
+@{
+aprime[j] = (R_FINITE(da[j]) ? dtmp : 0);
+bprime[j] = (R_FINITE(db[j]) ? etmp : 0);
+fmprime[j] = (bprime[j] - aprime[j]) * f;
+@}
+
+
 We next update scores for parameters introduced for smaller $j$
 
 @d update score
@@ -1914,11 +1943,25 @@ for (idx = 0; idx < j * (j + 1) / 2; idx++) {
     for (k = 0; k < j; k++)
         xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
 
-    dprime[idx] = dtmp * (-1) * xx;
-    eprime[idx] = etmp * (-1) * xx;
+    dprime[idx] = dtmp * (-1.0) * xx;
+    eprime[idx] = etmp * (-1.0) * xx;
     fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
 }
 @}
+
+@d update score a, b
+@{
+for (idx = 0; idx < j; idx++) {
+    xx = 0.0;
+    for (k = 0; k < j; k++)
+        xx += dC[start + k] * ymprime[idx * (iJ - 1) + k];
+
+    aprime[idx] = dtmp * (-1.0) * xx;
+    bprime[idx] = etmp * (-1.0) * xx;
+    fmprime[idx] = (bprime[idx] - aprime[idx]) * f + emd * fmprime[idx];
+}
+@}
+
 
 We put everything together in a loop starting with the second dimension
 
@@ -1934,11 +1977,17 @@ for (j = 1; j < iJ; j++) {
 
     @<update yprime@>
 
+    @<update yprime for a, b@>
+
     @<score wrt new off-diagonals@>
 
     @<score wrt new diagonal@>
 
+    @<new score a, b@>
+
     @<update score@>
+
+    @<update score a, b@>
 
     @<update f@>
 
@@ -1963,6 +2012,8 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 dans[0] += f;
 for (j = 0; j < Jp; j++)
     dans[j + 1] += fprime[j];
+for (j = 0; j < iJ; j++)
+    dans[Jp + j + 1] += fmprime[j];
 @}
 
 \end{enumerate}
@@ -2023,7 +2074,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
 
         @<move on@>
 
-        dans += Jp + 1;
+        dans += Jp + 1 + iJ;
     }
 
     if (W == R_NilValue)
@@ -2038,7 +2089,13 @@ The \proglang{R} code is now essentially identical to \code{lmvnorm},
 however, we need to undo the effect of standardisation once the scores have
 been computed
 
-@d post differentiate
+@d post differentiate mean score
+@{
+Jp <- J * (J + 1) / 2;
+smean <- - ret[Jp + 1:J, , drop = FALSE] / c(dchol)
+@}
+
+@d post differentiate chol score
 @{
 if (J == 1) {
     idx <- 1L
@@ -2076,10 +2133,14 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
     m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
     ret <- ret[-1L,,drop = FALSE] / m
 
-    @<post differentiate@>
+    @<post differentiate mean score@>
+
+    ret <- ret[1:Jp, , drop = FALSE]
+
+    @<post differentiate chol score@>
 
     if (logLik) {
-        ret <- list(logLik = ll, score = ret)
+        ret <- list(logLik = ll, mean = smean, chol = ret)
         return(ret)
     }
     
@@ -2121,7 +2182,7 @@ S <- smvnorm(a, b, chol = lx, w = W, M = M)
 chk(lli, S$logLik)
 
 if (require("numDeriv"))
-    print(max(abs(grad(fc, p) - rowSums(S$score))))
+    print(max(abs(grad(fc, p) - rowSums(S$chol))))
 @@
 
 The score function also works for univariate problems
@@ -2152,7 +2213,7 @@ R[2,4] <- R[4,2] <- .75
 (C <- t(chol(Sigma)))
 @@
 
-We know represent this matrix as \code{ltMatrices} object
+We now represent this matrix as \code{ltMatrices} object
 <<ex-ML-C>>=
 prm <- C[lower.tri(C, diag = TRUE)]
 lt <- ltMatrices(matrix(prm, ncol = 1L), 
@@ -2166,22 +2227,22 @@ chk(C, as.array(lt)[,,1], check.attributes = FALSE)
 chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
 @@
 
-We now generate some data from $\N_\J(\mathbf{0}_\J, \Sigma)$. We first sample
-from $\rZ \sim \N_\J(\mathbf{0}_\J, \mI_\J)$ and then $\rY = \mC \rZ \sim
-\N_\J(\mathbf{0}_\J, \mC \mC^\top)$
+We generate some data from $\N_\J(\mathbf{0}_\J, \Sigma)$ by first sampling
+from $\rZ \sim \N_\J(\mathbf{0}_\J, \mI_\J)$ and then computing $\rY = \mC \rZ +
+\muvec \sim \N_\J(\muvec, \mC \mC^\top)$
 
 <<ex-ML-data>>=
 N <- 100
 Z <- matrix(rnorm(N * J), nrow = J)
-Y <- Mult(lt, Z)
-Y <- Y - rowMeans(Y)
+Y <- Mult(lt, Z) + (mn <- 1:J)
 @@
 
 Next we add some interval-censoring represented by \code{lwr} and \code{upr}. 
 
 <<ex-ML-cens>>=
 prb <- 1:9 / 10
-ct <- sapply(sqrt(diag(Sigma)), function(s) qnorm(prb, sd = s)) 
+sds <- sqrt(diag(Sigma))
+ct <- sapply(1:J, function(j) qnorm(prb, mean = mn[j], sd = sds[j])) 
 lwr <- upr <- Y
 for (j in 1:J) {
     f <- cut(Y[j,], breaks = c(-Inf, ct[,j], Inf))
@@ -2190,9 +2251,10 @@ for (j in 1:J) {
 }
 @@
 
-The true covariance matrix $\Sigma$ can be estimated from the uncensored data as
+The true mean $\muvec$ and the true covariance matrix $\Sigma$ can be estimated from the uncensored data as
 
-<<ex-ML-vcov>>=
+<<ex-ML-mu-vcov>>=
+rowMeans(Y)
 (Shat <- var(t(Y)))
 @@
 
@@ -2207,7 +2269,7 @@ deterministic function to be optimised)
 <<ex-ML-chk, eval = TRUE>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lmvnormR(lwr, upr, chol = lt, algorithm = 
+    st <- system.time(ret <- lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = 
                                       GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
@@ -2215,7 +2277,7 @@ lH <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng"))
         W <- t(ghalton(m * N, d = J - 1))
-    st <- system.time(ret <- lmvnorm(lwr, upr, chol = lt, w = W, M = m))
+    st <- system.time(ret <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 @@
@@ -2251,57 +2313,74 @@ if (require("qrng")) {
     ### Monte-Carlo
     W <- matrix(runif(M * N * (J - 1)), ncol = M)
 }
-ll <- function(parm) {
+ll <- function(parm, J) {
+     m <- parm[1:J]		### mean parameters
+     parm <- parm[-(1:J)]	### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-     -lmvnorm(lower = lwr, upper = upr, chol = C, w = W, M = M, logLik = TRUE)
+     -lmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
 
 We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
-ll(unclass(lt))
-lmvnormR(lwr, upr, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-(llprm <- lmvnorm(lwr, upr, chol = lt, w = W, M = M))
-chk(llprm, sum(lmvnorm(lwr, upr, chol = lt, w = W, M = M, logLik = FALSE)))
+prm <- c(mn, unclass(lt))
+ll(prm, J = J)
+lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+(llprm <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M))
+chk(llprm, sum(lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M, logLik = FALSE)))
 @@
+
+Before we hand over to the optimiser, we define the score function with
+respect to $\muvec$ and $\mC$
+
+<<ex-ML-sc>>=
+sc <- function(parm, J) {
+    m <- parm[1:J]             ### mean parameters
+    parm <- parm[-(1:J)]       ### chol parameters
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+    ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
+    return(-c(rowSums(ret$mean), rowSums(ret$chol)))
+}
+
+if (require("numDeriv"))
+    print(abs(max(grad(ll, prm, J = J) - sc(prm, J = J))))
+@@
+
 
 Finally, we can hand-over to \code{optim}. Because we need $\text{diag}(\mC) >
 0$, we use box constraints and \code{method = "L-BFGS-B"}. We start with the
 true $\mC$
 
-<<ex-ML-sc>>=
-sc <- function(parm) {
-    C <- matrix(c(parm), ncol = 1L)
-    C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
-    ret <- smvnorm(lower = lwr, upper = upr, chol = C, w = W, M = M, logLik = TRUE)
-    return(-rowSums(ret$score))
-}
-@@
-
 <<ex-ML>>=
-llim <- rep(-Inf, J * (J + 1) / 2)
-llim[cumsum(c(1, 2:J))] <- 1e-4
+llim <- rep(-Inf, J + J * (J + 1) / 2)
+llim[J + cumsum(c(1, 2:J))] <- 1e-4
 
-op <- optim(lt, fn = ll, gr = sc, method = "L-BFGS-B", 
+op <- optim(c(mn, unclass(lt)), fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
             lower = llim, control = list(trace = TRUE))
 
 op$value ## compare with 
-ll(lt)
+ll(prm, J = J)
 @@
 
 We can now compare the true and estimated Cholesky factor of our covariance
 matrix
 <<ex-ML-L>>=
-op$par   ## compare with
+(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), diag = TRUE, byrow = TRUE, trans = TRUE) )
 lt
+@@
+and the estimated means
+<<ex-ML-mu>>=
+op$par[1:J]
+mn
 @@
 
 We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
 Tcrossprod(lt)		### true Sigma
-Tcrossprod(op$par)      ### interval-censored obs
+Tcrossprod(L)           ### interval-censored obs
 Shat                    ### "exact" obs
 @@
 
