@@ -2351,13 +2351,15 @@ if (require("numDeriv"))
 
 Finally, we can hand-over to \code{optim}. Because we need $\text{diag}(\mC) >
 0$, we use box constraints and \code{method = "L-BFGS-B"}. We start with the
-true $\mC$
+estimates obtained from the original continuous data.
 
 <<ex-ML>>=
 llim <- rep(-Inf, J + J * (J + 1) / 2)
 llim[J + cumsum(c(1, 2:J))] <- 1e-4
 
-op <- optim(c(mn, unclass(lt)), fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
+start <- c(rowMeans(Y), t(chol(Shat))[lower.tri(Shat, diag = TRUE)])
+
+op <- optim(start, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
             lower = llim, control = list(trace = TRUE))
 
 op$value ## compare with 
