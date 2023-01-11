@@ -179,7 +179,7 @@ attr(,"msg")
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl)
 Loading required package: qrng
-[1] 0.7733948
+[1] 0.7733946
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK())
 [1] 0.7733949
@@ -363,7 +363,7 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-Inf, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9499712
+[1] 0.949977
 
 > qu <- qmvt(0.95, df = df, corr = corr, tail = "both.tails")$quantile
 
@@ -379,7 +379,7 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-qu, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9500036
+[1] 0.9500143
 
 > qu <- qmvt(0.95, df = df, corr = corr, tail = "upper.tail")$quantile
 
@@ -395,7 +395,7 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(qu, dim), upper = rep(Inf, dim), 
 +     corr = corr)
-[1] 0.9500208
+[1] 0.9500265
 
 > qu <- qmvt(0.95, df = df, corr = corr, interval = c(0, 
 +     10))$quantile
@@ -412,7 +412,7 @@ attr(,"msg")
 
 > pmvnorm(lower = rep(-Inf, dim), upper = rep(qu, dim), 
 +     corr = corr)
-[1] 0.9499732
+[1] 0.9499789
 > try(source("bugfix-tests.R", echo = TRUE))
 
 > invisible(options(echo = TRUE))
@@ -435,7 +435,7 @@ attr(,"msg")
 
 > pmvnorm(lower = c(-a, slo), upper = c(a, shi), mean = c(mu, 
 +     2 * mu), sigma = sig)
-[1] 0.04210632
+[1] 0.04210637
 
 > n <- 5
 
@@ -563,21 +563,21 @@ attr(,"msg")
 [1] 0.9550173
 
 > pmvnorm(lower = rep(-Inf, 2), upper = rep(2, 2), sigma = diag(2))
-[1] 0.9550155
+[1] 0.9550173
 
 > pnorm(2)^90
 [1] 0.1260393
 
 > pmvnorm(lower = rep(-Inf, 90), upper = rep(2, 90), 
 +     sigma = diag(90))
-[1] 0.1260288
+[1] 0.1260393
 
 > pnorm(2)^199
 [1] 0.01025932
 
 > pmvnorm(lower = rep(-Inf, 199), upper = rep(2, 199), 
 +     sigma = diag(199))
-[1] 0.01025744
+[1] 0.01025932
 
 > cr = matrix(0.5, nr = 4, nc = 4)
 
@@ -1085,4 +1085,4 @@ In addition: Warning messages:
 > 
 > proc.time()
    user  system elapsed 
- 19.330   0.283  19.633 
+ 19.362   0.203  19.566 

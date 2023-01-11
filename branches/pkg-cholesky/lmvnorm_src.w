@@ -1325,6 +1325,7 @@ We want to achieve the same result a bit more general and a bit faster.
 #include <Rdefines.h>
 #include <Rconfig.h>
 @<pnorm fast@>
+@<pnorm slow@>
 @<R lmvnorm@>
 @<R smvnorm@>
 @}
@@ -1393,8 +1394,8 @@ uC <- unclass(C)
 
 @d initialisation
 @{
-d0 = C_pnorm_fast(da[0], 0.0);
-e0 = C_pnorm_fast(db[0], 0.0);
+d0 = pnorm_ptr(da[0], 0.0);
+e0 = pnorm_ptr(db[0], 0.0);
 emd0 = e0 - d0;
 f0 = emd0;
 intsum = (iJ > 1 ? 0.0 : f0);
@@ -1454,8 +1455,8 @@ for (k = 0; k < j; k++)
 
 @d update d, e
 @{
-d = C_pnorm_fast(da[j], x);
-e = C_pnorm_fast(db[j], x);
+d = pnorm_ptr(da[j], x);
+e = pnorm_ptr(db[j], x);
 emd = e - d;
 @}
 
@@ -1523,7 +1524,8 @@ dC += p;
 \end{enumerate}
 
 It turned out that calls to \code{pnorm} are expensive, so a slightly faster
-alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} is used
+alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
+(\code{fast = TRUE} in the calls to \code{lmvnorm} and \code{smvnorm}):
 
 @d pnorm fast
 @{
@@ -1555,6 +1557,24 @@ double C_pnorm_fast (double x, double m) {
     }
     return(ret);
 }
+@}
+
+@d pnorm slow
+@{
+double C_pnorm_slow (double x, double m) {
+    return(pnorm(x, m, 1.0, 1L, 0L));
+}
+@}
+
+The \code{fast} argument can be used to switch on the faster but less
+accurate version of \code{pnorm}
+
+@d pnorm
+@{
+Rboolean Rfast = asLogical(fast);
+double (*pnorm_ptr)(double, double) = C_pnorm_slow;
+if (Rfast)
+    pnorm_ptr = C_pnorm_fast;
 @}
 
 We allow a new set of weights for each observation or one set for all
@@ -1618,7 +1638,7 @@ We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik) {
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
@@ -1627,6 +1647,8 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     int p, len;
 
     Rboolean RlogLik = asLogical(logLik);
+
+    @<pnorm@>
 
     @<dimensions@>
 
@@ -1717,7 +1739,7 @@ if (!is.null(w)) {
 @d lmvnorm
 @{
 lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = .Machine$double.eps) {
+                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
 
@@ -1729,7 +1751,7 @@ lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 
     ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), 
-                 as.logical(logLik));
+                 as.logical(logLik), as.logical(fast));
     return(ret)
 }
 @}
@@ -1739,7 +1761,8 @@ Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
 iterations)
 <<ex-again>>=
 phat
-exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE))
+exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = TRUE))
+exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = FALSE))
 @@
 
 Next generate some data and compare our implementation to \code{pmvnorm}
@@ -1764,12 +1787,16 @@ if (require("qrng")) {
 ### Genz & Bretz, 2001, without early stopping (really?)
 pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-### Genz 1992 with quasi-Monte-Carlo
-pGq <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
-### Genz 1992, original Monte-Carlo
-pG <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE))
+### Genz 1992 with quasi-Monte-Carlo, fast pnorm
+pGqf <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = TRUE))
+### Genz 1992, original Monte-Carlo, fast pnorm
+pGf <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = TRUE))
+### Genz 1992 with quasi-Monte-Carlo, R::pnorm
+pGqs <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = FALSE))
+### Genz 1992, original Monte-Carlo, R::pnorm
+pGs <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = FALSE))
 
-cbind(pGB, pGq, pG)
+cbind(pGB, pGqf, pGf, pGqs, pGs)
 @@
 
 The three versions agree nicely. We now check if the code also works for
@@ -2022,7 +2049,7 @@ We put everything together in \proglang{C}
 
 @d R smvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol) {
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
@@ -2031,6 +2058,8 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol)
     int p, len, idx;
 
     @<dimensions@>
+
+    @<pnorm@>
 
     @<W length@>
 
@@ -2114,7 +2143,7 @@ if (attr(chol, "diag")) {
 @d smvnorm
 @{
 smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = .Machine$double.eps) {
+                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
 
@@ -2125,7 +2154,7 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
     @<check and / or set integration weights@>
 
     ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.integer(N), 
-                 as.integer(J), w, as.integer(M), as.double(tol));
+                 as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
     intsum <- ret[1L,]

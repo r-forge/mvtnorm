@@ -10,8 +10,10 @@
     corresponding scores.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps)
-smvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps)
+lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, 
+        seed = NULL, tol = .Machine$double.eps, fast = FALSE)
+smvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, 
+        seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).
@@ -45,6 +47,9 @@ drawn for each observation.
 }
   \item{tol}{tolerance limit, values smaller than \code{tol} are interpreted
 as zero.
+}
+  \item{fast}{logical, if \code{TRUE}, a faster but less accurate version 
+              of \code{pnorm} is used internally.
 }
 }
 \details{
