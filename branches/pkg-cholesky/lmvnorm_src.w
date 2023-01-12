@@ -550,7 +550,9 @@ chk(a, b)
 \section{Subsetting}
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
-rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
+rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$. 
+
+j <- (1:J)[j]
 
 @d subset ltMatrices
 @{
@@ -564,6 +566,9 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$
     class(x) <- class(x)[-1L]
 
     if (!missing(j)) {
+
+        j <- (1:J)[j] ### get rid of negative indices
+
         if (length(j) == 1L && !diag) {
             if (trans)
                 return(ltMatrices(matrix(1, ncol = ncol(x), nrow = 1), diag = TRUE, 
