@@ -1342,6 +1342,8 @@ For each $i = 1, \dots, N$, do
 
 @d input checks
 @{
+if (!is.matrix(lower)) lower <- matrix(lower, ncol = 1)
+if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
 stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
 stopifnot(inherits(chol, "ltMatrices"))
