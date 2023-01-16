@@ -67,12 +67,15 @@ urlcolor={linkcolor}%
 \newcommand{\avec}{\mathbf{a}}
 \newcommand{\bvec}{\mathbf{b}}
 \newcommand{\xvec}{\mathbf{x}}
+\newcommand{\svec}{\mathbf{s}}
 \newcommand{\muvec}{\mathbf{\mu}}
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
 \newcommand{\mL}{\mathbf{L}}
 \newcommand{\mI}{\mathbf{I}}
+\newcommand{\mS}{\mathbf{S}}
+\newcommand{\mA}{\mathbf{A}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
 
@@ -863,7 +866,7 @@ all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
 @d setup memory
 @{
-/* return object: include unit diagnonal elements if Rdiag == 0 */
+/* return object: include unit diagonal elements if Rdiag == 0 */
 
 /* add diagonal elements (expected by Lapack) */
 nrow = (Rdiag ? len : len + iJ);
@@ -1129,9 +1132,15 @@ for (n = 0; n < INTEGER(N)[0]; n++) {
 
 and put both cases together
 
-@d tcrossprod
+@d IDX
 @{
 #define IDX(i, j, n, d) ((i) >= (j) ? (n) * ((j) - 1) - ((j) - 2) * ((j) - 1)/2 + (i) - (j) - (!d) * (j) : 0)
+@}
+
+@d tcrossprod
+@{
+
+@<IDX@>
 
 SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
 
@@ -1319,6 +1328,7 @@ We want to achieve the same result a bit more general and a bit faster.
 @<R Header@>
 @<lmvnorm@>
 @<smvnorm@>
+@<.gradSolveL@>
 @}
 
 @o lmvnorm.c -cc
@@ -1329,10 +1339,12 @@ We want to achieve the same result a bit more general and a bit faster.
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <Rconfig.h>
+#include <R_ext/BLAS.h> /* for dtrmm */
 @<pnorm fast@>
 @<pnorm slow@>
 @<R lmvnorm@>
 @<R smvnorm@>
+@<grad solve(L)@>
 @}
 
 We implement the algorithm described by \cite{numerical-:1992}. The key
@@ -2428,6 +2440,153 @@ This looks reasonably close.
 and \code{W}) to be universally applicable. Make sure to investigate the
 accuracy depending on these parameters 
 of the log-likelihood and score function in your application.
+
+\subsection{Cholesky of Precision Matrix}
+
+We sometimes parameterise models in terms of $\mL = \mC^{-1}$, the Cholesky
+factor of the precision matrix. The log-likelihood operates on $\mC$, so we
+need to post-differentiate the score function. We have
+\begin{eqnarray*}
+\mA = \frac{\partial \mL^{-1}}{\partial \mL} = - \mL^{-\top} \otimes \mL^{-1}
+\end{eqnarray*}
+and computing $\svec \mA$ for a score vector $\svec$ with respect to $\mL$ can be
+implemented by the ``vec trick''
+\begin{eqnarray*}
+\svec \mA = \mL^{-\top} \mS \mL^{-\top}
+\end{eqnarray*}
+where $\svec = \text{vec}(\mS)$.
+
+@d t(C) S t(C)
+@{
+char si = 'R', lo = 'L', tr = 'N', trT = 'T', di = 'N';
+double ONE = 1.0;
+int idx;
+
+double tmp[iJ * iJ];
+for (j = 0; j < iJ * iJ; j++) tmp[j] = 0.0;
+
+ans = PROTECT(allocMatrix(REALSXP, iN, iJ * iJ));
+dans = REAL(ans);
+
+for (i = 0; i < LENGTH(ans); i++) dans[i] = 0.0;
+
+for (i = 0; i < iN; i++) {
+
+    /* B := t(C) */
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++) {
+            idx = IDX(j + 1, k + 1, iJ, 1L);
+            dans[j * iJ + k] = dC[idx];
+            /* argument A in dtrmm is not in packed form, so exand in J x J
+               matrix */
+            tmp[k * iJ + j] = dS[idx];
+        }
+    }
+
+    /* B := B %*% S */
+    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++)
+            tmp[k * iJ + j] = dC[IDX(j + 1, k + 1, iJ, 1L)];
+    }
+
+    /* B := B %*% t(C) */
+    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+
+    dans += iN;
+    dC += p;
+    dS += len;
+}    
+@}
+
+@d grad solve(L)
+@{
+
+@<IDX@>
+
+SEXP R_gradSolveL(SEXP C, SEXP N, SEXP J, SEXP S, SEXP diag) {
+
+    int i, j, k;
+    SEXP ans;
+    double *dS, *dans;
+
+    @<RC input@>
+    @<C length@>
+    dS = REAL(S);
+    @<t(C) S t(C)@>
+
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+@d .gradSolveL
+@{
+.gradSolveL <- function(C, S, diag = FALSE) {
+
+    stopifnot(inherits(C, "ltMatrices"))
+    stopifnot(attr(C, "diag"))
+    stopifnot(inherits(S, "ltMatrices"))
+    stopifnot(attr(S, "diag"))
+
+    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
+    dC <- dim(C)
+    nm <- attr(C, "rcnames")
+    S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
+    dS <- dim(S)
+    stopifnot(dC[2L] == dS[2L])
+    if (dC[1] != 1L)
+        stopifnot(dC[1L] == dS[1L])
+    N <- dS[1L]
+    J <- dS[2L]
+
+    class(C) <- class(C)[-1L]
+    storage.mode(C) <- "double"
+    class(S) <- class(S)[-1L]
+    storage.mode(S) <- "double"
+            
+    ret <- .Call(mvtnorm_R_gradSolveL, C, as.integer(N), as.integer(J), S, as.logical(TRUE))
+
+    L <- matrix(1:(J^2), nrow = J)
+    ret <- ltMatrices(ret[L[lower.tri(L, diag = diag)]], 
+                      diag = diag, byrow = FALSE, trans = TRUE, names = nm)
+    return(ret)
+}
+@}
+
+Here is a small example
+
+<<kronecker>>=
+J <- 10
+
+d <- TRUE
+L <- diag(J)
+L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + c(-1, 1)[d + 1]) / 2)
+
+C <- solve(L)
+
+D <- -kronecker(t(C), C)
+
+S <- diag(J)
+S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 1) / 2)
+
+SD0 <- matrix(c(S) %*% D, ncol = J)
+
+SD1 <- -crossprod(C, tcrossprod(S, C))
+
+a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
+b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+
+SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
+
+all.equal(SD0[lower.tri(SD0, diag = d)], 
+          SD1[lower.tri(SD1, diag = d)])
+all.equal(SD0[lower.tri(SD0, diag = d)],
+          c(unclass(SD2)))
+@@
+
+
 
 \chapter{Package Infrastructure}
 
