@@ -142,13 +142,12 @@ computed in \proglang{FORTRAN}. Function \code{pmvnorm} is not vectorised
 over $i = 1, \dots, N$ and thus separate calls to this function are
 necessary in order to compute likelihood contributions.
 
-The implementation described here is expected to be inferior to Alan Genz'
-original \proglang{FORTRAN} code when accuracy for single $p_i$ matters. We cut
-some corners aiming at efficient computation of the log-likelihood $\sum_{i
-= 1}^N \log(p_i)$.
+The implementation described here is a re-implementation (in \proglang{R}
+and \proglang{C}) of Alan Genz' original \proglang{FORTRAN} code, focusing 
+on efficient computation of the log-likelihood $\sum_{i = 1}^N \log(p_i)$
+and the corresponding score function.
 
-The document first describes infrastructure, that is, a class and useful
-methods, for dealing with multiple lower triangular matrices $\mC_i, i = 1,
+The document first describes a class and some useful methods for dealing with multiple lower triangular matrices $\mC_i, i = 1,
 \dots, N$ in Chapter~\ref{ltMatrices}.  The multivariate normal
 log-likelihood, and the corresponding score function, is implemented as
 outlined in Chapter~\ref{lmvnorm}.  An example demonstrating
@@ -449,7 +448,7 @@ print.syMatrices <- function(x, ...)
 \section{Reordering}
 
 It is sometimes convenient to have access to lower triangular matrices in
-either column- or row major order and this little helper function switches
+either column- or row-major order and this little helper function switches
 between the two forms
 
 @d reorder ltMatrices
@@ -554,8 +553,6 @@ chk(a, b)
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
 rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$. 
-
-j <- (1:J)[j]
 
 @d subset ltMatrices
 @{
@@ -663,7 +660,7 @@ chk(a, b)
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
 always returned as an $\J \times N$ matrix (regardless of \code{trans}).
 The reason is that \code{ltMatrices} with \code{trans = TRUE} can be
-standardized elementwise without transposing objects
+standardised elementwise without transposing objects
 
 @d diagonals ltMatrices
 @{
@@ -1267,7 +1264,8 @@ We now discuss code for evaluating the log-likelihood
 This is relatively simple to achieve using the existing \code{pmvnorm}, so a
 prototype might look like
 
-<<lmvnorm_R>>=
+@d lmvnormR
+@{
 library("mvtnorm")
 lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
@@ -1291,6 +1289,10 @@ lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
 
     ret
 }
+@}
+
+<<fct-lmvnormR, echo = FALSE>>=
+@<lmvnormR@>
 @@
 
 However, the underlying \proglang{FORTRAN} code first computes the Cholesky
@@ -1382,7 +1384,7 @@ upper <- upper - mean
 @}
 
 
-  \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
+  \item Standardise integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
 
 
 @d standardise
@@ -1409,7 +1411,7 @@ uC <- unclass(C)
 @}
 
 
-  \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
+  \item Initialise $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
 \Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
 
 
@@ -1799,12 +1801,12 @@ exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = TRUE))
 exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = FALSE))
 @@
 
-Next generate some data and compare our implementation to \code{pmvnorm}
+Next we generate some data and compare our implementation to \code{pmvnorm}
 using quasi-Monte-Carlo integration. The \code{pmvnorm}
-function uses randomized Korobov rules.
+function uses randomised Korobov rules.
 The experiment here applies generalised Halton sequences. Plain Monte-Carlo
 (\code{w = NULL}) will also work but produces more variable results. Results
-will depend a lot on appropriate choices and it is the users'
+will depend a lot on appropriate choices and it is the users
 responsibility to make sure things work as intended. If you are unsure, you
 should use \code{pmvnorm} which provides a well-tested configuration.
 
@@ -1839,20 +1841,20 @@ univariate problems
 <<ex-uni>>=
 ### test univariate problem
 ### call pmvnorm
-pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE, 
+pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
+                logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 ### call lmvnorm
-pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE))
+pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
+                   logLik = FALSE))
 ### ground truth
 ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
 
 cbind(c(ptr), pGB, pGq)
 @@
 
-The reason for small numerical differences is that \code{pmvnorm}
-also uses \code{pnorm} but \code{lmvnorm} relies on our faster (but a bit
-less accurate) version \code{C\_pnorm\_fast}.
-
+Because the default \code{fast = FALSE} was used here, all results are
+identical.
 
 \section{Score Function}
 
@@ -1879,12 +1881,12 @@ For each $i = 1, \dots, N$, do
   \item Input $\mC_i$ (\code{chol}), $\avec_i$ (\code{lower}), $\bvec_i$
 (\code{upper}), and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
-  \item Standardize integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
+  \item Standardise integration limits $a^{(i)}_j / c^{(i)}_{jj}$, $b^{(i)}_j / c^{(i)}_{jj}$, and rows $c^{(i)}_{j\jmath} / c^{(i)}_{jj}$ for $1 \le \jmath < j < \J$.
 
 Note: We later need derivatives wrt $c^{(i)}_{jj}$, so we compute derivates
 wrt $a^{(i)}_j$ and $b^{(i)}_j$ and post-differentiate later.
 
-  \item Initialize $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
+  \item Initialise $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
 \Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
 
 We start initialised the score wrt to $c^{(i)}_{11}$ (the parameter is non-existent
@@ -2083,7 +2085,8 @@ We put everything together in \proglang{C}
 
 @d R smvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP fast) {
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, 
+               SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
@@ -2092,9 +2095,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     int p, len, idx;
 
     @<dimensions@>
-
     @<pnorm@>
-
     @<W length@>
 
     int start, j, k;
@@ -2113,7 +2114,6 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     for (int i = 0; i < iN; i++) {
 
         @<initialisation@>
-
         @<score c11@>
 
         if (iM == 0) {
@@ -2127,9 +2127,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
         for (int m = 0; m < iM; m++) {
 
             @<init score loop@>
-
             @<inner score loop@>
-
             @<score output@>
 
             if (W != R_NilValue)
@@ -2218,7 +2216,8 @@ for (i = 0; i < iN; i++) {
     }
 
     /* B := B %*% S */
-    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, 
+                    dans, &iJ FCONE FCONE FCONE FCONE);
 
     for (j = 0; j < iJ; j++) {
         for (k = 0; k <= j; k++)
@@ -2226,7 +2225,8 @@ for (i = 0; i < iN; i++) {
     }
 
     /* B := B %*% t(C) */
-    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
+                    dans, &iJ FCONE FCONE FCONE FCONE);
 
     dans += iJ2;
     dC += p;
@@ -2323,10 +2323,10 @@ b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
 
 SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
 
-all.equal(SD0[lower.tri(SD0, diag = d)], 
-          SD1[lower.tri(SD1, diag = d)])
-all.equal(SD0[lower.tri(SD0, diag = d)],
-          c(unclass(SD2)))
+chk(SD0[lower.tri(SD0, diag = d)], 
+    SD1[lower.tri(SD1, diag = d)])
+chk(SD0[lower.tri(SD0, diag = d)],
+    c(unclass(SD2)))
 @@
 
 @d post differentiate invchol score
@@ -2516,7 +2516,7 @@ rowMeans(Y)
 
 Let's do some sanity and performance checks first. For different values of
 $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
-\code{lmvnormR}) and the simplified implementation. The comparion is a bit
+\code{lmvnormR}) and the simplified implementation (fast and slow). The comparion is a bit
 unfair, because we do not add the time needed to setup Halton sequences, but
 we would do this only once and use the stored values for repeated
 evaluations of a log-likelihood (because the optimiser expects a
@@ -2594,7 +2594,8 @@ We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 prm <- c(mn, unclass(lt))
 ll(prm, J = J)
-lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
+lmvnormR(lwr, upr, mean = mn, chol = lt, 
+         algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 (llprm <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M))
 chk(llprm, sum(lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M, logLik = FALSE)))
 @@
@@ -2608,12 +2609,14 @@ sc <- function(parm, J) {
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW, trans = TRUE)
-    ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
+    ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, 
+                   w = W, M = M, logLik = TRUE)
     return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
 }
 
 if (require("numDeriv"))
     print(abs(max(grad(ll, prm, J = J) - sc(prm, J = J))))
+### TODO: using a different seed gives much better agreement
 @@
 
 
@@ -2643,7 +2646,8 @@ ll(prm, J = J)
 We can now compare the true and estimated Cholesky factor of our covariance
 matrix
 <<ex-ML-L>>=
-(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), diag = TRUE, byrow = BYROW, trans = TRUE) )
+(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+                 diag = TRUE, byrow = BYROW, trans = TRUE) )
 lt
 @@
 and the estimated means

@@ -502,12 +502,10 @@ Loading required package: qrng
 
 > SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
 
-> all.equal(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
+> chk(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
 +     diag = d)])
-[1] TRUE
 
-> all.equal(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
-[1] TRUE
+> chk(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
 
 > J <- 5
 
@@ -689,20 +687,30 @@ attr(,"rcnames")
 +         W <- t(ghalton(m * N, d = J - 1))
 +     st <- system.time(ret <- .... [TRUNCATED] 
 
+> lHf <- sapply(M, function(m) {
++     W <- NULL
++     if (require("qrng")) 
++         W <- t(ghalton(m * N, d = J - 1))
++     st <- system.time(ret < .... [TRUNCATED] 
+
 > layout(matrix(1:2, nrow = 1))
 
 > plot(M, lGB["ll", ], ylim = range(c(lGB["ll", ], lH["ll", 
-+     ])), ylab = "Log-likelihood")
++     ], lHf["ll", ])), ylab = "Log-likelihood")
 
 > points(M, lH["ll", ], pch = 4)
+
+> points(M, lHf["ll", ], pch = 5)
 
 > plot(M, lGB["user.self", ], ylim = c(0, max(lGB["user.self", 
 +     ])), ylab = "Time (in sec)")
 
 > points(M, lH["user.self", ], pch = 4)
 
-> legend("bottomright", legend = c("pmvnorm", "lmvnorm"), 
-+     pch = c(1, 4), bty = "n")
+> points(M, lHf["user.self", ], pch = 5)
+
+> legend("bottomright", legend = c("pmvnorm", "lmvnorm", 
++     "lmvnorm(fast)"), pch = c(1, 4, 5), bty = "n")
 
 > M <- 500
 
@@ -721,15 +729,15 @@ attr(,"rcnames")
 > prm <- c(mn, unclass(lt))
 
 > ll(prm, J = J)
-[1] 860.0029
+[1] 860.0128
 
 > lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = GenzBretz(maxpts = M, 
 +     abseps = 0, releps = 0))
-[1] -859.998
+[1] -860.0072
 
 > (llprm <- lmvnorm(lwr, upr, mean = mn, chol = lt, 
 +     w = W, M = M))
-[1] -860.0029
+[1] -860.0128
 
 > chk(llprm, sum(lmvnorm(lwr, upr, mean = mn, chol = lt, 
 +     w = W, M = M, logLik = FALSE)))
@@ -742,7 +750,7 @@ attr(,"rcnames")
 
 > if (require("numDeriv")) print(abs(max(grad(ll, prm, 
 +     J = J) - sc(prm, J = J))))
-[1] 0.2897199
+[1] 0.3018445
 
 > llim <- rep(-Inf, J + J * (J + 1)/2)
 
@@ -755,28 +763,28 @@ attr(,"rcnames")
 +     start <- c(rowMeans(Y), t(chol(Shat))[lower.tr .... [TRUNCATED] 
 
 > ll(start, J = J)
-[1] 858.1204
+[1] 858.1291
 
 > op <- optim(start, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = TRUE))
-final  value 857.060347 
+final  value 857.095419 
 converged
 
 > op$value
-[1] 857.0603
+[1] 857.0954
 
 > ll(prm, J = J)
-[1] 860.0029
+[1] 860.0128
 
 > (L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
 +     diag = TRUE, byrow = BYROW, trans = TRUE))
 , , 1
 
            1          2         3         4
-1  0.6587469  0.0000000 0.0000000 0.0000000
-2  0.1722696  0.9579007 0.0000000 0.0000000
-3  0.7035280 -0.2204267 1.0386978 0.0000000
-4 -0.1340032  1.1863975 0.2730744 0.8581644
+1  0.6605086  0.0000000 0.0000000 0.0000000
+2  0.1819037  0.9604210 0.0000000 0.0000000
+3  0.6985604 -0.2216254 1.0412998 0.0000000
+4 -0.1362407  1.1914478 0.2660047 0.8597862
 
 
 > lt
@@ -791,7 +799,7 @@ converged
 
 > op$par[1:J]
        1        2        3        4 
-1.009168 1.961241 2.936688 3.808215 
+1.005904 1.967627 2.938949 3.802091 
 
 > mn
 [1] 1 2 3 4
@@ -810,10 +818,10 @@ converged
 , , 1
 
             1           2           3           4
-1  0.43394746  0.11348208  0.46344687 -0.08827417
-2  0.11348208  0.94725063 -0.08995036  1.11336634
-3  0.46344687 -0.08995036  1.62243257 -0.07214688
-4 -0.08827417  1.11336634 -0.07214688  2.23651165
+1  0.43627157  0.12014893  0.46140512 -0.08998815
+2  0.12014893  0.95549737 -0.08578303  1.11950875
+3  0.46140512 -0.08578303  1.62140982 -0.08223684
+4 -0.08998815  1.11950875 -0.08223684  2.24810008
 
 
 > Shat
@@ -826,4 +834,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 24.277   0.119  24.396 
+ 35.129   0.167  35.298 
