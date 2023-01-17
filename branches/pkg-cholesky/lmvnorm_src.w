@@ -1868,7 +1868,7 @@ once, the chain rule rules, so to speak.
 int Jp = iJ * (iJ + 1) / 2;
 double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
 double aprime[iJ], bprime[iJ], fmprime[iJ], ymprime[(iJ - 1) * iJ];
-double dtmp, etmp, Wtmp, ytmp, ktmp, xx;
+double dtmp, etmp, Wtmp, ytmp, xx;
 
 PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + iJ, iN));
 dans = REAL(ans);
@@ -2091,8 +2091,8 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W,
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, intsum;
-    int p, len, idx;
+    double d0, e0, emd0, f0, q0, intsum;
+    int p, idx;
 
     @<dimensions@>
     @<pnorm@>
