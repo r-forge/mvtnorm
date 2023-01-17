@@ -2536,22 +2536,34 @@ lH <- sapply(M, function(m) {
     st <- system.time(ret <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
+lHf <- sapply(M, function(m) {
+    W <- NULL
+    if (require("qrng"))
+        W <- t(ghalton(m * N, d = J - 1))
+    st <- system.time(ret <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m, 
+                                     fast = TRUE))
+    return(c(st["user.self"], ll = ret))
+})
 @@
 The evaluated log-likelihoods and corresponding timings are given in
 Figure~\ref{lleval}. It seems that for $M \ge 3000$, results are reasonably
 stable.
 
 \begin{figure}
-<<ex-ML-fig, eval = TRUE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 6, height = 4>>=
+\begin{center}
+<<ex-ML-fig, eval = TRUE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 8, height = 5>>=
 layout(matrix(1:2, nrow = 1))
-plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",])), ylab = "Log-likelihood")
+plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",], lHf["ll",])), ylab = "Log-likelihood")
 points(M, lH["ll",], pch = 4)
+points(M, lHf["ll",], pch = 5)
 plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])), ylab = "Time (in sec)")
 points(M, lH["user.self",], pch = 4)
-legend("bottomright", legend = c("pmvnorm", "lmvnorm"), pch = c(1, 4), bty = "n")
+points(M, lHf["user.self",], pch = 5)
+legend("bottomright", legend = c("pmvnorm", "lmvnorm", "lmvnorm(fast)"), pch = c(1, 4, 5), bty = "n")
 @@
 \caption{Evaluated log-likelihoods (left) and timings (right).
 \label{lleval}}
+\end{center}
 \end{figure}
 
 We now define the log-likelihood function. It is important to use weights
