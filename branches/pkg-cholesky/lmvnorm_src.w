@@ -366,7 +366,7 @@ library("mvtnorm")
 
 chk <- function(...) stopifnot(isTRUE(all.equal(...)))
 
-set.seed(270312)
+set.seed(290875)
 N <- 4
 J <- 5
 rn <- paste0("C_", 1:N)
@@ -2088,7 +2088,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, intsum, lM;
+    double d0, e0, emd0, f0, q0, l0, intsum;
     int p, len, idx;
 
     @<dimensions@>
@@ -2104,7 +2104,8 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol,
 
     q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);
 
-    @<univariate problem@>
+    /* univariate problem */
+    if (iJ == 1) iM = 0; 
 
     if (W == R_NilValue)
         GetRNGstate();
@@ -2610,9 +2611,15 @@ estimates obtained from the original continuous data.
 
 <<ex-ML>>=
 llim <- rep(-Inf, J + J * (J + 1) / 2)
-llim[J + cumsum(c(1, 2:J))] <- 1e-4
+llim[J + which(rownames(unclass(lt)) %in% paste(1:J, 1:J, sep = "."))] <- 1e-4
 
-start <- c(rowMeans(Y), t(chol(Shat))[lower.tri(Shat, diag = TRUE)])
+if (BYROW) {
+  start <- c(rowMeans(Y), chol(Shat)[upper.tri(Shat, diag = TRUE)])
+} else {
+  start <- c(rowMeans(Y), t(chol(Shat))[lower.tri(Shat, diag = TRUE)])
+}
+
+ll(start, J = J)
 
 op <- optim(start, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
             lower = llim, control = list(trace = TRUE))

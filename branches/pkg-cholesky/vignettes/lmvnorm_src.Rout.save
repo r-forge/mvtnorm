@@ -376,8 +376,8 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > lmvnormR <- function(lower, upper, mean = 0, chol, 
 +     logLik = TRUE, ...) {
-+     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
-+     sto .... [TRUNCATED] 
++     if (!is.matrix(lower)) 
++         lower <- matrix(lower, ncol  .... [TRUNCATED] 
 
 > J <- 5
 
@@ -426,10 +426,10 @@ Loading required package: qrng
 +     abseps = 0, releps = 0))
 
 > pGqf <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, 
-+     logLik = FALSE))
++     logLik = FALSE, fast = TRUE))
 
 > pGf <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, 
-+     logLik = FALSE))
++     logLik = FALSE, fast = TRUE))
 
 > pGqs <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, 
 +     logLik = FALSE, fast = FALSE))
@@ -440,15 +440,15 @@ Loading required package: qrng
 > cbind(pGB, pGqf, pGf, pGqs, pGs)
             pGB         pGqf          pGf         pGqs          pGs
  [1,] 0.0000000 2.220446e-20 2.220446e-20 2.220446e-20 2.220446e-20
- [2,] 0.4167053 4.161704e-01 4.162066e-01 4.161704e-01 4.152929e-01
- [3,] 0.3521572 3.521535e-01 3.524480e-01 3.521535e-01 3.529928e-01
- [4,] 0.5471531 5.471207e-01 5.429131e-01 5.471207e-01 5.459049e-01
- [5,] 0.4547521 4.555029e-01 4.538373e-01 4.555029e-01 4.550493e-01
- [6,] 0.3340352 3.341317e-01 3.362061e-01 3.341317e-01 3.297836e-01
- [7,] 0.3179135 3.179562e-01 3.202917e-01 3.179562e-01 3.192830e-01
- [8,] 0.4336671 4.337770e-01 4.373169e-01 4.337770e-01 4.312718e-01
+ [2,] 0.4167053 4.161690e-01 4.162052e-01 4.161704e-01 4.152929e-01
+ [3,] 0.3521572 3.521519e-01 3.524463e-01 3.521535e-01 3.529928e-01
+ [4,] 0.5471531 5.471200e-01 5.429125e-01 5.471207e-01 5.459049e-01
+ [5,] 0.4547521 4.555023e-01 4.538366e-01 4.555029e-01 4.550493e-01
+ [6,] 0.3340352 3.341323e-01 3.362067e-01 3.341317e-01 3.297836e-01
+ [7,] 0.3179135 3.179560e-01 3.202915e-01 3.179562e-01 3.192830e-01
+ [8,] 0.4336671 4.337769e-01 4.373165e-01 4.337770e-01 4.312718e-01
  [9,] 0.0000000 2.220446e-20 2.220446e-20 2.220446e-20 2.220446e-20
-[10,] 0.6459174 6.457457e-01 6.455656e-01 6.457457e-01 6.526470e-01
+[10,] 0.6459174 6.457455e-01 6.455624e-01 6.457457e-01 6.526470e-01
 
 > pGB <- lmvnormR(a[1, , drop = FALSE], b[1, , drop = FALSE], 
 +     chol = lx[, 1], logLik = FALSE, algorithm = GenzBretz(maxpts = M, 
@@ -473,6 +473,42 @@ Loading required package: qrng
  [9,] 0.9616381 0.9616381 0.9616381
 [10,] 0.9981752 0.9981752 0.9981752
 
+> J <- 10
+
+> d <- TRUE
+
+> L <- diag(J)
+
+> L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + 
++     c(-1, 1)[d + 1])/2)
+
+> C <- solve(L)
+
+> D <- -kronecker(t(C), C)
+
+> S <- diag(J)
+
+> S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 
++     1)/2)
+
+> SD0 <- matrix(c(S) %*% D, ncol = J)
+
+> SD1 <- -crossprod(C, tcrossprod(S, C))
+
+> a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, 
++     byrow = FALSE, trans = TRUE)
+
+> b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+
+> SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
+
+> all.equal(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
++     diag = d)])
+[1] TRUE
+
+> all.equal(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
+[1] TRUE
+
 > J <- 5
 
 > N <- 4
@@ -481,9 +517,8 @@ Loading required package: qrng
 
 > prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
 
-> x <- matrix(prm, ncol = 1)
-
-> lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+> mC <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, 
++     diag = TRUE)
 
 > a <- matrix(runif(N * J), nrow = J) - 2
 
@@ -497,53 +532,81 @@ Loading required package: qrng
 
 > W <- matrix(runif(M * (J - 1)), ncol = M)
 
-> lli <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+> lli <- c(lmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
 
-> p <- unclass(lx)
+> fC <- function(prm) {
++     C <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
++     lmvnorm(a, b, chol = C, w = W, M = M)
++ }
 
-> fc <- function(prm, i) {
-+     L <- ltMatrices(matrix(prm, ncol = 1), byrow = TRUE, trans = TRUE, 
-+         diag = TRUE)
-+     lmvnorm(a, b, chol = .... [TRUNCATED] 
+> sC <- smvnorm(a, b, chol = mC, w = W, M = M)
 
-> S <- smvnorm(a, b, chol = lx, w = W, M = M)
+> chk(lli, sC$logLik)
 
-> chk(lli, S$logLik)
-
-> if (require("numDeriv")) print(max(abs(grad(fc, p) - 
-+     rowSums(S$chol))))
+> if (require("numDeriv")) print(max(abs(grad(fC, unclass(mC)) - 
++     rowSums(unclass(sC$chol)))))
 Loading required package: numDeriv
-[1] 4.969252e-08
+[1] 5.360648e-09
 
-> ptr <- pnorm(b[1, ]/c(unclass(lx[, 1]))) - pnorm(a[1, 
-+     ]/c(unclass(lx[, 1])))
+> mL <- solve(mC)
+
+> lliL <- c(lmvnorm(a, b, invchol = mL, w = W, M = M, 
++     logLik = FALSE))
+
+> chk(lli, lliL)
+
+> fL <- function(prm) {
++     L <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
++     lmvnorm(a, b, invchol = L, w = W, M = M)
++ }
+
+> sL <- smvnorm(a, b, invchol = mL, w = W, M = M)
+
+> chk(lliL, sL$logLik)
+
+> if (require("numDeriv")) print(max(abs(grad(fL, unclass(mL)) - 
++     rowSums(unclass(sL$chol)))))
+[1] 2.575826e-09
+
+> ptr <- pnorm(b[1, ]/c(unclass(mC[, 1]))) - pnorm(a[1, 
++     ]/c(unclass(mC[, 1])))
 
 > log(ptr)
-[1] -0.1751674 -0.2181914 -0.2550665 -0.1919741
+[1] -0.1851247 -0.1902665 -0.1614033 -0.1017233
 
 > lmvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
-+     chol = lx[, 1], logLik = FALSE)
-[1] -0.1751674 -0.2181914 -0.2550665 -0.1919741
++     chol = mC[, 1], logLik = FALSE)
+[1] -0.1851247 -0.1902665 -0.1614033 -0.1017233
 
-> smvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
-+     chol = lx[, 1], logLik = TRUE)
+> lapply(smvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
++     chol = mC[, 1], logLik = TRUE), unclass)
 $logLik
-[1] -0.1751674 -0.2181914 -0.2550665 -0.1919741
+[1] -0.1851247 -0.1902665 -0.1614033 -0.1017233
 
 $mean
      [,1] [,2] [,3] [,4]
 [1,]    0    0    0    0
 
 $chol
-           [,1]       [,2]       [,3]       [,4]
-[1,] -0.3344104 -0.3195376 -0.3047058 -0.3289291
+          [,1]       [,2]       [,3]      [,4]
+1.1 -0.3023276 -0.3016162 -0.3046262 -0.302357
+attr(,"J")
+[1] 1
+attr(,"diag")
+[1] TRUE
+attr(,"byrow")
+[1] FALSE
+attr(,"trans")
+[1] TRUE
+attr(,"rcnames")
+[1] "1"
 
 
-> sd1 <- c(unclass(lx[, 1]))
+> sd1 <- c(unclass(mC[, 1]))
 
 > (dnorm(b[1, ]/sd1) * b[1, ] - dnorm(a[1, ]/sd1) * 
 +     a[1, ]) * (-1)/sd1^2/ptr
-[1] -0.3344104 -0.3195376 -0.3047058 -0.3289291
+[1] -0.3023276 -0.3016162 -0.3046262 -0.3023570
 
 > J <- 4
 
@@ -574,7 +637,9 @@ $chol
 > lt <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE, 
 +     byrow = FALSE, trans = TRUE)
 
-> lt <- ltMatrices(lt, byrow = TRUE, trans = TRUE)
+> BYROW <- FALSE
+
+> lt <- ltMatrices(lt, byrow = BYROW, trans = TRUE)
 
 > chk(C, as.array(lt)[, , 1], check.attributes = FALSE)
 
@@ -602,15 +667,15 @@ $chol
 + .... [TRUNCATED] 
 
 > rowMeans(Y)
-        1         2         3         4 
-0.9215796 1.9262228 2.8982608 3.9810374 
+       1        2        3        4 
+1.001581 1.930707 2.949487 3.809772 
 
 > (Shat <- var(t(Y)))
-           1         2          3           4
-1  0.5029058 0.1291601 0.48742760 -0.15903670
-2  0.1291601 0.8438216 0.15585770  1.01952335
-3  0.4874276 0.1558577 1.31583555  0.05410955
-4 -0.1590367 1.0195234 0.05410955  2.15529693
+            1           2           3           4
+1  0.49613028  0.13904203  0.44517502 -0.08930947
+2  0.13904203  1.05349524 -0.07451484  1.12902099
+3  0.44517502 -0.07451484  1.54572038 -0.06188290
+4 -0.08930947  1.12902099 -0.06188290  2.15211344
 
 > M <- floor(exp(0:25/10) * 1000)
 
@@ -656,15 +721,15 @@ $chol
 > prm <- c(mn, unclass(lt))
 
 > ll(prm, J = J)
-[1] 852.2596
+[1] 860.0029
 
 > lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = GenzBretz(maxpts = M, 
 +     abseps = 0, releps = 0))
-[1] -852.2681
+[1] -859.998
 
 > (llprm <- lmvnorm(lwr, upr, mean = mn, chol = lt, 
 +     w = W, M = M))
-[1] -852.2596
+[1] -860.0029
 
 > chk(llprm, sum(lmvnorm(lwr, upr, mean = mn, chol = lt, 
 +     w = W, M = M, logLik = FALSE)))
@@ -677,37 +742,41 @@ $chol
 
 > if (require("numDeriv")) print(abs(max(grad(ll, prm, 
 +     J = J) - sc(prm, J = J))))
-[1] 9.240838e-08
+[1] 0.2897199
 
 > llim <- rep(-Inf, J + J * (J + 1)/2)
 
-> llim[J + cumsum(c(1, 2:J))] <- 1e-04
+> llim[J + which(rownames(unclass(lt)) %in% paste(1:J, 
++     1:J, sep = "."))] <- 1e-04
 
-> start <- c(rowMeans(Y), t(chol(Shat))[lower.tri(Shat, 
-+     diag = TRUE)])
+> if (BYROW) {
++     start <- c(rowMeans(Y), chol(Shat)[upper.tri(Shat, diag = TRUE)])
++ } else {
++     start <- c(rowMeans(Y), t(chol(Shat))[lower.tr .... [TRUNCATED] 
+
+> ll(start, J = J)
+[1] 858.1204
 
 > op <- optim(start, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = TRUE))
-iter   10 value 844.680182
-iter   20 value 843.425842
-final  value 843.425726 
+final  value 857.060347 
 converged
 
 > op$value
-[1] 843.4257
+[1] 857.0603
 
 > ll(prm, J = J)
-[1] 852.2596
+[1] 860.0029
 
 > (L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
-+     diag = TRUE, byrow = TRUE, trans = TRUE))
++     diag = TRUE, byrow = BYROW, trans = TRUE))
 , , 1
 
            1          2         3         4
-1  0.6329242 0.00000000 0.0000000 0.0000000
-2  0.1681258 0.91799748 0.0000000 0.0000000
-3  0.7138439 0.05847382 0.9297253 0.0000000
-4 -0.2003649 1.25024414 0.1521195 0.8342284
+1  0.6587469  0.0000000 0.0000000 0.0000000
+2  0.1722696  0.9579007 0.0000000 0.0000000
+3  0.7035280 -0.2204267 1.0386978 0.0000000
+4 -0.1340032  1.1863975 0.2730744 0.8581644
 
 
 > lt
@@ -721,8 +790,8 @@ converged
 
 
 > op$par[1:J]
-        1         2         3         4 
-0.9470606 1.9243811 2.8653617 3.9781098 
+       1        2        3        4 
+1.009168 1.961241 2.936688 3.808215 
 
 > mn
 [1] 1 2 3 4
@@ -740,21 +809,21 @@ converged
 > Tcrossprod(L)
 , , 1
 
-           1         2         3          4
-1  0.4005931 0.1064109 0.4518091 -0.1268158
-2  0.1064109 0.8709857 0.1736944  1.1140345
-3  0.4518091 0.1736944 1.3773816  0.0715066
-4 -0.1268158 1.1140345 0.0715066  2.3223339
+            1           2           3           4
+1  0.43394746  0.11348208  0.46344687 -0.08827417
+2  0.11348208  0.94725063 -0.08995036  1.11336634
+3  0.46344687 -0.08995036  1.62243257 -0.07214688
+4 -0.08827417  1.11336634 -0.07214688  2.23651165
 
 
 > Shat
-           1         2          3           4
-1  0.5029058 0.1291601 0.48742760 -0.15903670
-2  0.1291601 0.8438216 0.15585770  1.01952335
-3  0.4874276 0.1558577 1.31583555  0.05410955
-4 -0.1590367 1.0195234 0.05410955  2.15529693
+            1           2           3           4
+1  0.49613028  0.13904203  0.44517502 -0.08930947
+2  0.13904203  1.05349524 -0.07451484  1.12902099
+3  0.44517502 -0.07451484  1.54572038 -0.06188290
+4 -0.08930947  1.12902099 -0.06188290  2.15211344
 
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 21.793   0.143  21.935 
+ 24.277   0.119  24.396 
