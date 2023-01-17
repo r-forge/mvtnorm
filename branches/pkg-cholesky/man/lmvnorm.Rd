@@ -10,9 +10,9 @@
     corresponding scores.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, 
+lmvnorm(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
         seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-smvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL, 
+smvnorm(lower, upper, mean = 0, chol, invchol. logLik = TRUE, M = NULL, w = NULL, 
         seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 }
 \arguments{
@@ -24,7 +24,12 @@ smvnorm(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, w = NULL,
 recycled to length of \code{lower} and \code{upper}).
 }
   \item{chol}{Cholesky factors of covariance matrices as
-    \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and \code{upper}
+    \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and
+\code{upper}.
+}
+  \item{chol}{Cholesky factors of precision matrices as
+    \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and
+\code{upper}. Either \code{chol} or \code{invchol} must be given.
 }
   \item{logLik}{logical, if \code{TRUE}, the log-likelihood is returned,
 otherwise the individual contributions to the sum are returned.

@@ -366,7 +366,7 @@ library("mvtnorm")
 
 chk <- function(...) stopifnot(isTRUE(all.equal(...)))
 
-set.seed(290875)
+set.seed(270312)
 N <- 4
 J <- 5
 rn <- paste0("C_", 1:N)
@@ -1364,6 +1364,8 @@ if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
 stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
 stopifnot(inherits(chol, "ltMatrices"))
+byrow_orig <- attr(chol, "byrow")
+trans_orig <- attr(chol, "trans")
 chol <- ltMatrices(chol, trans = TRUE, byrow = TRUE)
 d <- dim(chol)
 ### allow single matrix C
@@ -1755,12 +1757,25 @@ if (!is.null(w)) {
 }
 @}
 
+Sometimes we want to evaluate the log-likelihood based on $\mL = \mC^{-1}$,
+the Cholesky factor of the precision (not the covariance) matrix. In this
+case, we explicitly invert $\mL$ to give $\mC$ (both matrices are lower
+triangular, so this is fast).
+
+@d Cholesky of precision
+@{
+stopifnot(xor(missing(chol), missing(invchol)))
+if (missing(chol)) chol <- solve(invchol)
+@}
+
 @d lmvnorm
 @{
-lmvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
+lmvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
+
+    @<Cholesky of precision@>
 
     @<input checks@>
 
@@ -2157,14 +2172,178 @@ if (attr(chol, "diag")) {
     ### remove scores for constant diagonal elements
     ret <- ret[-idx, drop = FALSE]    
 }
+ret <- ltMatrices(ret, diag = attr(chol, "diag"), trans = TRUE, byrow = TRUE)
 @}
+
+We sometimes parameterise models in terms of $\mL = \mC^{-1}$, the Cholesky
+factor of the precision matrix. The log-likelihood operates on $\mC$, so we
+need to post-differentiate the score function. We have
+\begin{eqnarray*}
+\mA = \frac{\partial \mL^{-1}}{\partial \mL} = - \mL^{-\top} \otimes \mL^{-1}
+\end{eqnarray*}
+and computing $\svec \mA$ for a score vector $\svec$ with respect to $\mL$ can be
+implemented by the ``vec trick''
+\begin{eqnarray*}
+\svec \mA = \mL^{-\top} \mS \mL^{-\top}
+\end{eqnarray*}
+where $\svec = \text{vec}(\mS)$.
+
+@d t(C) S t(C)
+@{
+char si = 'R', lo = 'L', tr = 'N', trT = 'T', di = 'N';
+double ONE = 1.0;
+int idx;
+int iJ2 = iJ * iJ;
+
+double tmp[iJ2];
+for (j = 0; j < iJ2; j++) tmp[j] = 0.0;
+
+ans = PROTECT(allocMatrix(REALSXP, iJ2, iN));
+dans = REAL(ans);
+
+for (i = 0; i < LENGTH(ans); i++) dans[i] = 0.0;
+
+for (i = 0; i < iN; i++) {
+
+    /* B := t(C) */
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++) {
+            idx = IDX(j + 1, k + 1, iJ, 1L);
+            dans[j * iJ + k] = dC[idx];
+            /* argument A in dtrmm is not in packed form, so exand in J x J
+               matrix */
+            tmp[k * iJ + j] = dS[idx];
+        }
+    }
+
+    /* B := B %*% S */
+    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++)
+            tmp[k * iJ + j] = dC[IDX(j + 1, k + 1, iJ, 1L)];
+    }
+
+    /* B := B %*% t(C) */
+    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
+
+    dans += iJ2;
+    dC += p;
+    dS += len;
+}    
+@}
+
+@d grad solve(L)
+@{
+
+@<IDX@>
+
+SEXP R_gradSolveL(SEXP C, SEXP N, SEXP J, SEXP S, SEXP diag) {
+
+    int i, j, k;
+    SEXP ans;
+    double *dS, *dans;
+
+    @<RC input@>
+    @<C length@>
+    dS = REAL(S);
+    @<t(C) S t(C)@>
+
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+@d .gradSolveL
+@{
+.gradSolveL <- function(C, S, diag = FALSE) {
+
+    stopifnot(inherits(C, "ltMatrices"))
+    stopifnot(attr(C, "diag"))
+    stopifnot(inherits(S, "ltMatrices"))
+    stopifnot(attr(S, "diag"))
+
+    C_byrow_orig <- attr(C, "byrow")
+    C_trans_orig <- attr(C, "trans")
+    S_byrow_orig <- attr(S, "byrow")
+    S_trans_orig <- attr(S, "trans")
+
+    stopifnot(S_byrow_orig == C_byrow_orig)
+    stopifnot(S_trans_orig == C_trans_orig)
+
+    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
+    dC <- dim(C)
+    nm <- attr(C, "rcnames")
+    S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
+    dS <- dim(S)
+    stopifnot(dC[2L] == dS[2L])
+    if (dC[1] != 1L)
+        stopifnot(dC[1L] == dS[1L])
+    N <- dS[1L]
+    J <- dS[2L]
+
+    class(C) <- class(C)[-1L]
+    storage.mode(C) <- "double"
+    class(S) <- class(S)[-1L]
+    storage.mode(S) <- "double"
+            
+    ret <- .Call(mvtnorm_R_gradSolveL, C, as.integer(N), as.integer(J), S, as.logical(TRUE))
+
+    L <- matrix(1:(J^2), nrow = J)
+    ret <- ltMatrices(ret[L[lower.tri(L, diag = diag)],,drop = FALSE], 
+                      diag = diag, byrow = FALSE, trans = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = C_byrow_orig, trans = C_trans_orig)
+    return(ret)
+}
+@}
+
+Here is a small example
+
+<<kronecker>>=
+J <- 10
+
+d <- TRUE
+L <- diag(J)
+L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + c(-1, 1)[d + 1]) / 2)
+
+C <- solve(L)
+
+D <- -kronecker(t(C), C)
+
+S <- diag(J)
+S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 1) / 2)
+
+SD0 <- matrix(c(S) %*% D, ncol = J)
+
+SD1 <- -crossprod(C, tcrossprod(S, C))
+
+a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
+b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+
+SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
+
+all.equal(SD0[lower.tri(SD0, diag = d)], 
+          SD1[lower.tri(SD1, diag = d)])
+all.equal(SD0[lower.tri(SD0, diag = d)],
+          c(unclass(SD2)))
+@@
+
+@d post differentiate invchol score
+@{
+if (!missing(invchol))
+    ret <- - .gradSolveL(chol, ret, diag = TRUE)
+@}
+
+We can now finally put everything together in a single score function.
 
 @d smvnorm
 @{
-smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL, 
+smvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
+
+    @<Cholesky of precision@>
 
     @<input checks@>
 
@@ -2187,8 +2366,14 @@ smvnorm <- function(lower, upper, mean = 0, chol, logLik = TRUE, M = NULL,
 
     @<post differentiate chol score@>
 
+    @<post differentiate invchol score@>
+
+    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+
     if (logLik) {
-        ret <- list(logLik = ll, mean = smean, chol = ret)
+        ret <- list(logLik = ll, 
+                    mean = smean, 
+                    chol = ret)
         return(ret)
     }
     
@@ -2206,8 +2391,8 @@ N <- 4
 S <- crossprod(matrix(runif(J^2), nrow = J))
 prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
 
-x <- matrix(prm, ncol = 1)
-lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+### define C
+mC <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
 
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 4
@@ -2217,29 +2402,50 @@ b[3,] <- Inf
 M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
-lli <- c(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE))
+lli <- c(lmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
 
-p <- unclass(lx)
-fc <- function(prm, i) {
-    L <- ltMatrices(matrix(prm, ncol = 1), byrow = TRUE, trans = TRUE, diag = TRUE)
-    lmvnorm(a, b, chol = L, w = W, M = M)
+fC <- function(prm) {
+    C <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
+    lmvnorm(a, b, chol = C, w = W, M = M)
 }
 
-S <- smvnorm(a, b, chol = lx, w = W, M = M)
+sC <- smvnorm(a, b, chol = mC, w = W, M = M)
 
-chk(lli, S$logLik)
+chk(lli, sC$logLik)
 
 if (require("numDeriv"))
-    print(max(abs(grad(fc, p) - rowSums(S$chol))))
+    print(max(abs(grad(fC, unclass(mC)) - rowSums(unclass(sC$chol)))))
+@@
+
+We can do the same when $\mL$ (and not $\mC$) is given
+<<ex-Lscore>>=
+mL <- solve(mC)
+
+lliL <- c(lmvnorm(a, b, invchol = mL, w = W, M = M, logLik = FALSE))
+
+chk(lli, lliL)
+
+fL <- function(prm) {
+    L <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
+    lmvnorm(a, b, invchol = L, w = W, M = M)
+}
+
+sL <- smvnorm(a, b, invchol = mL, w = W, M = M)
+
+chk(lliL, sL$logLik)
+
+if (require("numDeriv"))
+    print(max(abs(grad(fL, unclass(mL)) - rowSums(unclass(sL$chol)))))
 @@
 
 The score function also works for univariate problems
 <<ex-uni-score>>=
-ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
+ptr <- pnorm(b[1,] / c(unclass(mC[,1]))) - pnorm(a[1,] / c(unclass(mC[,1])))
 log(ptr)
-lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = FALSE)
-smvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], logLik = TRUE)
-sd1 <- c(unclass(lx[,1]))
+lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik = FALSE)
+lapply(smvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik =
+TRUE), unclass)
+sd1 <- c(unclass(mC[,1]))
 (dnorm(b[1,] / sd1) * b[1,] - dnorm(a[1,] / sd1) * a[1,]) * (-1) / sd1^2 / ptr
 @@
 
@@ -2268,8 +2474,9 @@ lt <- ltMatrices(matrix(prm, ncol = 1L),
                  diag = TRUE,    ### has diagonal elements
                  byrow = FALSE,  ### prm is column-major
                  trans = TRUE)   ### store as J * (J + 1) / 2 x 1
+BYROW <- FALSE   ### later checks
 lt <- ltMatrices(lt, 
-                 byrow = TRUE,   ### convert to row-major
+                 byrow = BYROW,   ### convert to row-major
                  trans = TRUE)   ### keep dimensions
 chk(C, as.array(lt)[,,1], check.attributes = FALSE)
 chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
@@ -2365,7 +2572,7 @@ ll <- function(parm, J) {
      m <- parm[1:J]		### mean parameters
      parm <- parm[-(1:J)]	### chol parameters
      C <- matrix(c(parm), ncol = 1L)
-     C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW, trans = TRUE)
      -lmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
@@ -2387,9 +2594,9 @@ sc <- function(parm, J) {
     m <- parm[1:J]             ### mean parameters
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
-    C <- ltMatrices(C, diag = TRUE, byrow = TRUE, trans = TRUE)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW, trans = TRUE)
     ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
-    return(-c(rowSums(ret$mean), rowSums(ret$chol)))
+    return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
 }
 
 if (require("numDeriv"))
@@ -2417,7 +2624,7 @@ ll(prm, J = J)
 We can now compare the true and estimated Cholesky factor of our covariance
 matrix
 <<ex-ML-L>>=
-(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), diag = TRUE, byrow = TRUE, trans = TRUE) )
+(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), diag = TRUE, byrow = BYROW, trans = TRUE) )
 lt
 @@
 and the estimated means
@@ -2440,151 +2647,6 @@ This looks reasonably close.
 and \code{W}) to be universally applicable. Make sure to investigate the
 accuracy depending on these parameters 
 of the log-likelihood and score function in your application.
-
-\subsection{Cholesky of Precision Matrix}
-
-We sometimes parameterise models in terms of $\mL = \mC^{-1}$, the Cholesky
-factor of the precision matrix. The log-likelihood operates on $\mC$, so we
-need to post-differentiate the score function. We have
-\begin{eqnarray*}
-\mA = \frac{\partial \mL^{-1}}{\partial \mL} = - \mL^{-\top} \otimes \mL^{-1}
-\end{eqnarray*}
-and computing $\svec \mA$ for a score vector $\svec$ with respect to $\mL$ can be
-implemented by the ``vec trick''
-\begin{eqnarray*}
-\svec \mA = \mL^{-\top} \mS \mL^{-\top}
-\end{eqnarray*}
-where $\svec = \text{vec}(\mS)$.
-
-@d t(C) S t(C)
-@{
-char si = 'R', lo = 'L', tr = 'N', trT = 'T', di = 'N';
-double ONE = 1.0;
-int idx;
-
-double tmp[iJ * iJ];
-for (j = 0; j < iJ * iJ; j++) tmp[j] = 0.0;
-
-ans = PROTECT(allocMatrix(REALSXP, iN, iJ * iJ));
-dans = REAL(ans);
-
-for (i = 0; i < LENGTH(ans); i++) dans[i] = 0.0;
-
-for (i = 0; i < iN; i++) {
-
-    /* B := t(C) */
-    for (j = 0; j < iJ; j++) {
-        for (k = 0; k <= j; k++) {
-            idx = IDX(j + 1, k + 1, iJ, 1L);
-            dans[j * iJ + k] = dC[idx];
-            /* argument A in dtrmm is not in packed form, so exand in J x J
-               matrix */
-            tmp[k * iJ + j] = dS[idx];
-        }
-    }
-
-    /* B := B %*% S */
-    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
-
-    for (j = 0; j < iJ; j++) {
-        for (k = 0; k <= j; k++)
-            tmp[k * iJ + j] = dC[IDX(j + 1, k + 1, iJ, 1L)];
-    }
-
-    /* B := B %*% t(C) */
-    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, dans, &iJ FCONE FCONE FCONE FCONE);
-
-    dans += iN;
-    dC += p;
-    dS += len;
-}    
-@}
-
-@d grad solve(L)
-@{
-
-@<IDX@>
-
-SEXP R_gradSolveL(SEXP C, SEXP N, SEXP J, SEXP S, SEXP diag) {
-
-    int i, j, k;
-    SEXP ans;
-    double *dS, *dans;
-
-    @<RC input@>
-    @<C length@>
-    dS = REAL(S);
-    @<t(C) S t(C)@>
-
-    UNPROTECT(1);
-    return(ans);
-}
-@}
-
-@d .gradSolveL
-@{
-.gradSolveL <- function(C, S, diag = FALSE) {
-
-    stopifnot(inherits(C, "ltMatrices"))
-    stopifnot(attr(C, "diag"))
-    stopifnot(inherits(S, "ltMatrices"))
-    stopifnot(attr(S, "diag"))
-
-    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
-    dC <- dim(C)
-    nm <- attr(C, "rcnames")
-    S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
-    dS <- dim(S)
-    stopifnot(dC[2L] == dS[2L])
-    if (dC[1] != 1L)
-        stopifnot(dC[1L] == dS[1L])
-    N <- dS[1L]
-    J <- dS[2L]
-
-    class(C) <- class(C)[-1L]
-    storage.mode(C) <- "double"
-    class(S) <- class(S)[-1L]
-    storage.mode(S) <- "double"
-            
-    ret <- .Call(mvtnorm_R_gradSolveL, C, as.integer(N), as.integer(J), S, as.logical(TRUE))
-
-    L <- matrix(1:(J^2), nrow = J)
-    ret <- ltMatrices(ret[L[lower.tri(L, diag = diag)]], 
-                      diag = diag, byrow = FALSE, trans = TRUE, names = nm)
-    return(ret)
-}
-@}
-
-Here is a small example
-
-<<kronecker>>=
-J <- 10
-
-d <- TRUE
-L <- diag(J)
-L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + c(-1, 1)[d + 1]) / 2)
-
-C <- solve(L)
-
-D <- -kronecker(t(C), C)
-
-S <- diag(J)
-S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 1) / 2)
-
-SD0 <- matrix(c(S) %*% D, ncol = J)
-
-SD1 <- -crossprod(C, tcrossprod(S, C))
-
-a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
-b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
-
-SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
-
-all.equal(SD0[lower.tri(SD0, diag = d)], 
-          SD1[lower.tri(SD1, diag = d)])
-all.equal(SD0[lower.tri(SD0, diag = d)],
-          c(unclass(SD2)))
-@@
 
 
 
