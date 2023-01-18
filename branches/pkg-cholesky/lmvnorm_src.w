@@ -172,6 +172,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<mult ltMatrices@>
 @<solve ltMatrices@>
 @<tcrossprod ltMatrices@>
+@<crossprod ltMatrices@>
 @<chol syMatrices@>
 @}
 
@@ -1068,22 +1069,39 @@ chk(solve(lxn, y[,1]), solve(lxn, y[,rep(1, N)]))
 Compute $\mC_i \mC_i^\top$ or $\text{diag}(\mC_i \mC_i^\top)$
 (\code{diag\_only = TRUE}) for $i = 1, \dots, N$. These are symmetric
 matrices, so we store them as a lower triangular matrix using a different
-class name \code{syMatrices}.
+class name \code{syMatrices}. We write one \proglang{C} function for
+computing $\mC_i \mC_i^\top$ or $\mC_i^\top \mC_i$ (\code{Rtranspose} being
+\code{TRUE}).
 
 We differentiate between computation of the diagonal elements of the
 crossproduct
+
+@d first element
+@{
+dans[0] = 1.0;
+if (Rdiag)
+    dans[0] = pow(dC[0], 2);
+if (Rtranspose) { // crossprod
+    for (k = 1; k < iJ; k++) 
+        dans[0] += pow(dC[IDX(k + 1, 1, iJ, Rdiag)], 2);
+}
+@}
 
 @d tcrossprod diagonal only
 @{
 PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
 dans = REAL(ans);
 for (n = 0; n < iN; n++) {
-    dans[0] = 1.0;
-    if (Rdiag) dans[0] = pow(dC[0], 2);
+    @<first element@>
     for (i = 1; i < iJ; i++) {
         dans[i] = 0.0;
-        for (k = 0; k < i; k++)
-            dans[i] += pow(dC[IDX(i + 1, k + 1, iJ, Rdiag)], 2);
+        if (Rtranspose) { // crossprod
+            for (k = i + 1; k < iJ; k++)
+                dans[i] += pow(dC[IDX(k + 1, i + 1, iJ, Rdiag)], 2);
+        } else {         // tcrossprod
+            for (k = 0; k < i; k++)
+                dans[i] += pow(dC[IDX(i + 1, k + 1, iJ, Rdiag)], 2);
+        }
         if (Rdiag) {
             dans[i] += pow(dC[IDX(i + 1, i + 1, iJ, Rdiag)], 2);
         } else {
@@ -1103,20 +1121,32 @@ nrow = iJ * (iJ + 1) / 2;
 PROTECT(ans = allocMatrix(REALSXP, nrow, iN)); 
 dans = REAL(ans);
 for (n = 0; n < INTEGER(N)[0]; n++) {
-    dans[0] = 1.0;
-    if (Rdiag) dans[0] = pow(dC[0], 2);
+    @<first element@>
     for (i = 1; i < iJ; i++) {
         for (j = 0; j <= i; j++) {
             ix = IDX(i + 1, j + 1, iJ, 1);
             dans[ix] = 0.0;
-            for (k = 0; k < j; k++)
-                dans[ix] += 
-                    dC[IDX(i + 1, k + 1, iJ, Rdiag)] *
-                    dC[IDX(j + 1, k + 1, iJ, Rdiag)];
+            if (Rtranspose) { // crossprod
+                for (k = i + 1; k < iJ; k++)
+                    dans[ix] += 
+                        dC[IDX(k + 1, i + 1, iJ, Rdiag)] *
+                        dC[IDX(k + 1, j + 1, iJ, Rdiag)];
+            } else {         // tcrossprod
+                for (k = 0; k < j; k++)
+                    dans[ix] += 
+                        dC[IDX(i + 1, k + 1, iJ, Rdiag)] *
+                        dC[IDX(j + 1, k + 1, iJ, Rdiag)];
+            }
             if (Rdiag) {
-                dans[ix] += 
-                    dC[IDX(i + 1, j + 1, iJ, Rdiag)] *
-                    dC[IDX(j + 1, j + 1, iJ, Rdiag)];
+                if (Rtranspose) {
+                    dans[ix] += 
+                        dC[IDX(i + 1, i + 1, iJ, Rdiag)] *
+                        dC[IDX(i + 1, j + 1, iJ, Rdiag)];
+                } else {
+                    dans[ix] += 
+                        dC[IDX(i + 1, j + 1, iJ, Rdiag)] *
+                        dC[IDX(j + 1, j + 1, iJ, Rdiag)];
+                }
             } else {
                 if (j < i)
                     dans[ix] += dC[IDX(i + 1, j + 1, iJ, Rdiag)];
@@ -1142,7 +1172,7 @@ and put both cases together
 
 @<IDX@>
 
-SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only) {
+SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only, SEXP transpose) {
 
     SEXP ans;
     double *dans;
@@ -1151,6 +1181,7 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only)
     @<RC input@>
 
     Rboolean Rdiag_only = asLogical(diag_only);
+    Rboolean Rtranspose = asLogical(transpose);
 
     if (Rdiag_only) {
 
@@ -1172,7 +1203,7 @@ with \proglang{R} interface
 @{
 ### C %*% t(C) => returns object of class syMatrices
 ### diag(C %*% t(C)) => returns matrix of diagonal elements
-Tcrossprod <- function(x, diag_only = FALSE) {
+Tcrossprod <- function(x, diag_only = FALSE, transpose = FALSE) {
 
     if (!inherits(x, "ltMatrices")) {
         ret <- tcrossprod(x)
@@ -1193,7 +1224,7 @@ Tcrossprod <- function(x, diag_only = FALSE) {
     storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_ltMatrices_tcrossprod, x, as.integer(N), as.integer(J), 
-                 as.logical(diag), as.logical(diag_only))
+                 as.logical(diag), as.logical(diag_only), as.logical(transpose))
     colnames(ret) <- dn[[1L]]
     if (diag_only) {
         rownames(ret) <- dn[[2L]]
@@ -1232,6 +1263,41 @@ d <- Tcrossprod(lxd, diag_only = TRUE)
 chk(d, apply(a, 3, diag))
 chk(d, diagonals(Tcrossprod(lxd)))
 @@
+
+We also add \code{Crossprod}, which is a call to \code{Tcrossprod} with the
+\code{transpose} switch turned on
+
+@d crossprod ltMatrices
+@{
+Crossprod <- function(x, diag_only = FALSE)
+    Tcrossprod(x, diag = diag_only, transpose = TRUE)
+@}
+
+and run some checks
+
+<<ex-crossprod>>=
+## Crossprod
+a <- as.array(Crossprod(lxn))
+b <- array(apply(as.array(lxn), 3L, function(x) crossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxn)))
+chk(a, b, check.attributes = FALSE)
+
+# diagonal elements only
+d <- Crossprod(lxn, diag_only = TRUE)
+chk(d, apply(a, 3, diag))
+chk(d, diagonals(Crossprod(lxn)))
+
+a <- as.array(Crossprod(lxd))
+b <- array(apply(as.array(lxd), 3L, function(x) crossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxd)))
+chk(a, b, check.attributes = FALSE)
+
+# diagonal elements only
+d <- Crossprod(lxd, diag_only = TRUE)
+chk(d, apply(a, 3, diag))
+chk(d, diagonals(Crossprod(lxd)))
+@@
+
 
 \section{Cholesky Factorisation}
 
@@ -1323,6 +1389,67 @@ Sigma <- Tcrossprod(lxn)
 ## Sigma and chol(Sigma) always have diagonal, lxn doesn't
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
+
+\section{Marginal and Conditional Normal Distributions}
+
+@d mc input checks
+@{
+stopifnot(xor(missing(chol), missing(invchol)))
+x <- chol
+if (missing(chol)) x <- invchol
+
+stopifnot(inherits(x, "ltMatrices"))
+
+N <- dim(x)[1L]
+J <- dim(x)[2L]
+if (is.character(which)) which <- match(which, dimnames(x)[[2L]])
+stopifnot(all(which %in% 1:J))
+
+@}
+
+@d marginal
+@{
+marg_mvnorm <- function(chol, invchol, which = 1L) {
+
+    @<mc input checks@>
+
+    if (which[1] == 1L && (length(which) == 1L || 
+                           all(diff(which) == 1L))) {
+        ### which is 1:j
+        tmp <- x[,which]
+    } else {
+        tmp <- chol(Tcrossprod(x)[,which])
+    }
+
+    if (missing(chol))
+        ret <- list(invchol = tmp)
+    else
+        ret <- list(chol = tmp)
+
+    ret
+}
+@}
+
+@d conditional
+@{
+cond_mvnorm <- function(chol, invchol, which = 1L, given) {
+
+    @<mc input checks@>
+
+    stopifnot(is.matrix(given) && nrow(given) == J && ncol(given) == N)
+
+    if (!missing(chol)) {
+        P <- Tcrossprod(chol)
+        Pw <- P[, -which]
+        chol <- solve(chol(Pw))
+        Pa <- as.array(P)
+        Sa <- as.array(Tcrossprod(chol))
+        mean <- sapply(1:N, function(i) -Sa[,,i] %*% P[-which,,i] %*% given[,i])
+    }
+        
+}
+@}
+
 
 \section{Application Example}
 

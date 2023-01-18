@@ -9,7 +9,7 @@ importFrom("stats",
 importFrom("methods", hasArg)
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
-       GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, diagonals, Mult, lmvnorm, smvnorm)
+       GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, Crossprod, diagonals, Mult, lmvnorm, smvnorm)
 
 S3method("as.array", "ltMatrices")
 S3method("as.array", "syMatrices")
