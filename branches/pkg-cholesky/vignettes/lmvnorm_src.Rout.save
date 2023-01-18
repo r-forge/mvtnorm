@@ -352,6 +352,32 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > chk(d, diagonals(Tcrossprod(lxd)))
 
+> a <- as.array(Crossprod(lxn))
+
+> b <- array(apply(as.array(lxn), 3, function(x) crossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxn)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> d <- Crossprod(lxn, diag_only = TRUE)
+
+> chk(d, apply(a, 3, diag))
+
+> chk(d, diagonals(Crossprod(lxn)))
+
+> a <- as.array(Crossprod(lxd))
+
+> b <- array(apply(as.array(lxd), 3, function(x) crossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxd)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> d <- Crossprod(lxd, diag_only = TRUE)
+
+> chk(d, apply(a, 3, diag))
+
+> chk(d, diagonals(Crossprod(lxd)))
+
 > Sigma <- Tcrossprod(lxd)
 
 > chk(chol(Sigma), lxd)
@@ -359,6 +385,68 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 > Sigma <- Tcrossprod(lxn)
 
 > chk(as.array(chol(Sigma)), as.array(lxn))
+
+> Sigma <- Tcrossprod(lxd)
+
+> j <- 1:3
+
+> chk(Sigma[, j], Tcrossprod(marg_mvnorm(chol = lxd, 
++     which = j)$chol))
+
+> j <- 2:4
+
+> chk(Sigma[, j], Tcrossprod(marg_mvnorm(chol = lxd, 
++     which = j)$chol))
+
+> Sigma <- Tcrossprod(solve(lxd))
+
+> j <- 1:3
+
+> chk(Sigma[, j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, 
++     which = j)$invchol)))
+
+> j <- 2:4
+
+> chk(Sigma[, j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, 
++     which = j)$invchol)))
+
+> Sigma <- as.array(Tcrossprod(lxd))[, , 1]
+
+> j <- 2:4
+
+> y <- matrix(c(-1, 2, 1), nrow = 3)
+
+> cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
++     j]) %*% y
+
+> cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
++     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
+
+> cmv <- cond_mvnorm(chol = lxd[1, ], which = j, given = y)
+
+> chk(cm, cmv$mean)
+
+> chk(cS, as.array(Tcrossprod(cmv$chol))[, , 1])
+
+> Sigma <- as.array(Tcrossprod(solve(lxd)))[, , 1]
+
+> j <- 2:4
+
+> y <- matrix(c(-1, 2, 1), nrow = 3)
+
+> cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
++     j]) %*% y
+
+> cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
++     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
+
+> cmv <- cond_mvnorm(invchol = lxd[1, ], which = j, 
++     given = y)
+
+> chk(cm, cmv$mean)
+
+> chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[, 
++     , 1])
 
 > N <- 1000
 
@@ -379,6 +467,20 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 +     i], sigma = S[, , i], log = TRUE)))
 
 > chk(ll1, ll2)
+
+> (j <- 1:5 * 10)
+[1] 10 20 30 40 50
+
+> md <- marg_mvnorm(invchol = lt, which = j)
+
+> cd <- cond_mvnorm(invchol = lt, which = j, given = Y[j, 
++     ])
+
+> ll3 <- sum(dnorm(Mult(md$invchol, Y[j, ]), log = TRUE)) + 
++     sum(log(diagonals(md$invchol))) + sum(dnorm(Mult(cd$invchol, 
++     Y[-j, ] - cd$me .... [TRUNCATED] 
+
+> chk(ll1, ll3)
 
 > library("mvtnorm")
 
@@ -842,4 +944,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 61.546   0.267  61.905 
+ 34.982   0.267  35.251 
