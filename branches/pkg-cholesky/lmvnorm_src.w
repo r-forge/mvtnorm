@@ -1432,7 +1432,7 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         tmp <- x[,which]
     } else {
         if (missing(chol)) x <- solve(x)
-        tmp <- mvtnorm:::chol.syMatrices(Tcrossprod(x)[,which])
+        tmp <- base::chol(Tcrossprod(x)[,which])
         if (missing(chol)) tmp <- solve(tmp)
     }
 
@@ -1474,7 +1474,7 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
         P <- Crossprod(invchol)
 
     Pw <- P[, -which]
-    chol <- solve(mvtnorm:::chol.syMatrices(Pw))
+    chol <- solve(base::chol(Pw))
     Pa <- as.array(P)
     Sa <- as.array(S <- Crossprod(chol))
     if (dim(chol)[1L] == 1L) {
@@ -1485,7 +1485,7 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
         mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
     }
 
-    chol <- mvtnorm:::chol.syMatrices(S)
+    chol <- base::chol(S)
     if (missing(invchol)) 
         return(list(mean = mean, chol = chol))
 
