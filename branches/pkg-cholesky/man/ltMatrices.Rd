@@ -9,6 +9,7 @@
 \alias{diagonals.ltMatrices}
 \alias{diagonals.syMatrices}
 \alias{diagonals.matrix}
+\alias{chol.syMatrices}
 \title{
   Multiple Lower Triangular Matrices
 }
@@ -25,6 +26,7 @@ ltMatrices(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE)
 Mult(x, y)
 \S3method{solve}{ltMatrices}(a, b, \dots)
 Tcrossprod(x, diag_only = FALSE)
+\S3method{chol}{syMatrices}(x, \dots)
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
@@ -48,7 +50,7 @@ Tcrossprod(x, diag_only = FALSE)
   \item{diag_only}{logical, compute diagonal elements of crossproduct only
 if \code{TRUE}.
 }
-  \item{x}{object of class \code{ltMatrices}.
+  \item{x}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
 }
   \item{a}{object of class \code{ltMatrices}.
 }

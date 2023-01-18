@@ -352,6 +352,14 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > chk(d, diagonals(Tcrossprod(lxd)))
 
+> Sigma <- Tcrossprod(lxd)
+
+> chk(chol(Sigma), lxd)
+
+> Sigma <- Tcrossprod(lxn)
+
+> chk(as.array(chol(Sigma)), as.array(lxn))
+
 > N <- 1000
 
 > J <- 50
@@ -834,4 +842,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 35.129   0.167  35.298 
+ 61.546   0.267  61.905 

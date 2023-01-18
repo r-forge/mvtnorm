@@ -76,6 +76,7 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
+\newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
 
@@ -171,6 +172,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<mult ltMatrices@>
 @<solve ltMatrices@>
 @<tcrossprod ltMatrices@>
+@<chol syMatrices@>
 @}
 
 @o ltMatrices.c -cc
@@ -185,6 +187,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<solve@>
 @<tcrossprod@>
 @<mult@>
+@<chol@>
 @}
 
 
@@ -1228,6 +1231,97 @@ chk(a, b, check.attributes = FALSE)
 d <- Tcrossprod(lxd, diag_only = TRUE)
 chk(d, apply(a, 3, diag))
 chk(d, diagonals(Tcrossprod(lxd)))
+@@
+
+\section{Cholesky Factorisation}
+
+There might arise needs to compute the Cholesky factorisation $\mSigma_i = \mC_i
+\mC_i^\top$ for multiple symmetric matrices $\mSigma_i$, stored as a matrix
+in class \code{syMatrices}.
+
+@d chol syMatrices
+@{
+chol.syMatrices <- function(x, ...) {
+
+    byrow_orig <- attr(x, "byrow")
+    trans_orig <- attr(x, "trans")
+    dnm <- dimnames(x)
+    stopifnot(attr(x, "diag"))
+    d <- dim(x)
+
+    ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
+    ### second
+    x <- ltMatrices(unclass(x), diag = TRUE, trans = trans_orig, 
+                    byrow = byrow_orig, names = dnm[[2L]])
+    x <- ltMatrices(x, trans = TRUE, byrow = FALSE)
+    class(x) <- class(x)[-1]
+    storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
+                 as.integer(d[1L]), as.integer(d[2L]))
+    colnames(ret) <- dnm[[1L]]
+
+    ret <- ltMatrices(ret, diag = TRUE, trans = TRUE, 
+                      byrow = FALSE, names = dnm[[2L]])
+    ret <- ltMatrices(ret, trans = trans_orig, byrow = byrow_orig)
+
+    return(ret)
+}
+@}
+
+Luckily, we already have the data in the correct packed colum-major storage,
+so we swiftly loop over $i = 1, \dots, N$ in \proglang{C} and hand over to
+\code{LAPACK}
+
+@d chol
+@{
+SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
+
+    SEXP ans;
+    double *dans, *dSigma;
+    int iJ = INTEGER(J)[0];
+    int pJ = iJ * (iJ + 1) / 2;
+    int iN = INTEGER(N)[0];
+    int i, j, info = 0;
+    char lo = 'L';
+
+    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    dans = REAL(ans);
+    dSigma = REAL(Sigma);
+
+    for (i = 0; i < iN; i++) {
+
+        /* copy data */
+        for (j = 0; j < pJ; j++)
+            dans[j] = dSigma[j];
+
+        F77_CALL(dpptrf)(&lo, &iJ, dans, &info FCONE);
+
+        if (info != 0) {
+            if (info > 0)
+                error("the leading minor of order %d is not positive definite",
+                      info);
+            error("argument %d of Lapack routine %s had invalid value",
+                  -info, "dpptrf");
+        }
+
+        dSigma += pJ;
+        dans += pJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+This new \code{chol} method can be used to revert \code{Tcrossprod} for
+\code{ltMatrices} with and without unit diagonals:
+
+<<chol>>=
+Sigma <- Tcrossprod(lxd)
+chk(chol(Sigma), lxd)
+Sigma <- Tcrossprod(lxn)
+## Sigma and chol(Sigma) always have diagonal, lxn doesn't
+chk(as.array(chol(Sigma)), as.array(lxn))
 @@
 
 \section{Application Example}

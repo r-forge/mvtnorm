@@ -29,3 +29,4 @@ extern SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag);
 extern SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik);
 extern SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol);
 extern SEXP R_gradSolveL(SEXP C, SEXP N, SEXP J, SEXP S, SEXP diag);
+extern SEXP R_syMatrices_chol(SEXP Sigma, SEXP N, SEXP J);
