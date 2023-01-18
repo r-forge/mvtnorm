@@ -68,11 +68,13 @@ urlcolor={linkcolor}%
 \newcommand{\bvec}{\mathbf{b}}
 \newcommand{\xvec}{\mathbf{x}}
 \newcommand{\svec}{\mathbf{s}}
+\newcommand{\jvec}{\mathbf{j}}
 \newcommand{\muvec}{\mathbf{\mu}}
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
 \newcommand{\mL}{\mathbf{L}}
+\newcommand{\mP}{\mathbf{P}}
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
@@ -174,6 +176,8 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
 @<chol syMatrices@>
+@<marginal@>
+@<conditional@>
 @}
 
 @o ltMatrices.c -cc
@@ -1392,11 +1396,15 @@ chk(as.array(chol(Sigma)), as.array(lxn))
 
 \section{Marginal and Conditional Normal Distributions}
 
+Marginal and conditional distributions from distributions $\rY_i \sim \N_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
+(\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim \N_\J(\mathbf{0}_\J, \mL_i^{-1} \mL_i^{-\top})$
+(\code{invchol} argument for $\mL_i$ for $i = 1, \dots, N$) shall be
+computed.
+
 @d mc input checks
 @{
 stopifnot(xor(missing(chol), missing(invchol)))
-x <- chol
-if (missing(chol)) x <- invchol
+x <- if (missing(chol)) solve(invchol) else chol
 
 stopifnot(inherits(x, "ltMatrices"))
 
@@ -1404,8 +1412,13 @@ N <- dim(x)[1L]
 J <- dim(x)[2L]
 if (is.character(which)) which <- match(which, dimnames(x)[[2L]])
 stopifnot(all(which %in% 1:J))
-
 @}
+
+The first $j$ marginal distributions can be obtained from subsetting $\mC$
+or $\mL$ directly. Arbitrary marginal distributions are based on the
+corresponding subset of the covariance matrix for which we compute a
+corresponding Cholesky factor (such that we can use \code{lmvnorm} later
+on).
 
 @d marginal
 @{
@@ -1418,11 +1431,11 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        tmp <- chol(Tcrossprod(x)[,which])
+        tmp <- mvtnorm:::chol.syMatrices(Tcrossprod(x)[,which])
     }
 
     if (missing(chol))
-        ret <- list(invchol = tmp)
+        ret <- list(invchol = solve(tmp))
     else
         ret <- list(chol = tmp)
 
@@ -1430,25 +1443,59 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
 }
 @}
 
+We compute conditional distributions from the precision matrices
+$\mSigma^{-1} = \mP_i = \mL_i^\top \mL_i$. For an arbitrary subset $\jvec
+\subset \{1, \dots, J\}, the conditional distribution of $\rY_{i,-\yvec}$
+given $\rY_{i,\jvec} = \ry_{i,\jvec}$ is
+\begin{eqnarray*}
+\rY_{i,-\yvec} \mid \rY_{i,\jvec} = \ry_{i,\jvec} \sim \ND_{|\jvec|}(-
+\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \ry_{i,\jvec},
+\mP^{-1}_{-\jvec,-\jvec})
+\end{eqnarray*}
+and we return a Cholesky factor $\tilde{\mC_i}$ such that
+$\mP^{-1}_{-\jvec,-\jvec} = \tilde{\mC_i} \tilde{\mC_i}^\top$. 
+
 @d conditional
 @{
 cond_mvnorm <- function(chol, invchol, which = 1L, given) {
 
     @<mc input checks@>
 
+    if (N == 1) N <- NCOL(given)
     stopifnot(is.matrix(given) && nrow(given) == J && ncol(given) == N)
 
-    if (!missing(chol)) {
-        P <- Tcrossprod(chol)
-        Pw <- P[, -which]
-        chol <- solve(chol(Pw))
-        Pa <- as.array(P)
-        Sa <- as.array(Tcrossprod(chol))
+    if (!missing(chol)) ### chol is C = Cholesky of covariance
+        P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
+    else                ### invcol is L = Cholesky of precision
+        P <- Crossprod(invchol)
+
+    Pw <- P[, -which]
+    chol <- solve(mvtnorm:::chol.syMatriceschol(Pw))
+    Pa <- as.array(P)
+    Sa <- as.array(Tcrossprod(chol))
+    if (dim(chol)[1L] == 1L) {
+        mean <- -Sa[,,1] %*% P[-which,,1] %*% given[,i]
+    } else {
         mean <- sapply(1:N, function(i) -Sa[,,i] %*% P[-which,,i] %*% given[,i])
     }
-        
+
+    return(list(mean = mean, chol = chol))
 }
 @}
+
+Let's check this against the commonly used formula based on the covariance
+matrix
+
+<<marg>>=
+Sigma <- Tcrossprod(lxd)
+j <- 2:4
+chk(Sigma[,j], Tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
+
+Sigma <- Tcrossprod(solve(lxd))
+j <- 2:4
+chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
+
+@@
 
 
 \section{Application Example}
