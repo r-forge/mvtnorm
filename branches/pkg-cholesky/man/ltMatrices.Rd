@@ -1,6 +1,7 @@
 \name{ltMatrices}
 \alias{ltMatrices}
 \alias{Tcrossprod}
+\alias{Crossprod}
 \alias{diagonals}
 \alias{Mult}
 \alias{solve.ltMatrices}
@@ -25,7 +26,8 @@ ltMatrices(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE)
 \S3method{diagonals}{matrix}(x, \dots)
 Mult(x, y)
 \S3method{solve}{ltMatrices}(a, b, \dots)
-Tcrossprod(x, diag_only = FALSE)
+Tcrossprod(x, diag_only = FALSE, transpose = FALSE)
+Crossprod(x, diag_only = FALSE)
 \S3method{chol}{syMatrices}(x, \dots)
 }
 \arguments{
@@ -49,6 +51,10 @@ Tcrossprod(x, diag_only = FALSE)
 }
   \item{diag_only}{logical, compute diagonal elements of crossproduct only
 if \code{TRUE}.
+}
+  \item{transpose}{logical, compute \eqn{x^\top x} (one should use
+\code{Crossprod}) instead of \eqn{x x^\top} (the default in
+\code{Tcrossprod}). 
 }
   \item{x}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
 }

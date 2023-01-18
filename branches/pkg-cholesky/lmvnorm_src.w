@@ -1274,7 +1274,7 @@ We also add \code{Crossprod}, which is a call to \code{Tcrossprod} with the
 @d crossprod ltMatrices
 @{
 Crossprod <- function(x, diag_only = FALSE)
-    Tcrossprod(x, diag = diag_only, transpose = TRUE)
+    Tcrossprod(x, diag_only = diag_only, transpose = TRUE)
 @}
 
 and run some checks
@@ -1404,7 +1404,7 @@ computed.
 @d mc input checks
 @{
 stopifnot(xor(missing(chol), missing(invchol)))
-x <- if (missing(chol)) solve(invchol) else chol
+x <- if (missing(chol)) invchol else chol
 
 stopifnot(inherits(x, "ltMatrices"))
 
@@ -1431,11 +1431,13 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
+        if (missing(chol)) x <- solve(x)
         tmp <- mvtnorm:::chol.syMatrices(Tcrossprod(x)[,which])
+        if (missing(chol)) tmp <- solve(tmp)
     }
 
     if (missing(chol))
-        ret <- list(invchol = solve(tmp))
+        ret <- list(invchol = tmp)
     else
         ret <- list(chol = tmp)
 
@@ -1444,16 +1446,18 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
 @}
 
 We compute conditional distributions from the precision matrices
-$\mSigma^{-1} = \mP_i = \mL_i^\top \mL_i$. For an arbitrary subset $\jvec
-\subset \{1, \dots, J\}, the conditional distribution of $\rY_{i,-\yvec}$
-given $\rY_{i,\jvec} = \ry_{i,\jvec}$ is
+$\mSigma^{-1}_i = \mP_i = \mL_i^\top \mL_i$ (we omit the $i$ index from now
+on). For an arbitrary subset $\jvec
+\subset \{1, \dots, J\}$, the conditional distribution of $\rY_{-\jvec}$
+given $\rY_{\jvec} = \yvec_{\jvec}$ is
 \begin{eqnarray*}
-\rY_{i,-\yvec} \mid \rY_{i,\jvec} = \ry_{i,\jvec} \sim \ND_{|\jvec|}(-
-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \ry_{i,\jvec},
-\mP^{-1}_{-\jvec,-\jvec})
+\rY_{-\jvec} \mid \rY_{\jvec} = \yvec_{\jvec} \sim 
+  \N_{|\jvec|}\left(-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec}, 
+                    \mP^{-1}_{-\jvec,-\jvec}\right)
 \end{eqnarray*}
-and we return a Cholesky factor $\tilde{\mC_i}$ such that
-$\mP^{-1}_{-\jvec,-\jvec} = \tilde{\mC_i} \tilde{\mC_i}^\top$. 
+and we return a Cholesky factor $\tilde{\mC}$ such that
+$\mP^{-1}_{-\jvec,-\jvec} = \tilde{\mC} \tilde{\mC}^\top$ (if \code{chol} was
+given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 
 @d conditional
 @{
@@ -1462,7 +1466,7 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
     @<mc input checks@>
 
     if (N == 1) N <- NCOL(given)
-    stopifnot(is.matrix(given) && nrow(given) == J && ncol(given) == N)
+    stopifnot(is.matrix(given) && nrow(given) == length(which) && ncol(given) == N)
 
     if (!missing(chol)) ### chol is C = Cholesky of covariance
         P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
@@ -1470,33 +1474,70 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
         P <- Crossprod(invchol)
 
     Pw <- P[, -which]
-    chol <- solve(mvtnorm:::chol.syMatriceschol(Pw))
+    chol <- solve(mvtnorm:::chol.syMatrices(Pw))
     Pa <- as.array(P)
-    Sa <- as.array(Tcrossprod(chol))
+    Sa <- as.array(S <- Crossprod(chol))
     if (dim(chol)[1L] == 1L) {
-        mean <- -Sa[,,1] %*% P[-which,,1] %*% given[,i]
+        Pa <- Pa[,,1]
+        Sa <- Sa[,,1]
+        mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
     } else {
-        mean <- sapply(1:N, function(i) -Sa[,,i] %*% P[-which,,i] %*% given[,i])
+        mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
     }
 
-    return(list(mean = mean, chol = chol))
+    chol <- mvtnorm:::chol.syMatrices(S)
+    if (missing(invchol)) 
+        return(list(mean = mean, chol = chol))
+
+    return(list(mean = mean, invchol = solve(chol)))
 }
 @}
 
 Let's check this against the commonly used formula based on the covariance
-matrix
+matrix, first for the marginal distribution
 
 <<marg>>=
 Sigma <- Tcrossprod(lxd)
+j <- 1:3
+chk(Sigma[,j], Tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
 j <- 2:4
 chk(Sigma[,j], Tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
 
 Sigma <- Tcrossprod(solve(lxd))
+j <- 1:3
+chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
 j <- 2:4
 chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
-
 @@
 
+and then for conditional distributions
+
+<<cond>>=
+Sigma <- as.array(Tcrossprod(lxd))[,,1]
+j <- 2:4
+y <- matrix(c(-1, 2, 1), nrow = 3)
+
+cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+
+cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
+
+chk(cm, cmv$mean)
+chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
+
+Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
+j <- 2:4
+y <- matrix(c(-1, 2, 1), nrow = 3)
+
+cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+
+cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
+
+chk(cm, cmv$mean)
+chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
+
+@@
 
 \section{Application Example}
 
@@ -1519,6 +1560,24 @@ ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
 S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
+@@
+
+Sometimes it is preferable to split the joint distribution into a marginal
+distribution of some elements and the conditional distribution given these
+elements. The joint density is, of course, the product of the marginal and
+conditional densities and we can check if this works for our example by
+
+<<ex-MV-mc>>=
+## marginal of and conditional on these
+(j <- 1:5 * 10)
+md <- marg_mvnorm(invchol = lt, which = j)
+cd <- cond_mvnorm(invchol = lt, which = j, given = Y[j,])
+
+ll3 <- sum(dnorm(Mult(md$invchol, Y[j,]), log = TRUE)) + 
+       sum(log(diagonals(md$invchol))) +
+       sum(dnorm(Mult(cd$invchol, Y[-j,] - cd$mean), log = TRUE)) + 
+       sum(log(diagonals(cd$invchol)))
+chk(ll1, ll3)
 @@
 
 
