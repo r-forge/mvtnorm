@@ -75,6 +75,7 @@ urlcolor={linkcolor}%
 \newcommand{\mC}{\mathbf{C}}
 \newcommand{\mL}{\mathbf{L}}
 \newcommand{\mP}{\mathbf{P}}
+\newcommand{\mR}{\mathbf{R}}
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
@@ -176,6 +177,8 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
 @<chol syMatrices@>
+@<add diagonal elements@>
+@<convenience functions@>
 @<marginal@>
 @<conditional@>
 @}
@@ -1394,6 +1397,218 @@ Sigma <- Tcrossprod(lxn)
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
 
+\section{Convenience Functions}
+
+Sometimes we need to add diagonal elements to an \code{ltMatrices} object
+defined without diagonal elements.
+
+@d add diagonal elements
+@{
+adddiag <- function(x) {
+
+    stopifnot(inherits(x, "ltMatrices")) 
+
+    if (attr(x, "diag")) return(x)
+
+    trans_orig <- attr(x, "trans")
+    byrow_orig <- attr(x, "byrow")
+
+    x <- ltMatrices(x, byrow = FALSE, trans = TRUE)
+
+    N <- dim(x)[1L]
+    J <- dim(x)[2L]
+    nm <- dimnames(x)[[2L]]
+
+    L <- diag(J)
+    L[lower.tri(L, diag = TRUE)] <- 1:(J * (J + 1) / 2)
+
+    D <- diag(J)
+    ret <- matrix(D[lower.tri(D, diag = TRUE)], 
+                  nrow = J * (J + 1) / 2, ncol = N)
+    colnames(ret) <- colnames(unclass(x))
+    ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)
+
+    ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, 
+                      trans = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+
+    ret
+}
+@}
+
+<<ex-addiag>>=
+chk(as.array(adddiag(lxn)), as.array(lxn))
+chk(as.array(adddiag(lxd)), as.array(lxd))
+@@
+
+We add a few convenience functions for computing covariance matrices
+$\mSigma_i = \mC_i \mC_i^\top$, precision matrices $\mP_i = \mL_i^\top \mL_i$, 
+or correlation matrices $\mR_i = \tilde{\mC}_i \tilde{\mC_i}^\top$ 
+(where $\tilde{\mC}_i = \text{diag}(\mC_i \mC_i^\top)^{-\frac{1}{2}} \mC_i)$
+from $\mL_i$ (\code{invchol}) or $\mC_i =
+\mL_i^{-1}$ (\code{chol}) for $i = 1, \dots, N$. 
+
+First, we set-up functions for computing $\tilde{\mC}_i$
+@d D times C
+@{
+D1chol <- function(x) {
+
+    D <- sqrt(Tcrossprod(x, diag_only = TRUE))
+    x <- adddiag(x)
+
+    trans_orig <- attr(x, "trans")
+    byrow_orig <- attr(x, "byrow")
+
+    x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
+
+    N <- dim(x)[1L]
+    J <- dim(x)[2L]
+    nm <- dimnames(x)[[2L]]
+
+    x <- unclass(x) / D[rep(1:J, 1:J),,drop = FALSE]
+
+    ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, 
+                      trans = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+}
+@}
+
+and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{2}}$
+
+@d L times D
+@{
+### invcholD = solve(D1chol)
+invcholD <- function(x) {
+
+    D <- sqrt(Tcrossprod(solve(x), diag_only = TRUE))
+    x <- adddiag(x)
+
+    trans_orig <- attr(x, "trans")
+    byrow_orig <- attr(x, "byrow")
+
+    x <- ltMatrices(x, byrow = FALSE, trans = TRUE)
+
+    N <- dim(x)[1L]
+    J <- dim(x)[2L]
+    nm <- dimnames(x)[[2L]]
+
+    x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
+
+    ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, 
+                      trans = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret
+}
+@}
+
+and now the convenience functions are one-liners:
+
+@d convenience functions
+@{
+@<D times C@>
+@<L times D@>
+
+### C -> Sigma
+chol2cov <- function(x)
+    Tcrossprod(x)
+
+### L -> C
+invchol2chol <- function(x)
+    solve(x)
+
+### C -> L
+chol2invchol <- function(x)
+    solve(x)
+
+### L -> Sigma
+invchol2cov <- function(x)
+    chol2cov(invchol2chol(x))
+
+### L -> Precision
+invchol2pre <- function(x)
+    Crossprod(x)
+
+### C -> Precision
+chol2pre <- function(x)
+    Crossprod(chol2invchol(x))
+
+### C -> R
+chol2cor <- function(x)
+    Tcrossprod(D1chol(x))
+
+### L -> R
+invchol2cor <- function(x)
+    chol2cor(invchol2chol(x))
+@}
+
+Here are some tests
+
+<<conv-ex-1>>=
+Sigma <- apply(as.array(lxn), 3, 
+               function(x) tcrossprod(solve(x)), simplify = FALSE)
+Prec <- lapply(Sigma, solve)
+Corr <- lapply(Sigma, cov2cor)
+CP <- lapply(Corr, solve)
+chk(unlist(Sigma), c(as.array(invchol2cov(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(Prec), c(as.array(invchol2pre(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(Corr), c(as.array(invchol2cor(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(CP), c(as.array(Crossprod(invcholD(lxn)))), 
+    check.attributes = FALSE)
+@@
+
+<<conv-ex-2>>=
+Sigma <- apply(as.array(lxn), 3, 
+               function(x) tcrossprod(x), simplify = FALSE)
+Prec <- lapply(Sigma, solve)
+Corr <- lapply(Sigma, cov2cor)
+CP <- lapply(Corr, solve)
+chk(unlist(Sigma), c(as.array(chol2cov(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(Prec), c(as.array(chol2pre(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(Corr), c(as.array(chol2cor(lxn))), 
+    check.attributes = FALSE)
+chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(lxn))))), 
+    check.attributes = FALSE)
+@@
+
+<<conv-ex-3>>=
+Sigma <- apply(as.array(lxd), 3, 
+               function(x) tcrossprod(solve(x)), simplify = FALSE)
+Prec <- lapply(Sigma, solve)
+Corr <- lapply(Sigma, cov2cor)
+CP <- lapply(Corr, solve)
+chk(unlist(Sigma), c(as.array(invchol2cov(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(Prec), c(as.array(invchol2pre(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(Corr), c(as.array(invchol2cor(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(CP), c(as.array(Crossprod(invcholD(lxd)))), 
+    check.attributes = FALSE)
+@@
+
+<<conv-ex-4>>=
+Sigma <- apply(as.array(lxd), 3, 
+               function(x) tcrossprod(x), simplify = FALSE)
+Prec <- lapply(Sigma, solve)
+Corr <- lapply(Sigma, cov2cor)
+CP <- lapply(Corr, solve)
+chk(unlist(Sigma), c(as.array(chol2cov(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(Prec), c(as.array(chol2pre(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(Corr), c(as.array(chol2cor(lxd))), 
+    check.attributes = FALSE)
+chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(lxd))))), 
+    check.attributes = FALSE)
+@@
+
+
+
 \section{Marginal and Conditional Normal Distributions}
 
 Marginal and conditional distributions from distributions $\rY_i \sim \N_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
@@ -2550,7 +2765,9 @@ been computed
 @d post differentiate mean score
 @{
 Jp <- J * (J + 1) / 2;
-smean <- - ret[Jp + 1:J, , drop = FALSE] / c(dchol)
+smean <- - ret[Jp + 1:J, , drop = FALSE]
+if (attr(chol, "diag"))
+    smean <- smean / c(dchol)
 @}
 
 @d post differentiate chol score

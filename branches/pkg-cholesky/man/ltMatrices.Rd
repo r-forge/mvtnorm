@@ -11,6 +11,17 @@
 \alias{diagonals.syMatrices}
 \alias{diagonals.matrix}
 \alias{chol.syMatrices}
+\alias{adddiag}
+\alias{chol2cov}
+\alias{invchol2chol}
+\alias{chol2invchol}
+\alias{invchol2cov}
+\alias{invchol2pre}
+\alias{chol2pre}
+\alias{D1chol}
+\alias{invcholD}
+\alias{chol2cor}
+\alias{invchol2cor}
 \title{
   Multiple Lower Triangular Matrices
 }
@@ -29,6 +40,17 @@ Mult(x, y)
 Tcrossprod(x, diag_only = FALSE, transpose = FALSE)
 Crossprod(x, diag_only = FALSE)
 \S3method{chol}{syMatrices}(x, \dots)
+adddiag(x)
+chol2cov(x)
+invchol2chol(x)
+chol2invchol(x)
+invchol2cov(x)
+invchol2pre(x)
+chol2pre(x)
+D1chol(x)
+invcholD(x)
+chol2cor(x)
+invchol2cor(x)
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
