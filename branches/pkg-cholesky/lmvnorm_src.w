@@ -1448,7 +1448,7 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
 We compute conditional distributions from the precision matrices
 $\mSigma^{-1}_i = \mP_i = \mL_i^\top \mL_i$ (we omit the $i$ index from now
 on). For an arbitrary subset $\jvec
-\subset \{1, \dots, J\}$, the conditional distribution of $\rY_{-\jvec}$
+\subset \{1, \dots, \J\}$, the conditional distribution of $\rY_{-\jvec}$
 given $\rY_{\jvec} = \yvec_{\jvec}$ is
 \begin{eqnarray*}
 \rY_{-\jvec} \mid \rY_{\jvec} = \yvec_{\jvec} \sim 
@@ -1459,6 +1459,61 @@ and we return a Cholesky factor $\tilde{\mC}$ such that
 $\mP^{-1}_{-\jvec,-\jvec} = \tilde{\mC} \tilde{\mC}^\top$ (if \code{chol} was
 given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 
+We can implement this as
+@d cond general
+@{
+if (!missing(chol)) ### chol is C = Cholesky of covariance
+    P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
+else                ### invcol is L = Cholesky of precision
+    P <- Crossprod(invchol)
+
+Pw <- P[, -which]
+chol <- solve(base::chol(Pw))
+Pa <- as.array(P)
+Sa <- as.array(S <- Crossprod(chol))
+if (dim(chol)[1L] == 1L) {
+   Pa <- Pa[,,1]
+   Sa <- Sa[,,1]
+   mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
+} else {
+   mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
+}
+@}
+
+If $\jvec = \{1, \dots, j < \J \}$ and $\mL$ is given, computations simplify a lot because
+the conditional precision matrix is
+\begin{eqnarray*}
+\mP_{-\jvec, -\jvec} = (\mL^\top \mL)_{-\jvec, -\jvec} = \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, -\jvec}
+\end{eqnarray*}
+and thus we return $\tilde{\mL} = \mL_{-\jvec, -\jvec}$ (if \code{invchol}
+was given) or $\tilde{\mC} = \mL^{-1}_{-\jvec, -\jvec}$ (if \code{chol} was
+given). The conditional mean is
+\begin{eqnarray*}
+-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec} 
+& = & 
+  -\mL^{-1}_{-\jvec, -\jvec} \mL^{-\top}_{-\jvec, -\jvec} \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec} \\
+& = & - \mL^{-1}_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec}.
+\end{eqnarray*}
+The implementation reads
+
+@d cond simple
+@{
+if (which[1] == 1L && (length(which) == 1L || 
+                       all(diff(which) == 1L))) {
+    ### which is 1:j
+    L <- if (missing(invchol)) solve(chol) else invchol
+    tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which))
+    meantmp <- Mult(L, rbind(given, tmp))
+    L <- L[,-which]
+    C <- solve(L)
+    mean <- -Mult(C, meantmp[-which,,drop = FALSE])
+    if (missing(invchol))
+        return(list(mean = mean, chol = C))
+    return(list(mean = mean, invchol = L))
+}
+@}
+
+
 @d conditional
 @{
 cond_mvnorm <- function(chol, invchol, which = 1L, given) {
@@ -1468,22 +1523,9 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
     if (N == 1) N <- NCOL(given)
     stopifnot(is.matrix(given) && nrow(given) == length(which) && ncol(given) == N)
 
-    if (!missing(chol)) ### chol is C = Cholesky of covariance
-        P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
-    else                ### invcol is L = Cholesky of precision
-        P <- Crossprod(invchol)
+    @<cond simple@>
 
-    Pw <- P[, -which]
-    chol <- solve(base::chol(Pw))
-    Pa <- as.array(P)
-    Sa <- as.array(S <- Crossprod(chol))
-    if (dim(chol)[1L] == 1L) {
-        Pa <- Pa[,,1]
-        Sa <- Sa[,,1]
-        mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
-    } else {
-        mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
-    }
+    @<cond general@>
 
     chol <- base::chol(S)
     if (missing(invchol)) 
@@ -1510,9 +1552,9 @@ j <- 2:4
 chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
 @@
 
-and then for conditional distributions
+and then for conditional distributions. The general case is
 
-<<cond>>=
+<<cond-general>>=
 Sigma <- as.array(Tcrossprod(lxd))[,,1]
 j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
@@ -1536,7 +1578,34 @@ cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
 
 chk(cm, cmv$mean)
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
+@@
 
+and the simple case is
+
+<<cond-simple>>=
+Sigma <- as.array(Tcrossprod(lxd))[,,1]
+j <- 1:3
+y <- matrix(c(-1, 2, 1), nrow = 3)
+
+cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+
+cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
+
+chk(c(cm), c(cmv$mean))
+chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
+
+Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
+j <- 1:3
+y <- matrix(c(-1, 2, 1), nrow = 3)
+
+cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+
+cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
+
+chk(c(cm), c(cmv$mean))
+chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
 \section{Application Example}
