@@ -1956,6 +1956,10 @@ chk(ll1, ll3)
 
 \chapter{Multivariate Normal Log-likelihoods} \label{lmvnorm}
 
+<<chapterseed, echo = FALSE>>=
+set.seed(270312)
+@@
+
 We now discuss code for evaluating the log-likelihood
 \begin{eqnarray*}
 \sum_{i = 1}^N \log(p_i(\mC_i \mid \avec_i, \bvec_i))
@@ -3153,6 +3157,10 @@ sd1 <- c(unclass(mC[,1]))
 @@
 
 \chapter{Maximum-likelihood Example} \label{ML}
+
+<<chapterseed, echo = FALSE>>=
+set.seed(110515)
+@@
 
 We now discuss how this infrastructure can be used to estimate the Cholesky
 factor of a multivariate normal in the presence of interval-censored
