@@ -811,6 +811,10 @@ N$ can be computed with $\code{y}$ being an $J \times N$ matrix of
 columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 \yvec_N)$. If \code{y} is a single vector, it is recycled $N$ times.
 
+If the number of columns of a matrix \code{y} is neither one nor $N$, 
+we compute $\mC_i \yvec_j$ for all $i = 1, \dots, N$ and $j$. This is
+dangerous but needed in \code{cond\_mvnorm} alter on.
+
 @d mult ltMatrices
 @{
 ### C %*% y
@@ -822,7 +826,9 @@ Mult <- function(x, y) {
 
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
-    stopifnot(nrow(y) == d[2L] && ncol(y) == N)
+    stopifnot(nrow(y) == d[2L])
+    if (ncol(y) != N)
+        return(sapply(1:ncol(y), function(i) Mult(C, y[,i])))
 
     x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
 
@@ -1770,7 +1776,11 @@ if (dim(chol)[1L] == 1L) {
    Sa <- Sa[,,1]
    mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
 } else {
-   mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
+   if (ncol(given) == N) {
+       mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
+   } else {  ### compare to Mult() with ncol(y) !%in% (1, N)
+       mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given)
+   }
 }
 @}
 
@@ -1815,7 +1825,7 @@ cond_mvnorm <- function(chol, invchol, which = 1L, given) {
     @<mc input checks@>
 
     if (N == 1) N <- NCOL(given)
-    stopifnot(is.matrix(given) && nrow(given) == length(which) && ncol(given) == N)
+    stopifnot(is.matrix(given) && nrow(given) == length(which))# && ncol(given) == N)
 
     @<cond simple@>
 
@@ -3335,10 +3345,10 @@ op$value ## compare with
 ll(prm, J = J)
 @@
 
-We can now compare the true and estimated Cholesky factor of our covariance
-matrix
-<<ex-ML-L>>=
-(L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+We can now compare the true and estimated Cholesky factor $\mC$ of our covariance
+matrix $\mSigma = \mC \mC^\top$
+<<ex-ML-C>>=
+(C <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
                  diag = TRUE, byrow = BYROW, trans = TRUE) )
 lt
 @@
@@ -3352,7 +3362,7 @@ We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
 Tcrossprod(lt)		### true Sigma
-Tcrossprod(L)           ### interval-censored obs
+Tcrossprod(C)           ### interval-censored obs
 Shat                    ### "exact" obs
 @@
 
@@ -3363,6 +3373,67 @@ and \code{W}) to be universally applicable. Make sure to investigate the
 accuracy depending on these parameters 
 of the log-likelihood and score function in your application.
 
+One could ask what this whole exercise was about statistically. We
+estimated a multivariate normal distribution from interval-censored data, so
+what? Maybe we were primarily interested in fitting a linear regression 
+\begin{eqnarray*}
+\E(Y_1 \mid Y_j = y_j, j = 2, \dots, J) = \alpha + \sum_{j = 2}^J \beta_j y_j.
+\end{eqnarray*}
+Interval-censoring in the response could have been handled by some Tobit model, but
+what about interval-censoring in the explanatory variables? Based on the
+multivariate distribution just estimated, we can obtain the regression
+coefficients $\beta_j$ as
+
+<<regressions>>=
+c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 1))$mean)
+@@
+We can compare these estimated regression coefficients with those obtained
+from a linear model fitted to the exact observations
+<<lm-ex>>=
+dY <- as.data.frame(t(Y))
+colnames(dY) <- paste0("Y", 1:J)
+coef(m1 <- lm(Y1 ~ ., data = dY))[-1L]
+@@
+The estimates are quite close, but what about standard errors?
+Interval-censoring means loss of information, so we should see larger
+standard errors for the interval-censored data.
+
+Let's obtain the Hessian for all parameters first
+<<hessian>>=
+H <- optim(op$par, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
+           lower = llim, hessian = TRUE)$hessian
+@@
+and next we sample from the distribution of the maximum-likelihood
+estimators
+<<ML-sample>>=
+L <- t(chol(H))
+L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE)
+Nsim <- 50000
+Z <- matrix(rnorm(Nsim * nrow(H)), ncol = Nsim)
+rC <- solve(L, Z)[-(1:J),] + op$par[-(1:J)] ### remove mean parameters
+@@
+The standard error in this sample should be close to the ones obtained from
+the inverse Fisher information
+<<ML-check>>=
+c(sqrt(rowMeans((rC - rowMeans(rC))^2)))
+c(sqrt(diagonals(Crossprod(solve(L)))))
+@@
+We now coerse the matrix \code{rC} to an object of class \code{ltMatrices}
+<<rC>>=
+rC <- ltMatrices(rC, diag = TRUE, trans = TRUE)
+@@
+The object \code{rC} contains all sampled Cholesky factors of the covariance
+matrix. From each of these matrices, we compute the regression coefficient,
+giving us a sample we can use to compute standard errors from
+<<ML-beta>>=
+rbeta <- cond_mvnorm(chol = rC, which = 2:J, given = diag(J - 1))$mean
+sqrt(rowMeans((rbeta - rowMeans(rbeta))^2))
+@@
+which are, as expected, slightly larger than the ones obtained from the more
+informative exact observations
+<<se-ex>>=
+sqrt(diag(vcov(m1)))[-1L]
+@@
 
 
 \chapter{Package Infrastructure}
