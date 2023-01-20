@@ -828,7 +828,7 @@ Mult <- function(x, y) {
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
     stopifnot(nrow(y) == d[2L])
     if (ncol(y) != N)
-        return(sapply(1:ncol(y), function(i) Mult(C, y[,i])))
+        return(sapply(1:ncol(y), function(i) Mult(x, y[,i])))
 
     x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
 

@@ -1032,7 +1032,7 @@ converged
 > ll(prm, J = J)
 [1] 860.0128
 
-> (L <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+> (C <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
 +     diag = TRUE, byrow = BYROW, trans = TRUE))
 , , 1
 
@@ -1070,7 +1070,7 @@ converged
 4 0.0000000 1.0606602 0.0000000 2.00000
 
 
-> Tcrossprod(L)
+> Tcrossprod(C)
 , , 1
 
             1           2           3           4
@@ -1087,7 +1087,55 @@ converged
 3  0.44517502 -0.07451484  1.54572038 -0.06188290
 4 -0.08930947  1.12902099 -0.06188290  2.15211344
 
+> c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 
++     1))$mean)
+[1]  0.4477519  0.2954683 -0.2521916
+
+> dY <- as.data.frame(t(Y))
+
+> colnames(dY) <- paste0("Y", 1:J)
+
+> coef(m1 <- lm(Y1 ~ ., data = dY))[-1]
+        Y2         Y3         Y4 
+ 0.4302745  0.2983924 -0.2586448 
+
+> H <- optim(op$par, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
++     lower = llim, hessian = TRUE)$hessian
+
+> L <- t(chol(H))
+
+> L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE)
+
+> Nsim <- 50000
+
+> Z <- matrix(rnorm(Nsim * nrow(H)), ncol = Nsim)
+
+> rC <- solve(L, Z)[-(1:J), ] + op$par[-(1:J)]
+
+> c(sqrt(rowMeans((rC - rowMeans(rC))^2)))
+         5          6          7          8          9         10         11 
+0.05417928 0.06730413 0.13915930 0.17169811 0.06569157 0.11867110 0.15833902 
+        12         13         14 
+0.11848898 0.12773940 0.08488511 
+
+> c(sqrt(diagonals(Crossprod(solve(L)))))
+ [1] 0.06902985 0.09976062 0.13234374 0.15388448 0.05897216 0.10213818
+ [7] 0.14703601 0.15450913 0.08421299 0.11969195 0.15335951 0.11722334
+[13] 0.11556777 0.07938093
+
+> rC <- ltMatrices(rC, diag = TRUE, trans = TRUE)
+
+> rbeta <- cond_mvnorm(chol = rC, which = 2:J, given = diag(J - 
++     1))$mean
+
+> sqrt(rowMeans((rbeta - rowMeans(rbeta))^2))
+[1] 0.09945538 0.06028595 0.06720116
+
+> sqrt(diag(vcov(m1)))[-1]
+        Y2         Y3         Y4 
+0.07967537 0.04354647 0.05568218 
+
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 34.404   0.247  34.657 
+ 35.621   0.259  35.880 
