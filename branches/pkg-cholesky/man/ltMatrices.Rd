@@ -10,6 +10,9 @@
 \alias{diagonals.ltMatrices}
 \alias{diagonals.syMatrices}
 \alias{diagonals.matrix}
+\alias{diagonals<-}
+\alias{diagonals<-.ltMatrices}
+\alias{diagonals<-.syMatrices}
 \alias{chol.syMatrices}
 \alias{adddiag}
 \alias{chol2cov}
@@ -22,6 +25,8 @@
 \alias{invcholD}
 \alias{chol2cor}
 \alias{invchol2cor}
+\alias{invchol2pc}
+\alias{chol2pc}
 \title{
   Multiple Lower Triangular Matrices
 }
@@ -35,22 +40,26 @@ ltMatrices(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE)
 \S3method{diagonals}{ltMatrices}(x, \dots)
 \S3method{diagonals}{syMatrices}(x, \dots)
 \S3method{diagonals}{matrix}(x, \dots)
-Mult(x, y)
+diagonals(x) <- value
+\S3method{diagonals}{ltMatrices}(x) <- value
+\S3method{diagonals}{syMatrices}(x) <- value
 \S3method{solve}{ltMatrices}(a, b, \dots)
-Tcrossprod(x, diag_only = FALSE, transpose = FALSE)
-Crossprod(x, diag_only = FALSE)
 \S3method{chol}{syMatrices}(x, \dots)
-adddiag(x)
+Mult(x, y)
+Tcrossprod(x, diag_only = FALSE)
+Crossprod(x, diag_only = FALSE)
 chol2cov(x)
 invchol2chol(x)
 chol2invchol(x)
 invchol2cov(x)
 invchol2pre(x)
 chol2pre(x)
-D1chol(x)
-invcholD(x)
+D1chol(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE)))
+invcholD(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE)))
 chol2cor(x)
 invchol2cor(x)
+chol2pc(x)
+invchol2pc(x)
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
@@ -74,13 +83,13 @@ invchol2cor(x)
   \item{diag_only}{logical, compute diagonal elements of crossproduct only
 if \code{TRUE}.
 }
-  \item{transpose}{logical, compute \eqn{x^\top x} (one should use
-\code{Crossprod}) instead of \eqn{x x^\top} (the default in
-\code{Tcrossprod}). 
-}
   \item{x}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
 }
+  \item{value}{a matrix of diagonal elements to be assigned (of dimension \eqn{J \times N}).
+}
   \item{a}{object of class \code{ltMatrices}.
+}
+  \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with .
 }
   \item{y}{matrix with \eqn{J} rows.
 }

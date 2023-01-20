@@ -252,6 +252,12 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 > all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1)
 [1] TRUE
 
+> lxd2 <- lxn
+
+> diagonals(lxd2) <- 1
+
+> chk(as.array(lxd2), as.array(lxn))
+
 > lxn <- ltMatrices(xn, byrow = TRUE)
 
 > lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE)
@@ -386,11 +392,15 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > chk(as.array(chol(Sigma)), as.array(lxn))
 
-> chk(as.array(adddiag(lxn)), as.array(lxn))
+> prec2pc <- function(x) {
++     ret <- -cov2cor(x)
++     diag(ret) <- 0
++     ret
++ }
 
-> chk(as.array(adddiag(lxd)), as.array(lxd))
+> L <- lxn
 
-> Sigma <- apply(as.array(lxn), 3, function(x) tcrossprod(solve(x)), 
+> Sigma <- apply(as.array(L), 3, function(x) tcrossprod(solve(x)), 
 +     simplify = FALSE)
 
 > Prec <- lapply(Sigma, solve)
@@ -399,17 +409,22 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > CP <- lapply(Corr, solve)
 
-> chk(unlist(Sigma), c(as.array(invchol2cov(lxn))), 
+> PC <- lapply(Prec, function(x) prec2pc(x))
+
+> chk(unlist(Sigma), c(as.array(invchol2cov(L))), check.attributes = FALSE)
+
+> chk(unlist(Prec), c(as.array(invchol2pre(L))), check.attributes = FALSE)
+
+> chk(unlist(Corr), c(as.array(invchol2cor(L))), check.attributes = FALSE)
+
+> chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
 +     check.attributes = FALSE)
 
-> chk(unlist(Prec), c(as.array(invchol2pre(lxn))), check.attributes = FALSE)
+> chk(unlist(PC), c(as.array(invchol2pc(L))), check.attributes = FALSE)
 
-> chk(unlist(Corr), c(as.array(invchol2cor(lxn))), check.attributes = FALSE)
+> C <- lxn
 
-> chk(unlist(CP), c(as.array(Crossprod(invcholD(lxn)))), 
-+     check.attributes = FALSE)
-
-> Sigma <- apply(as.array(lxn), 3, function(x) tcrossprod(x), 
+> Sigma <- apply(as.array(C), 3, function(x) tcrossprod(x), 
 +     simplify = FALSE)
 
 > Prec <- lapply(Sigma, solve)
@@ -418,16 +433,22 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > CP <- lapply(Corr, solve)
 
-> chk(unlist(Sigma), c(as.array(chol2cov(lxn))), check.attributes = FALSE)
+> PC <- lapply(Prec, function(x) prec2pc(x))
 
-> chk(unlist(Prec), c(as.array(chol2pre(lxn))), check.attributes = FALSE)
+> chk(unlist(Sigma), c(as.array(chol2cov(C))), check.attributes = FALSE)
 
-> chk(unlist(Corr), c(as.array(chol2cor(lxn))), check.attributes = FALSE)
+> chk(unlist(Prec), c(as.array(chol2pre(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(lxn))))), 
+> chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
+
+> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
 +     check.attributes = FALSE)
 
-> Sigma <- apply(as.array(lxd), 3, function(x) tcrossprod(solve(x)), 
+> chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
+
+> L <- lxd
+
+> Sigma <- apply(as.array(L), 3, function(x) tcrossprod(solve(x)), 
 +     simplify = FALSE)
 
 > Prec <- lapply(Sigma, solve)
@@ -436,17 +457,22 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > CP <- lapply(Corr, solve)
 
-> chk(unlist(Sigma), c(as.array(invchol2cov(lxd))), 
+> PC <- lapply(Prec, function(x) prec2pc(x))
+
+> chk(unlist(Sigma), c(as.array(invchol2cov(L))), check.attributes = FALSE)
+
+> chk(unlist(Prec), c(as.array(invchol2pre(L))), check.attributes = FALSE)
+
+> chk(unlist(Corr), c(as.array(invchol2cor(L))), check.attributes = FALSE)
+
+> chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
 +     check.attributes = FALSE)
 
-> chk(unlist(Prec), c(as.array(invchol2pre(lxd))), check.attributes = FALSE)
+> chk(unlist(PC), c(as.array(invchol2pc(L))), check.attributes = FALSE)
 
-> chk(unlist(Corr), c(as.array(invchol2cor(lxd))), check.attributes = FALSE)
+> C <- lxd
 
-> chk(unlist(CP), c(as.array(Crossprod(invcholD(lxd)))), 
-+     check.attributes = FALSE)
-
-> Sigma <- apply(as.array(lxd), 3, function(x) tcrossprod(x), 
+> Sigma <- apply(as.array(C), 3, function(x) tcrossprod(x), 
 +     simplify = FALSE)
 
 > Prec <- lapply(Sigma, solve)
@@ -455,14 +481,18 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > CP <- lapply(Corr, solve)
 
-> chk(unlist(Sigma), c(as.array(chol2cov(lxd))), check.attributes = FALSE)
+> PC <- lapply(Prec, function(x) prec2pc(x))
 
-> chk(unlist(Prec), c(as.array(chol2pre(lxd))), check.attributes = FALSE)
+> chk(unlist(Sigma), c(as.array(chol2cov(C))), check.attributes = FALSE)
 
-> chk(unlist(Corr), c(as.array(chol2cor(lxd))), check.attributes = FALSE)
+> chk(unlist(Prec), c(as.array(chol2pre(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(lxd))))), 
+> chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
+
+> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
 +     check.attributes = FALSE)
+
+> chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
 
 > Sigma <- Tcrossprod(lxd)
 
@@ -1060,4 +1090,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 34.027   0.283  34.310 
+ 34.404   0.247  34.657 

@@ -10,8 +10,9 @@ importFrom("methods", hasArg)
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, Crossprod, diagonals, 
-       adddiag, chol2cov, invchol2chol, chol2invchol, invchol2cov, 
+       chol2cov, invchol2chol, chol2invchol, invchol2cov, 
        invchol2pre, chol2pre, D1chol, invcholD, chol2cor, invchol2cor,
+       invchol2pc, chol2pc, "diagonals<-",
        marg_mvnorm, cond_mvnorm, Mult, lmvnorm, smvnorm)
 
 S3method("as.array", "ltMatrices")
@@ -30,4 +31,6 @@ S3method("solve", "ltMatrices")
 S3method("diagonals", "ltMatrices")
 S3method("diagonals", "syMatrices")
 S3method("diagonals", "matrix")
+S3method("diagonals<-", "ltMatrices")
+S3method("diagonals<-", "syMatrices")
 S3method("chol", "syMatrices")
