@@ -180,6 +180,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<add diagonal elements@>
 @<assign diagonal elements@>
 @<convenience functions@>
+@<aperm@>
 @<marginal@>
 @<conditional@>
 @}
@@ -568,7 +569,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 
 @d subset ltMatrices
 @{
-"[.ltMatrices" <- function(x, i, j, ..., drop = FALSE) {
+.subset_ltMatrices <- function(x, i, j, ..., drop = FALSE) {
 
     if (drop) warning("argument drop is ignored")
     if (missing(i) && missing(j)) return(x)
@@ -592,10 +593,14 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
         Jp <- sum(upper.tri(L, diag = diag))
         if (byrow) {
             L[upper.tri(L, diag = diag)] <- 1:Jp
+            L <- L + t(L)
+            diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
             L <- L[upper.tri(L, diag = diag)]
         } else {
             L[lower.tri(L, diag = diag)] <- 1:Jp
+            L <- L + t(L)
+            diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
             L <- L[lower.tri(L, diag = diag)]
         }
@@ -619,11 +624,22 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
                       byrow = byrow, names = dn[[2L]]))
 }
 
+### if j is not ordered, result is not a lower triangular matrix
+"[.ltMatrices" <- function(x, i, j, ..., drop = FALSE) {
+    if (!missing(j)) {
+        if (all(j > 0)) {
+            if (any(diff(j) < 0)) stop("invalid subset argument j")
+        }
+    }
+
+    return(.subset_ltMatrices(x = x, i = i, j = j, ..., drop = drop))
+}
+
 "[.syMatrices" <- function(x, i, j, ..., drop = FALSE) {
     class(x)[1L] <- "ltMatrices"
-    ret <- x[i, j, ..., drop = drop]
+    ret <- .subset_ltMatrices(x = x, i = i, j = j, ..., drop = drop)
     class(ret)[1L] <- "syMatrices"
-    return(ret)
+    ret
 }
 @}
 
@@ -666,6 +682,99 @@ a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, 2:
 b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
 chk(a, b)
 @@
+
+With a different subset
+
+<<ex-subset-2>>=
+## subset
+j <- c(1, 3, 5)
+a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
+b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
+chk(a, b)
+
+### with trans
+a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+@@
+
+with negative subsets
+
+<<ex-subset-3>>=
+## subset
+j <- -c(1, 3, 5)
+a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
+b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
+b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
+chk(a, b)
+
+### with trans
+a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+
+a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, j])
+b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[j, j, 1:2]
+chk(a, b)
+@@
+
+and with non-increasing argument \code{j} (this won't work for lower
+triangular matrices, only for symmetric matrices)
+
+<<ex-subset-4>>=
+## subset
+j <- sample(1:J)
+ltM <- ltMatrices(xn, byrow = FALSE)
+try(ltM[1:2, j])
+class(ltM) <- "syMatrices"
+a <- as.array(ltM[1:2, j])
+b <- as.array(ltM)[j, j, 1:2]
+chk(a, b)
+@@
+
 
 \section{Diagonal Elements}
 
@@ -1525,6 +1634,7 @@ D1chol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
     ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, 
                       trans = TRUE, names = nm)
     ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    return(ret)
 }
 @}
 
@@ -1551,7 +1661,7 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
     ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, 
                       trans = TRUE, names = nm)
     ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
-    ret
+    return(ret)
 }
 @}
 
@@ -1693,6 +1803,32 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
     check.attributes = FALSE)
 @@
 
+
+@d aperm
+@{
+aperm.ltMatrices <- function(a, perm, chol = FALSE, ...) {
+
+    if (chol) { ### a is Cholesky of covariance
+        Sperm <- chol2cov(a)[,perm]
+        return(chol(Sperm))
+    }
+
+    Sperm <- invchol2cov(a)[,perm]
+    chol2invchol(chol(Sperm))
+}
+@}
+
+<<aperm-tests, eval= TRUE>>=
+L <- lxn
+J <- dim(L)[2L]
+Lp <- aperm(a = L, perm = p <- sample(1:J), chol = FALSE)
+chk(invchol2cov(L)[,p], invchol2cov(Lp))
+
+C <- lxn
+J <- dim(C)[2L]
+Cp <- aperm(a = C, perm = p <- sample(1:J), chol = TRUE)
+chk(chol2cov(C)[,p], chol2cov(Cp))
+@@
 
 \section{Marginal and Conditional Normal Distributions}
 

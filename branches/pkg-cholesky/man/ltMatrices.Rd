@@ -14,6 +14,7 @@
 \alias{diagonals<-.ltMatrices}
 \alias{diagonals<-.syMatrices}
 \alias{chol.syMatrices}
+\alias{aperm.ltMatrices}
 \alias{adddiag}
 \alias{chol2cov}
 \alias{invchol2chol}
@@ -45,6 +46,7 @@ diagonals(x) <- value
 \S3method{diagonals}{syMatrices}(x) <- value
 \S3method{solve}{ltMatrices}(a, b, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
+\S3method{aperm}{ltMatrices}(a, perm, chol = FALSE, \dots)
 Mult(x, y)
 Tcrossprod(x, diag_only = FALSE)
 Crossprod(x, diag_only = FALSE)
@@ -88,6 +90,11 @@ if \code{TRUE}.
   \item{value}{a matrix of diagonal elements to be assigned (of dimension \eqn{J \times N}).
 }
   \item{a}{object of class \code{ltMatrices}.
+}
+  \item{perm}{a permutation of the covariance matrix corresponding to \code{a}.
+}
+  \item{chol}{a logical indicating if \code{a} is the Cholesky of the
+covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with .
 }
