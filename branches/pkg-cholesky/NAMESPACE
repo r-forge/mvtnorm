@@ -11,7 +11,7 @@ importFrom("methods", hasArg)
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, Crossprod, diagonals, 
        chol2cov, invchol2chol, chol2invchol, invchol2cov, 
-       invchol2pre, chol2pre, D1chol, invcholD, chol2cor, invchol2cor,
+       invchol2pre, chol2pre, Dchol, invcholD, chol2cor, invchol2cor,
        invchol2pc, chol2pc, "diagonals<-",
        marg_mvnorm, cond_mvnorm, Mult, lmvnorm, smvnorm)
 

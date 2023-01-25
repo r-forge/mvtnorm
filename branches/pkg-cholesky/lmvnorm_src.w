@@ -1616,7 +1616,7 @@ from $\mL_i$ (\code{invchol}) or $\mC_i =
 First, we set-up functions for computing $\tilde{\mC}_i$
 @d D times C
 @{
-D1chol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
+Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
 
     x <- .adddiag(x)
 
@@ -1642,7 +1642,7 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 
 @d L times D
 @{
-### invcholD = solve(D1chol)
+### invcholD = solve(Dchol)
 invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
 
     x <- .adddiag(x)
@@ -1698,7 +1698,7 @@ chol2pre <- function(x)
 
 ### C -> R
 chol2cor <- function(x)
-    Tcrossprod(D1chol(x))
+    Tcrossprod(Dchol(x))
 
 ### L -> R
 invchol2cor <- function(x)
@@ -1757,7 +1757,7 @@ chk(unlist(Prec), c(as.array(chol2pre(C))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(chol2cor(C))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
+chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(chol2pc(C))), 
     check.attributes = FALSE)
@@ -1797,7 +1797,7 @@ chk(unlist(Prec), c(as.array(chol2pre(C))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(chol2cor(C))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
+chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(chol2pc(C))), 
     check.attributes = FALSE)

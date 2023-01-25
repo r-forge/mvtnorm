@@ -22,7 +22,7 @@
 \alias{invchol2cov}
 \alias{invchol2pre}
 \alias{chol2pre}
-\alias{D1chol}
+\alias{Dchol}
 \alias{invcholD}
 \alias{chol2cor}
 \alias{invchol2cor}
@@ -56,7 +56,7 @@ chol2invchol(x)
 invchol2cov(x)
 invchol2pre(x)
 chol2pre(x)
-D1chol(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE)))
+Dchol(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE)))
 invcholD(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE)))
 chol2cor(x)
 invchol2cor(x)
