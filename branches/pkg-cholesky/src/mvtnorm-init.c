@@ -52,7 +52,7 @@ static const R_CallMethodDef callMethods[] = {
     {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
     {"R_lmvnorm", (DL_FUNC) &R_lmvnorm, 10},
     {"R_smvnorm", (DL_FUNC) &R_smvnorm, 9},
-    {"R_gradSolveL", (DL_FUNC) &R_gradSolveL, 5},
+    {"R_gradSolveL", (DL_FUNC) &R_gradSolveL, 6},
     {"R_syMatrices_chol", (DL_FUNC) &R_syMatrices_chol, 3},
     {NULL, NULL, 0}
 };
