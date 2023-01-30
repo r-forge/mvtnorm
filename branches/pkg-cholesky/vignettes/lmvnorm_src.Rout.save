@@ -584,7 +584,7 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
+> chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
@@ -632,7 +632,7 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(D1chol(C))))), 
+> chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
@@ -917,12 +917,18 @@ Loading required package: qrng
 
 > b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
 
-> SD2 <- -mvtnorm:::.gradSolveL(a, b, diag = d)
+> SD2 <- -mvtnorm:::.gradSolveL(a, b, a)
 
 > chk(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
 +     diag = d)])
 
 > chk(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
+
+> S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
+
+> SD2 <- -mvtnorm:::.gradSolveL(a, S, a)
+
+> chk(SD0, SD2)
 
 > J <- 5
 
@@ -1302,4 +1308,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 37.783   0.239  38.025 
+ 36.986   0.279  37.275 
