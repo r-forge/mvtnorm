@@ -79,6 +79,8 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
+\newcommand{\mX}{\mathbf{X}}
+\newcommand{\mB}{\mathbf{B}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
@@ -179,6 +181,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<chol syMatrices@>
 @<add diagonal elements@>
 @<assign diagonal elements@>
+@<kronecker vec trick@>
 @<convenience functions@>
 @<aperm@>
 @<marginal@>
@@ -198,6 +201,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<tcrossprod@>
 @<mult@>
 @<chol@>
+@<vec trick@>
 @}
 
 
@@ -1601,6 +1605,227 @@ Sigma <- Tcrossprod(lxn)
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
 
+\section{Vec Trick}
+
+We compute $\text{vec}{\mX}^\top (\mB^\top \otimes \mA) =
+\text{vec}(\mA^\top \mX \mB^\top)^\top$.
+
+FIXME: rename arguments.
+
+@d t(C) S t(D)
+@{
+char siR = 'R', siL = 'L', lo = 'L', tr = 'N', trT = 'T', di = 'N', trs;
+double ONE = 1.0;
+int idx;
+int iJ2 = iJ * iJ;
+
+double tmp[iJ2];
+for (j = 0; j < iJ2; j++) tmp[j] = 0.0;
+
+ans = PROTECT(allocMatrix(REALSXP, iJ2, iN));
+dans = REAL(ans);
+
+for (i = 0; i < LENGTH(ans); i++) dans[i] = 0.0;
+
+for (i = 0; i < iN; i++) {
+
+    /* A := C */
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++)
+            tmp[k * iJ + j] = dC[IDX(j + 1, k + 1, iJ, 1L)];
+    }
+
+    /* S was already expanded in R code; B = S */
+    for (j = 0; j < iJ2; j++) dans[j] = dS[j];
+
+    /* B := t(A) %*% B */
+    trs = (RtC ? trT : tr);
+    F77_CALL(dtrmm)(&siL, &lo, &trs, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
+                    dans, &iJ FCONE FCONE FCONE FCONE);
+
+    /* A := D */
+    for (j = 0; j < iJ; j++) {
+        for (k = 0; k <= j; k++)
+            tmp[k * iJ + j] = dD[IDX(j + 1, k + 1, iJ, 1L)];
+    }
+
+    /* B := B %*% t(D) */
+    trs = (RtD ? trT : tr);
+    F77_CALL(dtrmm)(&siR, &lo, &trs, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
+                    dans, &iJ FCONE FCONE FCONE FCONE);
+
+    dans += iJ2;
+    dC += p;
+    dS += iJ2;
+    dD += p;
+}    
+@}
+
+@d vec trick
+@{
+
+@<IDX@>
+
+SEXP R_vectrick(SEXP C, SEXP N, SEXP J, SEXP S, SEXP D, SEXP diag, SEXP trans) {
+
+    int i, j, k;
+    SEXP ans;
+    double *dS, *dans, *dD;
+
+    /* note: diag is needed by this chunk but has no consequences */
+    @<RC input@>
+    @<C length@>
+    dS = REAL(S);
+    dD = REAL(D);
+
+    Rboolean RtC = LOGICAL(trans)[0];
+    Rboolean RtD = LOGICAL(trans)[1];
+
+    @<t(C) S t(D)@>
+
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+We compute $\mA^\top \mX \mB^\top$ by default or $\mA \mX \mB^\top$ or
+$\mA^\top \mX \mB$ or $\mA^\top \mX \mB^\top$ by using the \code{trans}
+argument in \code{vectrick}
+
+@d kronecker vec trick
+@{
+vectrick <- function(A, X, B, transpose = c(TRUE, TRUE)) {
+
+    ### argument renamed because of clash in Rd file
+    C <- A
+    S <- X
+    D <- B
+
+    stopifnot(all(is.logical(transpose)))
+    stopifnot(length(transpose) == 2L)
+
+    stopifnot(inherits(C, "ltMatrices"))
+    if (!attr(C, "diag")) diagonals(C) <- 1
+    C_byrow_orig <- attr(C, "byrow")
+    C_trans_orig <- attr(C, "trans")
+    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
+    dC <- dim(C)
+    nm <- attr(C, "rcnames")
+    N <- dC[1L]
+    J <- dC[2L]
+    class(C) <- class(C)[-1L]
+    storage.mode(C) <- "double"
+
+    stopifnot(inherits(D, "ltMatrices"))
+    if (!attr(D, "diag")) diagonals(D) <- 1
+    D_byrow_orig <- attr(D, "byrow")
+    D_trans_orig <- attr(D, "trans")
+    stopifnot(D_byrow_orig == D_byrow_orig)
+    stopifnot(D_trans_orig == D_trans_orig)
+    D <- ltMatrices(D, byrow = FALSE, trans = TRUE)
+    dD <- dim(D)
+    stopifnot(dC[2L] == dD[2L])
+    stopifnot(dC[1L] == dD[1L])
+    class(D) <- class(D)[-1L]
+    storage.mode(D) <- "double"
+
+    SltM <- inherits(S, "ltMatrices")
+    if (SltM) {
+        if (!attr(S, "diag")) diagonals(S) <- 1
+        S_byrow_orig <- attr(S, "byrow")
+        S_trans_orig <- attr(S, "trans")
+        stopifnot(S_byrow_orig == C_byrow_orig)
+        stopifnot(S_trans_orig == C_trans_orig)
+        S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
+        dS <- dim(S)
+        stopifnot(dC[2L] == dS[2L])
+        if (dC[1] != 1L) {
+            stopifnot(dC[1L] == dS[1L])
+        } else {
+            N <- dS[1L]
+        }
+        ## argument A in dtrmm is not in packed form, so exand in J x J
+        ## matrix
+        S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
+        class(S) <- class(S)[-1L]
+    } else {
+        stopifnot(is.matrix(S))
+        ### we need trans = TRUE
+        stopifnot(nrow(S) == J^2)
+        if (dC[1] != 1L) {
+            stopifnot(dC[1L] == ncol(S))
+        } else {
+            N <- ncol(S)
+        }
+    }
+    storage.mode(S) <- "double"
+            
+    ret <- .Call(mvtnorm_R_vectrick, C, as.integer(N), as.integer(J), S, D, 
+                 as.logical(TRUE), as.logical(transpose))
+
+    if (!SltM) return(matrix(c(ret), ncol = N))
+
+    L <- matrix(1:(J^2), nrow = J)
+    ret <- ltMatrices(ret[L[lower.tri(L, diag = TRUE)],,drop = FALSE], 
+                      diag = TRUE, byrow = FALSE, trans = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = C_byrow_orig, trans = C_trans_orig)
+    return(ret)
+}
+@}
+
+Here is a small example
+
+<<kronecker>>=
+J <- 10
+
+d <- TRUE
+L <- diag(J)
+L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + c(-1, 1)[d + 1]) / 2)
+
+C <- solve(L)
+
+D <- -kronecker(t(C), C)
+
+S <- diag(J)
+S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 1) / 2)
+
+SD0 <- matrix(c(S) %*% D, ncol = J)
+
+SD1 <- -crossprod(C, tcrossprod(S, C))
+
+a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
+b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+
+SD2 <- -vectrick(a, b, a)
+
+chk(SD0[lower.tri(SD0, diag = d)], 
+    SD1[lower.tri(SD1, diag = d)])
+chk(SD0[lower.tri(SD0, diag = d)],
+    c(unclass(SD2)))
+
+### same; but SD2 is vec(SD0)
+S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
+SD2 <- -vectrick(a, S, a)
+
+chk(c(SD0), c(SD2))
+
+### N > 1
+N <- 4
+prm <- runif(J * (J - 1) / 2)
+C <- ltMatrices(prm)
+S <- matrix(runif(J^2 * N), ncol = N)
+A <- vectrick(C, S, C)
+Cx <- as.array(C)[,,1]
+B <- apply(S, 2, function(x) t(Cx) %*% matrix(x, ncol = J) %*% t(Cx))
+chk(A, B)
+
+A <- vectrick(C, S, C, transpose = c(FALSE, FALSE))
+Cx <- as.array(C)[,,1]
+B <- apply(S, 2, function(x) Cx %*% matrix(x, ncol = J) %*% Cx)
+chk(A, B)
+@@
+
+
 \section{Convenience Functions}
 
 
@@ -2170,7 +2395,6 @@ We want to achieve the same result a bit more general and a bit faster.
 @<R Header@>
 @<lmvnorm@>
 @<smvnorm@>
-@<.gradSolveL@>
 @}
 
 @o lmvnorm.c -cc
@@ -2186,7 +2410,6 @@ We want to achieve the same result a bit more general and a bit faster.
 @<pnorm slow@>
 @<R lmvnorm@>
 @<R smvnorm@>
-@<grad solve(L)@>
 @}
 
 We implement the algorithm described by \cite{numerical-:1992}. The key
@@ -3029,190 +3252,10 @@ implemented by the ``vec trick''
 \end{eqnarray*}
 where $\svec = \text{vec}(\mS)$.
 
-@d t(C) S t(D)
-@{
-char si = 'R', lo = 'L', tr = 'N', trT = 'T', di = 'N';
-double ONE = 1.0;
-int idx;
-int iJ2 = iJ * iJ;
-
-double tmp[iJ2];
-for (j = 0; j < iJ2; j++) tmp[j] = 0.0;
-
-ans = PROTECT(allocMatrix(REALSXP, iJ2, iN));
-dans = REAL(ans);
-
-for (i = 0; i < LENGTH(ans); i++) dans[i] = 0.0;
-
-for (i = 0; i < iN; i++) {
-
-    /* B := t(C) */
-    for (j = 0; j < iJ; j++) {
-        for (k = 0; k <= j; k++) {
-            idx = IDX(j + 1, k + 1, iJ, 1L);
-            dans[j * iJ + k] = dC[idx];
-        }
-    }
-
-    /* S was already expanded in R code */
-    for (j = 0; j < iJ2; j++) tmp[j] = dS[j];
-
-    /* B := B %*% S */
-    F77_CALL(dtrmm)(&si, &lo, &tr , &di, &iJ, &iJ, &ONE, tmp, &iJ, 
-                    dans, &iJ FCONE FCONE FCONE FCONE);
-
-    for (j = 0; j < iJ; j++) {
-        for (k = 0; k <= j; k++)
-            tmp[k * iJ + j] = dD[IDX(j + 1, k + 1, iJ, 1L)];
-    }
-
-    /* B := B %*% t(D) */
-    F77_CALL(dtrmm)(&si, &lo, &trT, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
-                    dans, &iJ FCONE FCONE FCONE FCONE);
-
-    dans += iJ2;
-    dC += p;
-    dS += iJ2;
-    dD += p;
-}    
-@}
-
-@d grad solve(L)
-@{
-
-@<IDX@>
-
-SEXP R_gradSolveL(SEXP C, SEXP N, SEXP J, SEXP S, SEXP D, SEXP diag) {
-
-    int i, j, k;
-    SEXP ans;
-    double *dS, *dans, *dD;
-
-    @<RC input@>
-    @<C length@>
-    dS = REAL(S);
-    dD = REAL(D);
-    @<t(C) S t(D)@>
-
-    UNPROTECT(1);
-    return(ans);
-}
-@}
-
-@d .gradSolveL
-@{
-.gradSolveL <- function(C, S, D) {
-
-    stopifnot(inherits(C, "ltMatrices"))
-    if (!attr(C, "diag")) diagonals(C) <- 1
-    C_byrow_orig <- attr(C, "byrow")
-    C_trans_orig <- attr(C, "trans")
-    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
-    dC <- dim(C)
-    nm <- attr(C, "rcnames")
-    N <- dC[1L]
-    J <- dC[2L]
-    class(C) <- class(C)[-1L]
-    storage.mode(C) <- "double"
-
-    stopifnot(inherits(D, "ltMatrices"))
-    if (!attr(D, "diag")) diagonals(D) <- 1
-    D_byrow_orig <- attr(D, "byrow")
-    D_trans_orig <- attr(D, "trans")
-    stopifnot(D_byrow_orig == D_byrow_orig)
-    stopifnot(D_trans_orig == D_trans_orig)
-    D <- ltMatrices(D, byrow = FALSE, trans = TRUE)
-    dD <- dim(D)
-    stopifnot(dC[2L] == dD[2L])
-    stopifnot(dC[1L] == dD[1L])
-    class(D) <- class(D)[-1L]
-    storage.mode(D) <- "double"
-
-    SltM <- inherits(S, "ltMatrices")
-    if (SltM) {
-        if (!attr(S, "diag")) diagonals(S) <- 1
-        S_byrow_orig <- attr(S, "byrow")
-        S_trans_orig <- attr(S, "trans")
-        stopifnot(S_byrow_orig == C_byrow_orig)
-        stopifnot(S_trans_orig == C_trans_orig)
-        S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
-        dS <- dim(S)
-        stopifnot(dC[2L] == dS[2L])
-        if (dC[1] != 1L) {
-            stopifnot(dC[1L] == dS[1L])
-        } else {
-            N <- dS[1L]
-        }
-        ## argument A in dtrmm is not in packed form, so exand in J x J
-        ## matrix
-        S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
-        class(S) <- class(S)[-1L]
-    } else {
-        stopifnot(is.matrix(S))
-        ### we need trans = TRUE
-        stopifnot(nrow(S) == J^2)
-        if (dC[1] != 1L) {
-            stopifnot(dC[1L] == ncol(S))
-        } else {
-            N <- ncol(S)
-        }
-    }
-    storage.mode(S) <- "double"
-            
-    ret <- .Call(mvtnorm_R_gradSolveL, C, as.integer(N), as.integer(J), S, D, 
-                 as.logical(TRUE))
-
-    if (!SltM) return(matrix(c(ret), nrow = J))
-
-    L <- matrix(1:(J^2), nrow = J)
-    ret <- ltMatrices(ret[L[lower.tri(L, diag = TRUE)],,drop = FALSE], 
-                      diag = TRUE, byrow = FALSE, trans = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = C_byrow_orig, trans = C_trans_orig)
-    return(ret)
-}
-@}
-
-Here is a small example
-
-<<kronecker>>=
-J <- 10
-
-d <- TRUE
-L <- diag(J)
-L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + c(-1, 1)[d + 1]) / 2)
-
-C <- solve(L)
-
-D <- -kronecker(t(C), C)
-
-S <- diag(J)
-S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 1) / 2)
-
-SD0 <- matrix(c(S) %*% D, ncol = J)
-
-SD1 <- -crossprod(C, tcrossprod(S, C))
-
-a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
-b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
-
-SD2 <- -mvtnorm:::.gradSolveL(a, b, a)
-
-chk(SD0[lower.tri(SD0, diag = d)], 
-    SD1[lower.tri(SD1, diag = d)])
-chk(SD0[lower.tri(SD0, diag = d)],
-    c(unclass(SD2)))
-
-### same
-S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
-SD2 <- -mvtnorm:::.gradSolveL(a, S, a)
-
-chk(SD0, SD2)
-@@
-
 @d post differentiate invchol score
 @{
 if (!missing(invchol))
-    ret <- - .gradSolveL(chol, ret, chol)
+    ret <- - vectrick(chol, ret, chol)
 @}
 
 We can now finally put everything together in a single score function.

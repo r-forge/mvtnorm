@@ -535,6 +535,72 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(as.array(chol(Sigma)), as.array(lxn))
 
+> J <- 10
+
+> d <- TRUE
+
+> L <- diag(J)
+
+> L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + 
++     c(-1, 1)[d + 1])/2)
+
+> C <- solve(L)
+
+> D <- -kronecker(t(C), C)
+
+> S <- diag(J)
+
+> S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 
++     1)/2)
+
+> SD0 <- matrix(c(S) %*% D, ncol = J)
+
+> SD1 <- -crossprod(C, tcrossprod(S, C))
+
+> a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, 
++     byrow = FALSE, trans = TRUE)
+
+> b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+
+> SD2 <- -vectrick(a, b, a)
+
+> chk(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
++     diag = d)])
+
+> chk(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
+
+> S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
+
+> SD2 <- -vectrick(a, S, a)
+
+> chk(c(SD0), c(SD2))
+
+> N <- 4
+
+> prm <- runif(J * (J - 1)/2)
+
+> C <- ltMatrices(prm)
+
+> S <- matrix(runif(J^2 * N), ncol = N)
+
+> A <- vectrick(C, S, C)
+
+> Cx <- as.array(C)[, , 1]
+
+> B <- apply(S, 2, function(x) t(Cx) %*% matrix(x, ncol = J) %*% 
++     t(Cx))
+
+> chk(A, B)
+
+> A <- vectrick(C, S, C, transpose = c(FALSE, FALSE))
+
+> Cx <- as.array(C)[, , 1]
+
+> B <- apply(S, 2, function(x) Cx %*% matrix(x, ncol = J) %*% 
++     Cx)
+
+> chk(A, B)
+
 > prec2pc <- function(x) {
 +     ret <- -cov2cor(x)
 +     diag(ret) <- 0
@@ -890,46 +956,6 @@ Loading required package: qrng
  [9,] 0.9386051 0.9386051 0.9386051
 [10,] 0.9119778 0.9119778 0.9119778
 
-> J <- 10
-
-> d <- TRUE
-
-> L <- diag(J)
-
-> L[lower.tri(L, diag = d)] <- prm <- runif(J * (J + 
-+     c(-1, 1)[d + 1])/2)
-
-> C <- solve(L)
-
-> D <- -kronecker(t(C), C)
-
-> S <- diag(J)
-
-> S[lower.tri(S, diag = TRUE)] <- x <- runif(J * (J + 
-+     1)/2)
-
-> SD0 <- matrix(c(S) %*% D, ncol = J)
-
-> SD1 <- -crossprod(C, tcrossprod(S, C))
-
-> a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, 
-+     byrow = FALSE, trans = TRUE)
-
-> b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
-
-> SD2 <- -mvtnorm:::.gradSolveL(a, b, a)
-
-> chk(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
-+     diag = d)])
-
-> chk(SD0[lower.tri(SD0, diag = d)], c(unclass(SD2)))
-
-> S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
-
-> SD2 <- -mvtnorm:::.gradSolveL(a, S, a)
-
-> chk(SD0, SD2)
-
 > J <- 5
 
 > N <- 4
@@ -967,7 +993,7 @@ Loading required package: qrng
 > if (require("numDeriv")) print(max(abs(grad(fC, unclass(mC)) - 
 +     rowSums(unclass(sC$chol)))))
 Loading required package: numDeriv
-[1] 2.816633e-08
+[1] 3.46508e-09
 
 > mL <- solve(mC)
 
@@ -987,30 +1013,30 @@ Loading required package: numDeriv
 
 > if (require("numDeriv")) print(max(abs(grad(fL, unclass(mL)) - 
 +     rowSums(unclass(sL$chol)))))
-[1] 1.840256e-09
+[1] 7.867307e-10
 
 > ptr <- pnorm(b[1, ]/c(unclass(mC[, 1]))) - pnorm(a[1, 
 +     ]/c(unclass(mC[, 1])))
 
 > log(ptr)
-[1] -0.1468528 -0.2690970 -0.2002127 -0.1546458
+[1] -0.01165889 -0.08617272 -0.01240094 -0.03105050
 
 > lmvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
 +     chol = mC[, 1], logLik = FALSE)
-[1] -0.1468528 -0.2690970 -0.2002127 -0.1546458
+[1] -0.01165889 -0.08617272 -0.01240094 -0.03105050
 
 > lapply(smvnorm(a[1, , drop = FALSE], b[1, , drop = FALSE], 
 +     chol = mC[, 1], logLik = TRUE), unclass)
 $logLik
-[1] -0.1468528 -0.2690970 -0.2002127 -0.1546458
+[1] -0.01165889 -0.08617272 -0.01240094 -0.03105050
 
 $mean
      [,1] [,2] [,3] [,4]
 [1,]    0    0    0    0
 
 $chol
-        [,1]       [,2]       [,3]       [,4]
-1.1 -0.33428 -0.2938555 -0.3196305 -0.3324615
+         [,1]       [,2]       [,3]       [,4]
+1.1 -0.104149 -0.2994286 -0.1075726 -0.1787174
 attr(,"J")
 [1] 1
 attr(,"diag")
@@ -1027,7 +1053,7 @@ attr(,"rcnames")
 
 > (dnorm(b[1, ]/sd1) * b[1, ] - dnorm(a[1, ]/sd1) * 
 +     a[1, ]) * (-1)/sd1^2/ptr
-[1] -0.3342800 -0.2938555 -0.3196305 -0.3324615
+[1] -0.1041490 -0.2994286 -0.1075726 -0.1787174
 
 > set.seed(110515)
 
@@ -1308,4 +1334,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 36.986   0.279  37.275 
+ 35.489   0.179  35.667 

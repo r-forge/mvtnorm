@@ -28,6 +28,7 @@
 \alias{invchol2cor}
 \alias{invchol2pc}
 \alias{chol2pc}
+\alias{vectrick}
 \title{
   Multiple Lower Triangular Matrices
 }
@@ -62,6 +63,7 @@ chol2cor(x)
 invchol2cor(x)
 chol2pc(x)
 invchol2pc(x)
+vectrick(A, X, B, transpose = c(TRUE, TRUE))
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
@@ -102,6 +104,10 @@ covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{b}{matrix with \eqn{J} rows.
 }
+  \item{A}{an object of class \code{ltMatrices}.}
+  \item{X}{an object of class \code{ltMatrices} or a matrix with \eqn{J^2} rows.}
+  \item{B}{an object of class \code{ltMatrices}.}
+  \item{transpose}{a logical of length two indicating if \code{A} or \code{B}  shall be transposed   in \code{vectrick}.}
   \item{\dots}{additional arguments, currently ignored.
 }
 }
