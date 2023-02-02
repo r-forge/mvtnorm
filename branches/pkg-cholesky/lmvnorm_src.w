@@ -2181,8 +2181,9 @@ if (which[1] == 1L && (length(which) == 1L ||
 
 @d conditional
 @{
-cond_mvnorm <- function(chol, invchol, which = 1L, given) {
+cond_mvnorm <- function(chol, invchol, which_given = 1L, given) {
 
+    which <- which_given
     @<mc input checks@>
 
     if (N == 1) N <- NCOL(given)

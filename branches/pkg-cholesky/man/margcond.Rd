@@ -10,7 +10,7 @@
 }
 \usage{
 marg_mvnorm(chol, invchol, which = 1L)
-cond_mvnorm(chol, invchol, which = 1L, given)
+cond_mvnorm(chol, invchol, which_given = 1L, given)
 }
 \arguments{
   \item{chol}{Cholesky factors of covariance matrices as
@@ -22,7 +22,9 @@ cond_mvnorm(chol, invchol, which = 1L, given)
 \code{upper}. Either \code{chol} or \code{invchol} must be given.
 }
   \item{which}{names or indices of elements those marginal distribution
-               is of interest or which to condition on.
+               is of interest.
+}
+  \item{which_given}{names or indices of elements to condition on.
 }
   \item{given}{matrix of realisations to condition on (number of rows is
                equal to \code{length(which)}, the number of 
