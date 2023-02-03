@@ -31,6 +31,8 @@ clean:
 	rm -rf *~
 	rm -rf lmvnorm_src*.pdf
 	rm -rf lmvnorm_src.R
+	rm -rf lmvnorm_src.Rnw
+	rm -rf Rplots.pdf
 	texclean lmvnorm_src
 	rm -rf lmvnorm_src.tex
 	rm -rf lmvnorm_src.aux
