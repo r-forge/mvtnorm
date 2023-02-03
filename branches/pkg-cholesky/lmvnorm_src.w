@@ -79,8 +79,6 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
-\newcommand{\mX}{\mathbf{X}}
-\newcommand{\mB}{\mathbf{B}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
@@ -571,7 +569,7 @@ chk(a, b)
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
 rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$. 
 
-@d subset ltMatrices
+@d .subset ltMatrices
 @{
 .subset_ltMatrices <- function(x, i, j, ..., drop = FALSE) {
 
@@ -627,7 +625,11 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
     return(ltMatrices(x[i, , drop = FALSE], diag = diag, 
                       byrow = byrow, names = dn[[2L]]))
 }
+@}
 
+@d subset ltMatrices
+@{
+@<.subset ltMatrices@>
 ### if j is not ordered, result is not a lower triangular matrix
 "[.ltMatrices" <- function(x, i, j, ..., drop = FALSE) {
     if (!missing(j)) {
@@ -1605,14 +1607,17 @@ Sigma <- Tcrossprod(lxn)
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
 
-\section{Vec Trick}
+\section{Kronecker Products} \label{sec:vectrick}
 
-We compute $\text{vec}{\mX}^\top (\mB^\top \otimes \mA) =
-\text{vec}(\mA^\top \mX \mB^\top)^\top$.
+We sometimes need to compute $\text{vec}(\mS)^\top (\mA^\top \otimes \mC)$,
+where $\mS$ is a lower triangular or other $\J \times \J$ matrix and
+$\mA$ and $\mC$ are lower triangular $\J \times \J$ matrices. With the ``vec
+trick'', we have $\text{vec}(\mS)^\top (\mA^\top \otimes \mC) = 
+\text{vec}(\mC^\top \mS \mA^\top)^\top$. The \proglang{LAPACK} function
+\code{dtrmm} computes products of lower triangular matrices with other
+matrices, so we simply call this function looping over $i = 1, \dots, N$.
 
-FIXME: rename arguments.
-
-@d t(C) S t(D)
+@d t(C) S t(A)
 @{
 char siR = 'R', siL = 'L', lo = 'L', tr = 'N', trT = 'T', di = 'N', trs;
 double ONE = 1.0;
@@ -1643,21 +1648,21 @@ for (i = 0; i < iN; i++) {
     F77_CALL(dtrmm)(&siL, &lo, &trs, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
                     dans, &iJ FCONE FCONE FCONE FCONE);
 
-    /* A := D */
+    /* A */
     for (j = 0; j < iJ; j++) {
         for (k = 0; k <= j; k++)
-            tmp[k * iJ + j] = dD[IDX(j + 1, k + 1, iJ, 1L)];
+            tmp[k * iJ + j] = dA[IDX(j + 1, k + 1, iJ, 1L)];
     }
 
-    /* B := B %*% t(D) */
-    trs = (RtD ? trT : tr);
+    /* B := B %*% t(A) */
+    trs = (RtA ? trT : tr);
     F77_CALL(dtrmm)(&siR, &lo, &trs, &di, &iJ, &iJ, &ONE, tmp, &iJ, 
                     dans, &iJ FCONE FCONE FCONE FCONE);
 
     dans += iJ2;
     dC += p;
     dS += iJ2;
-    dD += p;
+    dA += p;
 }    
 @}
 
@@ -1666,101 +1671,117 @@ for (i = 0; i < iN; i++) {
 
 @<IDX@>
 
-SEXP R_vectrick(SEXP C, SEXP N, SEXP J, SEXP S, SEXP D, SEXP diag, SEXP trans) {
+SEXP R_vectrick(SEXP C, SEXP N, SEXP J, SEXP S, SEXP A, SEXP diag, SEXP trans) {
 
     int i, j, k;
     SEXP ans;
-    double *dS, *dans, *dD;
+    double *dS, *dans, *dA;
 
     /* note: diag is needed by this chunk but has no consequences */
     @<RC input@>
     @<C length@>
     dS = REAL(S);
-    dD = REAL(D);
+    dA = REAL(A);
 
     Rboolean RtC = LOGICAL(trans)[0];
-    Rboolean RtD = LOGICAL(trans)[1];
+    Rboolean RtA = LOGICAL(trans)[1];
 
-    @<t(C) S t(D)@>
+    @<t(C) S t(A)@>
 
     UNPROTECT(1);
     return(ans);
 }
 @}
 
-We compute $\mA^\top \mX \mB^\top$ by default or $\mA \mX \mB^\top$ or
-$\mA^\top \mX \mB$ or $\mA^\top \mX \mB^\top$ by using the \code{trans}
-argument in \code{vectrick}
+In \proglang{R}, we compute $\mC^\top \mS \mA^\top$ by default or $\mC \mS \mA^\top$ or
+$\mC^\top \mS \mA$ or $\mC^\top \mS \mA^\top$ by using the \code{trans}
+argument in \code{vectrick}.  Argument \code{C} is an \code{ltMatrices}
+object
+
+@d check C argument
+@{
+stopifnot(inherits(C, "ltMatrices"))
+if (!attr(C, "diag")) diagonals(C) <- 1
+C_byrow_orig <- attr(C, "byrow")
+C_trans_orig <- attr(C, "trans")
+C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
+dC <- dim(C)
+nm <- attr(C, "rcnames")
+N <- dC[1L]
+J <- dC[2L]
+class(C) <- class(C)[-1L]
+storage.mode(C) <- "double"
+@}
+
+\code{S} can be an \code{ltMatrices} object or a $\J^2 \times N$ matrix
+whose columns of vectorised $\J \times \J$ matrices
+
+@d check S argument
+@{
+SltM <- inherits(S, "ltMatrices")
+if (SltM) {
+    if (!attr(S, "diag")) diagonals(S) <- 1
+    S_byrow_orig <- attr(S, "byrow")
+    S_trans_orig <- attr(S, "trans")
+    stopifnot(S_byrow_orig == C_byrow_orig)
+    stopifnot(S_trans_orig == C_trans_orig)
+    S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
+    dS <- dim(S)
+    stopifnot(dC[2L] == dS[2L])
+    if (dC[1] != 1L) {
+        stopifnot(dC[1L] == dS[1L])
+    } else {
+        N <- dS[1L]
+    }
+    ## argument A in dtrmm is not in packed form, so expand in J x J
+    ## matrix
+    S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
+    class(S) <- class(S)[-1L]
+} else {
+    stopifnot(is.matrix(S))
+    ### we need trans = TRUE
+    stopifnot(nrow(S) == J^2)
+    if (dC[1] != 1L) {
+        stopifnot(dC[1L] == ncol(S))
+    } else {
+        N <- ncol(S)
+    }
+}
+storage.mode(S) <- "double"
+@}
+
+\code{C} is an \code{ltMatrices} object
+
+@d check A argument
+@{
+stopifnot(inherits(A, "ltMatrices"))
+if (!attr(A, "diag")) diagonals(A) <- 1
+A_byrow_orig <- attr(A, "byrow")
+A_trans_orig <- attr(A, "trans")
+stopifnot(C_byrow_orig == A_byrow_orig)
+stopifnot(C_trans_orig == A_trans_orig)
+A <- ltMatrices(A, byrow = FALSE, trans = TRUE)
+dA <- dim(A)
+stopifnot(dC[2L] == dA[2L])
+stopifnot(dC[1L] == dA[1L])
+class(A) <- class(A)[-1L]
+storage.mode(A) <- "double"
+@}
+
+We put everything together in function \code{vectrick}
 
 @d kronecker vec trick
 @{
-vectrick <- function(A, X, B, transpose = c(TRUE, TRUE)) {
-
-    ### argument renamed because of clash in Rd file
-    C <- A
-    S <- X
-    D <- B
+vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
 
     stopifnot(all(is.logical(transpose)))
     stopifnot(length(transpose) == 2L)
 
-    stopifnot(inherits(C, "ltMatrices"))
-    if (!attr(C, "diag")) diagonals(C) <- 1
-    C_byrow_orig <- attr(C, "byrow")
-    C_trans_orig <- attr(C, "trans")
-    C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
-    dC <- dim(C)
-    nm <- attr(C, "rcnames")
-    N <- dC[1L]
-    J <- dC[2L]
-    class(C) <- class(C)[-1L]
-    storage.mode(C) <- "double"
+    @<check C argument@>
+    @<check S argument@>
+    @<check A argument@>
 
-    stopifnot(inherits(D, "ltMatrices"))
-    if (!attr(D, "diag")) diagonals(D) <- 1
-    D_byrow_orig <- attr(D, "byrow")
-    D_trans_orig <- attr(D, "trans")
-    stopifnot(D_byrow_orig == D_byrow_orig)
-    stopifnot(D_trans_orig == D_trans_orig)
-    D <- ltMatrices(D, byrow = FALSE, trans = TRUE)
-    dD <- dim(D)
-    stopifnot(dC[2L] == dD[2L])
-    stopifnot(dC[1L] == dD[1L])
-    class(D) <- class(D)[-1L]
-    storage.mode(D) <- "double"
-
-    SltM <- inherits(S, "ltMatrices")
-    if (SltM) {
-        if (!attr(S, "diag")) diagonals(S) <- 1
-        S_byrow_orig <- attr(S, "byrow")
-        S_trans_orig <- attr(S, "trans")
-        stopifnot(S_byrow_orig == C_byrow_orig)
-        stopifnot(S_trans_orig == C_trans_orig)
-        S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
-        dS <- dim(S)
-        stopifnot(dC[2L] == dS[2L])
-        if (dC[1] != 1L) {
-            stopifnot(dC[1L] == dS[1L])
-        } else {
-            N <- dS[1L]
-        }
-        ## argument A in dtrmm is not in packed form, so exand in J x J
-        ## matrix
-        S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
-        class(S) <- class(S)[-1L]
-    } else {
-        stopifnot(is.matrix(S))
-        ### we need trans = TRUE
-        stopifnot(nrow(S) == J^2)
-        if (dC[1] != 1L) {
-            stopifnot(dC[1L] == ncol(S))
-        } else {
-            N <- ncol(S)
-        }
-    }
-    storage.mode(S) <- "double"
-            
-    ret <- .Call(mvtnorm_R_vectrick, C, as.integer(N), as.integer(J), S, D, 
+    ret <- .Call(mvtnorm_R_vectrick, C, as.integer(N), as.integer(J), S, A, 
                  as.logical(TRUE), as.logical(transpose))
 
     if (!SltM) return(matrix(c(ret), ncol = N))
@@ -2138,9 +2159,11 @@ if (dim(chol)[1L] == 1L) {
    mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
 } else {
    if (ncol(given) == N) {
-       mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
+       mean <- sapply(1:N, function(i) 
+           -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
    } else {  ### compare to Mult() with ncol(y) !%in% (1, N)
-       mean <- sapply(1:N, function(i) -Sa[,,i] %*% Pa[-which,which,i] %*% given)
+       mean <- sapply(1:N, function(i) 
+           -Sa[,,i] %*% Pa[-which,which,i] %*% given)
    }
 }
 @}
@@ -2187,7 +2210,7 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given) {
     @<mc input checks@>
 
     if (N == 1) N <- NCOL(given)
-    stopifnot(is.matrix(given) && nrow(given) == length(which))# && ncol(given) == N)
+    stopifnot(is.matrix(given) && nrow(given) == length(which))
 
     @<cond simple@>
 
@@ -2226,7 +2249,8 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
-cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
+      solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
 cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
 
@@ -2238,7 +2262,8 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
-cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
+      solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
 cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
 
@@ -2254,7 +2279,8 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
-cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
+      solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
 cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
 
@@ -2266,7 +2292,8 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
-cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
+cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
+      solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
 cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
 
@@ -2725,7 +2752,8 @@ We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, 
+               SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
@@ -3247,7 +3275,7 @@ need to post-differentiate the score function. We have
 \mA = \frac{\partial \mL^{-1}}{\partial \mL} = - \mL^{-\top} \otimes \mL^{-1}
 \end{eqnarray*}
 and computing $\svec \mA$ for a score vector $\svec$ with respect to $\mL$ can be
-implemented by the ``vec trick''
+implemented by the ``vec trick''~(Section~\ref{sec:vectrick})
 \begin{eqnarray*}
 \svec \mA = \mL^{-\top} \mS \mL^{-\top}
 \end{eqnarray*}

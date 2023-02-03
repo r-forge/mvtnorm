@@ -63,7 +63,7 @@ chol2cor(x)
 invchol2cor(x)
 chol2pc(x)
 invchol2pc(x)
-vectrick(A, X, B, transpose = c(TRUE, TRUE))
+vectrick(C, S, A, transpose = c(TRUE, TRUE))
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
@@ -104,9 +104,10 @@ covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{b}{matrix with \eqn{J} rows.
 }
+  \item{C}{an object of class \code{ltMatrices}.}
+  \item{S}{an object of class \code{ltMatrices} or a matrix with \eqn{J^2} rows 
+           representing multiple $J x J$ matrices (columns of vec operators).}
   \item{A}{an object of class \code{ltMatrices}.}
-  \item{X}{an object of class \code{ltMatrices} or a matrix with \eqn{J^2} rows.}
-  \item{B}{an object of class \code{ltMatrices}.}
   \item{transpose}{a logical of length two indicating if \code{A} or \code{B}  shall be transposed   in \code{vectrick}.}
   \item{\dots}{additional arguments, currently ignored.
 }
