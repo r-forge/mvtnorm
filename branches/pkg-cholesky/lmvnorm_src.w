@@ -1621,7 +1621,6 @@ matrices, so we simply call this function looping over $i = 1, \dots, N$.
 @{
 char siR = 'R', siL = 'L', lo = 'L', tr = 'N', trT = 'T', di = 'N', trs;
 double ONE = 1.0;
-int idx;
 int iJ2 = iJ * iJ;
 
 double tmp[iJ2];
