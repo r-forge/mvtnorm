@@ -77,7 +77,7 @@ vectrick(C, S, A, transpose = c(TRUE, TRUE))
                if \code{TRUE} or, otherwise, in column-major order.
 }
   \item{trans}{logical, \code{ncol(object)} is \eqn{N} if \code{TRUE},
-               otherwise, \code{ncol(object)} is \eqn{N}.
+               otherwise, \code{nrow(object)} is \eqn{N}.
 }
   \item{names}{logical or character vector of length \eqn{J}.
 }
