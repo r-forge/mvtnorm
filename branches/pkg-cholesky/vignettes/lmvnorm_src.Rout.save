@@ -475,6 +475,9 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(solve(lxn, y[, 1]), solve(lxn, y[, rep(1, N)]))
 
+> chk(solve(lxn[1, ], y, transpose = TRUE), t(as.array(solve(lxn[1, 
++     ]))[, , 1]) %*% y)
+
 > a <- as.array(Tcrossprod(lxn))
 
 > b <- array(apply(as.array(lxn), 3, function(x) tcrossprod(x), 
@@ -1334,4 +1337,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 35.489   0.179  35.667 
+ 35.470   0.231  35.705 

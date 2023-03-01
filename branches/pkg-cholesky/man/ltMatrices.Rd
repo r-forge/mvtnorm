@@ -45,7 +45,7 @@ ltMatrices(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE)
 diagonals(x) <- value
 \S3method{diagonals}{ltMatrices}(x) <- value
 \S3method{diagonals}{syMatrices}(x) <- value
-\S3method{solve}{ltMatrices}(a, b, \dots)
+\S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{ltMatrices}(a, perm, chol = FALSE, \dots)
 Mult(x, y)
@@ -108,7 +108,10 @@ covariance (\code{chol = TRUE}) of the precision matrix.
   \item{S}{an object of class \code{ltMatrices} or a matrix with \eqn{J^2} rows 
            representing multiple $J x J$ matrices (columns of vec operators).}
   \item{A}{an object of class \code{ltMatrices}.}
-  \item{transpose}{a logical of length two indicating if \code{A} or \code{B}  shall be transposed   in \code{vectrick}.}
+  \item{transpose}{a logical of length two indicating if \code{A} or \code{B} shall be transposed in \code{vectrick}.
+                   For \code{solve}, this argument being true computes
+                   \code{solve(t(a), b)} (in absence of a \code{t()} method for \code{ltMatrices}
+                   objects).}
   \item{\dots}{additional arguments, currently ignored.
 }
 }

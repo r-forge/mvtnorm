@@ -1070,8 +1070,8 @@ chk(a, b, check.attributes = FALSE)
 \section{Solving Linear Systems}
 
 Compute $\mC_i^{-1}$ or solve $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
-all $i = 1, \dots, N$.
-
+all $i = 1, \dots, N$. We sometimes also need $\mC^\top_i \xvec_i =
+\yvec_i$ triggered by \code{transpose = TRUE}.
 
 \code{C} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
 (matrix of dimension $\J (\J - 1) / 2 + \J \text{diag} \times N$), and
@@ -1167,7 +1167,7 @@ We finally put everything together in a dedicated \proglang{C} function
 
 @d solve
 @{
-SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
+SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpose)
 {
 
     SEXP ans, ansx;
@@ -1185,6 +1185,16 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag)
     } else {
         /* unit diagonal elements */
         di = 'U';
+    }
+
+    /* t(C) instead of C */
+    Rboolean Rtranspose = asLogical(transpose);
+    if (Rtranspose) {
+        /* t(C) */
+        tr = 'T';
+    } else {
+        /* C */
+        tr = 'N';
     }
 
     @<setup memory@>
@@ -1211,7 +1221,7 @@ with \proglang{R} interface
 
 @d solve ltMatrices
 @{
-solve.ltMatrices <- function(a, b, ...) {
+solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
 
     byrow_orig <- attr(a, "byrow")
     trans_orig <- attr(a, "trans")
@@ -1231,7 +1241,8 @@ solve.ltMatrices <- function(a, b, ...) {
         stopifnot(ncol(b) == N)
         storage.mode(b) <- "double"
         ret <- .Call(mvtnorm_R_ltMatrices_solve, x, b, 
-                     as.integer(N), as.integer(J), as.logical(diag))
+                     as.integer(N), as.integer(J), as.logical(diag),
+                     as.logical(transpose))
         if (d[1L] == N) {
             colnames(ret) <- dn[[1L]]
         } else {
@@ -1241,8 +1252,10 @@ solve.ltMatrices <- function(a, b, ...) {
         return(ret)
     }
 
+    if (transpose) stop("cannot compute inverse of t(a)")
     ret <- try(.Call(mvtnorm_R_ltMatrices_solve, x, NULL,
-                     as.integer(ncol(x)), as.integer(J), as.logical(diag)))
+                     as.integer(ncol(x)), as.integer(J), as.logical(diag),
+                     as.logical(FALSE)))
     colnames(ret) <- dn[[1L]]
 
     if (!diag)
@@ -1280,6 +1293,13 @@ chk(solve(lxn[rep(1, N),], y), solve(lxn[1,], y), check.attributes = FALSE)
 
 ### recycle y
 chk(solve(lxn, y[,1]), solve(lxn, y[,rep(1, N)]))
+@@
+
+also for $\mC^\top_i \xvec_i = \yvec_i$
+
+<<ex-tsolve>>=
+chk(solve(lxn[1,], y, transpose = TRUE), 
+    t(as.array(solve(lxn[1,]))[,,1]) %*% y)
 @@
 
 \section{Crossproducts}
