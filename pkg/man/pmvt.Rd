@@ -139,9 +139,10 @@ multiple comparisons. \emph{Biometrics}, \bold{43}, 913--928.
 
 }
 
-\source{
-  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
-}
+%%% can't validate certificate anymore
+%\source{
+%  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
+%}
 
 \seealso{\code{\link{qmvt}}}
 

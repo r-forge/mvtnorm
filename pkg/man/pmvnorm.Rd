@@ -85,9 +85,10 @@ The evaluation of general non-centred orthant probabilities.
 
 }
 
-\source{
-  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
-}
+%%% can't validate certificate anymore
+%\source{
+%  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
+%}
 
 \seealso{\code{\link{qmvnorm}}}
 
