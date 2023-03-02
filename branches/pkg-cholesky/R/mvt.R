@@ -449,7 +449,7 @@ qmvnorm <- function(p, interval = NULL,
         if (is.null(args$sigma))
           stop(sQuote("sigma"), " not specified: cannot compute qnorm")
         if (tail == "both.tails") p <- ifelse(p < 0.5, p / 2, 1 - (1 - p)/2)
-        q <- qnorm(p, mean = args$mean, sd = args$sigma,
+        q <- qnorm(p, mean = args$mean, sd = sqrt(args$sigma),
                    lower.tail = (tail != "upper.tail"))
         return( list(quantile = q, f.quantile = p) )
     }

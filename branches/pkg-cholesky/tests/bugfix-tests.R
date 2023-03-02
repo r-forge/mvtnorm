@@ -569,3 +569,8 @@ call <- try(qmvt(p=1-0.0001726701,
 inherits(call, "try-error")
 grepl("Covariance matrix not positive semidefinite", geterrmessage())
 
+### qmvnorm was wrong for the univariate setting; reported by Chen-Wei
+### <cwliu@ntnu.edu.tw>
+
+all.equal(qnorm(p = 0.2397501, mean = 1, sd = sqrt(2)),
+          qmvnorm(p=0.2397501 , mean = 1, sigma = 2)$quantile)
