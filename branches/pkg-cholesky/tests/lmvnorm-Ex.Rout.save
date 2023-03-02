@@ -1082,7 +1082,11 @@ In addition: Warning messages:
 > grepl("Covariance matrix not positive semidefinite", 
 +     geterrmessage())
 [1] TRUE
+
+> all.equal(qnorm(p = 0.2397501, mean = 1, sd = sqrt(2)), 
++     qmvnorm(p = 0.2397501, mean = 1, sigma = 2)$quantile)
+[1] TRUE
 > 
 > proc.time()
    user  system elapsed 
- 19.362   0.203  19.566 
+ 26.450   0.380  26.853 
