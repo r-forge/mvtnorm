@@ -2513,7 +2513,7 @@ if (attr(chol, "diag")) {
     ### CHECK if dimensions are correct
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     if (J > 1) ### else: univariate problem; C is no longer used
-        C <- ltMatrices(C[-cumsum(c(1, 2:J)), ], 
+        C <- ltMatrices(C[-cumsum(c(1, 2:J)), , drop = FALSE], 
                         byrow = TRUE, trans = TRUE, diag = FALSE)
 } else {
     ac <- lower
