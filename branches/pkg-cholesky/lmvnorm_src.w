@@ -2215,10 +2215,9 @@ if (which[1] == 1L && (length(which) == 1L ||
     tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which))
     meantmp <- Mult(L, rbind(given, tmp))
     L <- L[,-which]
-    C <- solve(L)
-    mean <- -Mult(C, meantmp[-which,,drop = FALSE])
+    mean <- -solve(L, meantmp[-which,,drop = FALSE])
     if (missing(invchol))
-        return(list(mean = mean, chol = C))
+        return(list(mean = mean, chol = solve(L)))
     return(list(mean = mean, invchol = L))
 }
 @}
