@@ -2509,6 +2509,9 @@ if (attr(chol, "diag")) {
     stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
     ac <- lower / c(dchol)
     bc <- upper / c(dchol)
+    ### the following is equivalent to Dchol(chol, D = 1 / dchol)
+    ### but returns an object without diagonal elements (expected by
+    ### R_lmvnorm)
     ### CHECK if dimensions are correct
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     if (J > 1) ### else: univariate problem; C is no longer used
