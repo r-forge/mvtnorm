@@ -1,7 +1,7 @@
 
 TVPACK <- function(abseps = 1e-6) structure(list(eps = abseps), class = "TVPACK")
 
-probval.TVPACK <- function (x, n, df, lower, upper, infin, corr, delta)
+probval.TVPACK <- function (x, n, df, lower, upper, infin, corr, delta, ...)
 {
     if (df > 0 && any(delta != 0))
         stop("TVPACK only possible for the central t-distribution.")

@@ -616,7 +616,7 @@ probval <- function(x, ...)
     UseMethod("probval")
 
 
-probval.GenzBretz <- function(x, n, df, lower, upper, infin, corrF, delta)
+probval.GenzBretz <- function(x, n, df, lower, upper, infin, corrF, delta, ...)
 {
     if(isInf(df)) df <- 0 # MH: deal with df=Inf (internally requires df=0!)
 
@@ -641,7 +641,7 @@ probval.GenzBretz <- function(x, n, df, lower, upper, infin, corrF, delta)
        RND = as.integer(1)) ### init RNG
 }
 
-probval.Miwa <- function(x, n, df, lower, upper, infin, corr, delta)
+probval.Miwa <- function(x, n, df, lower, upper, infin, corr, delta, ...)
 {
     if (!( df==0 || isInf(df) ))
         stop("Miwa algorithm cannot compute t-probabilities")
