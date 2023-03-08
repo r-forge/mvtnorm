@@ -2381,7 +2381,7 @@ prototype might look like
 @d lmvnormR
 @{
 library("mvtnorm")
-lmvnormR <- function(lower, upper, mean = 0, chol, logLik = TRUE, ...) {
+lmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
 
     @<input checks@>
 
@@ -2493,6 +2493,11 @@ if (is.matrix(mean))
 
 lower <- lower - mean
 upper <- upper - mean
+
+if (!is.null(center)) {
+    if (!is.matrix(center)) center <- matrix(center, ncol = 1)
+    stopifnot(nrow(center) == J && ncol(center == N))
+}
 @}
 
 
@@ -2532,8 +2537,11 @@ uC <- unclass(C)
 
 @d initialisation
 @{
-d0 = pnorm_ptr(da[0], 0.0);
-e0 = pnorm_ptr(db[0], 0.0);
+x0 = 0.0;
+if (LENGTH(center))
+    x0 = -dcenter[0];
+d0 = pnorm_ptr(da[0], x0);
+e0 = pnorm_ptr(db[0], x0);
 emd0 = e0 - d0;
 f0 = emd0;
 intsum = (iJ > 1 ? 0.0 : f0);
@@ -2582,8 +2590,14 @@ if (tmp < dtol) {
 @d compute x
 @{
 x = 0.0;
-for (k = 0; k < j; k++)
-    x += dC[start + k] * y[k];
+if (LENGTH(center)) {
+    for (k = 0; k < j; k++)
+        x += dC[start + k] * (y[k] - dcenter[k]);
+    x -= dcenter[j]; 
+} else {
+    for (k = 0; k < j; k++)
+        x += dC[start + k] * y[k];
+}
 @}
 
         \begin{eqnarray*}
@@ -2657,6 +2671,7 @@ $\mC_i \equiv \mC$).
 da += iJ;
 db += iJ;
 dC += p;
+if (LENGTH(center)) dcenter += iJ;
 @}
 
 \end{enumerate}
@@ -2772,17 +2787,27 @@ if (iJ == 1) {
 }
 @}
 
+@d init center
+@{
+dcenter = REAL(center);
+if (LENGTH(center)) {
+    if (LENGTH(center) != iN * iJ)
+        error("incorrect dimensions of center");
+}
+@}
+
 We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, 
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
+    double *dcenter;
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, lM, intsum;
+    double d0, e0, emd0, f0, q0, l0, lM, x0, intsum;
     int p, len;
 
     Rboolean RlogLik = asLogical(logLik);
@@ -2792,6 +2817,8 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J,
     @<dimensions@>
 
     @<W length@>
+
+    @<init center@>
 
     int start, j, k;
     double tmp, Wtmp, e, d, f, emd, x, y[iJ - 1];
@@ -2808,6 +2835,7 @@ SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J,
 
     for (int i = 0; i < iN; i++) {
 
+        x0 = 0;
         @<initialisation@>
 
         if (W != R_NilValue && pW == 0)
@@ -2888,7 +2916,7 @@ if (missing(chol)) chol <- solve(invchol)
 
 @d lmvnorm
 @{
-lmvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, 
+lmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
@@ -2901,8 +2929,8 @@ lmvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NU
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.integer(N), 
-                 as.integer(J), w, as.integer(M), as.double(tol), 
+    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), 
+                 as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik), as.logical(fast));
     return(ret)
 }
@@ -3010,15 +3038,15 @@ here due to standardisation)
 
 @d score c11
 @{
-dprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], 0.0, 1.0, 0L) * da[0] : 0);
-eprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], 0.0, 1.0, 0L) * db[0] : 0);
+dprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) * (da[0] - x0) : 0);
+eprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) * (db[0] - x0) : 0);
 fprime[0] = eprime[0] - dprime[0];
 @}
 
 @d score a, b
 @{
-aprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], 0.0, 1.0, 0L) : 0);
-bprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], 0.0, 1.0, 0L) : 0);
+aprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) : 0);
+bprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) : 0);
 fmprime[0] = bprime[0] - aprime[0];
 @}
 
@@ -3089,8 +3117,13 @@ etmp = dnorm(db[j], x, 1.0, 0L);
 
 for (k = 0; k < j; k++) {
     idx = start + j + k;
-    dprime[idx] = dtmp * (-1.0) * y[k];
-    eprime[idx] = etmp * (-1.0) * y[k];
+    if (LENGTH(center)) {    
+        dprime[idx] = dtmp * (-1.0) * (y[k] - dcenter[k]);
+        eprime[idx] = etmp * (-1.0) * (y[k] - dcenter[k]);
+    } else {
+        dprime[idx] = dtmp * (-1.0) * y[k];
+        eprime[idx] = etmp * (-1.0) * y[k];
+    }
     fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 }
 @}
@@ -3201,11 +3234,12 @@ We put everything together in \proglang{C}
 
 @d R smvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W, 
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
                SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
+    double *dcenter;
     double mdtol = 1.0 - dtol;
     double d0, e0, emd0, f0, q0, intsum;
     int p, idx;
@@ -3213,9 +3247,10 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP N, SEXP J, SEXP W,
     @<dimensions@>
     @<pnorm@>
     @<W length@>
+    @<init center@>
 
     int start, j, k;
-    double tmp, e, d, f, emd, x, y[iJ - 1];
+    double tmp, e, d, f, emd, x, x0, y[iJ - 1];
 
     @<score output object@>
 
@@ -3285,12 +3320,9 @@ if (J == 1) {
 if (attr(chol, "diag")) {
     ret <- ret / c(dchol[rep(1:J, 1:J),]) ### because 1 / dchol already there
     ret[idx,] <- -ret[idx,]
-} else {
-    ### remove scores for constant diagonal elements
-    ret <- ret[-idx, drop = FALSE]    
 }
-ret <- ltMatrices(ret, diag = attr(chol, "diag"), trans = TRUE, byrow = TRUE)
 @}
+
 
 We sometimes parameterise models in terms of $\mL = \mC^{-1}$, the Cholesky
 factor of the precision matrix. The log-likelihood operates on $\mC$, so we
@@ -3307,15 +3339,28 @@ where $\svec = \text{vec}(\mS)$.
 
 @d post differentiate invchol score
 @{
-if (!missing(invchol))
-    ret <- - vectrick(chol, ret, chol)
+if (!missing(invchol)) {
+    ret <- ltMatrices(ret, diag = TRUE, trans = TRUE, byrow = TRUE)
+    ret <- - unclass(vectrick(chol, ret, chol))
+}
+@}
+
+If the diagonal elements were constants, we remove them before returning the
+result
+
+@d post process score
+@{
+if (!attr(chol, "diag"))
+    ### remove scores for constant diagonal elements
+    ret <- ret[-idx, drop = FALSE]    
+ret <- ltMatrices(ret, diag = attr(chol, "diag"), trans = TRUE, byrow = TRUE)
 @}
 
 We can now finally put everything together in a single score function.
 
 @d smvnorm
 @{
-smvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, 
+smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
@@ -3328,7 +3373,7 @@ smvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NU
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.integer(N), 
+    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
@@ -3345,12 +3390,15 @@ smvnorm <- function(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NU
 
     @<post differentiate invchol score@>
 
+    @<post process score@>
+
     ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
 
     if (logLik) {
         ret <- list(logLik = ll, 
                     mean = smean, 
                     chol = ret)
+        if (!missing(invchol)) names(ret)[3L] <- "invchol"
         return(ret)
     }
     
@@ -3412,7 +3460,7 @@ sL <- smvnorm(a, b, invchol = mL, w = W, M = M)
 chk(lliL, sL$logLik)
 
 if (require("numDeriv"))
-    print(max(abs(grad(fL, unclass(mL)) - rowSums(unclass(sL$chol)))))
+    print(max(abs(grad(fL, unclass(mL)) - rowSums(unclass(sL$invchol)))))
 @@
 
 The score function also works for univariate problems

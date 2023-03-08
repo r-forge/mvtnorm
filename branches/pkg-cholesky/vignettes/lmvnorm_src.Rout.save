@@ -860,10 +860,10 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > library("mvtnorm")
 
-> lmvnormR <- function(lower, upper, mean = 0, chol, 
-+     logLik = TRUE, ...) {
+> lmvnormR <- function(lower, upper, mean = 0, center = NULL, 
++     chol, logLik = TRUE, ...) {
 +     if (!is.matrix(lower)) 
-+         lower <- matrix(lower, ncol  .... [TRUNCATED] 
++         lower <- matr .... [TRUNCATED] 
 
 > J <- 5
 
@@ -1015,7 +1015,7 @@ Loading required package: numDeriv
 > chk(lliL, sL$logLik)
 
 > if (require("numDeriv")) print(max(abs(grad(fL, unclass(mL)) - 
-+     rowSums(unclass(sL$chol)))))
++     rowSums(unclass(sL$invchol)))))
 [1] 7.867307e-10
 
 > ptr <- pnorm(b[1, ]/c(unclass(mC[, 1]))) - pnorm(a[1, 
@@ -1337,4 +1337,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 35.470   0.231  35.705 
+ 85.287   0.567  85.914 

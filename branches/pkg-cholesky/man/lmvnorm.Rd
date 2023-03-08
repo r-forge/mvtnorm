@@ -10,9 +10,9 @@
     corresponding scores.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
+lmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
         seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-smvnorm(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
+smvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
         seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 }
 \arguments{
@@ -21,6 +21,9 @@ smvnorm(lower, upper, mean = 0, chol, invchol, logLik = TRUE, M = NULL, w = NULL
   \item{upper}{matrix of upper limits (one column for each observation, \eqn{J} rows).
 }
   \item{mean}{matrix of means (one column for each observation, length is
+recycled to length of \code{lower} and \code{upper}).
+}
+  \item{center}{matrix of rescaled means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}).
 }
   \item{chol}{Cholesky factors of covariance matrices as
