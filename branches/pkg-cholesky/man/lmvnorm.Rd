@@ -10,10 +10,10 @@
     corresponding scores.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
-        seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-smvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, w = NULL, 
-        seed = NULL, tol = .Machine$double.eps, fast = FALSE)
+lmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+        M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
+smvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+        M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).
