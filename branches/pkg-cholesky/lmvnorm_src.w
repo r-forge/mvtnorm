@@ -1772,7 +1772,7 @@ if (SltM) {
 storage.mode(S) <- "double"
 @}
 
-\code{C} is an \code{ltMatrices} object
+\code{A} is an \code{ltMatrices} object
 
 @d check A argument
 @{
