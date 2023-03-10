@@ -443,6 +443,30 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(a, b, check.attributes = FALSE)
 
+> a <- Mult(lxn, y, transpose = TRUE)
+
+> A <- as.array(lxn)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[, 
++     , i]) %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> a <- Mult(lxd, y, transpose = TRUE)
+
+> A <- as.array(lxd)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[, 
++     , i]) %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> chk(Mult(lxn[rep(1, N), ], y, transpose = TRUE), Mult(lxn[1, 
++     ], y, transpose = TRUE), check.attributes = FALSE)
+
+> chk(Mult(lxn, y[, 1], transpose = TRUE), Mult(lxn, 
++     y[, rep(1, N)], transpose = TRUE))
+
 > A <- as.array(lxn)
 
 > a <- solve(lxn)
@@ -1337,4 +1361,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 85.287   0.567  85.914 
+ 36.777   0.215  37.004 

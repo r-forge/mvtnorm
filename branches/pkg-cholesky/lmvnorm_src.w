@@ -924,7 +924,7 @@ chk(as.array(lxd2), as.array(lxn))
 
 \section{Multiplication}
 
-Multiplications $\mC_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
+Multiplications $\mC_i \yvec_i$ or $\mC^\top_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
 N$ can be computed with $\code{y}$ being an $J \times N$ matrix of
 columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 \yvec_N)$. If \code{y} is a single vector, it is recycled $N$ times.
@@ -933,12 +933,35 @@ If the number of columns of a matrix \code{y} is neither one nor $N$,
 we compute $\mC_i \yvec_j$ for all $i = 1, \dots, N$ and $j$. This is
 dangerous but needed in \code{cond\_mvnorm} alter on.
 
+We start with $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), which can
+conveniently be computed in \proglang{R} (although no attention is paid to
+the lower triangular structure of \code{x})
+
+@d mult ltMatrices transpose
+@{
+if (transpose) {
+    J <- dim(x)[2L]
+    if (dim(x)[1L] == 1L) x <- x[rep(1, N),]
+    ax <- as.array(x)
+    ay <- array(y[rep(1:J, J),,drop = FALSE], dim = dim(ax), 
+                dimnames = dimnames(ax))
+    return(margin.table(ay * ax, 2:3))
+}
+@}
+
+For $\mC_i \yvec_i$, we call \proglang{C} code computing the product
+efficiently without copying data by using the lower triangular structure of
+\code{x}
+
 @d mult ltMatrices
 @{
 ### C %*% y
-Mult <- function(x, y) {
+Mult <- function(x, y, transpose = FALSE) {
 
-    if (!inherits(x, "ltMatrices")) return(x %*% y)
+    if (!inherits(x, "ltMatrices")) {
+        if (!transpose) return(x %*% y)
+        return(crossprod(x, y))
+    }
 
     @<extract slots@>
 
@@ -946,7 +969,9 @@ Mult <- function(x, y) {
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
     stopifnot(nrow(y) == d[2L])
     if (ncol(y) != N)
-        return(sapply(1:ncol(y), function(i) Mult(x, y[,i])))
+        return(sapply(1:ncol(y), function(i) Mult(x, y[,i], transpose = transpose)))
+
+    @<mult ltMatrices transpose@>
 
     x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
 
@@ -1036,7 +1061,7 @@ SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
 }
 @}
 
-Some checks
+Some checks for $\mC_i \yvec_i$
 
 <<ex-mult>>=
 lxn <- ltMatrices(xn, byrow = TRUE)
@@ -1065,6 +1090,28 @@ a <- sapply(1:J, function(j) Mult(lxn[i,], M[,j,drop = FALSE]))
 rownames(a) <- colnames(a) <- dimnames(lxn)[[2L]]
 b <- as.array(Tcrossprod(lxn[i,]))[,,1]
 chk(a, b, check.attributes = FALSE)
+@@
+
+and for $\mC^\top_i \yvec_i$
+
+<<ex-tmult>>=
+a <- Mult(lxn, y, transpose = TRUE)
+A <- as.array(lxn)
+b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+a <- Mult(lxd, y, transpose = TRUE)
+A <- as.array(lxd)
+b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+### recycle C
+chk(Mult(lxn[rep(1, N),], y, transpose = TRUE), 
+    Mult(lxn[1,], y, transpose = TRUE), check.attributes = FALSE)
+
+### recycle y
+chk(Mult(lxn, y[,1], transpose = TRUE), 
+    Mult(lxn, y[,rep(1, N)], transpose = TRUE))
 @@
 
 \section{Solving Linear Systems}
@@ -3352,7 +3399,7 @@ result
 @{
 if (!attr(chol, "diag"))
     ### remove scores for constant diagonal elements
-    ret <- ret[-idx, drop = FALSE]    
+    ret <- ret[-idx, , drop = FALSE]    
 ret <- ltMatrices(ret, diag = attr(chol, "diag"), trans = TRUE, byrow = TRUE)
 @}
 

@@ -48,7 +48,7 @@ diagonals(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{ltMatrices}(a, perm, chol = FALSE, \dots)
-Mult(x, y)
+Mult(x, y, transpose = FALSE)
 Tcrossprod(x, diag_only = FALSE)
 Crossprod(x, diag_only = FALSE)
 chol2cov(x)
