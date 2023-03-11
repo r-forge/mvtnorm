@@ -3053,15 +3053,49 @@ In addition to the log-likelihood, we would also like to have access to the
 scores with respect to $\mC_i$. Because every element of $\mC_i$ only enters
 once, the chain rule rules, so to speak.
 
+We need the derivatives of $d$, $e$, $y$, and $f$ with respect to the $c$
+parameters
+@d chol scores
+@{
+double dp_c[Jp], ep_c[Jp], fp_c[Jp], yp_c[(iJ - 1) * Jp];
+@}
+
+and the derivates with respect to the mean
+
+@d mean scores
+@{
+double dp_m[Jp], ep_m[Jp], fp_m[Jp], yp_m[(iJ - 1) * Jp];
+@}
+
+and the derivates with respect to lower (\code{a})
+
+@d lower scores
+@{
+double dp_l[Jp], ep_l[Jp], fp_l[Jp], yp_l[(iJ - 1) * Jp];
+@}
+
+and the derivates with respect to upper (\code{b})
+
+@d upper scores
+@{
+double dp_u[Jp], ep_u[Jp], fp_u[Jp], yp_u[(iJ - 1) * Jp];
+@}
+
+and we start allocating the necessary memory. The output object contains the
+likelihood contributions (first row), the scores with respect to the mean
+(next $\J$ rows), with respect to the lower integration limits (next $\J$
+rows), with respect to the upper integration limits (next $\J$ rows) and
+finally with respect to the off-diagonal elements of the Cholesky factor
+(last $\J (\J - 1) / 2$ rows).
 
 @d score output object
 @{
 int Jp = iJ * (iJ + 1) / 2;
-double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
-double aprime[iJ], bprime[iJ], iaprime[iJ], ibprime[iJ], iabprime[iJ], ibaprime[iJ];
-double fmprime[iJ], faprime[iJ], fbprime[iJ];
-double ymprime[(iJ - 1) * iJ], yaprime[(iJ - 1) * iJ], ybprime[(iJ - 1) * iJ];
-double dtmp, etmp, Wtmp, ytmp, xx, ap, bp;
+@<chol scores@>
+@<mean scores@>
+@<lower scores@>
+@<upper scores@>
+double dtmp, etmp, Wtmp, ytmp, xx;
 
 PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + 3 * iJ, iN));
 dans = REAL(ans);
@@ -3087,22 +3121,22 @@ here due to standardisation)
 
 @d score c11
 @{
-dprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) * (da[0] - x0) : 0);
-eprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) * (db[0] - x0) : 0);
-fprime[0] = eprime[0] - dprime[0];
+dp_c[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) * (da[0] - x0) : 0);
+ep_c[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) * (db[0] - x0) : 0);
+fp_c[0] = ep_c[0] - dp_c[0];
 @}
 
 @d score a, b
 @{
-aprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) : 0);
-bprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) : 0);
-iaprime[0] = aprime[0];
-ibprime[0] = bprime[0];
-iabprime[0] = 0;
-ibaprime[0] = 0;
-fmprime[0] = bprime[0] - aprime[0];
-faprime[0] = -aprime[0];
-fbprime[0] = bprime[0];
+dp_m[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) : 0);
+ep_m[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) : 0);
+dp_l[0] = dp_m[0];
+ep_u[0] = ep_m[0];
+dp_u[0] = 0;
+ep_l[0] = 0;
+fp_m[0] = ep_m[0] - dp_m[0];
+fp_l[0] = -dp_m[0];
+fp_u[0] = ep_m[0];
 @}
 
   \item Repeat
@@ -3127,40 +3161,40 @@ We again either generate $w_{j - 1}$ on the fly or use pre-computed weights
 (\code{w}). We first compute the scores with respect to the already existing
 parameters.
 
-@d update yprime
+@d update yp for chol
 @{
 ytmp = exp(- dnorm(y[j - 1], 0.0, 1.0, 1L)); // = 1 / dnorm(y[j - 1], 0.0, 1.0, 0L)
 
-for (k = 0; k < Jp; k++) yprime[k * (iJ - 1) + (j - 1)] = 0.0;
+for (k = 0; k < Jp; k++) yp_c[k * (iJ - 1) + (j - 1)] = 0.0;
 
 for (idx = 0; idx < (j + 1) * j / 2; idx++) {
-    yprime[idx * (iJ - 1) + (j - 1)] = ytmp;
-    yprime[idx * (iJ - 1) + (j - 1)] *= (dprime[idx] + Wtmp * (eprime[idx] - dprime[idx]));
+    yp_c[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yp_c[idx * (iJ - 1) + (j - 1)] *= (dp_c[idx] + Wtmp * (ep_c[idx] - dp_c[idx]));
 }
 @}
 
-@d update yprime for a, b
+@d update yp for means, lower and upper
 @{
 for (k = 0; k < iJ; k++)
-    ymprime[k * (iJ - 1) + (j - 1)] = 0.0;
+    yp_m[k * (iJ - 1) + (j - 1)] = 0.0;
 
 for (idx = 0; idx < j; idx++) {
-    ymprime[idx * (iJ - 1) + (j - 1)] = ytmp;
-    ymprime[idx * (iJ - 1) + (j - 1)] *= (aprime[idx] + Wtmp * (bprime[idx] - aprime[idx]));
+    yp_m[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yp_m[idx * (iJ - 1) + (j - 1)] *= (dp_m[idx] + Wtmp * (ep_m[idx] - dp_m[idx]));
 }
 for (k = 0; k < iJ; k++)
-    yaprime[k * (iJ - 1) + (j - 1)] = 0.0;
+    yp_l[k * (iJ - 1) + (j - 1)] = 0.0;
 
 for (idx = 0; idx < j; idx++) {
-    yaprime[idx * (iJ - 1) + (j - 1)] = ytmp;
-    yaprime[idx * (iJ - 1) + (j - 1)] *= (iaprime[idx] + Wtmp * (iabprime[idx] - iaprime[idx]));
+    yp_l[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yp_l[idx * (iJ - 1) + (j - 1)] *= (dp_l[idx] + Wtmp * (dp_u[idx] - dp_l[idx]));
 }
 for (k = 0; k < iJ; k++)
-    ybprime[k * (iJ - 1) + (j - 1)] = 0.0;
+    yp_u[k * (iJ - 1) + (j - 1)] = 0.0;
 
 for (idx = 0; idx < j; idx++) {
-    ybprime[idx * (iJ - 1) + (j - 1)] = ytmp;
-    ybprime[idx * (iJ - 1) + (j - 1)] *= (ibaprime[idx] + Wtmp * (ibprime[idx] - ibaprime[idx]));
+    yp_u[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yp_u[idx * (iJ - 1) + (j - 1)] *= (ep_l[idx] + Wtmp * (ep_u[idx] - ep_l[idx]));
 }
 @}
 
@@ -3179,7 +3213,7 @@ for (idx = 0; idx < j; idx++) {
 
 The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 
-@d score wrt new off-diagonals
+@d score wrt new chol off-diagonals
 @{
 dtmp = dnorm(da[j], x, 1.0, 0L);
 etmp = dnorm(db[j], x, 1.0, 0L);
@@ -3187,85 +3221,85 @@ etmp = dnorm(db[j], x, 1.0, 0L);
 for (k = 0; k < j; k++) {
     idx = start + j + k;
     if (LENGTH(center)) {    
-        dprime[idx] = dtmp * (-1.0) * (y[k] - dcenter[k]);
-        eprime[idx] = etmp * (-1.0) * (y[k] - dcenter[k]);
+        dp_c[idx] = dtmp * (-1.0) * (y[k] - dcenter[k]);
+        ep_c[idx] = etmp * (-1.0) * (y[k] - dcenter[k]);
     } else {
-        dprime[idx] = dtmp * (-1.0) * y[k];
-        eprime[idx] = etmp * (-1.0) * y[k];
+        dp_c[idx] = dtmp * (-1.0) * y[k];
+        ep_c[idx] = etmp * (-1.0) * y[k];
     }
-    fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+    fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
 }
 @}
 
 and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 
-@d score wrt new diagonal
+@d score wrt new chol diagonal
 @{
 idx = (j + 1) * (j + 2) / 2 - 1;
-dprime[idx] = (R_FINITE(da[j]) ? dtmp * (da[j] - x) : 0);
-eprime[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x) : 0);
-fprime[idx] = (eprime[idx] - dprime[idx]) * f;
+dp_c[idx] = (R_FINITE(da[j]) ? dtmp * (da[j] - x) : 0);
+ep_c[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x) : 0);
+fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
 @}
 
-@d new score a, b
+@d new score means, lower and upper
 @{
-aprime[j] = (R_FINITE(da[j]) ? dtmp : 0);
-bprime[j] = (R_FINITE(db[j]) ? etmp : 0);
-iaprime[j] = aprime[j];
-ibprime[j] = bprime[j];
-iabprime[j] = 0;
-ibaprime[j] = 0;
-faprime[j] = - aprime[j] * f;
-fbprime[j] = bprime[j] * f;
-fmprime[j] = fbprime[j] + faprime[j];
+dp_m[j] = (R_FINITE(da[j]) ? dtmp : 0);
+ep_m[j] = (R_FINITE(db[j]) ? etmp : 0);
+dp_l[j] = dp_m[j];
+ep_u[j] = ep_m[j];
+dp_u[j] = 0;
+ep_l[j] = 0;
+fp_l[j] = - dp_m[j] * f;
+fp_u[j] = ep_m[j] * f;
+fp_m[j] = fp_u[j] + fp_l[j];
 @}
 
 
 We next update scores for parameters introduced for smaller $j$
 
-@d update score
+@d update score for chol
 @{
 for (idx = 0; idx < j * (j + 1) / 2; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yprime[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_c[idx * (iJ - 1) + k];
 
-    dprime[idx] = dtmp * (-1.0) * xx;
-    eprime[idx] = etmp * (-1.0) * xx;
-    fprime[idx] = (eprime[idx] - dprime[idx]) * f + emd * fprime[idx];
+    dp_c[idx] = dtmp * (-1.0) * xx;
+    ep_c[idx] = etmp * (-1.0) * xx;
+    fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f + emd * fp_c[idx];
 }
 @}
 
-@d update score a, b
+@d update score means, lower and upper
 @{
 for (idx = 0; idx < j; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * ymprime[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_m[idx * (iJ - 1) + k];
 
-    aprime[idx] = dtmp * (-1.0) * xx;
-    bprime[idx] = etmp * (-1.0) * xx;
-    fmprime[idx] = (bprime[idx] - aprime[idx]) * f + emd * fmprime[idx];
+    dp_m[idx] = dtmp * (-1.0) * xx;
+    ep_m[idx] = etmp * (-1.0) * xx;
+    fp_m[idx] = (ep_m[idx] - dp_m[idx]) * f + emd * fp_m[idx];
 }
 
 for (idx = 0; idx < j; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yaprime[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_l[idx * (iJ - 1) + k];
 
-    iaprime[idx] = dtmp * (-1.0) * xx;
-    iabprime[idx] = etmp * (-1.0) * xx;
-    faprime[idx] = (iabprime[idx] - iaprime[idx]) * f + emd * faprime[idx];
+    dp_l[idx] = dtmp * (-1.0) * xx;
+    dp_u[idx] = etmp * (-1.0) * xx;
+    fp_l[idx] = (dp_u[idx] - dp_l[idx]) * f + emd * fp_l[idx];
 }
 
 for (idx = 0; idx < j; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * ybprime[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_u[idx * (iJ - 1) + k];
 
-    ibaprime[idx] = dtmp * (-1.0) * xx;
-    ibprime[idx] = etmp * (-1.0) * xx;
-    fbprime[idx] = (ibprime[idx] - ibaprime[idx]) * f + emd * fbprime[idx];
+    ep_l[idx] = dtmp * (-1.0) * xx;
+    ep_u[idx] = etmp * (-1.0) * xx;
+    fp_u[idx] = (ep_u[idx] - ep_l[idx]) * f + emd * fp_u[idx];
 }
 @}
 
@@ -3281,19 +3315,19 @@ for (j = 1; j < iJ; j++) {
 
     @<update d, e@>
 
-    @<update yprime@>
+    @<update yp for chol@>
 
-    @<update yprime for a, b@>
+    @<update yp for means, lower and upper@>
 
-    @<score wrt new off-diagonals@>
+    @<score wrt new chol off-diagonals@>
 
-    @<score wrt new diagonal@>
+    @<score wrt new chol diagonal@>
 
-    @<new score a, b@>
+    @<new score means, lower and upper@>
 
-    @<update score@>
+    @<update score for chol@>
 
-    @<update score a, b@>
+    @<update score means, lower and upper@>
 
     @<update f@>
 
@@ -3317,12 +3351,12 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 @{
 dans[0] += f;
 for (j = 0; j < Jp; j++)
-    dans[j + 1] += fprime[j];
+    dans[j + 1] += fp_c[j];
 for (j = 0; j < iJ; j++) {
     idx = Jp + j + 1;
-    dans[idx] += fmprime[j];
-    dans[idx + iJ] += faprime[j];
-    dans[idx + 2 * iJ] += fbprime[j];
+    dans[idx] += fp_m[j];
+    dans[idx + iJ] += fp_l[j];
+    dans[idx + 2 * iJ] += fp_u[j];
 }
 @}
 
@@ -3367,7 +3401,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
 
         if (iM == 0) {
             dans[0] = intsum;
-            dans[1] = fprime[0];
+            dans[1] = fp_c[0];
         }
 
         if (W != R_NilValue && pW == 0)
