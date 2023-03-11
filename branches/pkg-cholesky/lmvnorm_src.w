@@ -3058,10 +3058,12 @@ once, the chain rule rules, so to speak.
 @{
 int Jp = iJ * (iJ + 1) / 2;
 double dprime[Jp], eprime[Jp], fprime[Jp], yprime[(iJ - 1) * Jp];
-double aprime[iJ], bprime[iJ], fmprime[iJ], ymprime[(iJ - 1) * iJ];
-double dtmp, etmp, Wtmp, ytmp, xx;
+double aprime[iJ], bprime[iJ], iaprime[iJ], ibprime[iJ], iabprime[iJ], ibaprime[iJ];
+double fmprime[iJ], faprime[iJ], fbprime[iJ];
+double ymprime[(iJ - 1) * iJ], yaprime[(iJ - 1) * iJ], ybprime[(iJ - 1) * iJ];
+double dtmp, etmp, Wtmp, ytmp, xx, ap, bp;
 
-PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + iJ, iN));
+PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + 3 * iJ, iN));
 dans = REAL(ans);
 for (j = 0; j < LENGTH(ans); j++) dans[j] = 0.0;
 @}
@@ -3094,7 +3096,13 @@ fprime[0] = eprime[0] - dprime[0];
 @{
 aprime[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) : 0);
 bprime[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) : 0);
+iaprime[0] = aprime[0];
+ibprime[0] = bprime[0];
+iabprime[0] = 0;
+ibaprime[0] = 0;
 fmprime[0] = bprime[0] - aprime[0];
+faprime[0] = -aprime[0];
+fbprime[0] = bprime[0];
 @}
 
   \item Repeat
@@ -3139,6 +3147,20 @@ for (k = 0; k < iJ; k++)
 for (idx = 0; idx < j; idx++) {
     ymprime[idx * (iJ - 1) + (j - 1)] = ytmp;
     ymprime[idx * (iJ - 1) + (j - 1)] *= (aprime[idx] + Wtmp * (bprime[idx] - aprime[idx]));
+}
+for (k = 0; k < iJ; k++)
+    yaprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+for (idx = 0; idx < j; idx++) {
+    yaprime[idx * (iJ - 1) + (j - 1)] = ytmp;
+    yaprime[idx * (iJ - 1) + (j - 1)] *= (iaprime[idx] + Wtmp * (iabprime[idx] - iaprime[idx]));
+}
+for (k = 0; k < iJ; k++)
+    ybprime[k * (iJ - 1) + (j - 1)] = 0.0;
+
+for (idx = 0; idx < j; idx++) {
+    ybprime[idx * (iJ - 1) + (j - 1)] = ytmp;
+    ybprime[idx * (iJ - 1) + (j - 1)] *= (ibaprime[idx] + Wtmp * (ibprime[idx] - ibaprime[idx]));
 }
 @}
 
@@ -3189,7 +3211,13 @@ fprime[idx] = (eprime[idx] - dprime[idx]) * f;
 @{
 aprime[j] = (R_FINITE(da[j]) ? dtmp : 0);
 bprime[j] = (R_FINITE(db[j]) ? etmp : 0);
-fmprime[j] = (bprime[j] - aprime[j]) * f;
+iaprime[j] = aprime[j];
+ibprime[j] = bprime[j];
+iabprime[j] = 0;
+ibaprime[j] = 0;
+faprime[j] = - aprime[j] * f;
+fbprime[j] = bprime[j] * f;
+fmprime[j] = fbprime[j] + faprime[j];
 @}
 
 
@@ -3219,8 +3247,27 @@ for (idx = 0; idx < j; idx++) {
     bprime[idx] = etmp * (-1.0) * xx;
     fmprime[idx] = (bprime[idx] - aprime[idx]) * f + emd * fmprime[idx];
 }
-@}
 
+for (idx = 0; idx < j; idx++) {
+    xx = 0.0;
+    for (k = 0; k < j; k++)
+        xx += dC[start + k] * yaprime[idx * (iJ - 1) + k];
+
+    iaprime[idx] = dtmp * (-1.0) * xx;
+    iabprime[idx] = etmp * (-1.0) * xx;
+    faprime[idx] = (iabprime[idx] - iaprime[idx]) * f + emd * faprime[idx];
+}
+
+for (idx = 0; idx < j; idx++) {
+    xx = 0.0;
+    for (k = 0; k < j; k++)
+        xx += dC[start + k] * ybprime[idx * (iJ - 1) + k];
+
+    ibaprime[idx] = dtmp * (-1.0) * xx;
+    ibprime[idx] = etmp * (-1.0) * xx;
+    fbprime[idx] = (ibprime[idx] - ibaprime[idx]) * f + emd * fbprime[idx];
+}
+@}
 
 We put everything together in a loop starting with the second dimension
 
@@ -3271,8 +3318,12 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 dans[0] += f;
 for (j = 0; j < Jp; j++)
     dans[j + 1] += fprime[j];
-for (j = 0; j < iJ; j++)
-    dans[Jp + j + 1] += fmprime[j];
+for (j = 0; j < iJ; j++) {
+    idx = Jp + j + 1;
+    dans[idx] += fmprime[j];
+    dans[idx + iJ] += faprime[j];
+    dans[idx + 2 * iJ] += fbprime[j];
+}
 @}
 
 \end{enumerate}
@@ -3334,7 +3385,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
 
         @<move on@>
 
-        dans += Jp + 1 + iJ;
+        dans += Jp + 1 + 3 * iJ;
     }
 
     if (W == R_NilValue)
@@ -3355,6 +3406,20 @@ Jp <- J * (J + 1) / 2;
 smean <- - ret[Jp + 1:J, , drop = FALSE]
 if (attr(chol, "diag"))
     smean <- smean / c(dchol)
+@}
+
+@d post differentiate lower score
+@{
+slower <- ret[Jp + J + 1:J, , drop = FALSE]
+if (attr(chol, "diag"))
+    slower <- slower / c(dchol)
+@}
+
+@d post differentiate upper score
+@{
+supper <- ret[Jp + 2 * J + 1:J, , drop = FALSE]
+if (attr(chol, "diag"))
+    supper <- supper / c(dchol)
 @}
 
 @d post differentiate chol score
@@ -3430,6 +3495,8 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
     ret <- ret[-1L,,drop = FALSE] / m
 
     @<post differentiate mean score@>
+    @<post differentiate lower score@>
+    @<post differentiate upper score@>
 
     ret <- ret[1:Jp, , drop = FALSE]
 
@@ -3444,8 +3511,10 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
     if (logLik) {
         ret <- list(logLik = ll, 
                     mean = smean, 
+                    lower = slower,
+                    upper = supper,
                     chol = ret)
-        if (!missing(invchol)) names(ret)[3L] <- "invchol"
+        if (!missing(invchol)) names(ret)[names(ret) == "chol"] <- "invchol"
         return(ret)
     }
     
