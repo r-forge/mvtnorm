@@ -2561,6 +2561,7 @@ if (attr(chol, "diag")) {
     stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
     ac <- lower / c(dchol)
     bc <- upper / c(dchol)
+    cc <- center / c(dchol)
     ### the following is equivalent to Dchol(chol, D = 1 / dchol)
     ### but returns an object without diagonal elements (expected by
     ### R_lmvnorm)
@@ -2572,6 +2573,7 @@ if (attr(chol, "diag")) {
 } else {
     ac <- lower
     bc <- upper
+    cc <- center
     C <- ltMatrices(chol, byrow = TRUE, trans = TRUE)
 }
 uC <- unclass(C)
@@ -2586,7 +2588,7 @@ uC <- unclass(C)
 @{
 x0 = 0.0;
 if (LENGTH(center))
-    x0 = -dcenter[0];
+    x0 = -dscenter[0]; /* center / dchol */
 d0 = pnorm_ptr(da[0], x0);
 e0 = pnorm_ptr(db[0], x0);
 emd0 = e0 - d0;
@@ -2640,7 +2642,7 @@ x = 0.0;
 if (LENGTH(center)) {
     for (k = 0; k < j; k++)
         x += dC[start + k] * (y[k] - dcenter[k]);
-    x -= dcenter[j]; 
+    x -= dscenter[j]; /* center / dchol; dC already contains this factor */
 } else {
     for (k = 0; k < j; k++)
         x += dC[start + k] * y[k];
@@ -2718,7 +2720,10 @@ $\mC_i \equiv \mC$).
 da += iJ;
 db += iJ;
 dC += p;
-if (LENGTH(center)) dcenter += iJ;
+if (LENGTH(center)) {
+    dcenter += iJ;
+    dscenter += iJ;
+}
 @}
 
 \end{enumerate}
@@ -2837,6 +2842,7 @@ if (iJ == 1) {
 @d init center
 @{
 dcenter = REAL(center);
+dscenter = REAL(scenter);
 if (LENGTH(center)) {
     if (LENGTH(center) != iN * iJ)
         error("incorrect dimensions of center");
@@ -2847,12 +2853,12 @@ We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP scenter, SEXP N, SEXP J, 
                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
-    double *dcenter;
+    double *dcenter, *dscenter;
     double mdtol = 1.0 - dtol;
     double d0, e0, emd0, f0, q0, l0, lM, x0, intsum;
     int p, len;
@@ -2976,7 +2982,7 @@ lmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), 
+    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), as.double(cc), 
                  as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik), as.logical(fast));
     return(ret)
@@ -3366,12 +3372,12 @@ We put everything together in \proglang{C}
 
 @d R smvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP scenter, SEXP N, SEXP J, SEXP W, 
                SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
-    double *dcenter;
+    double *dcenter, *dscenter;
     double mdtol = 1.0 - dtol;
     double d0, e0, emd0, f0, q0, intsum;
     int p, idx;
@@ -3519,7 +3525,7 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
+    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.double(cc), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)

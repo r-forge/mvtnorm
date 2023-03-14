@@ -61,3 +61,68 @@ chks <- function(dg, tol = .Machine$double.eps^(1 / 4)) {
 
 chks(TRUE)
 chks(FALSE)
+
+
+.cmvnorm <- function(invchol, which_given, given) {
+    L <- invchol
+    J <- dim(L)[2L]
+    tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which_given))
+    center <- Mult(L, rbind(given, tmp))
+    center <- center[-which_given,,drop = FALSE]
+    L <- L[,-which_given]
+    return(list(center = center, invchol = L))
+}
+
+J <- (cJ <- 5) + (dJ <- 5)
+N <- 3
+M <- 10
+ltM <- function(x) ltMatrices(x, diag = FALSE, byrow = TRUE, trans = TRUE)
+prm <- matrix(runif(J * (J - 1) / 2 * N), ncol = N)
+L <- ltM(prm)
+
+obs <- matrix(rnorm(J * N), ncol = N)
+lwr <- -abs(obs)
+upr <- abs(obs)
+
+w <- matrix(runif((dJ - 1) * N), ncol = N)
+
+j <- 1:cJ
+ll <- function(x) {
+    LD <- ltMatrices(x, diag = FALSE, byrow = TRUE, trans = TRUE)
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,], upr[-j,], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+
+ll(L)
+
+a <- ltMatrices(matrix(grad(ll, unclass(L)), ncol = N), diag = FALSE, byrow =
+TRUE, trans = TRUE)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+b <- smvnorm(lwr[-j,], upr[-j,], center = cd$center, invchol = cd$invchol, 
+        w = w)$invchol
+
+all.equal(a[,-j], b, check.attributes = FALSE)
+
+ll <- function(x) {
+    LD <- ltMatrices(x, diag = TRUE, byrow = TRUE, trans = TRUE)
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,], upr[-j,], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+
+LD <- invcholD(L)
+ll(LD)
+
+a <- ltMatrices(matrix(grad(ll, unclass(LD)), ncol = N), diag = TRUE, byrow =
+TRUE, trans = TRUE)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+b <- smvnorm(lwr[-j,], upr[-j,], center = cd$center, invchol = cd$invchol,
+        w = w)$invchol
+
+all.equal(a[,-j], b, check.attributes = FALSE)
+
+a[,-j] - b
+
