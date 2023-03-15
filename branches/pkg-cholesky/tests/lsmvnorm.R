@@ -62,6 +62,7 @@ chks <- function(dg, tol = .Machine$double.eps^(1 / 4)) {
 chks(TRUE)
 chks(FALSE)
 
+### check scores for conditional distributions
 
 .cmvnorm <- function(invchol, which_given, given) {
     L <- invchol
@@ -73,10 +74,11 @@ chks(FALSE)
     return(list(center = center, invchol = L))
 }
 
-J <- (cJ <- 5) + (dJ <- 5)
+J <- (cJ <- 4) + (dJ <- 4)
 N <- 3
-M <- 10
+M <- 30
 ltM <- function(x) ltMatrices(x, diag = FALSE, byrow = TRUE, trans = TRUE)
+ltD <- function(x) ltMatrices(x, diag = TRUE, byrow = TRUE, trans = TRUE)
 prm <- matrix(runif(J * (J - 1) / 2 * N), ncol = N)
 L <- ltM(prm)
 
@@ -84,45 +86,293 @@ obs <- matrix(rnorm(J * N), ncol = N)
 lwr <- -abs(obs)
 upr <- abs(obs)
 
-w <- matrix(runif((dJ - 1) * N), ncol = N)
+w <- matrix(runif((dJ - 1) * M), ncol = M)
 
+### without scaling, diag(L) == 1
+## score wrt L
 j <- 1:cJ
 ll <- function(x) {
-    LD <- ltMatrices(x, diag = FALSE, byrow = TRUE, trans = TRUE)
-    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
-    lmvnorm(lwr[-j,], upr[-j,], center = cd$center, 
+    L <- ltM(x)
+    cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
             invchol = cd$invchol, w = w)
 }
-
-ll(L)
-
-a <- ltMatrices(matrix(grad(ll, unclass(L)), ncol = N), diag = FALSE, byrow =
-TRUE, trans = TRUE)
+a <- ltM(matrix(grad(ll, unclass(L)), ncol = N))
 
 cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
-b <- smvnorm(lwr[-j,], upr[-j,], center = cd$center, invchol = cd$invchol, 
-        w = w)$invchol
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+             invchol = cd$invchol, w = w)
 
-all.equal(a[,-j], b, check.attributes = FALSE)
+chk(a[,-j], s$invchol, check.attributes = FALSE)
 
+## score wrt obs
 ll <- function(x) {
-    LD <- ltMatrices(x, diag = TRUE, byrow = TRUE, trans = TRUE)
-    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
-    lmvnorm(lwr[-j,], upr[-j,], center = cd$center, 
+    cd <- .cmvnorm(invchol = L, which = j, given = x)
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
             invchol = cd$invchol, w = w)
 }
+a <- matrix(grad(ll, obs[1:cJ,,drop = FALSE]), ncol = N)
 
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+tmp0 <- solve(cd$invchol, s$mean, transpose = TRUE)
+aL <- as.array(L)[-(1:cJ), 1:cJ,]
+lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
+dobs <- -margin.table(aL * array(lst, dim = dim(aL)), 2:3)
+
+chk(a, dobs, check.attributes = FALSE)
+
+## score wrt lower
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = L, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(x, upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, lwr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$lower, check.attributes = FALSE)
+
+## score wrt upper
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = L, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], x, center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, upr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$upper, check.attributes = FALSE)
+
+### after scaling
 LD <- invcholD(L)
-ll(LD)
 
-a <- ltMatrices(matrix(grad(ll, unclass(LD)), ncol = N), diag = TRUE, byrow =
-TRUE, trans = TRUE)
+## score wrt LD (!)
+# use center
+ll <- function(x) {
+    LD <- ltD(x)
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w, logLik = TRUE)
+}
+
+a1 <- ltD(matrix(grad(ll, unclass(LD)), ncol = N))
+# use mean
+ll <- function(x) {
+    LD <- ltD(x)
+    cd <- cond_mvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], mean = cd$mean, 
+            invchol = cd$invchol, w = w, logLik = FALSE)
+}
+
+a2 <- ltMatrices(matrix(grad(function(...) sum(ll(...)), unclass(LD)), ncol = N), 
+                diag = TRUE, byrow = TRUE, trans = TRUE)
+
+chk(a1, a2)
+
+cd <- cond_mvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s1 <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], mean = cd$mean, 
+             invchol = cd$invchol, w = w)
 
 cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
-b <- smvnorm(lwr[-j,], upr[-j,], center = cd$center, invchol = cd$invchol,
-        w = w)$invchol
+s2 <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+             invchol = cd$invchol, w = w)
 
-all.equal(a[,-j], b, check.attributes = FALSE)
+### needs to be FALSE
+# all.equal(s1, s2)
 
-a[,-j] - b
+chk(a1[,-j], s2$invchol, check.attributes = FALSE)
 
+# score wrt obs
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = x)
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, obs[1:cJ,,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, 
+        w = w)
+
+tmp0 <- solve(cd$invchol, s$mean, transpose = TRUE)
+aL <- as.array(LD)[-(1:cJ), 1:cJ,]
+lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
+dobs <- -margin.table(aL * array(lst, dim = dim(aL)), 2:3)
+
+chk(a, dobs, check.attributes = FALSE)
+
+## score wrt lower
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(x, upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, lwr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$lower, check.attributes = FALSE)
+
+## score wrt upper
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], x, center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, upr[-(1:cJ),, drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$upper, check.attributes = FALSE)
+
+### one-dimensional conditional distribution
+
+J <- (cJ <- 4) + (dJ <- 1)
+prm <- matrix(runif(J * (J - 1) / 2 * N), ncol = N)
+L <- ltM(prm)
+
+obs <- matrix(rnorm(J * N), ncol = N)
+lwr <- -abs(obs)
+upr <- abs(obs)
+
+w <- matrix(runif((dJ - 1) * M), ncol = M)
+
+### without scaling, diag(L) == 1
+## score wrt L not needed (a constant)
+j <- 1:cJ
+
+## score wrt obs
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = L, which = j, given = x)
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, obs[1:cJ,,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+tmp0 <- solve(cd$invchol, s$mean, transpose = TRUE)
+aL <- as.array(L)[-(1:cJ), 1:cJ,]
+lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
+dobs <- -aL * array(lst, dim = dim(aL))
+
+chk(a, dobs, check.attributes = FALSE)
+
+## score wrt lower
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = L, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(x, upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, lwr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$lower, check.attributes = FALSE)
+
+## score wrt upper
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = L, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], x, center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, upr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$upper, check.attributes = FALSE)
+
+### after scaling
+LD <- invcholD(L)
+
+## score wrt LD (!)
+# use center
+ll <- function(x) {
+    LD <- ltD(x)
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w, logLik = TRUE)
+}
+
+a1 <- ltD(matrix(grad(ll, unclass(LD)), ncol = N))
+# use mean
+ll <- function(x) {
+    LD <- ltD(x)
+    cd <- cond_mvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], mean = cd$mean, 
+            invchol = cd$invchol, w = w, logLik = FALSE)
+}
+
+a2 <- ltMatrices(matrix(grad(function(...) sum(ll(...)), unclass(LD)), ncol = N), 
+                diag = TRUE, byrow = TRUE, trans = TRUE)
+
+chk(a1, a2)
+
+cd <- cond_mvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s1 <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], mean = cd$mean, 
+             invchol = cd$invchol, w = w)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s2 <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+             invchol = cd$invchol, w = w)
+
+### needs to be FALSE
+# all.equal(s1, s2)
+
+chk(a1[,-j], s2$invchol, check.attributes = FALSE)
+
+# score wrt obs
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = x)
+    lmvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, obs[1:cJ,,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, 
+        w = w)
+
+tmp0 <- solve(cd$invchol, s$mean, transpose = TRUE)
+aL <- as.array(LD)[-(1:cJ), 1:cJ,]
+lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
+dobs <- -(aL * array(lst, dim = dim(aL)))
+
+chk(a, dobs, check.attributes = FALSE)
+
+## score wrt lower
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(x, upr[-j,,drop = FALSE], center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, lwr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$lower, check.attributes = FALSE)
+
+## score wrt upper
+ll <- function(x) {
+    cd <- .cmvnorm(invchol = LD, which = j, given = obs[1:cJ,,drop = FALSE])
+    lmvnorm(lwr[-j,,drop = FALSE], x, center = cd$center, 
+            invchol = cd$invchol, w = w)
+}
+a <- matrix(grad(ll, upr[-(1:cJ),,drop = FALSE]), ncol = N)
+
+cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
+s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
+
+chk(a, s$upper, check.attributes = FALSE)

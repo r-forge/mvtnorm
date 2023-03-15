@@ -2561,7 +2561,6 @@ if (attr(chol, "diag")) {
     stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
     ac <- lower / c(dchol)
     bc <- upper / c(dchol)
-    cc <- center / c(dchol)
     ### the following is equivalent to Dchol(chol, D = 1 / dchol)
     ### but returns an object without diagonal elements (expected by
     ### R_lmvnorm)
@@ -2573,7 +2572,6 @@ if (attr(chol, "diag")) {
 } else {
     ac <- lower
     bc <- upper
-    cc <- center
     C <- ltMatrices(chol, byrow = TRUE, trans = TRUE)
 }
 uC <- unclass(C)
@@ -2588,7 +2586,7 @@ uC <- unclass(C)
 @{
 x0 = 0.0;
 if (LENGTH(center))
-    x0 = -dscenter[0]; /* center / dchol */
+    x0 = -dcenter[0];
 d0 = pnorm_ptr(da[0], x0);
 e0 = pnorm_ptr(db[0], x0);
 emd0 = e0 - d0;
@@ -2642,7 +2640,7 @@ x = 0.0;
 if (LENGTH(center)) {
     for (k = 0; k < j; k++)
         x += dC[start + k] * (y[k] - dcenter[k]);
-    x -= dscenter[j]; /* center / dchol; dC already contains this factor */
+    x -= dcenter[j]; 
 } else {
     for (k = 0; k < j; k++)
         x += dC[start + k] * y[k];
@@ -2720,10 +2718,7 @@ $\mC_i \equiv \mC$).
 da += iJ;
 db += iJ;
 dC += p;
-if (LENGTH(center)) {
-    dcenter += iJ;
-    dscenter += iJ;
-}
+if (LENGTH(center)) dcenter += iJ;
 @}
 
 \end{enumerate}
@@ -2842,7 +2837,6 @@ if (iJ == 1) {
 @d init center
 @{
 dcenter = REAL(center);
-dscenter = REAL(scenter);
 if (LENGTH(center)) {
     if (LENGTH(center) != iN * iJ)
         error("incorrect dimensions of center");
@@ -2853,12 +2847,12 @@ We put the code together in a dedicated \proglang{C} function
 
 @d R lmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP scenter, SEXP N, SEXP J, 
+SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
-    double *dcenter, *dscenter;
+    double *dcenter;
     double mdtol = 1.0 - dtol;
     double d0, e0, emd0, f0, q0, l0, lM, x0, intsum;
     int p, len;
@@ -2940,7 +2934,7 @@ else {
 
 @d check and / or set integration weights
 @{
-if (!is.null(w)) {
+if (!is.null(w) && J > 1) {
     stopifnot(is.matrix(w))
     stopifnot(nrow(w) == J - 1)
     if (is.null(M))
@@ -2982,7 +2976,7 @@ lmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), as.double(cc), 
+    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), 
                  as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik), as.logical(fast));
     return(ret)
@@ -3127,8 +3121,8 @@ here due to standardisation)
 
 @d score c11
 @{
-dp_c[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) * (da[0] - x0) : 0);
-ep_c[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) * (db[0] - x0) : 0);
+dp_c[0] = (R_FINITE(da[0]) ? dnorm(da[0], x0, 1.0, 0L) * (da[0] - x0 - dcenter[0]) : 0);
+ep_c[0] = (R_FINITE(db[0]) ? dnorm(db[0], x0, 1.0, 0L) * (db[0] - x0 - dcenter[0]) : 0);
 fp_c[0] = ep_c[0] - dp_c[0];
 @}
 
@@ -3242,8 +3236,8 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 @d score wrt new chol diagonal
 @{
 idx = (j + 1) * (j + 2) / 2 - 1;
-dp_c[idx] = (R_FINITE(da[j]) ? dtmp * (da[j] - x) : 0);
-ep_c[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x) : 0);
+dp_c[idx] = (R_FINITE(da[j]) ? dtmp * (da[j] - x - dcenter[j]) : 0);
+ep_c[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x - dcenter[j]) : 0);
 fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
 @}
 
@@ -3372,12 +3366,12 @@ We put everything together in \proglang{C}
 
 @d R smvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP scenter, SEXP N, SEXP J, SEXP W, 
+SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
                SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
-    double *dcenter, *dscenter;
+    double *dcenter;
     double mdtol = 1.0 - dtol;
     double d0, e0, emd0, f0, q0, intsum;
     int p, idx;
@@ -3404,10 +3398,14 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP scenter, SEXP N, SEXP J
 
         @<initialisation@>
         @<score c11@>
+        @<score a, b@>
 
         if (iM == 0) {
             dans[0] = intsum;
             dans[1] = fp_c[0];
+            dans[2] = fp_m[0];
+            dans[3] = fp_l[0];
+            dans[4] = fp_u[0];
         }
 
         if (W != R_NilValue && pW == 0)
@@ -3525,7 +3523,7 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.double(cc), as.integer(N), 
+    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
