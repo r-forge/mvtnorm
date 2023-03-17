@@ -171,7 +171,6 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<dimnames ltMatrices@>
 @<names ltMatrices@>
 @<print ltMatrices@>
-@<transpose ltMatrices@>
 @<reorder ltMatrices@>
 @<subset ltMatrices@>
 @<diagonals ltMatrices@>
@@ -214,10 +213,8 @@ diagonal elements are one (that is, $c^{(i)}_{jj} \equiv 1, j = 1, \dots,
 
 \section{Multiple Lower Triangular Matrices}
 
-We can store $N$ such matrices in an $N \times \J (\J + 1) / 2$  (\code{diag = TRUE})
-or $N \times \J (\J - 1) / 2$ matrix (\code{diag = FALSE}). Sometimes it is
-more convenient to store the transposed $\J (\J + 1) / 2 \times N$ matrix
-(\code{trans = TRUE}, \code{diag = TRUE}) or, for \code{diag = FALSE}, the $\J (\J
+We can store $N$ such matrices in an $\J (\J + 1) / 2 \times N$ matrix
+(\code{diag = TRUE}) or, for \code{diag = FALSE}, the $\J (\J
 - 1) / 2 \times N$ matrix.
 
 Each vector might define the corresponding lower triangular matrix
@@ -251,8 +248,8 @@ either in row or column-major order:
 Based on some matrix \code{object}, the dimension $\J$ is computed and checked as
 @d ltMatrices dim
 @{
-J <- floor((1 + sqrt(1 + 4 * 2 * ifelse(trans, nrow(object), ncol(object)))) / 2 - diag)
-stopifnot(ifelse(trans, nrow(object), ncol(object)) == J * (J - 1) / 2 + diag * J)
+J <- floor((1 + sqrt(1 + 4 * 2 * nrow(object))) / 2 - diag)
+stopifnot(nrow(object) == J * (J - 1) / 2 + diag * J)
 @}
 
 Typically the $\J$ dimensions are associated with names, and we therefore
@@ -276,47 +273,34 @@ if (!nonames) {
     L1 <- matrix(names, nrow = J, ncol = J)
     L2 <- matrix(names, nrow = J, ncol = J, byrow = TRUE)
     L <- matrix(paste(L1, L2, sep = "."), nrow = J, ncol = J)
-    if (trans) {
-        if (byrow)
-            rownames(object) <- t(L)[upper.tri(L, diag = diag)]
-        else
-            rownames(object) <- L[lower.tri(L, diag = diag)]
-    } else {
-        if (byrow)
-            colnames(object) <- t(L)[upper.tri(L, diag = diag)]
-        else
-            colnames(object) <- L[lower.tri(L, diag = diag)]
-    }
+    if (byrow)
+        rownames(object) <- t(L)[upper.tri(L, diag = diag)]
+    else
+        rownames(object) <- L[lower.tri(L, diag = diag)]
 }
 @}
 
 If \code{object} is already a classed object representing lower triangular
 matrices (we will use the class name \code{ltMatrices}), we might want to
-change the storage form or transpose the underlying matrix.
+change the storage form from row- to column-major or the other way round.
 
 @d ltMatrices input
 @{
 if (inherits(object, "ltMatrices")) {
     ret <- .reorder(object, byrow = byrow)
-    ret <- .transpose(ret, trans = trans)
     return(ret)
 }
 @}
-
-It is important to specify both \code{byrow} and \code{trans}, otherwise
-the default arguments might chance the result in an unintended way.
 
 The constructor essentially attaches attributes to a matrix \code{object},
 possibly after some reordering / transposing
 
 @d ltMatrices
 @{
-ltMatrices <- function(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE) {
+ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 
-    if (!is.matrix(object) && trans) 
+    if (!is.matrix(object)) 
         object <- matrix(object, ncol = 1L)
-    if (!is.matrix(object) && !trans) 
-        object <- matrix(object, nrow = 1L)
 
     @<ltMatrices input@>
 
@@ -327,7 +311,6 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, trans = FALSE, names
     attr(object, "J")       <- J
     attr(object, "diag")    <- diag
     attr(object, "byrow")   <- byrow
-    attr(object, "trans")   <- trans
     attr(object, "rcnames") <- names
 
     class(object) <- c("ltMatrices", class(object))
@@ -339,15 +322,14 @@ Symmetric matrices are represented by lower triangular matrix objects, but
 we change the class from \code{ltMatrices} to \code{syMatrices} (which
 disables all functionality except printing and coersion to arrays).
 
-The dimensions of such an object are always $N \times \J \times \J$
-(regardless or \code{byrow} and \code{trans}), and are given by
+The dimensions of such an object are always $N \times \J \times \J$ and are given by
 
 @d dim ltMatrices
 @{
 dim.ltMatrices <- function(x) {
     J <- attr(x, "J")
     class(x) <- class(x)[-1L]
-    return(c(ifelse(attr(x, "trans"), ncol(x), nrow(x)), J, J))
+    return(c(ncol(x), J, J))
 }
 dim.syMatrices <- dim.ltMatrices
 @}
@@ -356,11 +338,8 @@ The corresponding dimnames can be extracted as
 
 @d dimnames ltMatrices
 @{
-dimnames.ltMatrices <- function(x) {
-    if (attr(x, "trans"))
-        return(list(colnames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
-    return(list(rownames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
-}
+dimnames.ltMatrices <- function(x)
+    return(list(colnames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
 dimnames.syMatrices <- dimnames.ltMatrices
 @}
 
@@ -369,9 +348,7 @@ The names identifying rows and columns in each $\mC_i$ are
 @d names ltMatrices
 @{
 names.ltMatrices <- function(x) {
-    if (attr(x, "trans"))
-        return(rownames(unclass(x)))
-    return(colnames(unclass(x)))
+    return(rownames(unclass(x)))
 }
 names.syMatrices <- names.ltMatrices
 @}
@@ -390,10 +367,10 @@ rn <- paste0("C_", 1:N)
 nm <- LETTERS[1:J]
 Jn <- J * (J - 1) / 2
 ## data
-xn <- matrix(runif(N * Jn), nrow = N, byrow = TRUE)
-rownames(xn) <- rn
-xd <- matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE)
-rownames(xd) <- rn
+xn <- t(matrix(runif(N * Jn), nrow = N, byrow = TRUE))
+colnames(xn) <- rn
+xd <- t(matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE))
+colnames(xd) <- rn
 
 (lxn <- ltMatrices(xn, byrow = TRUE, names = nm))
 dim(lxn)
@@ -416,7 +393,6 @@ triangular matrix to by interpreted as a symmetric matrix.
 @{
 diag <- attr(x, "diag")
 byrow <- attr(x, "byrow")
-trans <- attr(x, "trans")
 d <- dim(x)
 J <- d[2L]
 dn <- dimnames(x)
@@ -429,7 +405,7 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
     @<extract slots@>
 
     class(x) <- class(x)[-1L]
-    if (trans) x <- t(x)
+    x <- t(x)
 
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
@@ -480,27 +456,15 @@ between the two forms
 
     class(x) <- class(x)[-1L]
 
-    if (trans) {
-        rL <- cL <- diag(0, nrow = J)
-        rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)
-        cL <- t(cL)
-        if (byrow) ### row -> col order
-            return(ltMatrices(x[cL[lower.tri(cL, diag = diag)], , drop = FALSE], 
-                              diag = diag, byrow = FALSE, trans = TRUE, names = dn[[2L]]))
-        ### col -> row order
-        return(ltMatrices(x[t(rL)[upper.tri(rL, diag = diag)], , drop = FALSE], 
-                          diag = diag, byrow = TRUE, trans = TRUE, names = dn[[2L]]))
-    }
-
     rL <- cL <- diag(0, nrow = J)
-    rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:ncol(x)
+    rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)
     cL <- t(cL)
     if (byrow) ### row -> col order
-        return(ltMatrices(x[, cL[lower.tri(cL, diag = diag)], drop = FALSE], 
-                          diag = diag, byrow = FALSE, trans = FALSE, names = dn[[2L]]))
+        return(ltMatrices(x[cL[lower.tri(cL, diag = diag)], , drop = FALSE], 
+                          diag = diag, byrow = FALSE, names = dn[[2L]]))
     ### col -> row order
-    return(ltMatrices(x[, t(rL)[upper.tri(rL, diag = diag)], drop = FALSE], 
-                      diag = diag, trans = FALSE, byrow = TRUE, names = dn[[2L]]))
+    return(ltMatrices(x[t(rL)[upper.tri(rL, diag = diag)], , drop = FALSE], 
+                      diag = diag, byrow = TRUE, names = dn[[2L]]))
 }
 @}
 
@@ -526,47 +490,6 @@ b <- as.array(ltMatrices(ltMatrices(xd, byrow = FALSE, diag = TRUE), byrow = TRU
 chk(a, b)
 @@
 
-The internal representation as $N \times \J (\J + 1) / 2$ matrix to a matrix
-of dimensions $\J (\J + 1) / 2 \times N$ can be changed as well (NOTE that
-this does not mean the matrix $\mC_i$ is transposed to $\mC_i^\top$!)
-
-@d transpose ltMatrices
-@{
-.transpose <- function(x, trans = FALSE) {
-
-    stopifnot(inherits(x, "ltMatrices"))
-    if (attr(x, "trans") == trans) return(x)
-
-    @<extract slots@>
-
-    class(x) <- class(x)[-1L]
-
-    return(ltMatrices(t(x), diag = diag, byrow = byrow, 
-                      trans = !trans, names = dn[[2L]]))
-}
-@}
-
-which works as advertised
-
-<<ex-trans>>=
-## constructor + .reorder + as.array
-a <- as.array(ltMatrices(t(xn), trans = TRUE))
-b <- as.array(ltMatrices(ltMatrices(t(xn), trans = TRUE), trans = FALSE))
-chk(a, b)
-
-a <- as.array(ltMatrices(xn, trans = FALSE))
-b <- as.array(ltMatrices(ltMatrices(xn, trans = FALSE), trans = TRUE))
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), trans = TRUE, diag = TRUE))
-b <- as.array(ltMatrices(ltMatrices(t(xd), trans = TRUE, diag = TRUE), trans = FALSE))
-chk(a, b)
-
-a <- as.array(ltMatrices(xd, trans = FALSE, diag = TRUE))
-b <- as.array(ltMatrices(ltMatrices(xd, trans = FALSE, diag = TRUE), trans = TRUE))
-chk(a, b)
-@@
-
 \section{Subsetting}
 
 We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
@@ -588,10 +511,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
         j <- (1:J)[j] ### get rid of negative indices
 
         if (length(j) == 1L && !diag) {
-            if (trans)
-                return(ltMatrices(matrix(1, ncol = ncol(x), nrow = 1), diag = TRUE, 
-                                  trans = TRUE, names = dn[[2L]][j]))
-            return(ltMatrices(matrix(1, nrow = nrow(x), ncol = 1), diag = TRUE, 
+            return(ltMatrices(matrix(1, ncol = ncol(x), nrow = 1), diag = TRUE, 
                               names = dn[[2L]][j]))
         }
         L <- diag(0L, nrow = J)
@@ -610,22 +530,13 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
             L <- L[lower.tri(L, diag = diag)]
         }
         if (missing(i)) {
-            if (trans)
-                return(ltMatrices(x[c(L), , drop = FALSE], diag = diag, 
-                                  trans = TRUE, byrow = byrow, names = dn[[2L]][j]))
-            return(ltMatrices(x[, c(L), drop = FALSE], diag = diag, 
+            return(ltMatrices(x[c(L), , drop = FALSE], diag = diag, 
                               byrow = byrow, names = dn[[2L]][j]))
         }
-        if (trans) 
-            return(ltMatrices(x[c(L), i, drop = FALSE], diag = diag, 
-                              trans = TRUE, byrow = byrow, names = dn[[2L]][j]))
-        return(ltMatrices(x[i, c(L), drop = FALSE], diag = diag, 
+        return(ltMatrices(x[c(L), i, drop = FALSE], diag = diag, 
                           byrow = byrow, names = dn[[2L]][j]))
     }
-    if (trans)
-        return(ltMatrices(x[, i, drop = FALSE], diag = diag, 
-                          trans = trans, byrow = byrow, names = dn[[2L]]))
-    return(ltMatrices(x[i, , drop = FALSE], diag = diag, 
+    return(ltMatrices(x[, i, drop = FALSE], diag = diag, 
                       byrow = byrow, names = dn[[2L]]))
 }
 @}
@@ -673,23 +584,6 @@ chk(a, b)
 a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 2:4])
 b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 2:4, 1:2]
 chk(a, b)
-
-### with trans
-a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[2:4, 2:4, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[2:4, 2:4, 1:2]
-chk(a, b)
 @@
 
 With a different subset
@@ -711,23 +605,6 @@ chk(a, b)
 
 a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
 b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
-chk(a, b)
-
-### with trans
-a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[j, j, 1:2]
 chk(a, b)
 @@
 
@@ -751,23 +628,6 @@ chk(a, b)
 a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
 b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
 chk(a, b)
-
-### with trans
-a <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xn), byrow = FALSE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xn), byrow = TRUE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xd), byrow = FALSE, diag = TRUE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE)[1:2, j])
-b <- as.array(ltMatrices(t(xd), byrow = TRUE, diag = TRUE, trans = TRUE))[j, j, 1:2]
-chk(a, b)
 @@
 
 and with non-increasing argument \code{j} (this won't work for lower
@@ -788,9 +648,7 @@ chk(a, b)
 \section{Diagonal Elements}
 
 The diagonal elements of each matrix $\mC_i$ can be extracted and are
-always returned as an $\J \times N$ matrix (regardless of \code{trans}).
-The reason is that \code{ltMatrices} with \code{trans = TRUE} can be
-standardised elementwise without transposing objects
+always returned as an $\J \times N$ matrix.
 
 @d diagonals ltMatrices
 @{
@@ -804,23 +662,17 @@ diagonals.ltMatrices <- function(x, ...) {
     class(x) <- class(x)[-1L]
 
     if (!diag) {
-        ret <- matrix(1,  nrow = J, ncol = nrow(x))
+        ret <- matrix(1, nrow = J, ncol = ncol(x))
         colnames(ret) <- dn[[1L]]
         rownames(ret) <- dn[[2L]]
         return(ret)
     } else {
-        if (J == 1L) {
-            if (trans) return(x)
-            return(t(x))
-        }
+        if (J == 1L) return(x)
         if (byrow)
             idx <- cumsum(c(1, 2:J))
         else
             idx <- cumsum(c(1, J:2))
-        if (trans)
-            ret <- x[idx, , drop = FALSE]
-        else
-            ret <- t(x[, idx, drop = FALSE])
+        ret <- x[idx, , drop = FALSE]
         rownames(ret) <- dn[[2L]]
         return(ret)
     }
@@ -846,10 +698,9 @@ defined without diagonal elements.
 
     if (attr(x, "diag")) return(x)
 
-    trans_orig <- attr(x, "trans")
     byrow_orig <- attr(x, "byrow")
 
-    x <- ltMatrices(x, byrow = FALSE, trans = TRUE)
+    x <- ltMatrices(x, byrow = FALSE)
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
@@ -864,9 +715,8 @@ defined without diagonal elements.
     colnames(ret) <- colnames(unclass(x))
     ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)
 
-    ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, 
-                      trans = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
 
     ret
 }
@@ -897,10 +747,7 @@ defined without diagonal elements.
         idx <- cumsum(c(1, 2:J))
     else
         idx <- cumsum(c(1, J:2))
-    if (trans)
-        x[idx, ] <- value
-    else
-        x[, idx] <- value
+    x[idx, ] <- value
 
     return(x)
 }
@@ -973,7 +820,7 @@ Mult <- function(x, y, transpose = FALSE) {
 
     @<mult ltMatrices transpose@>
 
-    x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
+    x <- ltMatrices(x, byrow = TRUE)
 
     class(x) <- class(x)[-1L]
     storage.mode(x) <- "double"
@@ -990,7 +837,7 @@ Mult <- function(x, y, transpose = FALSE) {
 @}
 
 The underlying \proglang{C} code assumes $\mC_i$ (here called \code{C}) to
-be in row-major order and in transposed form.
+be in row-major order.
 
 @d RC input
 @{
@@ -1120,13 +967,13 @@ Compute $\mC_i^{-1}$ or solve $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
 all $i = 1, \dots, N$. We sometimes also need $\mC^\top_i \xvec_i =
 \yvec_i$ triggered by \code{transpose = TRUE}.
 
-\code{C} is $\mC_i, i = 1, \dots, N$ in transposed column-major order
+\code{C} is $\mC_i, i = 1, \dots, N$ in column-major order
 (matrix of dimension $\J (\J - 1) / 2 + \J \text{diag} \times N$), and
 \code{y} is the $\J \times N$ matrix $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 \yvec_N)$. This function returns the $\J \times N$ matrix $(\xvec_1 \mid \xvec_2 \mid \dots \mid
 \xvec_N)$ of solutions.
 
-If \code{y} is not given, $\mC_i^{-1}$ is returned in transposed
+If \code{y} is not given, $\mC_i^{-1}$ is returned in 
 column-major order (matrix of dimension $\J (\J \pm 1) / 2  \times N$). If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
@@ -1271,9 +1118,8 @@ with \proglang{R} interface
 solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
 
     byrow_orig <- attr(a, "byrow")
-    trans_orig <- attr(a, "trans")
 
-    x <- ltMatrices(a, byrow = FALSE, trans = TRUE)
+    x <- ltMatrices(a, byrow = FALSE)
     diag <- attr(x, "diag")
     d <- dim(x)
     J <- d[2L]
@@ -1309,9 +1155,8 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
         ### ret always includes diagonal elements, remove here
         ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
 
-    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, trans = TRUE, 
-                      names = dn[[2L]])
-    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, names = dn[[2L]])
+    ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
 @}
@@ -1497,13 +1342,12 @@ with \proglang{R} interface
     }
 
     byrow_orig <- attr(x, "byrow")
-    trans_orig <- attr(x, "trans")
     diag <- attr(x, "diag")
     d <- dim(x)
     J <- d[2L]
     dn <- dimnames(x)
 
-    x <- ltMatrices(x, byrow = FALSE, trans = TRUE)
+    x <- ltMatrices(x, byrow = FALSE)
     class(x) <- class(x)[-1L]
     N <- d[1L]
     storage.mode(x) <- "double"
@@ -1514,8 +1358,8 @@ with \proglang{R} interface
     if (diag_only) {
         rownames(ret) <- dn[[2L]]
     } else {
-        ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, trans = TRUE, names = dn[[2L]])
-        ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+        ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = dn[[2L]])
+        ret <- ltMatrices(ret, byrow = byrow_orig)
         class(ret)[1L] <- "syMatrices"
     }
     return(ret)
@@ -1597,16 +1441,15 @@ in class \code{syMatrices}.
 chol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    trans_orig <- attr(x, "trans")
     dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, trans = trans_orig, 
+    x <- ltMatrices(unclass(x), diag = TRUE, 
                     byrow = byrow_orig, names = dnm[[2L]])
-    x <- ltMatrices(x, trans = TRUE, byrow = FALSE)
+    x <- ltMatrices(x, byrow = FALSE)
     class(x) <- class(x)[-1]
     storage.mode(x) <- "double"
 
@@ -1614,9 +1457,9 @@ chol.syMatrices <- function(x, ...) {
                  as.integer(d[1L]), as.integer(d[2L]))
     colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE, trans = TRUE, 
+    ret <- ltMatrices(ret, diag = TRUE,
                       byrow = FALSE, names = dnm[[2L]])
-    ret <- ltMatrices(ret, trans = trans_orig, byrow = byrow_orig)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
 }
@@ -1772,8 +1615,7 @@ object
 stopifnot(inherits(C, "ltMatrices"))
 if (!attr(C, "diag")) diagonals(C) <- 1
 C_byrow_orig <- attr(C, "byrow")
-C_trans_orig <- attr(C, "trans")
-C <- ltMatrices(C, byrow = FALSE, trans = TRUE)
+C <- ltMatrices(C, byrow = FALSE)
 dC <- dim(C)
 nm <- attr(C, "rcnames")
 N <- dC[1L]
@@ -1791,10 +1633,8 @@ SltM <- inherits(S, "ltMatrices")
 if (SltM) {
     if (!attr(S, "diag")) diagonals(S) <- 1
     S_byrow_orig <- attr(S, "byrow")
-    S_trans_orig <- attr(S, "trans")
     stopifnot(S_byrow_orig == C_byrow_orig)
-    stopifnot(S_trans_orig == C_trans_orig)
-    S <- ltMatrices(S, byrow = FALSE, trans = TRUE)
+    S <- ltMatrices(S, byrow = FALSE)
     dS <- dim(S)
     stopifnot(dC[2L] == dS[2L])
     if (dC[1] != 1L) {
@@ -1808,7 +1648,6 @@ if (SltM) {
     class(S) <- class(S)[-1L]
 } else {
     stopifnot(is.matrix(S))
-    ### we need trans = TRUE
     stopifnot(nrow(S) == J^2)
     if (dC[1] != 1L) {
         stopifnot(dC[1L] == ncol(S))
@@ -1826,10 +1665,8 @@ storage.mode(S) <- "double"
 stopifnot(inherits(A, "ltMatrices"))
 if (!attr(A, "diag")) diagonals(A) <- 1
 A_byrow_orig <- attr(A, "byrow")
-A_trans_orig <- attr(A, "trans")
 stopifnot(C_byrow_orig == A_byrow_orig)
-stopifnot(C_trans_orig == A_trans_orig)
-A <- ltMatrices(A, byrow = FALSE, trans = TRUE)
+A <- ltMatrices(A, byrow = FALSE)
 dA <- dim(A)
 stopifnot(dC[2L] == dA[2L])
 stopifnot(dC[1L] == dA[1L])
@@ -1857,8 +1694,8 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
 
     L <- matrix(1:(J^2), nrow = J)
     ret <- ltMatrices(ret[L[lower.tri(L, diag = TRUE)],,drop = FALSE], 
-                      diag = TRUE, byrow = FALSE, trans = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = C_byrow_orig, trans = C_trans_orig)
+                      diag = TRUE, byrow = FALSE, names = nm)
+    ret <- ltMatrices(ret, byrow = C_byrow_orig)
     return(ret)
 }
 @}
@@ -1883,8 +1720,8 @@ SD0 <- matrix(c(S) %*% D, ncol = J)
 
 SD1 <- -crossprod(C, tcrossprod(S, C))
 
-a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE, trans = TRUE)
-b <- ltMatrices(x, diag = TRUE, byrow = FALSE, trans = TRUE)
+a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE)
+b <- ltMatrices(x, diag = TRUE, byrow = FALSE)
 
 SD2 <- -vectrick(a, b, a)
 
@@ -1935,10 +1772,9 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
 
     x <- .adddiag(x)
 
-    trans_orig <- attr(x, "trans")
     byrow_orig <- attr(x, "byrow")
 
-    x <- ltMatrices(x, byrow = TRUE, trans = TRUE)
+    x <- ltMatrices(x, byrow = TRUE)
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
@@ -1946,9 +1782,8 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
 
     x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]
 
-    ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, 
-                      trans = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
 @}
@@ -1962,10 +1797,9 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
 
     x <- .adddiag(x)
 
-    trans_orig <- attr(x, "trans")
     byrow_orig <- attr(x, "byrow")
 
-    x <- ltMatrices(x, byrow = FALSE, trans = TRUE)
+    x <- ltMatrices(x, byrow = FALSE)
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
@@ -1973,9 +1807,8 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
 
     x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
 
-    ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, 
-                      trans = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, names = nm)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
 @}
@@ -2382,7 +2215,7 @@ compared to repeated calls to \code{dmvnorm}
 N <- 1000
 J <- 50
 lt <- ltMatrices(matrix(runif(N * J * (J + 1) / 2) + 1, ncol = N), 
-                 diag = TRUE, byrow = FALSE, trans = TRUE)
+                 diag = TRUE, byrow = FALSE)
 Z <- matrix(rnorm(N * J), ncol = N)
 Y <- solve(lt, Z)
 ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
@@ -2472,7 +2305,7 @@ J <- 5
 N <- 10
 
 x <- matrix(runif(N * J * (J + 1) / 2), ncol = N)
-lx <- ltMatrices(x, byrow = TRUE, trans = TRUE, diag = TRUE)
+lx <- ltMatrices(x, byrow = TRUE, diag = TRUE)
 
 a <- matrix(runif(N * J), nrow = J) - 2
 a[sample(J * N)[1:2]] <- -Inf
@@ -2526,8 +2359,7 @@ stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
 stopifnot(inherits(chol, "ltMatrices"))
 byrow_orig <- attr(chol, "byrow")
-trans_orig <- attr(chol, "trans")
-chol <- ltMatrices(chol, trans = TRUE, byrow = TRUE)
+chol <- ltMatrices(chol, byrow = TRUE)
 d <- dim(chol)
 ### allow single matrix C
 N <- ifelse(d[1L] == 1, ncol(lower), d[1L])
@@ -2568,11 +2400,11 @@ if (attr(chol, "diag")) {
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     if (J > 1) ### else: univariate problem; C is no longer used
         C <- ltMatrices(C[-cumsum(c(1, 2:J)), , drop = FALSE], 
-                        byrow = TRUE, trans = TRUE, diag = FALSE)
+                        byrow = TRUE, diag = FALSE)
 } else {
     ac <- lower
     bc <- upper
-    C <- ltMatrices(chol, byrow = TRUE, trans = TRUE)
+    C <- ltMatrices(chol, byrow = TRUE)
 }
 uC <- unclass(C)
 @}
@@ -3490,7 +3322,7 @@ where $\svec = \text{vec}(\mS)$.
 @d post differentiate invchol score
 @{
 if (!missing(invchol)) {
-    ret <- ltMatrices(ret, diag = TRUE, trans = TRUE, byrow = TRUE)
+    ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
     ret <- - unclass(vectrick(chol, ret, chol))
 }
 @}
@@ -3503,7 +3335,7 @@ result
 if (!attr(chol, "diag"))
     ### remove scores for constant diagonal elements
     ret <- ret[-idx, , drop = FALSE]    
-ret <- ltMatrices(ret, diag = attr(chol, "diag"), trans = TRUE, byrow = TRUE)
+ret <- ltMatrices(ret, diag = attr(chol, "diag"), byrow = TRUE)
 @}
 
 We can now finally put everything together in a single score function.
@@ -3544,7 +3376,7 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<post process score@>
 
-    ret <- ltMatrices(ret, byrow = byrow_orig, trans = trans_orig)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
 
     if (logLik) {
         ret <- list(logLik = ll, 
@@ -3571,7 +3403,7 @@ S <- crossprod(matrix(runif(J^2), nrow = J))
 prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
 
 ### define C
-mC <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
+mC <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE)
 
 a <- matrix(runif(N * J), nrow = J) - 2
 b <- a + 4
@@ -3584,7 +3416,7 @@ W <- matrix(runif(M * (J - 1)), ncol = M)
 lli <- c(lmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
 
 fC <- function(prm) {
-    C <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
+    C <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE)
     lmvnorm(a, b, chol = C, w = W, M = M)
 }
 
@@ -3605,7 +3437,7 @@ lliL <- c(lmvnorm(a, b, invchol = mL, w = W, M = M, logLik = FALSE))
 chk(lli, lliL)
 
 fL <- function(prm) {
-    L <- ltMatrices(matrix(prm, ncol = 1), trans = TRUE, diag = TRUE)
+    L <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE)
     lmvnorm(a, b, invchol = L, w = W, M = M)
 }
 
@@ -3655,12 +3487,10 @@ We now represent this matrix as \code{ltMatrices} object
 prm <- C[lower.tri(C, diag = TRUE)]
 lt <- ltMatrices(matrix(prm, ncol = 1L), 
                  diag = TRUE,    ### has diagonal elements
-                 byrow = FALSE,  ### prm is column-major
-                 trans = TRUE)   ### store as J * (J + 1) / 2 x 1
+                 byrow = FALSE)  ### prm is column-major
 BYROW <- FALSE   ### later checks
 lt <- ltMatrices(lt, 
-                 byrow = BYROW,   ### convert to row-major
-                 trans = TRUE)   ### keep dimensions
+                 byrow = BYROW)   ### convert to row-major
 chk(C, as.array(lt)[,,1], check.attributes = FALSE)
 chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
 @@
@@ -3767,7 +3597,7 @@ ll <- function(parm, J) {
      m <- parm[1:J]		### mean parameters
      parm <- parm[-(1:J)]	### chol parameters
      C <- matrix(c(parm), ncol = 1L)
-     C <- ltMatrices(C, diag = TRUE, byrow = BYROW, trans = TRUE)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
      -lmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
@@ -3790,7 +3620,7 @@ sc <- function(parm, J) {
     m <- parm[1:J]             ### mean parameters
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
-    C <- ltMatrices(C, diag = TRUE, byrow = BYROW, trans = TRUE)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
     ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, 
                    w = W, M = M, logLik = TRUE)
     return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
@@ -3829,7 +3659,7 @@ We can now compare the true and estimated Cholesky factor $\mC$ of our covarianc
 matrix $\mSigma = \mC \mC^\top$
 <<ex-ML-C>>=
 (C <- ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
-                 diag = TRUE, byrow = BYROW, trans = TRUE) )
+                 diag = TRUE, byrow = BYROW))
 lt
 @@
 and the estimated means
@@ -3900,7 +3730,7 @@ c(sqrt(diagonals(Crossprod(solve(L)))))
 @@
 We now coerse the matrix \code{rC} to an object of class \code{ltMatrices}
 <<rC>>=
-rC <- ltMatrices(rC, diag = TRUE, trans = TRUE)
+rC <- ltMatrices(rC, diag = TRUE)
 @@
 The object \code{rC} contains all sampled Cholesky factors of the covariance
 matrix. From each of these matrices, we compute the regression coefficient,

@@ -36,7 +36,7 @@
   A class representing multiple lower triangular matrices and some methods
 }
 \usage{
-ltMatrices(object, diag = FALSE, byrow = FALSE, trans = FALSE, names = TRUE)
+ltMatrices(object, diag = FALSE, byrow = FALSE, names = TRUE)
 \S3method{as.array}{ltMatrices}(x, symmetric = FALSE, \dots)
 \S3method{as.array}{syMatrices}(x, \dots)
 \S3method{diagonals}{ltMatrices}(x, \dots)
@@ -68,16 +68,15 @@ vectrick(C, S, A, transpose = c(TRUE, TRUE))
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
                 \eqn{N} lower triangular matrix, each of dimension \eqn{J \times
-                J}. Dimensions of \code{object} depend on \code{trans} and \code{diag}.
+                J}. Dimensions of \code{object} depend on \code{diag}: With
+                diagonal elements, \code{object} is a \eqn{J(J+1)/2 \times N} matrix,
+                otherwise, the number of rows is \eqn{J(J - 1) / 2}.
 }
   \item{diag}{logical, \code{object} contains diagonal elements if
               \code{TRUE}, otherwise unit diagonal elements are assumed.
 }
   \item{byrow}{logical, \code{object} represents matrices in row-major order
                if \code{TRUE} or, otherwise, in column-major order.
-}
-  \item{trans}{logical, \code{ncol(object)} is \eqn{N} if \code{TRUE},
-               otherwise, \code{nrow(object)} is \eqn{N}.
 }
   \item{names}{logical or character vector of length \eqn{J}.
 }
@@ -133,7 +132,7 @@ with corresponding methods.
   dm <- paste0("d", 1:J)
   xm <- paste0("x", 1:N)
   (C <- ltMatrices(matrix(runif(N * J * (J + 1) / 2), 
-                          nrow = N, dimnames = list(xm, NULL)), 
+                          ncol = N, dimnames = list(NULL, xm)), 
                    diag = TRUE, names = dm))
 
   ## dimensions and names

@@ -77,8 +77,8 @@ chks(FALSE)
 J <- (cJ <- 4) + (dJ <- 4)
 N <- 3
 M <- 30
-ltM <- function(x) ltMatrices(x, diag = FALSE, byrow = TRUE, trans = TRUE)
-ltD <- function(x) ltMatrices(x, diag = TRUE, byrow = TRUE, trans = TRUE)
+ltM <- function(x) ltMatrices(x, diag = FALSE, byrow = TRUE)
+ltD <- function(x) ltMatrices(x, diag = TRUE, byrow = TRUE)
 prm <- matrix(runif(J * (J - 1) / 2 * N), ncol = N)
 L <- ltM(prm)
 
@@ -171,7 +171,7 @@ ll <- function(x) {
 }
 
 a2 <- ltMatrices(matrix(grad(function(...) sum(ll(...)), unclass(LD)), ncol = N), 
-                diag = TRUE, byrow = TRUE, trans = TRUE)
+                diag = TRUE, byrow = TRUE)
 
 chk(a1, a2)
 
@@ -315,7 +315,7 @@ ll <- function(x) {
 }
 
 a2 <- ltMatrices(matrix(grad(function(...) sum(ll(...)), unclass(LD)), ncol = N), 
-                diag = TRUE, byrow = TRUE, trans = TRUE)
+                diag = TRUE, byrow = TRUE)
 
 chk(a1, a2)
 

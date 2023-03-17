@@ -20,8 +20,8 @@ pmvnorm <- function(lower = -Inf, upper = Inf, mean = rep(0, length(lower)),
     if (inherits(Chol, "try-error")) 
        return(mvtnorm::pmvnorm(lower = lower, upper = upper, mean = mean, 
                          sigma = sigma, corr = corr, algorithm = algorithm, ...))
-    Chol <- matrix(t(Chol)[lower.tri(Chol, diag = TRUE)], nrow = 1)
-    Chol <- ltMatrices(Chol, diag = TRUE, byrow = FALSE, trans = FALSE)
+    Chol <- matrix(t(Chol)[lower.tri(Chol, diag = TRUE)], ncol = 1)
+    Chol <- ltMatrices(Chol, diag = TRUE, byrow = FALSE)
 
     args$chol <- Chol
     
