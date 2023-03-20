@@ -3360,7 +3360,6 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
     intsum <- ret[1L,]
-    intsum <- pmax(intsum, tol^(1/3) * M) ### see mlt:::..mlt_score_interval
     m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
     ret <- ret[-1L,,drop = FALSE] / m
 
@@ -3625,10 +3624,13 @@ sc <- function(parm, J) {
                    w = W, M = M, logLik = TRUE)
     return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
 }
+@@
 
+and check the correctness numerically
+
+<<ex-ML-sc-chk>>=
 if (require("numDeriv"))
     print(abs(max(grad(ll, prm, J = J) - sc(prm, J = J))))
-### TODO: using a different seed gives much better agreement
 @@
 
 

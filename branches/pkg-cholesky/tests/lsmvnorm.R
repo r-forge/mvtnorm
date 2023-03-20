@@ -376,3 +376,24 @@ cd <- .cmvnorm(invchol = LD, which = j, given = obs[j,,drop = FALSE])
 s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, invchol = cd$invchol, w = w)
 
 chk(a, s$upper, check.attributes = FALSE)
+
+### check scores for extremely small likelihoods
+### use independence model as ground truth
+J <- 10
+
+yl <- matrix(-as.double(rep(1, J) / 2000), ncol = 1)
+yr <- abs(yl)
+
+w <- matrix(.5, nrow = J - 1, ncol = 1)
+
+## L = diag(J)
+L <- ltMatrices(rep(1, J * (J + 1) / 2), diag = TRUE)
+L[] <- 0
+diagonals(L) <- 1
+
+lmvnorm(lower = yl, upper = yr, invchol = L, w = w)
+
+s <- smvnorm(lower = yl, upper = yr, invchol = L, w = w)[c("logLik", "invchol")]
+
+chk(c((dnorm(yr) * yr - dnorm(yl) * yl ) / (pnorm(yr) - pnorm(yl))),
+    c(diagonals(s$invchol)))
