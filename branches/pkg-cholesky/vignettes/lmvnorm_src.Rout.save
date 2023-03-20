@@ -268,6 +268,79 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 
 > chk(a, b)
 
+> M <- ltMatrices(matrix(1:10, nrow = 10, ncol = 2), 
++     diag = TRUE)
+
+> Lower_tri(M, diag = FALSE)
+    [,1] [,2]
+2.1    2    2
+3.1    3    3
+4.1    4    4
+3.2    6    6
+4.2    7    7
+4.3    9    9
+
+> Lower_tri(M, diag = TRUE)
+    [,1] [,2]
+1.1    1    1
+2.1    2    2
+3.1    3    3
+4.1    4    4
+2.2    5    5
+3.2    6    6
+4.2    7    7
+3.3    8    8
+4.3    9    9
+4.4   10   10
+attr(,"J")
+[1] 4
+attr(,"diag")
+[1] TRUE
+attr(,"byrow")
+[1] FALSE
+attr(,"rcnames")
+[1] "1" "2" "3" "4"
+
+> M <- ltMatrices(matrix(1:6, nrow = 6, ncol = 2), diag = FALSE)
+
+> Lower_tri(M, diag = FALSE)
+    [,1] [,2]
+2.1    1    1
+3.1    2    2
+4.1    3    3
+3.2    4    4
+4.2    5    5
+4.3    6    6
+attr(,"J")
+[1] 4
+attr(,"diag")
+[1] FALSE
+attr(,"byrow")
+[1] FALSE
+attr(,"rcnames")
+[1] "1" "2" "3" "4"
+
+> Lower_tri(M, diag = TRUE)
+    [,1] [,2]
+1.1    1    1
+2.1    1    1
+3.1    2    2
+4.1    3    3
+2.2    1    1
+3.2    4    4
+4.2    5    5
+3.3    1    1
+4.3    6    6
+4.4    1    1
+attr(,"J")
+[1] 4
+attr(,"diag")
+[1] TRUE
+attr(,"byrow")
+[1] FALSE
+attr(,"rcnames")
+[1] "1" "2" "3" "4"
+
 > all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1)
 [1] TRUE
 
@@ -276,6 +349,30 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 > diagonals(lxd2) <- 1
 
 > chk(as.array(lxd2), as.array(lxn))
+
+> (I5 <- diagonals(5))
+, , 1
+
+  1 2 3 4 5
+1 1 0 0 0 0
+2 0 1 0 0 0
+3 0 0 1 0 0
+4 0 0 0 1 0
+5 0 0 0 0 1
+
+
+> diagonals(I5) <- 1:5
+
+> I5
+, , 1
+
+  1 2 3 4 5
+1 1 0 0 0 0
+2 0 2 0 0 0
+3 0 0 3 0 0
+4 0 0 0 4 0
+5 0 0 0 0 5
+
 
 > lxn <- ltMatrices(xn, byrow = TRUE)
 
@@ -1242,4 +1339,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 37.991   0.251  38.240 
+  34.38    0.20   34.58 

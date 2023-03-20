@@ -13,6 +13,8 @@
 \alias{diagonals<-}
 \alias{diagonals<-.ltMatrices}
 \alias{diagonals<-.syMatrices}
+\alias{diagonals.integer}
+\alias{Lower_tri}
 \alias{chol.syMatrices}
 \alias{aperm.ltMatrices}
 \alias{adddiag}
@@ -42,12 +44,14 @@ ltMatrices(object, diag = FALSE, byrow = FALSE, names = TRUE)
 \S3method{diagonals}{ltMatrices}(x, \dots)
 \S3method{diagonals}{syMatrices}(x, \dots)
 \S3method{diagonals}{matrix}(x, \dots)
+\S3method{diagonals}{integer}(x, \dots)
 diagonals(x) <- value
 \S3method{diagonals}{ltMatrices}(x) <- value
 \S3method{diagonals}{syMatrices}(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{ltMatrices}(a, perm, chol = FALSE, \dots)
+Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
 Mult(x, y, transpose = FALSE)
 Tcrossprod(x, diag_only = FALSE)
 Crossprod(x, diag_only = FALSE)

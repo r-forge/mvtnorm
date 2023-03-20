@@ -13,7 +13,7 @@ export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        chol2cov, invchol2chol, chol2invchol, invchol2cov, 
        invchol2pre, chol2pre, Dchol, invcholD, chol2cor, invchol2cor,
        invchol2pc, chol2pc, "diagonals<-", vectrick,
-       marg_mvnorm, cond_mvnorm, Mult, lmvnorm, smvnorm)
+       marg_mvnorm, cond_mvnorm, Mult, lmvnorm, smvnorm, Lower_tri)
 
 S3method("as.array", "ltMatrices")
 S3method("as.array", "syMatrices")
@@ -31,6 +31,7 @@ S3method("solve", "ltMatrices")
 S3method("diagonals", "ltMatrices")
 S3method("diagonals", "syMatrices")
 S3method("diagonals", "matrix")
+S3method("diagonals", "integer")
 S3method("diagonals<-", "ltMatrices")
 S3method("diagonals<-", "syMatrices")
 S3method("chol", "syMatrices")

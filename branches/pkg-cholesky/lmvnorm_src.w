@@ -173,7 +173,9 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<print ltMatrices@>
 @<reorder ltMatrices@>
 @<subset ltMatrices@>
+@<lower triangular elements@>
 @<diagonals ltMatrices@>
+@<diagonal matrix@>
 @<mult ltMatrices@>
 @<solve ltMatrices@>
 @<tcrossprod ltMatrices@>
@@ -644,6 +646,49 @@ b <- as.array(ltM)[j, j, 1:2]
 chk(a, b)
 @@
 
+Extracting the lower triangular elements from an \code{ltMatrices} object
+returns a matrix with $N$ columns
+
+@d lower triangular elements
+@{
+Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
+
+    stopifnot(inherits(x, "ltMatrices"))
+    adiag <- diag
+    x <- ltMatrices(x, byrow = byrow)
+
+    @<extract slots@>
+
+    if (diag == adiag)
+        return(unclass(x))
+
+    if (!diag && adiag) {
+        diagonals(x) <- 1
+        return(unclass(x))
+    }
+
+    x <- unclass(x)
+    if (J == 1) {
+        idx <- 1L
+    } else {
+      if (byrow)
+          idx <- cumsum(c(1, 2:J))
+      else
+          idx <- cumsum(c(1, J:2))
+    }
+    return(x[-idx,,drop = FALSE])
+}
+@}
+
+<<ex-Lower_tri>>=
+## J <- 4
+M <- ltMatrices(matrix(1:10, nrow = 10, ncol = 2), diag = TRUE)
+Lower_tri(M, diag = FALSE)
+Lower_tri(M, diag = TRUE)
+M <- ltMatrices(matrix(1:6, nrow = 6, ncol = 2), diag = FALSE)
+Lower_tri(M, diag = FALSE)
+Lower_tri(M, diag = TRUE)
+@@
 
 \section{Diagonal Elements}
 
@@ -766,6 +811,21 @@ defined without diagonal elements.
 lxd2 <- lxn
 diagonals(lxd2) <- 1
 chk(as.array(lxd2), as.array(lxn))
+@@
+
+A unit diagonal matrix is not treated as a special case but as an
+\code{ltMatrices} object with all lower triangular elements being zero
+
+@d diagonal matrix
+@{
+diagonals.integer <- function(x, ...)
+    ltMatrices(rep(0, x * (x - 1) / 2), diag = FALSE, ...)
+@}
+
+<<ex-diagJ>>=
+(I5 <- diagonals(5L))
+diagonals(I5) <- 1:5
+I5
 @@
 
 
@@ -3327,15 +3387,17 @@ if (!missing(invchol)) {
 }
 @}
 
-If the diagonal elements were constants, we remove them before returning the
-result
+If the diagonal elements were constants, we set them to zero. The function
+always returns an object of class \code{ltMatrices} with explicit diagonal
+elements (use \code{Lower\_tri(, diag = FALSE)} to extract the lower
+triangular elements such that the scores match the input)
 
 @d post process score
 @{
 if (!attr(chol, "diag"))
     ### remove scores for constant diagonal elements
-    ret <- ret[-idx, , drop = FALSE]    
-ret <- ltMatrices(ret, diag = attr(chol, "diag"), byrow = TRUE)
+    ret[idx,] <- 0
+ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
 @}
 
 We can now finally put everything together in a single score function.

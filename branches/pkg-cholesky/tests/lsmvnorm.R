@@ -27,7 +27,11 @@ chks <- function(dg, tol = .Machine$double.eps^(1 / 4)) {
     rl <- l(L)
     rs <- s(L)
     chk(rl, rs$logLik)
-    chk(rs$chol, ltMatrices(grad(l, unclass(L)), diag = dg), tol = tol)
+    if (dg) {
+        chk(rs$chol, ltMatrices(grad(l, unclass(L)), diag = dg), tol = tol)
+    } else {
+        chk(c(Lower_tri(rs$chol)), grad(l, unclass(L)), tol = tol)
+    }
 
     l <- function(x) {
         x <- ltMatrices(x, diag = dg)
@@ -40,7 +44,11 @@ chks <- function(dg, tol = .Machine$double.eps^(1 / 4)) {
     rl <- l(L)
     rs <- s(L)
     chk(rl, rs$logLik)
-    chk(rs$invchol, ltMatrices(grad(l, unclass(L)), diag = dg), tol = tol)
+    if (dg) {
+        chk(rs$invchol, ltMatrices(grad(l, unclass(L)), diag = dg), tol = tol)
+    } else {
+        chk(c(Lower_tri(rs$invchol)), grad(l, unclass(L)), tol = tol)
+    }
 
     l <- function(x)
         lmvnorm(a, b, mean = x, chol = L, M = M, seed = 29)
@@ -98,12 +106,13 @@ ll <- function(x) {
             invchol = cd$invchol, w = w)
 }
 a <- ltM(matrix(grad(ll, unclass(L)), ncol = N))
+diagonals(a) <- 0
 
 cd <- .cmvnorm(invchol = L, which = j, given = obs[j,,drop = FALSE])
 s <- smvnorm(lwr[-j,,drop = FALSE], upr[-j,,drop = FALSE], center = cd$center, 
              invchol = cd$invchol, w = w)
 
-chk(a[,-j], s$invchol, check.attributes = FALSE)
+chk(as.array(a[,-j]), as.array(s$invchol), check.attributes = FALSE)
 
 ## score wrt obs
 ll <- function(x) {
