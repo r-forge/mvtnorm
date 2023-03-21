@@ -23,8 +23,9 @@ smvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE,
   \item{mean}{matrix of means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}).
 }
-  \item{center}{matrix of rescaled means (one column for each observation, length is
-recycled to length of \code{lower} and \code{upper}).
+  \item{center}{matrix of negative rescaled means (one column for each observation, length is
+recycled to length of \code{lower} and \code{upper}) as returned by
+\code{cond_mvnorm(..., center = TRUE)}. 
 }
   \item{chol}{Cholesky factors of covariance matrices as
     \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and

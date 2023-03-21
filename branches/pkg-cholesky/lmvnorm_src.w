@@ -2106,6 +2106,8 @@ given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 We can implement this as
 @d cond general
 @{
+stopifnot(!center)
+
 if (!missing(chol)) ### chol is C = Cholesky of covariance
     P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
 else                ### invcol is L = Cholesky of precision
@@ -2144,6 +2146,11 @@ given). The conditional mean is
   -\mL^{-1}_{-\jvec, -\jvec} \mL^{-\top}_{-\jvec, -\jvec} \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec} \\
 & = & - \mL^{-1}_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec}.
 \end{eqnarray*}
+We sometimes, for example when scores with respect to $\mL^{-1}_{-\jvec,
+-\jvec}$ shall be computed in \code{smvnorm}, need the negative rescaled mean $\mL_{-\jvec, \jvec}
+\yvec_{\jvec}$ and the \code{center = TRUE} argument triggers this values to
+be returned.
+
 The implementation reads
 
 @d cond simple
@@ -2153,19 +2160,23 @@ if (which[1] == 1L && (length(which) == 1L ||
     ### which is 1:j
     L <- if (missing(invchol)) solve(chol) else invchol
     tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which))
-    meantmp <- Mult(L, rbind(given, tmp))
+    centerm <- Mult(L, rbind(given, tmp))[-which,,drop = FALSE]
     L <- L[,-which]
-    mean <- -solve(L, meantmp[-which,,drop = FALSE])
-    if (missing(invchol))
-        return(list(mean = mean, chol = solve(L)))
-    return(list(mean = mean, invchol = L))
+    if (missing(invchol)) {
+        if (center)
+            return(list(center = centerm, chol = solve(L)))
+        return(list(mean = -solve(L, centerm), chol = solve(L)))
+    }
+    if (center)
+        return(list(center = centerm, invchol = L))
+    return(list(mean = -solve(L, centerm), invchol = L))
 }
 @}
 
 
 @d conditional
 @{
-cond_mvnorm <- function(chol, invchol, which_given = 1L, given) {
+cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) {
 
     which <- which_given
     @<mc input checks@>

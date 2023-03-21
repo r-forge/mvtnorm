@@ -10,7 +10,7 @@
 }
 \usage{
 marg_mvnorm(chol, invchol, which = 1L)
-cond_mvnorm(chol, invchol, which_given = 1L, given)
+cond_mvnorm(chol, invchol, which_given = 1L, given, center = FALSE)
 }
 \arguments{
   \item{chol}{Cholesky factors of covariance matrices as
@@ -30,6 +30,10 @@ cond_mvnorm(chol, invchol, which_given = 1L, given)
                equal to \code{length(which)}, the number of 
                columns corresponds to the number of matrices in \code{chol}
                or \code{invchol}.
+}
+  \item{center}{logical, if \code{TRUE}, the negative rescaled conditional mean is returned
+   (such that it can be specified as \code{center} argument to
+   \code{\link{smvnorm}}). By default, the conditional mean is returned.
 }
 }
 \details{
