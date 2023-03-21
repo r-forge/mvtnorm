@@ -2,7 +2,7 @@
 useDynLib(mvtnorm, .registration = TRUE, .fixes = "mvtnorm_")
 
 importFrom("stats",
-	   pnorm, qnorm, rnorm, runif,
+	   pnorm, qnorm, rnorm, dnorm, runif,
 	   pt, qt,
 	   rchisq, uniroot,
 	   cov2cor, optim, coef, glm, pcauchy, qcauchy, predict, quasi)

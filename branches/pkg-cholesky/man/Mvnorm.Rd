@@ -9,7 +9,7 @@
   \code{sigma}.
 }
 \usage{
-dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE)
+dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, chol, invchol)
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 }
@@ -35,9 +35,17 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
    covariance matrix is symmetric or not. This will speed up the
    computation but may cause unexpected outputs when ill-behaved
    \code{sigma} is provided. The default value is \code{TRUE}.}
+ \item{chol}{an object of class \code{\link{ltMatrices}} specifying
+             potentially observation-specific covariance matrices via
+             their lower-triagular Cholesky factors.}
+ \item{invchol}{an object of class \code{\link{ltMatrices}} specifying
+             potentially observation-specific covariance matrices via
+             their inverse lower-triagular Cholesky factors (that is, a
+             factorisation of the precision matrices).}
+
 }
-\author{Friedrich Leisch and Fabian Scheipl}
-\seealso{\code{\link{pmvnorm}}, \code{\link{rnorm}}, \code{\link{qmvnorm}}}
+\seealso{\code{\link{pmvnorm}}, \code{\link{rnorm}}, \code{\link{qmvnorm}},
+         \code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \examples{
 dmvnorm(x=c(0,0))
 dmvnorm(x=c(0,0), mean=c(1,1))

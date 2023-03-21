@@ -839,6 +839,10 @@ attr(,"rcnames")
 
 > chk(ll1, ll2)
 
+> ll3 <- sum(dmvnorm(t(Y), invchol = lt, log = TRUE))
+
+> chk(ll1, ll3)
+
 > (j <- 1:5 * 10)
 [1] 10 20 30 40 50
 
@@ -1339,4 +1343,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  34.38    0.20   34.58 
+ 37.862   0.347  38.214 

@@ -2296,6 +2296,14 @@ ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE
 chk(ll1, ll2)
 @@
 
+The \code{dmvnorm} function now also has \code{chol} and \code{invchol}
+arguments such that we can use
+<<ex-MV-d>>=
+ll3 <- sum(dmvnorm(t(Y), invchol = lt, log = TRUE))
+chk(ll1, ll3)
+@@
+
+
 Sometimes it is preferable to split the joint distribution into a marginal
 distribution of some elements and the conditional distribution given these
 elements. The joint density is, of course, the product of the marginal and
