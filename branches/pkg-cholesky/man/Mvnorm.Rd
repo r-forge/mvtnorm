@@ -1,5 +1,6 @@
 \name{Mvnorm}
 \alias{dmvnorm}
+\alias{sldmvnorm}
 \alias{rmvnorm}
 \title{Multivariate Normal Density and Random Deviates}
 \description{
@@ -10,12 +11,13 @@
 }
 \usage{
 dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, chol, invchol)
+sldmvnorm(x, mean = 0, chol, invchol) 
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 }
 \arguments{
  \item{x}{vector or matrix of quantiles. If \code{x} is a matrix, each
-   row is taken to be a quantile.}
+   row is taken to be a quantile and columns correspond to the number of dimensions, \code{p}.}
  \item{n}{number of observations.}
  \item{mean}{mean vector, default is \code{rep(0, length = ncol(x))}.}
  \item{sigma}{covariance matrix, default is \code{diag(ncol(x))}.}
@@ -42,6 +44,20 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
              potentially observation-specific covariance matrices via
              their inverse lower-triagular Cholesky factors (that is, a
              factorisation of the precision matrices).}
+
+}
+\details{
+\code{dmvnorm} computes the density function of the multivariate normal
+specified by mean and the covariance matrix \code{sigma}. Alternatively,
+Cholesky factors of \code{sigma} (argument \code{chol}) or its inverse
+(argument \code{invchol}) can be used to specify the covariance structure.
+In the two latter cases, means and covariances might differ for each row of
+\code{x}. \code{slmvnorm} computes the gradients of the log-density with
+respect to \code{x} and \code{chol} (or \code{invchol}).
+
+\code{rmvnorm} generates multivariate normal variables. See the package
+vignette linked to below for simpler ways to do so based on \code{chol} or
+\code{invchol}.
 
 }
 \seealso{\code{\link{pmvnorm}}, \code{\link{rnorm}}, \code{\link{qmvnorm}},

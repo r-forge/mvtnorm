@@ -40,6 +40,29 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     retval
 }
 
+### allow matrix arguments x and also mean
+.xm <- function(x, mean, p, n) {
+
+    if (!is.matrix(x)) x <- matrix(x, ncol = length(x))
+    nr <- nrow(x)
+    nc <- ncol(x)
+    if (nr != n)
+        stop("x and (inv)chol have non-conforming size")
+    if (nc != p)
+        stop("x and (inv)chol have non-conforming size")
+    if (identical(unique(mean), 0)) return(x)
+    if (length(mean) == p) 
+        return(x - mean)
+    if (!is.matrix(mean))
+        stop("x and mean have non-conforming size")
+    if (nrow(mean) != nr)
+        stop("x and mean have non-conforming size")
+    if (ncol(mean) != nc)
+        stop("x and mean have non-conforming size")
+    return(x - mean)
+}
+
+
 dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, 
                      chol, invchol) ### allow multiple covariance matrices specified as
                                     ### chol = chol(sigma) or
@@ -81,18 +104,6 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
     } else {
         ## potentially one covariance per row of x
         ## mean might be a matrix
-        if(!missing(mean)) {
-            if(!is.null(dim(mean))) dim(mean) <- NULL
-            if (length(mean) == length(x)) {
-                x <- x - mean
-            } else {
-                if (length(mean) == p) {
-                    x <- t(t(x) - mean)
-                } else {
-                    stop("x and mean have non-conforming size")
-                }
-            }
-        }
 
         if (missing(chol)) {
             if (missing(invchol))
@@ -102,6 +113,9 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
                 stop("invchol is not an object of class ltMatrices")
             if (p != dim(invchol)[2L])
                 stop("x and invchol have non-conforming size")
+            N <- dim(invchol)[1L]
+            J <- dim(invchol)[2L]
+            x <- .xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N))
             ## use dnorm (gets the normalizing factors right)
             ## we need t(x) because x is (N x p) but Mult wants (p x N)
             logretval <- colSums(dnorm(Mult(invchol, t(x)), log = TRUE))
@@ -117,6 +131,9 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
                 stop("chol is not an object of class ltMatrices")
             if (p != dim(chol)[2L])
                 stop("x and chol have non-conforming size")
+            N <- dim(chol)[1L]
+            J <- dim(chol)[2L]
+            x <- .xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N))
             logretval <- colSums(dnorm(solve(chol, t(x)), log = TRUE))
             if (attr(chol, "diag"))
                 logretval <- logretval - colSums(log(diagonals(chol)))
@@ -124,4 +141,39 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
     }
     names(logretval) <- rownames(x)
     if(log) logretval else exp(logretval)
+}
+
+sldmvnorm <- function(x, mean = 0, chol, invchol) {
+
+    stopifnot(xor(missing(chol), missing(invchol)))
+
+    if (!missing(invchol)) {
+
+        N <- dim(invchol)[1L]
+        J <- dim(invchol)[2L]
+        x <- t(.xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N)))
+
+        sx <- - Mult(invchol, Mult(invchol, x), transpose = TRUE)
+
+        Y <- matrix(x, byrow = TRUE, nrow = J, ncol = N * J)
+        ret <- - matrix(Mult(invchol, x)[, rep(1:N, each = J)] * Y, ncol = N)
+
+        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
+        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], 
+                          diag = attr(invchol, "diag"), byrow = FALSE)
+        ret <- ltMatrices(ret, 
+                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
+        if (attr(invchol, "diag")) {
+            diagonals(ret) <- diagonals(ret) + 1 / diagonals(invchol)
+        } else {
+            diagonals(ret) <- 0
+        }
+        return(list(x = sx, invchol = ret))
+    }
+
+    invchol <- solve(chol)
+    ret <- sldmvnorm(x = x, mean = mean, invchol = invchol)
+    ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ret$invchol <- NULL
+    return(ret)
 }
