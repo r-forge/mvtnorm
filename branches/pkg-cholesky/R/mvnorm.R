@@ -114,8 +114,9 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
             if (p != dim(invchol)[2L])
                 stop("x and invchol have non-conforming size")
             N <- dim(invchol)[1L]
+            N <- ifelse(N == 1, nrow(x), N)
             J <- dim(invchol)[2L]
-            x <- .xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N))
+            x <- .xm(x = x, mean = mean, p = J, n = N)
             ## use dnorm (gets the normalizing factors right)
             ## we need t(x) because x is (N x p) but Mult wants (p x N)
             logretval <- colSums(dnorm(Mult(invchol, t(x)), log = TRUE))
@@ -132,8 +133,9 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
             if (p != dim(chol)[2L])
                 stop("x and chol have non-conforming size")
             N <- dim(chol)[1L]
+            N <- ifelse(N == 1, nrow(x), N)
             J <- dim(chol)[2L]
-            x <- .xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N))
+            x <- .xm(x = x, mean = mean, p = J, n = N)
             logretval <- colSums(dnorm(solve(chol, t(x)), log = TRUE))
             if (attr(chol, "diag"))
                 logretval <- logretval - colSums(log(diagonals(chol)))
@@ -150,8 +152,9 @@ sldmvnorm <- function(x, mean = 0, chol, invchol) {
     if (!missing(invchol)) {
 
         N <- dim(invchol)[1L]
+        N <- ifelse(N == 1, nrow(x), N)
         J <- dim(invchol)[2L]
-        x <- t(.xm(x = x, mean = mean, p = J, n = ifelse(N == 1, nrow(x), N)))
+        x <- t(.xm(x = x, mean = mean, p = J, n = N))
 
         sx <- - Mult(invchol, Mult(invchol, x), transpose = TRUE)
 
@@ -164,7 +167,8 @@ sldmvnorm <- function(x, mean = 0, chol, invchol) {
         ret <- ltMatrices(ret, 
                           diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
         if (attr(invchol, "diag")) {
-            diagonals(ret) <- diagonals(ret) + 1 / diagonals(invchol)
+            ### recycle properly
+            diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))
         } else {
             diagonals(ret) <- 0
         }
