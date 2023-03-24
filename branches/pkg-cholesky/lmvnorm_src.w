@@ -3585,7 +3585,75 @@ Z <- matrix(rnorm(N * J), nrow = J)
 Y <- Mult(lt, Z) + (mn <- 1:J)
 @@
 
-Next we add some interval-censoring represented by \code{lwr} and \code{upr}. 
+Before we add some interval-censoring to the data, let's estimate the
+Cholesky factor $\mC$ (here called \code{lt}) from the raw continuous data.
+The true mean $\muvec$ and the true covariance matrix $\Sigma$ can be estimated 
+from the uncensored data via maximum likelihood as
+
+<<ex-ML-mu-vcov>>=
+rowMeans(Y)
+(Shat <- var(t(Y)) * (N - 1) / N)
+@@
+
+We first check if we can obtain the same results by numerial optimisation
+using \code{dmvnorm} and the scores \code{sldmvnorm}. The log-likelihood and
+the score function (for the centered means) in terms of $\mC$ are
+
+<<ex-ML-clogLik>>=
+Yc <- t(Y - rowMeans(Y))
+
+ll <- function(parm) {
+    C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
+    -sum(dmvnorm(x = Yc, chol = C, log = TRUE))
+}
+
+sc <- function(parm) {
+    C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
+    -rowSums(unclass(sldmvnorm(x = Yc, chol = C)$chol))
+}
+@@
+
+The diagonal elements of $\mC$ are positive, so we need box constraints
+<<ex-ML-const>>=
+llim <- rep(-Inf, J * (J + 1) / 2)
+llim[which(rownames(unclass(lt)) %in% paste(1:J, 1:J, sep = "."))] <- 1e-4
+@@
+
+The ML-estimate of $\mC \mC^\top$ is now used to obtain an estimate of $\mC$
+and we check the score function for some random starting values
+<<ex-ML-c>>=
+if (BYROW) {
+  cML <- chol(Shat)[upper.tri(Shat, diag = TRUE)]
+} else {
+  cML <- t(chol(Shat))[lower.tri(Shat, diag = TRUE)]
+}
+ll(cML)
+start <- runif(length(cML))
+grad(ll, start)
+sc(start)
+@@
+
+Finally, we hand over to \code{optim} and compare the results of the
+analytically and numerically obtained ML estimates
+
+<<ex-ML-coptim>>=
+op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
+            lower = llim, control = list(trace = TRUE))
+## ML numerically
+ltMatrices(op$par, diag = TRUE, byrow = BYROW)
+ll(op$par)
+## ML analytically
+t(chol(Shat))
+ll(cML)
+## true C matrix
+lt
+@@
+
+Under interval-censoring, the mean and $\mC$ are no longer orthogonal and
+there is no analytic solution to the ML estimation problem. So, 
+we add some interval-censoring represented by \code{lwr} and \code{upr} and
+try to estimate the model parameters via \code{lmvnorm} and corresponding
+scores \code{slmvnorm}.
 
 <<ex-ML-cens>>=
 prb <- 1:9 / 10
@@ -3599,12 +3667,6 @@ for (j in 1:J) {
 }
 @@
 
-The true mean $\muvec$ and the true covariance matrix $\Sigma$ can be estimated from the uncensored data as
-
-<<ex-ML-mu-vcov>>=
-rowMeans(Y)
-(Shat <- var(t(Y)))
-@@
 
 Let's do some sanity and performance checks first. For different values of
 $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
