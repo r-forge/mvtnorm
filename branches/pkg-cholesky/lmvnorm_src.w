@@ -157,7 +157,7 @@ and the corresponding score function.
 The document first describes a class and some useful methods for dealing with multiple lower triangular matrices $\mC_i, i = 1,
 \dots, N$ in Chapter~\ref{ltMatrices}.  The multivariate normal
 log-likelihood, and the corresponding score function, is implemented as
-outlined in Chapter~\ref{lmvnorm}.  An example demonstrating
+outlined in Chapter~\ref{lpmvnorm}.  An example demonstrating
 maximum-likelihood estimation of Cholesky factors in the presence of
 interval-censored observations is discussed last in Chapter~\ref{ML}.
 
@@ -2061,7 +2061,7 @@ stopifnot(all(which %in% 1:J))
 The first $j$ marginal distributions can be obtained from subsetting $\mC$
 or $\mL$ directly. Arbitrary marginal distributions are based on the
 corresponding subset of the covariance matrix for which we compute a
-corresponding Cholesky factor (such that we can use \code{lmvnorm} later
+corresponding Cholesky factor (such that we can use \code{lpmvnorm} later
 on).
 
 @d marginal
@@ -2147,7 +2147,7 @@ given). The conditional mean is
 & = & - \mL^{-1}_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec}.
 \end{eqnarray*}
 We sometimes, for example when scores with respect to $\mL^{-1}_{-\jvec,
--\jvec}$ shall be computed in \code{smvnorm}, need the negative rescaled mean $\mL_{-\jvec, \jvec}
+-\jvec}$ shall be computed in \code{slpmvnorm}, need the negative rescaled mean $\mL_{-\jvec, \jvec}
 \yvec_{\jvec}$ and the \code{center = TRUE} argument triggers this values to
 be returned.
 
@@ -2323,7 +2323,7 @@ chk(ll1, ll3)
 @@
 
 
-\chapter{Multivariate Normal Log-likelihoods} \label{lmvnorm}
+\chapter{Multivariate Normal Log-likelihoods} \label{lpmvnorm}
 
 <<chapterseed, echo = FALSE>>=
 set.seed(270312)
@@ -2337,10 +2337,10 @@ We now discuss code for evaluating the log-likelihood
 This is relatively simple to achieve using the existing \code{pmvnorm}, so a
 prototype might look like
 
-@d lmvnormR
+@d lpmvnormR
 @{
 library("mvtnorm")
-lmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
+lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
 
     @<input checks@>
 
@@ -2364,8 +2364,8 @@ lmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE,
 }
 @}
 
-<<fct-lmvnormR, echo = FALSE>>=
-@<lmvnormR@>
+<<fct-lpmvnormR, echo = FALSE>>=
+@<lpmvnormR@>
 @@
 
 However, the underlying \proglang{FORTRAN} code first computes the Cholesky
@@ -2379,7 +2379,7 @@ such that maximum-likelihood estimation becomes a bit faster.
 
 Let's look at an example first. This code estimates $p_1, \dots, p_{10}$ for
 a $5$-dimensional normal
-<<ex-lmvnorm_R>>=
+<<ex-lpmvnorm_R>>=
 J <- 5
 N <- 10
 
@@ -2391,21 +2391,21 @@ a[sample(J * N)[1:2]] <- -Inf
 b <- a + 2 + matrix(runif(N * J), nrow = J)
 b[sample(J * N)[1:2]] <- Inf
 
-(phat <- c(lmvnormR(a, b, chol = lx, logLik = FALSE)))
+(phat <- c(lpmvnormR(a, b, chol = lx, logLik = FALSE)))
 @@
 
 We want to achieve the same result a bit more general and a bit faster.
 
 \section{Algorithm}
 
-@o lmvnorm.R -cp
+@o lpmvnorm.R -cp
 @{
 @<R Header@>
-@<lmvnorm@>
-@<smvnorm@>
+@<lpmvnorm@>
+@<slpmvnorm@>
 @}
 
-@o lmvnorm.c -cc
+@o lpmvnorm.c -cc
 @{
 @<C Header@>
 #include <R.h>
@@ -2416,8 +2416,8 @@ We want to achieve the same result a bit more general and a bit faster.
 #include <R_ext/BLAS.h> /* for dtrmm */
 @<pnorm fast@>
 @<pnorm slow@>
-@<R lmvnorm@>
-@<R smvnorm@>
+@<R lpmvnorm@>
+@<R slpmvnorm@>
 @}
 
 We implement the algorithm described by \cite{numerical-:1992}. The key
@@ -2474,7 +2474,7 @@ if (attr(chol, "diag")) {
     bc <- upper / c(dchol)
     ### the following is equivalent to Dchol(chol, D = 1 / dchol)
     ### but returns an object without diagonal elements (expected by
-    ### R_lmvnorm)
+    ### R_lpmvnorm)
     ### CHECK if dimensions are correct
     C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
     if (J > 1) ### else: univariate problem; C is no longer used
@@ -2636,7 +2636,7 @@ if (LENGTH(center)) dcenter += iJ;
 
 It turned out that calls to \code{pnorm} are expensive, so a slightly faster
 alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
-(\code{fast = TRUE} in the calls to \code{lmvnorm} and \code{smvnorm}):
+(\code{fast = TRUE} in the calls to \code{lpmvnorm} and \code{slpmvnorm}):
 
 @d pnorm fast
 @{
@@ -2756,9 +2756,9 @@ if (LENGTH(center)) {
 
 We put the code together in a dedicated \proglang{C} function
 
-@d R lmvnorm
+@d R lpmvnorm
 @{
-SEXP R_lmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
+SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     SEXP ans;
@@ -2872,9 +2872,9 @@ stopifnot(xor(missing(chol), missing(invchol)))
 if (missing(chol)) chol <- solve(invchol)
 @}
 
-@d lmvnorm
+@d lpmvnorm
 @{
-lmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
+lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
@@ -2887,7 +2887,7 @@ lmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_lmvnorm, ac, bc, unclass(C), as.double(center), 
+    ret <- .Call(mvtnorm_R_lpmvnorm, ac, bc, unclass(C), as.double(center), 
                  as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik), as.logical(fast));
     return(ret)
@@ -2899,8 +2899,8 @@ Coming back to our simple example, we get (with $25000$ simple Monte-Carlo
 iterations)
 <<ex-again>>=
 phat
-exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = TRUE))
-exp(lmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = FALSE))
+exp(lpmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = TRUE))
+exp(lpmvnorm(a, b, chol = lx, M = 25000, logLik = FALSE, fast = FALSE))
 @@
 
 Next we generate some data and compare our implementation to \code{pmvnorm}
@@ -2912,7 +2912,7 @@ will depend a lot on appropriate choices and it is the users
 responsibility to make sure things work as intended. If you are unsure, you
 should use \code{pmvnorm} which provides a well-tested configuration.
 
-<<ex-lmvnorm>>= )
+<<ex-lpmvnorm>>= )
 M <- 10000
 if (require("qrng")) {
     ### quasi-Monte-Carlo
@@ -2923,16 +2923,16 @@ if (require("qrng")) {
 }
 
 ### Genz & Bretz, 2001, without early stopping (really?)
-pGB <- lmvnormR(a, b, chol = lx, logLik = FALSE, 
+pGB <- lpmvnormR(a, b, chol = lx, logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 ### Genz 1992 with quasi-Monte-Carlo, fast pnorm
-pGqf <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = TRUE))
+pGqf <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = TRUE))
 ### Genz 1992, original Monte-Carlo, fast pnorm
-pGf <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = TRUE))
+pGf <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = TRUE))
 ### Genz 1992 with quasi-Monte-Carlo, R::pnorm
-pGqs <- exp(lmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = FALSE))
+pGqs <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = FALSE))
 ### Genz 1992, original Monte-Carlo, R::pnorm
-pGs <- exp(lmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = FALSE))
+pGs <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = FALSE))
 
 cbind(pGB, pGqf, pGf, pGqs, pGs)
 @@
@@ -2943,11 +2943,11 @@ univariate problems
 <<ex-uni>>=
 ### test univariate problem
 ### call pmvnorm
-pGB <- lmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
+pGB <- lpmvnormR(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
                 logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-### call lmvnorm
-pGq <- exp(lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
+### call lpmvnorm
+pGq <- exp(lpmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = lx[,1], 
                    logLik = FALSE))
 ### ground truth
 ptr <- pnorm(b[1,] / c(unclass(lx[,1]))) - pnorm(a[1,] / c(unclass(lx[,1])))
@@ -3275,9 +3275,9 @@ for (j = 0; j < iJ; j++) {
 
 We put everything together in \proglang{C}
 
-@d R smvnorm
+@d R slpmvnorm
 @{
-SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
+SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
                SEXP M, SEXP tol, SEXP fast) {
 
     SEXP ans;
@@ -3345,7 +3345,7 @@ SEXP R_smvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
 }
 @}
 
-The \proglang{R} code is now essentially identical to \code{lmvnorm},
+The \proglang{R} code is now essentially identical to \code{lpmvnorm},
 however, we need to undo the effect of standardisation once the scores have
 been computed
 
@@ -3421,9 +3421,9 @@ ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
 
 We can now finally put everything together in a single score function.
 
-@d smvnorm
+@d slpmvnorm
 @{
-smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
+slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
@@ -3436,7 +3436,7 @@ smvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_smvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
+    ret <- .Call(mvtnorm_R_slpmvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
@@ -3493,14 +3493,14 @@ b[3,] <- Inf
 M <- 10000
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
-lli <- c(lmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
+lli <- c(lpmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
 
 fC <- function(prm) {
     C <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE)
-    lmvnorm(a, b, chol = C, w = W, M = M)
+    lpmvnorm(a, b, chol = C, w = W, M = M)
 }
 
-sC <- smvnorm(a, b, chol = mC, w = W, M = M)
+sC <- slpmvnorm(a, b, chol = mC, w = W, M = M)
 
 chk(lli, sC$logLik)
 
@@ -3512,16 +3512,16 @@ We can do the same when $\mL$ (and not $\mC$) is given
 <<ex-Lscore>>=
 mL <- solve(mC)
 
-lliL <- c(lmvnorm(a, b, invchol = mL, w = W, M = M, logLik = FALSE))
+lliL <- c(lpmvnorm(a, b, invchol = mL, w = W, M = M, logLik = FALSE))
 
 chk(lli, lliL)
 
 fL <- function(prm) {
     L <- ltMatrices(matrix(prm, ncol = 1), diag = TRUE)
-    lmvnorm(a, b, invchol = L, w = W, M = M)
+    lpmvnorm(a, b, invchol = L, w = W, M = M)
 }
 
-sL <- smvnorm(a, b, invchol = mL, w = W, M = M)
+sL <- slpmvnorm(a, b, invchol = mL, w = W, M = M)
 
 chk(lliL, sL$logLik)
 
@@ -3533,8 +3533,8 @@ The score function also works for univariate problems
 <<ex-uni-score>>=
 ptr <- pnorm(b[1,] / c(unclass(mC[,1]))) - pnorm(a[1,] / c(unclass(mC[,1])))
 log(ptr)
-lmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik = FALSE)
-lapply(smvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik =
+lpmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik = FALSE)
+lapply(slpmvnorm(a[1,,drop = FALSE], b[1,,drop = FALSE], chol = mC[,1], logLik =
 TRUE), unclass)
 sd1 <- c(unclass(mC[,1]))
 (dnorm(b[1,] / sd1) * b[1,] - dnorm(a[1,] / sd1) * a[1,]) * (-1) / sd1^2 / ptr
@@ -3652,8 +3652,8 @@ lt
 Under interval-censoring, the mean and $\mC$ are no longer orthogonal and
 there is no analytic solution to the ML estimation problem. So, 
 we add some interval-censoring represented by \code{lwr} and \code{upr} and
-try to estimate the model parameters via \code{lmvnorm} and corresponding
-scores \code{slmvnorm}.
+try to estimate the model parameters via \code{lpmvnorm} and corresponding
+scores \code{slpmvnorm}.
 
 <<ex-ML-cens>>=
 prb <- 1:9 / 10
@@ -3670,16 +3670,16 @@ for (j in 1:J) {
 
 Let's do some sanity and performance checks first. For different values of
 $M$, we evaluate the log-likelihood using \code{pmvnorm} (called in
-\code{lmvnormR}) and the simplified implementation (fast and slow). The comparion is a bit
+\code{lpmvnormR}) and the simplified implementation (fast and slow). The comparion is a bit
 unfair, because we do not add the time needed to setup Halton sequences, but
 we would do this only once and use the stored values for repeated
 evaluations of a log-likelihood (because the optimiser expects a
 deterministic function to be optimised)
 
-<<ex-ML-chk, eval = TRUE>>=
+<<ex-ML-chk, eval = FALSE>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = 
+    st <- system.time(ret <- lpmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = 
                                       GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
@@ -3687,14 +3687,14 @@ lH <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng"))
         W <- t(ghalton(m * N, d = J - 1))
-    st <- system.time(ret <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
+    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 lHf <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng"))
         W <- t(ghalton(m * N, d = J - 1))
-    st <- system.time(ret <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m, 
+    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m, 
                                      fast = TRUE))
     return(c(st["user.self"], ll = ret))
 })
@@ -3705,6 +3705,73 @@ stable.
 
 \begin{figure}
 \begin{center}
+<<ex-ML-fig-data, echo = FALSE>>=
+### use pre-computed data, otherwise CRAN complains.
+M <-
+c(1000, 1105, 1221, 1349, 1491, 1648, 1822, 2013, 2225, 2459, 
+2718, 3004, 3320, 3669, 4055, 4481, 4953, 5473, 6049, 6685, 7389, 
+8166, 9025, 9974, 11023, 12182)
+lGB <-
+structure(c(0.054000000000002046, -880.49261248615869, 0.054000000000002046, 
+-880.49242591762345, 0.054000000000002046, -880.49299587719224, 
+0.053999999999994941, -880.49262902245289, 0.054000000000002046, 
+-880.49023141833743, 0.054999999999999716, -880.49278384818467, 
+0.054000000000002046, -880.49263211493064, 0.054999999999999716, 
+-880.48929666151639, 0.054000000000002046, -880.49251644257947, 
+0.054000000000002046, -880.49133879555245, 0.054000000000002046, 
+-880.49209059546854, 0.10999999999999943, -880.49160057988672, 
+0.11399999999999721, -880.49355264445524, 0.11100000000000421, 
+-880.49125049308975, 0.10799999999999699, -880.49215052698423, 
+0.10800000000000409, -880.49227539674052, 0.10900000000000176, 
+-880.4918790945195, 0.10900000000000176, -880.49200824376248, 
+0.19200000000000017, -880.49213191772731, 0.19500000000000028, 
+-880.49183887878723, 0.19400000000000261, -880.49213912969094, 
+0.19399999999999551, -880.49104161510115, 0.1980000000000004, 
+-880.49219786133153, 0.32800000000000296, -880.49160034162105, 
+0.3230000000000004, -880.49194070754265, 0.3230000000000004, 
+-880.49169841069408), dim = c(2L, 26L), dimnames = list(c("user.self", 
+"ll"), NULL))
+lH <-
+structure(c(0.022999999999996135, -880.48029630630356, 0.027000000000001023, 
+-880.49616556706735, 0.028999999999996362, -880.48868341221828, 
+0.031999999999996476, -880.49617133610923, 0.034999999999996589, 
+-880.48559676487218, 0.039000000000001478, -880.49133269164929, 
+0.042999999999999261, -880.49455705455455, 0.047999999999994714, 
+-880.49542914386404, 0.052999999999997272, -880.49439060601685, 
+0.059999999999995168, -880.48554604736751, 0.064000000000000057, 
+-880.49145473103829, 0.071000000000005059, -880.49413777944255, 
+0.079000000000000625, -880.49161893244116, 0.087000000000003297, 
+-880.49339336832497, 0.094999999999998863, -880.49254091532248, 
+0.10599999999999454, -880.49164929759263, 0.117999999999995, 
+-880.49250821826354, 0.12900000000000489, -880.49255823649469, 
+0.14100000000000534, -880.49250899551407, 0.15699999999999648, 
+-880.49044836032715, 0.17300000000000182, -880.4916864321558, 
+0.19299999999999784, -880.49117821390132, 0.21099999999999852, 
+-880.49228594426586, 0.23299999999999699, -880.49151053053481, 
+0.25800000000000267, -880.49153034586084, 0.28699999999999903, 
+-880.49192862086477), dim = c(2L, 26L), dimnames = list(c("user.self", 
+"ll"), NULL))
+lHf <-
+structure(c(0.018000000000000682, -880.48706686434321, 0.019000000000005457, 
+-880.48863853791863, 0.021999999999998465, -880.48856920618675, 
+0.023999999999993804, -880.49392985529778, 0.026000000000003354, 
+-880.48602935577401, 0.029000000000003467, -880.49156265644069, 
+0.033000000000001251, -880.49941537079019, 0.035000000000003695, 
+-880.49445708416158, 0.038000000000003809, -880.49395360381868, 
+0.042999999999999261, -880.49364771019248, 0.04700000000000415, 
+-880.49295526291712, 0.051999999999999602, -880.4946669985851, 
+0.058999999999997499, -880.49374458475813, 0.064999999999997726, 
+-880.49419536692346, 0.070000000000000284, -880.49332997377735, 
+0.07799999999999585, -880.49145097709174, 0.086000000000005627, 
+-880.49237859905554, 0.094000000000001194, -880.49039213464482, 
+0.10599999999999454, -880.49106109560728, 0.11500000000000199, 
+-880.49157721254892, 0.12899999999999778, -880.49252340367264, 
+0.14199999999999591, -880.49102722425221, 0.15800000000000125, 
+-880.49208613066503, 0.17099999999999227, -880.4920686898173, 
+0.18899999999999295, -880.4922510767417, 0.20799999999999841, 
+-880.4923471956962), dim = c(2L, 26L), dimnames = list(c("user.self", 
+"ll"), NULL))
+@@
 <<ex-ML-fig, eval = TRUE, echo = FALSE, fig = TRUE, pdf = TRUE, width = 8, height = 5>>=
 layout(matrix(1:2, nrow = 1))
 plot(M, lGB["ll",], ylim = range(c(lGB["ll",], lH["ll",], lHf["ll",])), ylab = "Log-likelihood")
@@ -3713,7 +3780,7 @@ points(M, lHf["ll",], pch = 5)
 plot(M, lGB["user.self",], ylim = c(0, max(lGB["user.self",])), ylab = "Time (in sec)")
 points(M, lH["user.self",], pch = 4)
 points(M, lHf["user.self",], pch = 5)
-legend("bottomright", legend = c("pmvnorm", "lmvnorm", "lmvnorm(fast)"), pch = c(1, 4, 5), bty = "n")
+legend("bottomright", legend = c("pmvnorm", "lpmvnorm", "lpmvnorm(fast)"), pch = c(1, 4, 5), bty = "n")
 @@
 \caption{Evaluated log-likelihoods (left) and timings (right).
 \label{lleval}}
@@ -3740,7 +3807,7 @@ ll <- function(parm, J) {
      parm <- parm[-(1:J)]	### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     -lmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
+     -lpmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
 }
 @@
 
@@ -3748,10 +3815,10 @@ We can check the correctness of our log-likelihood function
 <<ex-ML-check>>=
 prm <- c(mn, unclass(lt))
 ll(prm, J = J)
-lmvnormR(lwr, upr, mean = mn, chol = lt, 
+lpmvnormR(lwr, upr, mean = mn, chol = lt, 
          algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
-(llprm <- lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M))
-chk(llprm, sum(lmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M, logLik = FALSE)))
+(llprm <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M))
+chk(llprm, sum(lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M, logLik = FALSE)))
 @@
 
 Before we hand over to the optimiser, we define the score function with
@@ -3763,8 +3830,8 @@ sc <- function(parm, J) {
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-    ret <- smvnorm(lower = lwr, upper = upr, mean = m, chol = C, 
-                   w = W, M = M, logLik = TRUE)
+    ret <- slpmvnorm(lower = lwr, upper = upr, mean = m, chol = C, 
+                     w = W, M = M, logLik = TRUE)
     return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
 }
 @@

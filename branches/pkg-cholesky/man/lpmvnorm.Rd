@@ -1,6 +1,6 @@
-\name{lmvnorm}
-\alias{lmvnorm}
-\alias{smvnorm}
+\name{lpmvnorm}
+\alias{lpmvnorm}
+\alias{slpmvnorm}
 \title{
     Multivariate Normal Log-likelihood and Score Functions
 }
@@ -10,9 +10,9 @@
     corresponding scores.
 }
 \usage{
-lmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
         M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-smvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+slpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
         M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 }
 \arguments{
@@ -64,7 +64,7 @@ as zero.
 \details{
   Evaluates the multivariate normal law defined by \code{means} and
   \code{chol} over boxes defined by \code{lower} and \code{upper}. By
-  default, the log-likelihood is returned by \code{lmvnorm}.
+  default, the log-likelihood is returned by \code{lpmvnorm}.
 
   Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2002)
   integration is implemented, the latter with weights obtained, for example,
@@ -72,7 +72,7 @@ as zero.
   the user to ensure a meaningful lattice is used. In case of doubt, use
   plain Monte-Carlo (\code{w = NULL}) or \code{\link{pmvnorm}}.
 
-  \code{smvnorm} computes both the individual log-likelihood contributions
+  \code{slpmvnorm} computes both the individual log-likelihood contributions
   and the corresponding score matrix (of dimension \eqn{J * (J + 1) / 2 \times N}) if
   \code{chol} contains diagonal elements. Otherwise, the dimension is \eqn{J * (J
   - 1) / 2 \times N}.
@@ -82,7 +82,7 @@ as zero.
 }
 \value{
 The log-likelihood (\code{logLik = TRUE}) or the individual contributions to the log-likelihood.
-\code{smvnorm} returns the score matrix and, optionally (\code{logLik =
+\code{slpmvnorm} returns the score matrix and, optionally (\code{logLik =
 TRUE}), the individual log-likelihood contributions.
 }
 \references{
@@ -118,14 +118,14 @@ TRUE}), the individual log-likelihood contributions.
   if (require("qrng")) w <- t(ghalton(M * N, J - 1))
 
   ### log-likelihood
-  lmvnorm(lower = lwr, upper = upr, chol = C, w = w, M = M)
+  lpmvnorm(lower = lwr, upper = upr, chol = C, w = w, M = M)
 
   ### compare with pmvnorm
-  exp(lmvnorm(lower = lwr, upper = upr, chol = C, logLik = FALSE, w = w, M = M))
+  exp(lpmvnorm(lower = lwr, upper = upr, chol = C, logLik = FALSE, w = w, M = M))
   sapply(1:N, function(i) pmvnorm(lower = lwr[,i], upper = upr[,i], sigma = S))
 
   ### log-lik contributions and score matrix
-  smvnorm(lower = lwr, upper = upr, chol = C, w = w, M = M, logLik = TRUE)
+  slpmvnorm(lower = lwr, upper = upr, chol = C, w = w, M = M, logLik = TRUE)
 
 }
 \keyword{distribution}

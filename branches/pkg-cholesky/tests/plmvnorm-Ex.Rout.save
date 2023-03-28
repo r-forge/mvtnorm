@@ -56,7 +56,7 @@ Type 'q()' to quit R.
 +     args$lower <- matrix(args$lower, ncol = 1)
 +     args$upper <- matrix(args$upper, ncol = 1)
 + 
-+     ret <- exp(do.call("lmvnorm", args))
++     ret <- exp(do.call("lpmvnorm", args))
 +     ret[ret < .Machine$double.eps] <- 0
 +     ret
 + }
@@ -1089,4 +1089,4 @@ In addition: Warning messages:
 > 
 > proc.time()
    user  system elapsed 
- 19.485   0.239  19.723 
+ 18.482   0.228  18.721 

@@ -50,8 +50,8 @@ static const R_CallMethodDef callMethods[] = {
     {"R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve, 6},
     {"R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod , 6},
     {"R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult, 5},
-    {"R_lmvnorm", (DL_FUNC) &R_lmvnorm, 11},
-    {"R_smvnorm", (DL_FUNC) &R_smvnorm, 10},
+    {"R_lpmvnorm", (DL_FUNC) &R_lpmvnorm, 11},
+    {"R_slpmvnorm", (DL_FUNC) &R_slpmvnorm, 10},
     {"R_vectrick", (DL_FUNC) &R_vectrick, 7},
     {"R_syMatrices_chol", (DL_FUNC) &R_syMatrices_chol, 3},
     {NULL, NULL, 0}
@@ -68,8 +68,8 @@ void attribute_visible R_init_mvtnorm(DllInfo *dll)
     R_RegisterCCallable("mvtnorm", "R_ltMatrices_solve", (DL_FUNC) &R_ltMatrices_solve);
     R_RegisterCCallable("mvtnorm", "R_ltMatrices_tcrossprod", (DL_FUNC) &R_ltMatrices_tcrossprod);
     R_RegisterCCallable("mvtnorm", "R_ltMatrices_Mult", (DL_FUNC) &R_ltMatrices_Mult);
-    R_RegisterCCallable("mvtnorm", "R_lmvnorm", (DL_FUNC) &R_lmvnorm);
-    R_RegisterCCallable("mvtnorm", "R_smvnorm", (DL_FUNC) &R_smvnorm);
+    R_RegisterCCallable("mvtnorm", "R_lpmvnorm", (DL_FUNC) &R_lpmvnorm);
+    R_RegisterCCallable("mvtnorm", "R_slpmvnorm", (DL_FUNC) &R_slpmvnorm);
     R_RegisterCCallable("mvtnorm", "R_vectrick", (DL_FUNC) &R_vectrick);
     R_RegisterCCallable("mvtnorm", "R_syMatrices_chol", (DL_FUNC) &R_syMatrices_chol);
 }

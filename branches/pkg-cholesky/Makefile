@@ -4,8 +4,8 @@ lmvnorm_src.Rnw:	lmvnorm_src.w
 	mv lmvnorm_src.tex lmvnorm_src.Rnw
 	cp ltMatrices.R R
 	cp ltMatrices.c src
-	cp lmvnorm.c src
-	cp lmvnorm.R R
+	cp lpmvnorm.c src
+	cp lpmvnorm.R R
 
 lmvnorm_src.R: lmvnorm_src.Rnw
 	Stangle lmvnorm_src.Rnw

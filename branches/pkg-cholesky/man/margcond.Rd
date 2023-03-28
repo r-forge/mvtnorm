@@ -33,7 +33,7 @@ cond_mvnorm(chol, invchol, which_given = 1L, given, center = FALSE)
 }
   \item{center}{logical, if \code{TRUE}, the negative rescaled conditional mean is returned
    (such that it can be specified as \code{center} argument to
-   \code{\link{smvnorm}}). By default, the conditional mean is returned.
+   \code{\link{slpmvnorm}}). By default, the conditional mean is returned.
 }
 }
 \details{

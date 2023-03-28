@@ -39,7 +39,7 @@ pmvnorm <- function(lower = -Inf, upper = Inf, mean = rep(0, length(lower)),
     args$lower <- matrix(args$lower, ncol = 1)
     args$upper <- matrix(args$upper, ncol = 1)
 
-    ret <- exp(do.call("lmvnorm", args))
+    ret <- exp(do.call("lpmvnorm", args))
     ret[ret < .Machine$double.eps] <- 0
     ret
 }
