@@ -9,7 +9,7 @@ distribution for arbitrary limits and correlation matrices.
 }
 \usage{
 pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
-        corr=NULL, sigma=NULL, algorithm = GenzBretz(), keepAttr=TRUE, ...)
+        corr=NULL, sigma=NULL, algorithm = GenzBretz(), keepAttr=TRUE, seed = NULL, ...)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -18,7 +18,9 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the covariance matrix of dimension n less than 1000. Either \code{corr} or
                 \code{sigma} can be specified. If \code{sigma} is given, the
-                problem is standardized. If neither \code{corr} nor
+                problem is standardized internally. If \code{corr} is given,
+                it is assumed that appropriate standardization was performed
+                by the user.  If neither \code{corr} nor
                 \code{sigma} is given, the identity matrix is used
                 for \code{sigma}. }
   \item{algorithm}{ an object of class \code{\link{GenzBretz}},
@@ -28,7 +30,8 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
   \item{keepAttr}{\code{\link{logical}} indicating if
     \code{\link{attributes}} such as \code{error} and \code{msg} should be
     attached to the return value.  The default, \code{TRUE} is back compatible.}
-
+  \item{seed}{an object specifying if and how the random number generator
+          should be initialized, see \code{\link[stats]{simulate}}.}
   \item{...}{ additional parameters (currently given to \code{GenzBretz} for
               backward compatibility issues). }
 }

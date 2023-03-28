@@ -11,7 +11,7 @@
 \usage{
 pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
      df=1, corr=NULL, sigma=NULL, algorithm = GenzBretz(),
-     type = c("Kshirsagar", "shifted"), keepAttr=TRUE, ...)
+     type = c("Kshirsagar", "shifted"), keepAttr=TRUE, seed = NULL, ...)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -22,7 +22,9 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{corr}{ the correlation matrix of dimension n.}
   \item{sigma}{ the scale matrix of dimension n. Either \code{corr} or
     \code{sigma} can be specified. If \code{sigma} is given, the
-    problem is standardized. If neither \code{corr} nor
+                problem is standardized internally. If \code{corr} is given,
+                it is assumed that appropriate standardization was performed
+                by the user. If neither \code{corr} nor
     \code{sigma} is given, the identity matrix is used
     for \code{sigma}. }
   \item{algorithm}{ an object of class \code{\link{GenzBretz}} or
@@ -45,6 +47,8 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{keepAttr}{\code{\link{logical}} indicating if
     \code{\link{attributes}} such as \code{error} and \code{msg} should be
     attached to the return value.  The default, \code{TRUE} is back compatible.}
+  \item{seed}{an object specifying if and how the random number generator
+          should be initialized, see \code{\link[stats]{simulate}}. }
   \item{...}{additional parameters (currently given to \code{GenzBretz} for
               backward compatibility issues). }
 }

@@ -1,7 +1,7 @@
 Package: mvtnorm
 Title: Multivariate Normal and t Distributions
-Version: 1.1-4
-Date: 2023-03-02
+Version: 1.2-0
+Date: 2023-03-28
 Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Frank", "Bretz", role = "aut"),
              person("Tetsuhisa", "Miwa", role = "aut"),
@@ -13,8 +13,12 @@ Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Torsten", "Hothorn", role = c("aut", "cre"),
                     email = "Torsten.Hothorn@R-project.org", comment = c(ORCID = "0000-0001-8301-0471")))
 Description: Computes multivariate normal and t probabilities, quantiles,
-  random deviates and densities.
+  random deviates, and densities. Interval-censored log-likelihoods for Gaussian 
+  copulae parameterised by Cholesky factors of covariance matrices are implemented 
+  in addition. Methods for a class representing multiple lower triangular matrices 
+  are available.
 Imports: stats, methods
 Depends: R(>= 3.5.0)
+Suggests: qrng, numDeriv
 License: GPL-2
 URL: http://mvtnorm.R-forge.R-project.org
