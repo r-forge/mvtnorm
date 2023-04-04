@@ -777,6 +777,22 @@ defined without diagonal elements.
 
     @<extract slots@>
 
+    if (byrow)
+        idx <- cumsum(c(1, 2:J))
+    else
+        idx <- cumsum(c(1, J:2))
+
+    ### diagonals(x) <- NULL returns ltMatrices(..., diag = FALSE)
+    if (is.null(value)) {
+        if (!attr(x, "diag")) return(x)
+        if (J == 1L) {
+            x[] <- 1
+            return(x)
+        }
+        return(ltMatrices(unclass(x)[-idx,,drop = FALSE], diag = FALSE, 
+                          byrow = byrow, names = dn[[2L]]))
+    }
+
     x <- .adddiag(x)
 
     if (!is.matrix(value))
@@ -785,13 +801,11 @@ defined without diagonal elements.
     stopifnot(is.matrix(value) && nrow(value) == J 
                                && ncol(value) == d[1L])
 
-    if (J == 1L)
+    if (J == 1L) {
         x[] <- value
+        return(x)
+    }
 
-    if (byrow)
-        idx <- cumsum(c(1, 2:J))
-    else
-        idx <- cumsum(c(1, J:2))
     x[idx, ] <- value
 
     return(x)
@@ -1905,12 +1919,18 @@ chol2pre <- function(x)
     Crossprod(chol2invchol(x))
 
 ### C -> R
-chol2cor <- function(x)
-    Tcrossprod(Dchol(x))
+chol2cor <- function(x) {
+    ret <- Tcrossprod(Dchol(x))
+    diagonals(ret) <- NULL
+    return(ret)
+}
 
 ### L -> R
-invchol2cor <- function(x)
-    chol2cor(invchol2chol(x))
+invchol2cor <- function(x) {
+    ret <- chol2cor(invchol2chol(x))
+    diagonals(ret) <- NULL
+    return(ret)
+}
 
 ### L -> A
 invchol2pc <- function(x) {

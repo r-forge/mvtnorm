@@ -194,14 +194,14 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape subset ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb12}{12}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lower triangular elements}\nobreak\ {\footnotesize \NWlink{nuweb14}{14}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape diagonals ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb16}{16}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape diagonal matrix}\nobreak\ {\footnotesize \NWlink{nuweb18b}{18b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape diagonal matrix}\nobreak\ {\footnotesize \NWlink{nuweb19a}{19a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape mult ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb20a}{20a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape solve ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb26}{26}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape tcrossprod ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb31}{31}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape crossprod ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb32}{32}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape chol syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb33}{33}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape add diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb18a}{18a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize \NWlink{nuweb38}{38}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape convenience functions}\nobreak\ {\footnotesize \NWlink{nuweb41}{41}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape aperm}\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$}\verb@@\\
@@ -536,7 +536,7 @@ triangular matrix to by interpreted as a symmetric matrix.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18a}{, 18a}\NWlink{nuweb20a}{, 20a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18}{, 18}\NWlink{nuweb20a}{, 20a}.
 
 \item{}
 \end{list}
@@ -1001,7 +1001,7 @@ defined without diagonal elements.
 \end{flushleft}
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap18}\raggedright\small
-\NWtarget{nuweb18a}{} $\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize {18a}}$\,\rangle\equiv$
+\NWtarget{nuweb18}{} $\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize {18}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -1012,6 +1012,22 @@ defined without diagonal elements.
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
+\mbox{}\verb@    if (byrow)@\\
+\mbox{}\verb@        idx <- cumsum(c(1, 2:J))@\\
+\mbox{}\verb@    else@\\
+\mbox{}\verb@        idx <- cumsum(c(1, J:2))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ### diagonals(x) <- NULL returns ltMatrices(..., diag = FALSE)@\\
+\mbox{}\verb@    if (is.null(value)) {@\\
+\mbox{}\verb@        if (!attr(x, "diag")) return(x)@\\
+\mbox{}\verb@        if (J == 1L) {@\\
+\mbox{}\verb@            x[] <- 1@\\
+\mbox{}\verb@            return(x)@\\
+\mbox{}\verb@        }@\\
+\mbox{}\verb@        return(ltMatrices(unclass(x)[-idx,,drop = FALSE], diag = FALSE, @\\
+\mbox{}\verb@                          byrow = byrow, names = dn[[2L]]))@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@@\\
 \mbox{}\verb@    x <- .adddiag(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!is.matrix(value))@\\
@@ -1020,13 +1036,11 @@ defined without diagonal elements.
 \mbox{}\verb@    stopifnot(is.matrix(value) && nrow(value) == J @\\
 \mbox{}\verb@                               && ncol(value) == d[1L])@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (J == 1L)@\\
+\mbox{}\verb@    if (J == 1L) {@\\
 \mbox{}\verb@        x[] <- value@\\
+\mbox{}\verb@        return(x)@\\
+\mbox{}\verb@    }@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (byrow)@\\
-\mbox{}\verb@        idx <- cumsum(c(1, 2:J))@\\
-\mbox{}\verb@    else@\\
-\mbox{}\verb@        idx <- cumsum(c(1, J:2))@\\
 \mbox{}\verb@    x[idx, ] <- value@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    return(x)@\\
@@ -1062,7 +1076,7 @@ A unit diagonal matrix is not treated as a special case but as an
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap19}\raggedright\small
-\NWtarget{nuweb18b}{} $\langle\,${\itshape diagonal matrix}\nobreak\ {\footnotesize {18b}}$\,\rangle\equiv$
+\NWtarget{nuweb19a}{} $\langle\,${\itshape diagonal matrix}\nobreak\ {\footnotesize {19a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -1103,7 +1117,7 @@ the lower triangular structure of \code{x})
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap20}\raggedright\small
-\NWtarget{nuweb19}{} $\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize {19}}$\,\rangle\equiv$
+\NWtarget{nuweb19b}{} $\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize {19b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -1152,7 +1166,7 @@ efficiently without copying data by using the lower triangular structure of
 \mbox{}\verb@    if (ncol(y) != N)@\\
 \mbox{}\verb@        return(sapply(1:ncol(y), function(i) Mult(x, y[,i], transpose = transpose)))@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize \NWlink{nuweb19b}{19b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- ltMatrices(x, byrow = TRUE)@\\
 \mbox{}\verb@@\\
@@ -2530,12 +2544,18 @@ and now the convenience functions are one-liners:
 \mbox{}\verb@    Crossprod(chol2invchol(x))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### C -> R@\\
-\mbox{}\verb@chol2cor <- function(x)@\\
-\mbox{}\verb@    Tcrossprod(Dchol(x))@\\
+\mbox{}\verb@chol2cor <- function(x) {@\\
+\mbox{}\verb@    ret <- Tcrossprod(Dchol(x))@\\
+\mbox{}\verb@    diagonals(ret) <- NULL@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### L -> R@\\
-\mbox{}\verb@invchol2cor <- function(x)@\\
-\mbox{}\verb@    chol2cor(invchol2chol(x))@\\
+\mbox{}\verb@invchol2cor <- function(x) {@\\
+\mbox{}\verb@    ret <- chol2cor(invchol2chol(x))@\\
+\mbox{}\verb@    diagonals(ret) <- NULL@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### L -> A@\\
 \mbox{}\verb@invchol2pc <- function(x) {@\\
@@ -5496,7 +5516,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$.subset ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb11}{11}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb12}{12}.}
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18a}{18a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb83}{83}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb50b}{, 50b}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb21a}{21a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb21b}{21b}\NWlink{nuweb25}{, 25}\NWlink{nuweb36a}{, 36a}.
@@ -5523,13 +5543,13 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$copy elements\nobreak\ {\footnotesize \NWlink{nuweb23b}{23b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb25}{25}.}
 \item $\langle\,$crossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb32}{32}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb39}{39}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb41}{41}.}
-\item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb18b}{18b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb19a}{19a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb16}{16}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dim ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dimensions\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58}{58}\NWlink{nuweb68}{, 68}.
 }
 \item $\langle\,$dimnames ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18a}{, 18a}\NWlink{nuweb20a}{, 20a}.
+\item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18}{, 18}\NWlink{nuweb20a}{, 20a}.
 }
 \item $\langle\,$first element\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb28}{28}\NWlink{nuweb29a}{, 29a}.
 }
@@ -5567,7 +5587,7 @@ sqrt(diag(vcov(m1)))[-1L]
 }
 \item $\langle\,$mult\nobreak\ {\footnotesize \NWlink{nuweb21b}{21b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
 \item $\langle\,$mult ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb20a}{20a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$mult ltMatrices transpose\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb20a}{20a}.}
+\item $\langle\,$mult ltMatrices transpose\nobreak\ {\footnotesize \NWlink{nuweb19b}{19b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb20a}{20a}.}
 \item $\langle\,$names ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb6}{6}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$new score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb65c}{65c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb67a}{67a}.}
 \item $\langle\,$output\nobreak\ {\footnotesize \NWlink{nuweb54d}{54d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58}{58}.}
