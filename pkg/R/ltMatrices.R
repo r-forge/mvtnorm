@@ -359,7 +359,12 @@ Mult <- function(x, y, transpose = FALSE) {
         ax <- as.array(x)
         ay <- array(y[rep(1:J, J),,drop = FALSE], dim = dim(ax), 
                     dimnames = dimnames(ax))
-        return(margin.table(ay * ax, 2:3))
+        ret <- ay * ax
+        ### was: return(margin.table(ret, 2:3))
+        ret <- matrix(colSums(matrix(ret, nrow = dim(ret)[1L])), 
+                      nrow = dim(ret)[2L], ncol = dim(ret)[3L],
+                      dimnames = dimnames(ret)[-1L])
+        return(ret)
     }
     
 
