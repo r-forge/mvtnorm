@@ -10,7 +10,8 @@
   \code{sigma}.
 }
 \usage{
-dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, chol, invchol)
+dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, 
+        chol, invchol)
 sldmvnorm(x, mean = 0, chol, invchol) 
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)

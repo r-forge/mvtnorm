@@ -2321,9 +2321,15 @@ whose columns of vectorised $\J \times \J$ matrices
 \mbox{}\verb@A <- ltMatrices(A, byrow = FALSE)@\\
 \mbox{}\verb@dA <- dim(A)@\\
 \mbox{}\verb@stopifnot(dC[2L] == dA[2L])@\\
-\mbox{}\verb@stopifnot(dC[1L] == dA[1L])@\\
 \mbox{}\verb@class(A) <- class(A)[-1L]@\\
 \mbox{}\verb@storage.mode(A) <- "double"@\\
+\mbox{}\verb@if (dC[1L] != dA[1L]) {@\\
+\mbox{}\verb@    if (dC[1L] == 1L)@\\
+\mbox{}\verb@        C <- C[, rep(1, N), drop = FALSE]@\\
+\mbox{}\verb@    if (dA[1L] == 1L)@\\
+\mbox{}\verb@        A <- A[, rep(1, N), drop = FALSE]@\\
+\mbox{}\verb@    stopifnot(ncol(A) == ncol(C))@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -3307,7 +3313,7 @@ For each $i = 1, \dots, N$, do
 \mbox{}\verb@    ### elementwise standardisation is simple@\\
 \mbox{}\verb@    dchol <- diagonals(chol)@\\
 \mbox{}\verb@    ### zero diagonals not allowed@\\
-\mbox{}\verb@    stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))@\\
+\mbox{}\verb@    stopifnot(all(abs(dchol) > (.Machine$double.eps)))@\\
 \mbox{}\verb@    ac <- lower / c(dchol)@\\
 \mbox{}\verb@    bc <- upper / c(dchol)@\\
 \mbox{}\verb@    ### the following is equivalent to Dchol(chol, D = 1 / dchol)@\\

@@ -650,9 +650,15 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     A <- ltMatrices(A, byrow = FALSE)
     dA <- dim(A)
     stopifnot(dC[2L] == dA[2L])
-    stopifnot(dC[1L] == dA[1L])
     class(A) <- class(A)[-1L]
     storage.mode(A) <- "double"
+    if (dC[1L] != dA[1L]) {
+        if (dC[1L] == 1L)
+            C <- C[, rep(1, N), drop = FALSE]
+        if (dA[1L] == 1L)
+            A <- A[, rep(1, N), drop = FALSE]
+        stopifnot(ncol(A) == ncol(C))
+    }
     
 
     ret <- .Call(mvtnorm_R_vectrick, C, as.integer(N), as.integer(J), S, A, 

@@ -83,7 +83,7 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLi
         ### elementwise standardisation is simple
         dchol <- diagonals(chol)
         ### zero diagonals not allowed
-        stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
+        stopifnot(all(abs(dchol) > (.Machine$double.eps)))
         ac <- lower / c(dchol)
         bc <- upper / c(dchol)
         ### the following is equivalent to Dchol(chol, D = 1 / dchol)
@@ -187,7 +187,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         ### elementwise standardisation is simple
         dchol <- diagonals(chol)
         ### zero diagonals not allowed
-        stopifnot(all(abs(dchol) > sqrt(.Machine$double.eps)))
+        stopifnot(all(abs(dchol) > (.Machine$double.eps)))
         ac <- lower / c(dchol)
         bc <- upper / c(dchol)
         ### the following is equivalent to Dchol(chol, D = 1 / dchol)
