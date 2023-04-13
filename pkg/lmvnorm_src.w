@@ -1741,21 +1741,25 @@ storage.mode(S) <- "double"
 
 @d check A argument
 @{
-stopifnot(inherits(A, "ltMatrices"))
-if (!attr(A, "diag")) diagonals(A) <- 1
-A_byrow_orig <- attr(A, "byrow")
-stopifnot(C_byrow_orig == A_byrow_orig)
-A <- ltMatrices(A, byrow = FALSE)
-dA <- dim(A)
-stopifnot(dC[2L] == dA[2L])
-class(A) <- class(A)[-1L]
-storage.mode(A) <- "double"
-if (dC[1L] != dA[1L]) {
-    if (dC[1L] == 1L)
-        C <- C[, rep(1, N), drop = FALSE]
-    if (dA[1L] == 1L)
-        A <- A[, rep(1, N), drop = FALSE]
-    stopifnot(ncol(A) == ncol(C))
+if (missing(A)) {
+    A <- C
+} else {
+    stopifnot(inherits(A, "ltMatrices"))
+    if (!attr(A, "diag")) diagonals(A) <- 1
+    A_byrow_orig <- attr(A, "byrow")
+    stopifnot(C_byrow_orig == A_byrow_orig)
+    A <- ltMatrices(A, byrow = FALSE)
+    dA <- dim(A)
+    stopifnot(dC[2L] == dA[2L])
+    class(A) <- class(A)[-1L]
+    storage.mode(A) <- "double"
+    if (dC[1L] != dA[1L]) {
+        if (dC[1L] == 1L)
+            C <- C[, rep(1, N), drop = FALSE]
+        if (dA[1L] == 1L)
+            A <- A[, rep(1, N), drop = FALSE]
+        stopifnot(ncol(A) == ncol(C))
+    }
 }
 @}
 
