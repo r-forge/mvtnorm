@@ -156,10 +156,11 @@ sldmvnorm <- function(x, mean = 0, chol, invchol) {
         J <- dim(invchol)[2L]
         x <- t(.xm(x = x, mean = mean, p = J, n = N))
 
-        sx <- - Mult(invchol, Mult(invchol, x), transpose = TRUE)
+        Mix <- Mult(invchol, x)
+        sx <- - Mult(invchol, Mix, transpose = TRUE)
 
         Y <- matrix(x, byrow = TRUE, nrow = J, ncol = N * J)
-        ret <- - matrix(Mult(invchol, x)[, rep(1:N, each = J)] * Y, ncol = N)
+        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
 
         M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
         ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], 
@@ -177,7 +178,8 @@ sldmvnorm <- function(x, mean = 0, chol, invchol) {
 
     invchol <- solve(chol)
     ret <- sldmvnorm(x = x, mean = mean, invchol = invchol)
-    ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ret$chol <- - vectrick(invchol, ret$invchol)
     ret$invchol <- NULL
     return(ret)
 }

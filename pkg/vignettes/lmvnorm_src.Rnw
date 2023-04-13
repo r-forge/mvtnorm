@@ -202,7 +202,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape chol syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb34}{34}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape add diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize \NWlink{nuweb39}{39}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize \NWlink{nuweb39b}{39b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape convenience functions}\nobreak\ {\footnotesize \NWlink{nuweb42}{42}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape aperm}\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape marginal}\nobreak\ {\footnotesize \NWlink{nuweb45b}{45b}}$\,\rangle$}\verb@@\\
@@ -2253,7 +2253,7 @@ object
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb39}{39}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb39b}{39b}.
 
 \item{}
 \end{list}
@@ -2264,7 +2264,7 @@ whose columns of vectorised $\J \times \J$ matrices
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap43}\raggedright\small
-\NWtarget{nuweb38a}{} $\langle\,${\itshape check S argument}\nobreak\ {\footnotesize {38a}}$\,\rangle\equiv$
+\NWtarget{nuweb38}{} $\langle\,${\itshape check S argument}\nobreak\ {\footnotesize {38}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -2300,7 +2300,7 @@ whose columns of vectorised $\J \times \J$ matrices
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb39}{39}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb39b}{39b}.
 
 \item{}
 \end{list}
@@ -2310,32 +2310,36 @@ whose columns of vectorised $\J \times \J$ matrices
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap44}\raggedright\small
-\NWtarget{nuweb38b}{} $\langle\,${\itshape check A argument}\nobreak\ {\footnotesize {38b}}$\,\rangle\equiv$
+\NWtarget{nuweb39a}{} $\langle\,${\itshape check A argument}\nobreak\ {\footnotesize {39a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@stopifnot(inherits(A, "ltMatrices"))@\\
-\mbox{}\verb@if (!attr(A, "diag")) diagonals(A) <- 1@\\
-\mbox{}\verb@A_byrow_orig <- attr(A, "byrow")@\\
-\mbox{}\verb@stopifnot(C_byrow_orig == A_byrow_orig)@\\
-\mbox{}\verb@A <- ltMatrices(A, byrow = FALSE)@\\
-\mbox{}\verb@dA <- dim(A)@\\
-\mbox{}\verb@stopifnot(dC[2L] == dA[2L])@\\
-\mbox{}\verb@class(A) <- class(A)[-1L]@\\
-\mbox{}\verb@storage.mode(A) <- "double"@\\
-\mbox{}\verb@if (dC[1L] != dA[1L]) {@\\
-\mbox{}\verb@    if (dC[1L] == 1L)@\\
-\mbox{}\verb@        C <- C[, rep(1, N), drop = FALSE]@\\
-\mbox{}\verb@    if (dA[1L] == 1L)@\\
-\mbox{}\verb@        A <- A[, rep(1, N), drop = FALSE]@\\
-\mbox{}\verb@    stopifnot(ncol(A) == ncol(C))@\\
+\mbox{}\verb@if (missing(A)) {@\\
+\mbox{}\verb@    A <- C@\\
+\mbox{}\verb@} else {@\\
+\mbox{}\verb@    stopifnot(inherits(A, "ltMatrices"))@\\
+\mbox{}\verb@    if (!attr(A, "diag")) diagonals(A) <- 1@\\
+\mbox{}\verb@    A_byrow_orig <- attr(A, "byrow")@\\
+\mbox{}\verb@    stopifnot(C_byrow_orig == A_byrow_orig)@\\
+\mbox{}\verb@    A <- ltMatrices(A, byrow = FALSE)@\\
+\mbox{}\verb@    dA <- dim(A)@\\
+\mbox{}\verb@    stopifnot(dC[2L] == dA[2L])@\\
+\mbox{}\verb@    class(A) <- class(A)[-1L]@\\
+\mbox{}\verb@    storage.mode(A) <- "double"@\\
+\mbox{}\verb@    if (dC[1L] != dA[1L]) {@\\
+\mbox{}\verb@        if (dC[1L] == 1L)@\\
+\mbox{}\verb@            C <- C[, rep(1, N), drop = FALSE]@\\
+\mbox{}\verb@        if (dA[1L] == 1L)@\\
+\mbox{}\verb@            A <- A[, rep(1, N), drop = FALSE]@\\
+\mbox{}\verb@        stopifnot(ncol(A) == ncol(C))@\\
+\mbox{}\verb@    }@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb39}{39}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb39b}{39b}.
 
 \item{}
 \end{list}
@@ -2345,7 +2349,7 @@ We put everything together in function \code{vectrick}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap45}\raggedright\small
-\NWtarget{nuweb39}{} $\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize {39}}$\,\rangle\equiv$
+\NWtarget{nuweb39b}{} $\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize {39b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -2355,8 +2359,8 @@ We put everything together in function \code{vectrick}
 \mbox{}\verb@    stopifnot(length(transpose) == 2L)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape check C argument}\nobreak\ {\footnotesize \NWlink{nuweb37b}{37b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape check S argument}\nobreak\ {\footnotesize \NWlink{nuweb38a}{38a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape check A argument}\nobreak\ {\footnotesize \NWlink{nuweb38b}{38b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape check S argument}\nobreak\ {\footnotesize \NWlink{nuweb38}{38}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape check A argument}\nobreak\ {\footnotesize \NWlink{nuweb39a}{39a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- .Call(mvtnorm_R_vectrick, C, as.integer(N), as.integer(J), S, A, @\\
 \mbox{}\verb@                 as.logical(TRUE), as.logical(transpose))@\\
@@ -2448,7 +2452,7 @@ from $\mL_i$ (\code{invchol}) or $\mC_i =
 First, we set-up functions for computing $\tilde{\mC}_i$
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap46}\raggedright\small
-\NWtarget{nuweb40}{} $\langle\,${\itshape D times C}\nobreak\ {\footnotesize {40}}$\,\rangle\equiv$
+\NWtarget{nuweb41a}{} $\langle\,${\itshape D times C}\nobreak\ {\footnotesize {41a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -2485,7 +2489,7 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap47}\raggedright\small
-\NWtarget{nuweb41}{} $\langle\,${\itshape L times D}\nobreak\ {\footnotesize {41}}$\,\rangle\equiv$
+\NWtarget{nuweb41b}{} $\langle\,${\itshape L times D}\nobreak\ {\footnotesize {41b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -2527,8 +2531,8 @@ and now the convenience functions are one-liners:
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape D times C}\nobreak\ {\footnotesize \NWlink{nuweb40}{40}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape L times D}\nobreak\ {\footnotesize \NWlink{nuweb41}{41}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape D times C}\nobreak\ {\footnotesize \NWlink{nuweb41a}{41a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape L times D}\nobreak\ {\footnotesize \NWlink{nuweb41b}{41b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### C -> Sigma@\\
 \mbox{}\verb@chol2cov <- function(x)@\\
@@ -5533,11 +5537,11 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb21b}{21b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22}{22}\NWlink{nuweb26}{, 26}\NWlink{nuweb37a}{, 37a}.
 }
 \item $\langle\,$call Lapack\nobreak\ {\footnotesize \NWlink{nuweb24b}{24b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
-\item $\langle\,$check A argument\nobreak\ {\footnotesize \NWlink{nuweb38b}{38b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39}{39}.}
+\item $\langle\,$check A argument\nobreak\ {\footnotesize \NWlink{nuweb39a}{39a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
 \item $\langle\,$check and / or set integration weights\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$check C argument\nobreak\ {\footnotesize \NWlink{nuweb37b}{37b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39}{39}.}
-\item $\langle\,$check S argument\nobreak\ {\footnotesize \NWlink{nuweb38a}{38a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39}{39}.}
+\item $\langle\,$check C argument\nobreak\ {\footnotesize \NWlink{nuweb37b}{37b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
+\item $\langle\,$check S argument\nobreak\ {\footnotesize \NWlink{nuweb38}{38}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
 \item $\langle\,$chol\nobreak\ {\footnotesize \NWlink{nuweb35}{35}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
 \item $\langle\,$chol scores\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
 \item $\langle\,$chol syMatrices\nobreak\ {\footnotesize \NWlink{nuweb34}{34}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
@@ -5553,7 +5557,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$convenience functions\nobreak\ {\footnotesize \NWlink{nuweb42}{42}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$copy elements\nobreak\ {\footnotesize \NWlink{nuweb24a}{24a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
 \item $\langle\,$crossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb33}{33}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb40}{40}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
+\item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb41a}{41a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
 \item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb16}{16}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dim ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
@@ -5580,8 +5584,8 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$inner score loop\nobreak\ {\footnotesize \NWlink{nuweb68a}{68a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
 \item $\langle\,$input checks\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb50}{50}\NWlink{nuweb61}{, 61}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$kronecker vec trick\nobreak\ {\footnotesize \NWlink{nuweb39}{39}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb41}{41}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
+\item $\langle\,$kronecker vec trick\nobreak\ {\footnotesize \NWlink{nuweb39b}{39b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb41b}{41b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
 \item $\langle\,$lower scores\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
 \item $\langle\,$lower triangular elements\nobreak\ {\footnotesize \NWlink{nuweb14}{14}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb61}{61}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51a}{51a}.}
