@@ -249,6 +249,8 @@ print.syMatrices <- function(x, ...)
 
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
+    if (inherits(x, "syMatrices"))
+        class(x)[1L] <- "ltMatrices"
     stopifnot(inherits(x, "ltMatrices"))
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)

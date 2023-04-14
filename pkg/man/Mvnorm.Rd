@@ -17,10 +17,20 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 }
 \arguments{
- \item{x}{vector or matrix of quantiles. If \code{x} is a matrix, each
-   row is taken to be a quantile and columns correspond to the number of dimensions, \code{p}.}
+ \item{x}{vector or matrix of quantiles. In \code{dmvnorm}, when
+          \code{sigma} is given, and when \code{x} is a matrix, each
+          row is taken to be a quantile and columns correspond to the number of dimensions, 
+          \code{p}. Otherwise, \code{x} is expected to be the transposed
+          version with rows corresponding to dimensions and columns to
+          observations. The reason for this quite dangerous arrangement is
+          that, for efficiency reasons, \code{\link{Mult}} or
+          \code{\link{solve}} work with matrices where columns represent
+          observations.}
  \item{n}{number of observations.}
- \item{mean}{mean vector, default is \code{rep(0, length = ncol(x))}.}
+ \item{mean}{mean vector, default is \code{rep(0, length = ncol(x))}.
+             If \code{chol} or \code{invchol} are given in \code{dmvnorm} or 
+             \code{sldmvnorm}, \code{mean} can also be a matrix with
+             observation-specific means arranged in columns.}
  \item{sigma}{covariance matrix, default is \code{diag(ncol(x))}.}
  \item{log}{logical; if \code{TRUE}, densities d are given as log(d).}
  \item{method}{string specifying the matrix decomposition used to
@@ -52,8 +62,10 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
 specified by mean and the covariance matrix \code{sigma}. Alternatively,
 Cholesky factors of \code{sigma} (argument \code{chol}) or its inverse
 (argument \code{invchol}) can be used to specify the covariance structure.
-In the two latter cases, means and covariances might differ for each row of
-\code{x}. \code{slmvnorm} computes the gradients of the log-density with
+Note that rows and columns of \code{x} and \code{mean} are switched when
+these objects specify the covariance structure (for internal efficiency
+reasons). This interface if also present in \code{\link{lpmvnorm}}.
+\code{slmvnorm} computes the gradients of the log-density with
 respect to \code{x} and \code{chol} (or \code{invchol}).
 
 \code{rmvnorm} generates multivariate normal variables. See the package
@@ -71,6 +83,13 @@ sigma <- matrix(c(4,2,2,3), ncol=2)
 x <- rmvnorm(n=500, mean=c(1,2), sigma=sigma)
 colMeans(x)
 var(x)
+dS <- dmvnorm(x, sigma = sigma)
+
+### alternative interface
+C <- t(chol(sigma))
+(C <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE))
+dC <- dmvnorm(t(x), chol = C)
+all.equal(dS, dC)
 
 x <- rmvnorm(n=500, mean=c(1,2), sigma=sigma, method="chol")
 colMeans(x)

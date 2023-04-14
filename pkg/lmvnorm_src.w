@@ -647,12 +647,14 @@ chk(a, b)
 @@
 
 Extracting the lower triangular elements from an \code{ltMatrices} object
-returns a matrix with $N$ columns
+(or from an object of class \code{syMatrices}) returns a matrix with $N$ columns
 
 @d lower triangular elements
 @{
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
+    if (inherits(x, "syMatrices"))
+        class(x)[1L] <- "ltMatrices"
     stopifnot(inherits(x, "ltMatrices"))
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)
@@ -688,6 +690,8 @@ Lower_tri(M, diag = TRUE)
 M <- ltMatrices(matrix(1:6, nrow = 6, ncol = 2), diag = FALSE)
 Lower_tri(M, diag = FALSE)
 Lower_tri(M, diag = TRUE)
+## multiple symmetric matrices
+Lower_tri(invchol2cor(M))
 @@
 
 \section{Diagonal Elements}
@@ -2334,9 +2338,14 @@ chk(ll1, ll2)
 The \code{dmvnorm} function now also has \code{chol} and \code{invchol}
 arguments such that we can use
 <<ex-MV-d>>=
-ll3 <- sum(dmvnorm(t(Y), invchol = lt, log = TRUE))
+ll3 <- sum(dmvnorm(Y, invchol = lt, log = TRUE))
 chk(ll1, ll3)
 @@
+Note that argument \code{x} in \code{dmvnorm} is an $N \times \J$ matrix
+when \code{sigma} is given (the traditional interface) BUT expects
+an $\J \times \N$ matrix when \code{chol} or \code{invchol} are specified.
+The reason is that \code{Mult} or \code{solve} work with $\J \times \N$
+matrices and we want to avoid matrix transposes.
 
 
 Sometimes it is preferable to split the joint distribution into a marginal
@@ -3635,7 +3644,7 @@ using \code{dmvnorm} and the scores \code{sldmvnorm}. The log-likelihood and
 the score function (for the centered means) in terms of $\mC$ are
 
 <<ex-ML-clogLik>>=
-Yc <- t(Y - rowMeans(Y))
+Yc <- Y - rowMeans(Y)
 
 ll <- function(parm) {
     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)

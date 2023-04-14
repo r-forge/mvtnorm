@@ -21,8 +21,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt, log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt, log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -33,8 +33,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,1], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt[1,], log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt[1,]), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt[1,], log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt[1,]), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -44,31 +44,31 @@ if (require("numDeriv")) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), invchol = L, log = TRUE))
+      sum(dmvnorm(x = Y, invchol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$invchol, diag = dg))
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), chol = L, log = TRUE))
+      sum(dmvnorm(x = Y, chol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), chol = lt)
+  s1 <- sldmvnorm(x = Y, chol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$chol, diag = dg))
 
   f <- function(x)
-    sum(dmvnorm(x = t(x), invchol = lt, log = TRUE))
+    sum(dmvnorm(x = x, invchol = lt, log = TRUE))
 
   s0 <- grad(f, Y)
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(matrix(s0, ncol = N), s1$x)
 }
@@ -86,8 +86,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt, log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt, log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -98,8 +98,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,1], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt[1,], log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt[1,]), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt[1,], log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt[1,]), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -109,31 +109,31 @@ if (require("numDeriv")) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), invchol = L, log = TRUE))
+      sum(dmvnorm(x = Y, invchol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$invchol, diag = dg))
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), chol = L, log = TRUE))
+      sum(dmvnorm(x = Y, chol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), chol = lt)
+  s1 <- sldmvnorm(x = Y, chol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$chol, diag = dg))
 
   f <- function(x)
-    sum(dmvnorm(x = t(x), invchol = lt, log = TRUE))
+    sum(dmvnorm(x = x, invchol = lt, log = TRUE))
 
   s0 <- grad(f, Y)
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(matrix(s0, ncol = N), s1$x)
 }
@@ -151,8 +151,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt, log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt, log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -163,8 +163,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,1], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt[1,], log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt[1,]), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt[1,], log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt[1,]), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -174,31 +174,31 @@ if (require("numDeriv")) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), invchol = L, log = TRUE))
+      sum(dmvnorm(x = Y, invchol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$invchol, diag = dg))
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), chol = L, log = TRUE))
+      sum(dmvnorm(x = Y, chol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), chol = lt)
+  s1 <- sldmvnorm(x = Y, chol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$chol, diag = dg))
 
   f <- function(x)
-    sum(dmvnorm(x = t(x), invchol = lt, log = TRUE))
+    sum(dmvnorm(x = x, invchol = lt, log = TRUE))
 
   s0 <- grad(f, Y)
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(matrix(s0, ncol = N), s1$x)
 }
@@ -216,8 +216,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt, log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt, log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -228,8 +228,8 @@ S <- as.array(Tcrossprod(solve(lt)))
 ll2 <- sum(l2 <- sapply(1:N, function(i) mvtnorm:::dmvnorm(x = Y[,i], sigma = S[,,1], log = TRUE)))
 chk(ll1, ll2)
 
-l3 <- dmvnorm(x = t(Y), invchol = lt[1,], log = TRUE)
-l4 <- dmvnorm(x = t(Y), chol = solve(lt[1,]), log = TRUE)
+l3 <- dmvnorm(x = Y, invchol = lt[1,], log = TRUE)
+l4 <- dmvnorm(x = Y, chol = solve(lt[1,]), log = TRUE)
 
 chk(l2, l3)
 chk(l2, l4)
@@ -239,31 +239,31 @@ if (require("numDeriv")) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), invchol = L, log = TRUE))
+      sum(dmvnorm(x = Y, invchol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$invchol, diag = dg))
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
-      sum(dmvnorm(x = t(Y), chol = L, log = TRUE))
+      sum(dmvnorm(x = Y, chol = L, log = TRUE))
   }
 
   s0 <- grad(f, unclass(lt))
-  s1 <- sldmvnorm(x = t(Y), chol = lt)
+  s1 <- sldmvnorm(x = Y, chol = lt)
 
   chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
       Lower_tri(s1$chol, diag = dg))
 
   f <- function(x)
-    sum(dmvnorm(x = t(x), invchol = lt, log = TRUE))
+    sum(dmvnorm(x = x, invchol = lt, log = TRUE))
 
   s0 <- grad(f, Y)
-  s1 <- sldmvnorm(x = t(Y), invchol = lt)
+  s1 <- sldmvnorm(x = Y, invchol = lt)
 
   chk(matrix(s0, ncol = N), s1$x)
 }

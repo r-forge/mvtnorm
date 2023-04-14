@@ -341,6 +341,23 @@ attr(,"byrow")
 attr(,"rcnames")
 [1] "1" "2" "3" "4"
 
+> Lower_tri(invchol2cor(M))
+          [,1]       [,2]
+2.1 -0.7071068 -0.7071068
+3.1  0.4364358  0.4364358
+4.1 -0.4481107 -0.4481107
+3.2 -0.9258201 -0.9258201
+4.2  0.9189002  0.9189002
+4.3 -0.9974149 -0.9974149
+attr(,"J")
+[1] 4
+attr(,"diag")
+[1] FALSE
+attr(,"byrow")
+[1] FALSE
+attr(,"rcnames")
+[1] "1" "2" "3" "4"
+
 > all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1)
 [1] TRUE
 
@@ -839,7 +856,7 @@ attr(,"rcnames")
 
 > chk(ll1, ll2)
 
-> ll3 <- sum(dmvnorm(t(Y), invchol = lt, log = TRUE))
+> ll3 <- sum(dmvnorm(Y, invchol = lt, log = TRUE))
 
 > chk(ll1, ll3)
 
@@ -1120,7 +1137,7 @@ attr(,"rcnames")
 3 0.34222237 0.08992252 1.36054915 0.08104091
 4 0.01609179 0.84309528 0.08104091 1.63301525
 
-> Yc <- t(Y - rowMeans(Y))
+> Yc <- Y - rowMeans(Y)
 
 > ll <- function(parm) {
 +     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
@@ -1419,4 +1436,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  8.456   0.131   8.610 
+  9.061   0.151   9.215 

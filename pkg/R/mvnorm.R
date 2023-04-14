@@ -46,9 +46,9 @@ rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
     if (!is.matrix(x)) x <- matrix(x, ncol = length(x))
     nr <- nrow(x)
     nc <- ncol(x)
-    if (nr != n)
+    if (nc != n)
         stop("x and (inv)chol have non-conforming size")
-    if (nc != p)
+    if (nr != p)
         stop("x and (inv)chol have non-conforming size")
     if (identical(unique(mean), 0)) return(x)
     if (length(mean) == p) 
@@ -111,17 +111,15 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
             ## invchol is given
             if (!inherits(invchol, "ltMatrices"))
                 stop("invchol is not an object of class ltMatrices")
-            if (p != dim(invchol)[2L])
-                stop("x and invchol have non-conforming size")
             N <- dim(invchol)[1L]
-            N <- ifelse(N == 1, nrow(x), N)
+            N <- ifelse(N == 1, p, N)
             J <- dim(invchol)[2L]
             x <- .xm(x = x, mean = mean, p = J, n = N)
             ## use dnorm (gets the normalizing factors right)
-            ## we need t(x) because x is (N x p) but Mult wants (p x N)
-            logretval <- colSums(dnorm(Mult(invchol, t(x)), log = TRUE))
+            ## NOTE: x is (p x N) when (inv)chol are given
+            logretval <- colSums(dnorm(Mult(invchol, x), log = TRUE))
             ## note that the second summand gets recycled the correct number
-            ## of times in case dim(invchol)[1L] == 1 but nrow(x) > 1
+            ## of times in case dim(invchol)[1L] == 1 but ncol(x) > 1
             if (attr(invchol, "diag"))
                 logretval <- logretval + colSums(log(diagonals(invchol)))
         } else {
@@ -130,13 +128,11 @@ dmvnorm <- function (x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSym
             ## chol is given
             if (!inherits(chol, "ltMatrices"))
                 stop("chol is not an object of class ltMatrices")
-            if (p != dim(chol)[2L])
-                stop("x and chol have non-conforming size")
             N <- dim(chol)[1L]
-            N <- ifelse(N == 1, nrow(x), N)
+            N <- ifelse(N == 1, p, N)
             J <- dim(chol)[2L]
             x <- .xm(x = x, mean = mean, p = J, n = N)
-            logretval <- colSums(dnorm(solve(chol, t(x)), log = TRUE))
+            logretval <- colSums(dnorm(solve(chol, x), log = TRUE))
             if (attr(chol, "diag"))
                 logretval <- logretval - colSums(log(diagonals(chol)))
         }
@@ -152,9 +148,9 @@ sldmvnorm <- function(x, mean = 0, chol, invchol) {
     if (!missing(invchol)) {
 
         N <- dim(invchol)[1L]
-        N <- ifelse(N == 1, nrow(x), N)
+        N <- ifelse(N == 1, ncol(x), N)
         J <- dim(invchol)[2L]
-        x <- t(.xm(x = x, mean = mean, p = J, n = N))
+        x <- .xm(x = x, mean = mean, p = J, n = N)
 
         Mix <- Mult(invchol, x)
         sx <- - Mult(invchol, Mix, transpose = TRUE)
