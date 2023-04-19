@@ -199,7 +199,7 @@ print.syMatrices <- function(x, ...)
 
         if (length(j) == 1L && !diag) {
             return(ltMatrices(matrix(1, ncol = ncol(x), nrow = 1), diag = TRUE, 
-                              names = dn[[2L]][j]))
+                              byrow = byrow, names = dn[[2L]][j]))
         }
         L <- diag(0L, nrow = J)
         Jp <- sum(upper.tri(L, diag = diag))

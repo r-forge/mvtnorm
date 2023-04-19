@@ -685,7 +685,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \mbox{}\verb@@\\
 \mbox{}\verb@        if (length(j) == 1L && !diag) {@\\
 \mbox{}\verb@            return(ltMatrices(matrix(1, ncol = ncol(x), nrow = 1), diag = TRUE, @\\
-\mbox{}\verb@                              names = dn[[2L]][j]))@\\
+\mbox{}\verb@                              byrow = byrow, names = dn[[2L]][j]))@\\
 \mbox{}\verb@        }@\\
 \mbox{}\verb@        L <- diag(0L, nrow = J)@\\
 \mbox{}\verb@        Jp <- sum(upper.tri(L, diag = diag))@\\
