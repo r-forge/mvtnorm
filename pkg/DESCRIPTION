@@ -17,7 +17,7 @@ Description: Computes multivariate normal and t probabilities, quantiles,
   copulae parameterised by Cholesky factors of covariance matrices are implemented 
   in addition. Methods for a class representing multiple lower triangular matrices 
   are available.
-Imports: stats, methods
+Imports: stats
 Depends: R(>= 3.5.0)
 Suggests: qrng, numDeriv
 License: GPL-2

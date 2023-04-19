@@ -314,7 +314,7 @@ rmvt <- function(n, sigma = diag(2), df = 1,
 {
     if (length(delta) != nrow(sigma))
         stop("delta and sigma have non-conforming size")
-    if (hasArg(mean)) # MH: normal mean variance mixture != t distribution (!)
+    if ("mean" %in% names(list(...))) # MH: normal mean variance mixture != t distribution (!); TH: was methods::hasArg(mean)
         stop("Providing 'mean' does *not* sample from a multivariate t distribution!")
     if (df == 0 || isInf(df)) # MH: now (also) properly allow df = Inf
         return(rmvnorm(n, mean = delta, sigma = sigma, ...))

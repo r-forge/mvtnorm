@@ -6,7 +6,6 @@ importFrom("stats",
 	   pt, qt,
 	   rchisq, uniroot,
 	   cov2cor, optim, coef, glm, pcauchy, qcauchy, predict, quasi)
-importFrom("methods", hasArg)
 
 export(rmvnorm, dmvnorm, sldmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, Crossprod, diagonals, 
