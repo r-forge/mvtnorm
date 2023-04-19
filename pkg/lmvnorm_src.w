@@ -2958,12 +2958,12 @@ should use \code{pmvnorm} which provides a well-tested configuration.
 
 <<ex-lpmvnorm>>= )
 M <- 10000
-if (require("qrng")) {
+if (require("qrng", quietly = TRUE)) {
     ### quasi-Monte-Carlo
-    W <- t(ghalton(M * N, d = J - 1))
+    W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * N * (J - 1)), ncol = M)
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
 }
 
 ### Genz & Bretz, 2001, without early stopping (really?)
@@ -3548,7 +3548,7 @@ sC <- slpmvnorm(a, b, chol = mC, w = W, M = M)
 
 chk(lli, sC$logLik)
 
-if (require("numDeriv"))
+if (require("numDeriv", quietly = TRUE))
     print(max(abs(grad(fC, unclass(mC)) - rowSums(unclass(sC$chol)))))
 @@
 
@@ -3569,7 +3569,7 @@ sL <- slpmvnorm(a, b, invchol = mL, w = W, M = M)
 
 chk(lliL, sL$logLik)
 
-if (require("numDeriv"))
+if (require("numDeriv", quietly = TRUE))
     print(max(abs(grad(fL, unclass(mL)) - rowSums(unclass(sL$invchol)))))
 @@
 
@@ -3673,7 +3673,8 @@ if (BYROW) {
 }
 ll(cML)
 start <- runif(length(cML))
-grad(ll, start)
+if (require("numDeriv", quietly = TRUE))
+    print(grad(ll, start))
 sc(start)
 @@
 
@@ -3729,15 +3730,15 @@ lGB <- sapply(M, function(m) {
 })
 lH <- sapply(M, function(m) {
     W <- NULL
-    if (require("qrng"))
-        W <- t(ghalton(m * N, d = J - 1))
+    if (require("qrng", quietly = TRUE))
+        W <- t(ghalton(m, d = J - 1))
     st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 lHf <- sapply(M, function(m) {
     W <- NULL
-    if (require("qrng"))
-        W <- t(ghalton(m * N, d = J - 1))
+    if (require("qrng", quietly = TRUE))
+        W <- t(ghalton(m, d = J - 1))
     st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m, 
                                      fast = TRUE))
     return(c(st["user.self"], ll = ret))
@@ -3839,12 +3840,12 @@ this still works out.
 
 <<ex-ML-ll, eval = TRUE>>=
 M <- 500 
-if (require("qrng")) {
+if (require("qrng", quietly = TRUE)) {
     ### quasi-Monte-Carlo
-    W <- t(ghalton(M * N, d = J - 1))
+    W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * N * (J - 1)), ncol = M)
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
 }
 ll <- function(parm, J) {
      m <- parm[1:J]		### mean parameters
@@ -3883,7 +3884,7 @@ sc <- function(parm, J) {
 and check the correctness numerically
 
 <<ex-ML-sc-chk>>=
-if (require("numDeriv"))
+if (require("numDeriv", quietly = TRUE))
     print(abs(max(grad(ll, prm, J = J) - sc(prm, J = J))))
 @@
 
