@@ -1009,9 +1009,8 @@ attr(,"rcnames")
 
 > chk(lli, sC$logLik)
 
-> if (require("numDeriv", quietly = TRUE)) print(max(abs(grad(fC, 
-+     unclass(mC)) - rowSums(unclass(sC$chol)))))
-[1] 3.46508e-09
+> if (require("numDeriv", quietly = TRUE)) chk(grad(fC, 
++     unclass(mC)), rowSums(unclass(sC$chol)), check.attributes = FALSE)
 
 > mL <- solve(mC)
 
@@ -1029,9 +1028,8 @@ attr(,"rcnames")
 
 > chk(lliL, sL$logLik)
 
-> if (require("numDeriv", quietly = TRUE)) print(max(abs(grad(fL, 
-+     unclass(mL)) - rowSums(unclass(sL$invchol)))))
-[1] 7.867307e-10
+> if (require("numDeriv", quietly = TRUE)) chk(grad(fL, 
++     unclass(mL)), rowSums(unclass(sL$invchol)), check.attributes = FALSE)
 
 > ptr <- pnorm(b[1, ]/c(unclass(mC[, 1]))) - pnorm(a[1, 
 +     ]/c(unclass(mC[, 1])))
@@ -1163,16 +1161,8 @@ attr(,"rcnames")
 
 > start <- runif(length(cML))
 
-> if (require("numDeriv", quietly = TRUE)) print(grad(ll, 
-+     start))
- [1]  -609.51908  -480.63161  -563.73364   678.84744  -174.94039    92.50756
- [7]   -82.07315  -618.35576   739.04650 -3788.28918
-
-> sc(start)
-        1.1         2.1         3.1         4.1         2.2         3.2 
- -609.51908  -480.63161  -563.73364   678.84744  -174.94039    92.50756 
-        4.2         3.3         4.3         4.4 
-  -82.07315  -618.35576   739.04650 -3788.28918 
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     start), sc(start), check.attributes = FALSE)
 
 > op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = TRUE))
@@ -1300,9 +1290,8 @@ converged
 +     C <- matrix(c(parm), ncol = 1)
 +     C <- ltMatrices(C, diag = TRUE, .... [TRUNCATED] 
 
-> if (require("numDeriv", quietly = TRUE)) print(abs(max(grad(ll, 
-+     prm, J = J) - sc(prm, J = J))))
-[1] 1.844541e-07
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     prm, J = J), sc(prm, J = J), check.attributes = FALSE)
 
 > llim <- rep(-Inf, J + J * (J + 1)/2)
 
@@ -1435,4 +1424,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  8.921   0.175   9.095 
+  8.449   0.147   8.596 

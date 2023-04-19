@@ -4990,7 +4990,7 @@ sC <- slpmvnorm(a, b, chol = mC, w = W, M = M)
 chk(lli, sC$logLik)
 
 if (require("numDeriv", quietly = TRUE))
-    print(max(abs(grad(fC, unclass(mC)) - rowSums(unclass(sC$chol)))))
+    chk(grad(fC, unclass(mC)), rowSums(unclass(sC$chol)), check.attributes = FALSE)
 @
 
 We can do the same when $\mL$ (and not $\mC$) is given
@@ -5011,7 +5011,8 @@ sL <- slpmvnorm(a, b, invchol = mL, w = W, M = M)
 chk(lliL, sL$logLik)
 
 if (require("numDeriv", quietly = TRUE))
-    print(max(abs(grad(fL, unclass(mL)) - rowSums(unclass(sL$invchol)))))
+    chk(grad(fL, unclass(mL)), rowSums(unclass(sL$invchol)),
+        check.attributes = FALSE)
 @
 
 The score function also works for univariate problems
@@ -5115,8 +5116,7 @@ if (BYROW) {
 ll(cML)
 start <- runif(length(cML))
 if (require("numDeriv", quietly = TRUE))
-    print(grad(ll, start))
-sc(start)
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
 @
 
 Finally, we hand over to \code{optim} and compare the results of the
@@ -5326,7 +5326,7 @@ and check the correctness numerically
 
 <<ex-ML-sc-chk>>=
 if (require("numDeriv", quietly = TRUE))
-    print(abs(max(grad(ll, prm, J = J) - sc(prm, J = J))))
+    chk(grad(ll, prm, J = J), sc(prm, J = J), check.attributes = FALSE)
 @
 
 
