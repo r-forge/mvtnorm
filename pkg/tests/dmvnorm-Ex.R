@@ -40,7 +40,7 @@ chk(l2, l3)
 chk(l2, l4)
 
 ### check scores
-if (require("numDeriv")) {
+if (require("numDeriv", quietly = TRUE)) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
@@ -105,7 +105,7 @@ chk(l2, l3)
 chk(l2, l4)
 
 ### check scores
-if (require("numDeriv")) {
+if (require("numDeriv", quietly = TRUE)) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
@@ -170,7 +170,7 @@ chk(l2, l3)
 chk(l2, l4)
 
 ### check scores
-if (require("numDeriv")) {
+if (require("numDeriv", quietly = TRUE)) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)
@@ -235,7 +235,7 @@ chk(l2, l3)
 chk(l2, l4)
 
 ### check scores
-if (require("numDeriv")) {
+if (require("numDeriv", quietly = TRUE)) {
 
   f <- function(L) {
       L <- ltMatrices(L, diag = dg, byrow = br)

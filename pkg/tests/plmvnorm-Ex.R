@@ -26,7 +26,7 @@ pmvnorm <- function(lower = -Inf, upper = Inf, mean = rep(0, length(lower)),
     args$chol <- Chol
     
     M <- algorithm$maxpts
-    if (require("qrng")) {
+    if (require("qrng", quietly = TRUE)) {
         w <- t(ghalton(M, d = length(args$lower) - 1))
     } else {
         w <- NULL

@@ -1,8 +1,10 @@
 
 library("mvtnorm")
-library("numDeriv")
 
 set.seed(290875)
+
+if (require("numDeriv", quietly = TRUE)) {
+
 
 chk <- function(...) stopifnot(isTRUE(all.equal(...)))
 
@@ -406,3 +408,4 @@ s <- slpmvnorm(lower = yl, upper = yr, invchol = L, w = w)[c("logLik", "invchol"
 
 chk(c((dnorm(yr) * yr - dnorm(yl) * yl ) / (pnorm(yr) - pnorm(yl))),
     c(diagonals(s$invchol)))
+}

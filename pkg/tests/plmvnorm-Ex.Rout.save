@@ -43,7 +43,7 @@ Type 'q()' to quit R.
 +     args$chol <- Chol
 +     
 +     M <- algorithm$maxpts
-+     if (require("qrng")) {
++     if (require("qrng", quietly = TRUE)) {
 +         w <- t(ghalton(M, d = length(args$lower) - 1))
 +     } else {
 +         w <- NULL
@@ -178,7 +178,6 @@ attr(,"msg")
 > upper <- rexp(3, 1)
 
 > pmvnorm(upper = upper, corr = corr, algorithm = ctrl)
-Loading required package: qrng
 [1] 0.7733946
 
 > pmvnorm(upper = upper, corr = corr, algorithm = TVPACK())
@@ -1089,4 +1088,4 @@ In addition: Warning messages:
 > 
 > proc.time()
    user  system elapsed 
- 18.482   0.228  18.721 
+ 18.789   0.239  19.060 
