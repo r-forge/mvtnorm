@@ -97,6 +97,8 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
+\newcommand{\ND}{\mathcal{N}}
+\newcommand{\diag}{\text{diag}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
@@ -184,7 +186,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb83}{83}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5a}{5a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dimnames ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$}\verb@@\\
@@ -207,6 +209,9 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape aperm}\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape marginal}\nobreak\ {\footnotesize \NWlink{nuweb45b}{45b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape conditional}\nobreak\ {\footnotesize \NWlink{nuweb47b}{47b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape check obs}\nobreak\ {\footnotesize \NWlink{nuweb49b}{49b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb49a}{49a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb51}{51}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -223,7 +228,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
@@ -3023,6 +3028,233 @@ chk(c(cm), c(cmv$mean))
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
 @
 
+\section{Continuous Log-likelihoods}
+
+With $\rZ \sim \ND_J(0, \mI_J)$ and $\rY =  \mC_i \rZ + \muvec_i \sim
+\ND_J(\muvec_i, \mC_i \mC_i^\top)$ we want to evaluate the
+log-likelihood contributions for observations $\yvec_1, \dots, \yvec_N$ in a
+function called \code{ldmvnorm}
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap55}\raggedright\small
+\NWtarget{nuweb49a}{} $\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize {49a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@    p <- ncol(obs)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!missing(chol)) {@\\
+\mbox{}\verb@         @\hbox{$\langle\,${\itshape ldmvnorm chol}\nobreak\ {\footnotesize \NWlink{nuweb50a}{50a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@         @\hbox{$\langle\,${\itshape ldmvnorm invchol}\nobreak\ {\footnotesize \NWlink{nuweb50b}{50b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    names(logretval) <- colnames(obs)@\\
+\mbox{}\verb@    if (logLik) return(sum(logretval))@\\
+\mbox{}\verb@    return(logretval)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+We first check if the observations $\yvec_1, \dots, \yvec_N$ are given in an
+$\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
+\muvec_N$ in \code{means}.
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap56}\raggedright\small
+\NWtarget{nuweb49b}{} $\langle\,${\itshape check obs}\nobreak\ {\footnotesize {49b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@.check_obs <- function(obs, mean, J, N) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!is.matrix(obs)) @\\
+\mbox{}\verb@        obs <- matrix(obs, ncol = length(obs))@\\
+\mbox{}\verb@    nr <- nrow(obs)@\\
+\mbox{}\verb@    nc <- ncol(obs)@\\
+\mbox{}\verb@    if (nc != N)@\\
+\mbox{}\verb@        stop("obs and (inv)chol have non-conforming size")@\\
+\mbox{}\verb@    if (nr != J)@\\
+\mbox{}\verb@        stop("obs and (inv)chol have non-conforming size")@\\
+\mbox{}\verb@    if (identical(unique(mean), 0)) return(obs)@\\
+\mbox{}\verb@    if (length(mean) == J) @\\
+\mbox{}\verb@        return(obs - c(mean))@\\
+\mbox{}\verb@    if (!is.matrix(mean))@\\
+\mbox{}\verb@        stop("obs and mean have non-conforming size")@\\
+\mbox{}\verb@    if (nrow(mean) != nr)@\\
+\mbox{}\verb@        stop("obs and mean have non-conforming size")@\\
+\mbox{}\verb@    if (ncol(mean) != nc)@\\
+\mbox{}\verb@        stop("obs and mean have non-conforming size")@\\
+\mbox{}\verb@    return(obs - mean)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+With $\mSigma_i
+= \mC_i \mC_i^\top$ the log-likelihood function for $\rY_i = \yvec_i$ is
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) = -\frac{k}{2} \log(2\pi) - \frac{1}{2} \log \mid
+\mSigma_i \mid - \frac{1}{2} (\yvec_i - \muvec_i)^\top \mSigma^{-1}_i (\yvec_i - \muvec_i)
+\end{eqnarray*}
+Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \mid
+\mC_i \mid = 2 \sum_{j = 1}^\J \log \diag(\mC_i)_j$ we get the simpler expression
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mC^{-\top} \mC^{-1} (\yvec - \muvec_i).
+\end{eqnarray*}
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap57}\raggedright\small
+\NWtarget{nuweb50a}{} $\langle\,${\itshape ldmvnorm chol}\nobreak\ {\footnotesize {50a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (missing(chol))@\\
+\mbox{}\verb@    stop("either chol or invchol must be given")@\\
+\mbox{}\verb@## chol is given@\\
+\mbox{}\verb@if (!inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@    stop("chol is not an object of class ltMatrices")@\\
+\mbox{}\verb@N <- dim(chol)[1L]@\\
+\mbox{}\verb@N <- ifelse(N == 1, p, N)@\\
+\mbox{}\verb@J <- dim(chol)[2L]@\\
+\mbox{}\verb@obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)@\\
+\mbox{}\verb@logretval <- colSums(dnorm(solve(chol, obs), log = TRUE))@\\
+\mbox{}\verb@if (attr(chol, "diag"))@\\
+\mbox{}\verb@    logretval <- logretval - colSums(log(diagonals(chol)))@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb49a}{49a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+If $\mL_i = \mC_i^{-1}$ is given, we obtain
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mL_i) & = & -\frac{k}{2} \log(2\pi) + \sum_{j = 1}^\J \log \diag(\mL_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mL^\top \mL (\yvec - \muvec_i).
+\end{eqnarray*}
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap58}\raggedright\small
+\NWtarget{nuweb50b}{} $\langle\,${\itshape ldmvnorm invchol}\nobreak\ {\footnotesize {50b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@## invchol is given@\\
+\mbox{}\verb@if (!inherits(invchol, "ltMatrices"))@\\
+\mbox{}\verb@    stop("invchol is not an object of class ltMatrices")@\\
+\mbox{}\verb@N <- dim(invchol)[1L]@\\
+\mbox{}\verb@N <- ifelse(N == 1, p, N)@\\
+\mbox{}\verb@J <- dim(invchol)[2L]@\\
+\mbox{}\verb@obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)@\\
+\mbox{}\verb@## use dnorm (gets the normalizing factors right)@\\
+\mbox{}\verb@## NOTE: obs is (J x N) @\\
+\mbox{}\verb@logretval <- colSums(dnorm(Mult(invchol, obs), log = TRUE))@\\
+\mbox{}\verb@## note that the second summand gets recycled the correct number@\\
+\mbox{}\verb@## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1@\\
+\mbox{}\verb@if (attr(invchol, "diag"))@\\
+\mbox{}\verb@    logretval <- logretval + colSums(log(diagonals(invchol)))@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb49a}{49a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+The score function with respect to \code{obs} is
+\begin{eqnarray*}
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i \yvec_i
+\end{eqnarray*}
+and with respect to \code{invchol} we have
+\begin{eqnarray*}
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \mL_i} = 
+- 2 \mL_i \yvec_i \yvec_i^\top + \diag(\mL_i)^{-1}.
+\end{eqnarray*}
+The score function with respect to \code{chol} post-processes the above
+score using the vec trick~(Section~\ref{sec:vectrick}).
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap59}\raggedright\small
+\NWtarget{nuweb51}{} $\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize {51}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@sldmvnorm <- function(obs, mean = 0, chol, invchol) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!missing(invchol)) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        N <- dim(invchol)[1L]@\\
+\mbox{}\verb@        N <- ifelse(N == 1, ncol(obs), N)@\\
+\mbox{}\verb@        J <- dim(invchol)[2L]@\\
+\mbox{}\verb@        obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        Mix <- Mult(invchol, obs)@\\
+\mbox{}\verb@        sobs <- - Mult(invchol, Mix, transpose = TRUE)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)@\\
+\mbox{}\verb@        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)@\\
+\mbox{}\verb@        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], @\\
+\mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = FALSE)@\\
+\mbox{}\verb@        ret <- ltMatrices(ret, @\\
+\mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))@\\
+\mbox{}\verb@        if (attr(invchol, "diag")) {@\\
+\mbox{}\verb@            ### recycle properly@\\
+\mbox{}\verb@            diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))@\\
+\mbox{}\verb@        } else {@\\
+\mbox{}\verb@            diagonals(ret) <- 0@\\
+\mbox{}\verb@        }@\\
+\mbox{}\verb@        return(list(obs = sobs, invchol = ret))@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    invchol <- solve(chol)@\\
+\mbox{}\verb@    ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)@\\
+\mbox{}\verb@    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)@\\
+\mbox{}\verb@    ret$chol <- - vectrick(invchol, ret$invchol)@\\
+\mbox{}\verb@    ret$invchol <- NULL@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
 \section{Application Example}
 
 Let's say we have $\rY_i \sim \N_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
@@ -3046,15 +3278,15 @@ ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE
 chk(ll1, ll2)
 @
 
-The \code{dmvnorm} function now also has \code{chol} and \code{invchol}
+The \code{ldmvnorm} function now also has \code{chol} and \code{invchol}
 arguments such that we can use
 <<ex-MV-d>>=
-ll3 <- sum(dmvnorm(Y, invchol = lt, log = TRUE))
+ll3 <- ldmvnorm(obs = Y, invchol = lt)
 chk(ll1, ll3)
 @
-Note that argument \code{x} in \code{dmvnorm} is an $N \times \J$ matrix
-when \code{sigma} is given (the traditional interface) BUT expects
-an $\J \times \N$ matrix when \code{chol} or \code{invchol} are specified.
+Note that argument \code{obs} in \code{ldmvnorm} is an $\J \times \N$ matrix
+whereas the traditional interface in \code{dmvnorm} expects
+an $\N \times \J$ matrix \code{x}.
 The reason is that \code{Mult} or \code{solve} work with $\J \times \N$
 matrices and we want to avoid matrix transposes.
 
@@ -3093,15 +3325,15 @@ This is relatively simple to achieve using the existing \code{pmvnorm}, so a
 prototype might look like
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap55}\raggedright\small
-\NWtarget{nuweb50}{} $\langle\,${\itshape lpmvnormR}\nobreak\ {\footnotesize {50}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap60}\raggedright\small
+\NWtarget{nuweb53}{} $\langle\,${\itshape lpmvnormR}\nobreak\ {\footnotesize {53}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@library("mvtnorm")@\\
 \mbox{}\verb@lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb55}{55}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    sigma <- Tcrossprod(chol)@\\
 \mbox{}\verb@    S <- as.array(sigma)@\\
@@ -3216,14 +3448,14 @@ We want to achieve the same result a bit more general and a bit faster.
 \section{Algorithm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap56}\raggedright\small
-\NWtarget{nuweb51a}{} \verb@"lpmvnorm.R"@\nobreak\ {\footnotesize {51a}}$\equiv$
+\begin{minipage}{\linewidth}\label{scrap61}\raggedright\small
+\NWtarget{nuweb54a}{} \verb@"lpmvnorm.R"@\nobreak\ {\footnotesize {54a}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb83}{83}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb61}{61}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb64}{64}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -3235,22 +3467,22 @@ We want to achieve the same result a bit more general and a bit faster.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap57}\raggedright\small
-\NWtarget{nuweb51b}{} \verb@"lpmvnorm.c"@\nobreak\ {\footnotesize {51b}}$\equiv$
+\begin{minipage}{\linewidth}\label{scrap62}\raggedright\small
+\NWtarget{nuweb54b}{} \verb@"lpmvnorm.c"@\nobreak\ {\footnotesize {54b}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
 \mbox{}\verb@#include <Rdefines.h>@\\
 \mbox{}\verb@#include <Rconfig.h>@\\
 \mbox{}\verb@#include <R_ext/BLAS.h> /* for dtrmm */@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape pnorm fast}\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape pnorm slow}\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb59}{59}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape pnorm fast}\nobreak\ {\footnotesize \NWlink{nuweb59b}{59b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape pnorm slow}\nobreak\ {\footnotesize \NWlink{nuweb59c}{59c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb62}{62}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -3272,8 +3504,8 @@ For each $i = 1, \dots, N$, do
 (\code{upper}), and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap58}\raggedright\small
-\NWtarget{nuweb52}{} $\langle\,${\itshape input checks}\nobreak\ {\footnotesize {52}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap63}\raggedright\small
+\NWtarget{nuweb55}{} $\langle\,${\itshape input checks}\nobreak\ {\footnotesize {55}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3306,7 +3538,7 @@ For each $i = 1, \dots, N$, do
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb50}{50}\NWlink{nuweb61}{, 61}\NWlink{nuweb72}{, 72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb53}{53}\NWlink{nuweb64}{, 64}\NWlink{nuweb75}{, 75}.
 
 \item{}
 \end{list}
@@ -3316,8 +3548,8 @@ For each $i = 1, \dots, N$, do
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap59}\raggedright\small
-\NWtarget{nuweb53a}{} $\langle\,${\itshape standardise}\nobreak\ {\footnotesize {53a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap64}\raggedright\small
+\NWtarget{nuweb56a}{} $\langle\,${\itshape standardise}\nobreak\ {\footnotesize {56a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3348,7 +3580,7 @@ For each $i = 1, \dots, N$, do
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 
 \item{}
 \end{list}
@@ -3359,8 +3591,8 @@ For each $i = 1, \dots, N$, do
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap60}\raggedright\small
-\NWtarget{nuweb53b}{} $\langle\,${\itshape initialisation}\nobreak\ {\footnotesize {53b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap65}\raggedright\small
+\NWtarget{nuweb56b}{} $\langle\,${\itshape initialisation}\nobreak\ {\footnotesize {56b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3377,7 +3609,7 @@ For each $i = 1, \dots, N$, do
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
@@ -3386,8 +3618,8 @@ For each $i = 1, \dots, N$, do
 \item Repeat
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap61}\raggedright\small
-\NWtarget{nuweb53c}{} $\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize {53c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap66}\raggedright\small
+\NWtarget{nuweb56c}{} $\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize {56c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3400,7 +3632,7 @@ For each $i = 1, \dots, N$, do
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb64c}{, 64c}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb67c}{, 67c}.
 
 \item{}
 \end{list}
@@ -3419,8 +3651,8 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 (\code{w}).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap62}\raggedright\small
-\NWtarget{nuweb54a}{} $\langle\,${\itshape compute y}\nobreak\ {\footnotesize {54a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap67}\raggedright\small
+\NWtarget{nuweb57a}{} $\langle\,${\itshape compute y}\nobreak\ {\footnotesize {57a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3439,7 +3671,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 
 \item{}
 \end{list}
@@ -3450,8 +3682,8 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap63}\raggedright\small
-\NWtarget{nuweb54b}{} $\langle\,${\itshape compute x}\nobreak\ {\footnotesize {54b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap68}\raggedright\small
+\NWtarget{nuweb57b}{} $\langle\,${\itshape compute x}\nobreak\ {\footnotesize {57b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3469,7 +3701,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 
 \item{}
 \end{list}
@@ -3481,8 +3713,8 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
         \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap64}\raggedright\small
-\NWtarget{nuweb54c}{} $\langle\,${\itshape update d, e}\nobreak\ {\footnotesize {54c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap69}\raggedright\small
+\NWtarget{nuweb57c}{} $\langle\,${\itshape update d, e}\nobreak\ {\footnotesize {57c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3494,7 +3726,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 
 \item{}
 \end{list}
@@ -3505,8 +3737,8 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
        \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap65}\raggedright\small
-\NWtarget{nuweb55a}{} $\langle\,${\itshape update f}\nobreak\ {\footnotesize {55a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap70}\raggedright\small
+\NWtarget{nuweb58a}{} $\langle\,${\itshape update f}\nobreak\ {\footnotesize {58a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3517,7 +3749,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 
 \item{}
 \end{list}
@@ -3526,27 +3758,27 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 We put everything together in a loop starting with the second dimension
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap66}\raggedright\small
-\NWtarget{nuweb55b}{} $\langle\,${\itshape inner logLik loop}\nobreak\ {\footnotesize {55b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap71}\raggedright\small
+\NWtarget{nuweb58b}{} $\langle\,${\itshape inner logLik loop}\nobreak\ {\footnotesize {58b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@for (j = 1; j < iJ; j++) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute y}\nobreak\ {\footnotesize \NWlink{nuweb54a}{54a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute y}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute x}\nobreak\ {\footnotesize \NWlink{nuweb54b}{54b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute x}\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update d, e}\nobreak\ {\footnotesize \NWlink{nuweb54c}{54c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update d, e}\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update f}\nobreak\ {\footnotesize \NWlink{nuweb55a}{55a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update f}\nobreak\ {\footnotesize \NWlink{nuweb58a}{58a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}.
 
 \item{}
 \end{list}
@@ -3556,8 +3788,8 @@ We put everything together in a loop starting with the second dimension
             and $\text{error} = \sqrt{(\text{varsum}/M - (\text{intsum}/M)^2) / M}$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap67}\raggedright\small
-\NWtarget{nuweb55c}{} $\langle\,${\itshape increment}\nobreak\ {\footnotesize {55c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap72}\raggedright\small
+\NWtarget{nuweb58c}{} $\langle\,${\itshape increment}\nobreak\ {\footnotesize {58c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3567,7 +3799,7 @@ We put everything together in a loop starting with the second dimension
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}.
 
 \item{}
 \end{list}
@@ -3583,8 +3815,8 @@ We refrain from early stopping and error estimation.
 We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap68}\raggedright\small
-\NWtarget{nuweb55d}{} $\langle\,${\itshape output}\nobreak\ {\footnotesize {55d}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap73}\raggedright\small
+\NWtarget{nuweb58d}{} $\langle\,${\itshape output}\nobreak\ {\footnotesize {58d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3596,7 +3828,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}.
 
 \item{}
 \end{list}
@@ -3606,8 +3838,8 @@ and move on to the next observation (note that \code{p} might be 0, in case
 $\mC_i \equiv \mC$).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap69}\raggedright\small
-\NWtarget{nuweb56a}{} $\langle\,${\itshape move on}\nobreak\ {\footnotesize {56a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap74}\raggedright\small
+\NWtarget{nuweb59a}{} $\langle\,${\itshape move on}\nobreak\ {\footnotesize {59a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3620,7 +3852,7 @@ $\mC_i \equiv \mC$).
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
@@ -3633,8 +3865,8 @@ alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
 (\code{fast = TRUE} in the calls to \code{lpmvnorm} and \code{slpmvnorm}):
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap70}\raggedright\small
-\NWtarget{nuweb56b}{} $\langle\,${\itshape pnorm fast}\nobreak\ {\footnotesize {56b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap75}\raggedright\small
+\NWtarget{nuweb59b}{} $\langle\,${\itshape pnorm fast}\nobreak\ {\footnotesize {59b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3671,15 +3903,15 @@ alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51b}{51b}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54b}{54b}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap71}\raggedright\small
-\NWtarget{nuweb56c}{} $\langle\,${\itshape pnorm slow}\nobreak\ {\footnotesize {56c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap76}\raggedright\small
+\NWtarget{nuweb59c}{} $\langle\,${\itshape pnorm slow}\nobreak\ {\footnotesize {59c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3691,7 +3923,7 @@ alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51b}{51b}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54b}{54b}.
 
 \item{}
 \end{list}
@@ -3701,8 +3933,8 @@ The \code{fast} argument can be used to switch on the faster but less
 accurate version of \code{pnorm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap72}\raggedright\small
-\NWtarget{nuweb57a}{} $\langle\,${\itshape pnorm}\nobreak\ {\footnotesize {57a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap77}\raggedright\small
+\NWtarget{nuweb60a}{} $\langle\,${\itshape pnorm}\nobreak\ {\footnotesize {60a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3715,7 +3947,7 @@ accurate version of \code{pnorm}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
@@ -3726,8 +3958,8 @@ observations. In the former case, the number of columns is $M \times N$ and
 in the latter just $M$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap73}\raggedright\small
-\NWtarget{nuweb57b}{} $\langle\,${\itshape W length}\nobreak\ {\footnotesize {57b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap78}\raggedright\small
+\NWtarget{nuweb60b}{} $\langle\,${\itshape W length}\nobreak\ {\footnotesize {60b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3747,15 +3979,15 @@ in the latter just $M$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap74}\raggedright\small
-\NWtarget{nuweb57c}{} $\langle\,${\itshape dimensions}\nobreak\ {\footnotesize {57c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap79}\raggedright\small
+\NWtarget{nuweb60c}{} $\langle\,${\itshape dimensions}\nobreak\ {\footnotesize {60c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3777,15 +4009,15 @@ in the latter just $M$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap75}\raggedright\small
-\NWtarget{nuweb58a}{} $\langle\,${\itshape setup return object}\nobreak\ {\footnotesize {58a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap80}\raggedright\small
+\NWtarget{nuweb61a}{} $\langle\,${\itshape setup return object}\nobreak\ {\footnotesize {61a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3799,7 +4031,7 @@ in the latter just $M$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}.
 
 \item{}
 \end{list}
@@ -3808,8 +4040,8 @@ in the latter just $M$.
 The case $\J = 1$ does not loop over $M$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap76}\raggedright\small
-\NWtarget{nuweb58b}{} $\langle\,${\itshape univariate problem}\nobreak\ {\footnotesize {58b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap81}\raggedright\small
+\NWtarget{nuweb61b}{} $\langle\,${\itshape univariate problem}\nobreak\ {\footnotesize {61b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3824,15 +4056,15 @@ The case $\J = 1$ does not loop over $M$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap77}\raggedright\small
-\NWtarget{nuweb58c}{} $\langle\,${\itshape init center}\nobreak\ {\footnotesize {58c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap82}\raggedright\small
+\NWtarget{nuweb61c}{} $\langle\,${\itshape init center}\nobreak\ {\footnotesize {61c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3846,7 +4078,7 @@ The case $\J = 1$ does not loop over $M$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
@@ -3855,8 +4087,8 @@ The case $\J = 1$ does not loop over $M$
 We put the code together in a dedicated \proglang{C} function
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap78}\raggedright\small
-\NWtarget{nuweb59}{} $\langle\,${\itshape R lpmvnorm}\nobreak\ {\footnotesize {59}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap83}\raggedright\small
+\NWtarget{nuweb62}{} $\langle\,${\itshape R lpmvnorm}\nobreak\ {\footnotesize {62}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3872,23 +4104,23 @@ We put the code together in a dedicated \proglang{C} function
 \mbox{}\verb@@\\
 \mbox{}\verb@    Rboolean RlogLik = asLogical(logLik);@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape pnorm}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape pnorm}\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape dimensions}\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape dimensions}\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape W length}\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape W length}\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape init center}\nobreak\ {\footnotesize \NWlink{nuweb58c}{58c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape init center}\nobreak\ {\footnotesize \NWlink{nuweb61c}{61c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    int start, j, k;@\\
 \mbox{}\verb@    double tmp, Wtmp, e, d, f, emd, x, y[iJ - 1];@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape setup return object}\nobreak\ {\footnotesize \NWlink{nuweb58a}{58a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape setup return object}\nobreak\ {\footnotesize \NWlink{nuweb61a}{61a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);@\\
 \mbox{}\verb@    l0 = log(dtol);@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape univariate problem}\nobreak\ {\footnotesize \NWlink{nuweb58b}{58b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape univariate problem}\nobreak\ {\footnotesize \NWlink{nuweb61b}{61b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (W == R_NilValue)@\\
 \mbox{}\verb@        GetRNGstate();@\\
@@ -3896,26 +4128,26 @@ We put the code together in a dedicated \proglang{C} function
 \mbox{}\verb@    for (int i = 0; i < iN; i++) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        x0 = 0;@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape initialisation}\nobreak\ {\footnotesize \NWlink{nuweb53b}{53b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape initialisation}\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        if (W != R_NilValue && pW == 0)@\\
 \mbox{}\verb@            dW = REAL(W);@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        for (int m = 0; m < iM; m++) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb53c}{53c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape inner logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb55b}{55b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape inner logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb58b}{58b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape increment}\nobreak\ {\footnotesize \NWlink{nuweb55c}{55c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape increment}\nobreak\ {\footnotesize \NWlink{nuweb58c}{58c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@            if (W != R_NilValue)@\\
 \mbox{}\verb@                dW += iJ - 1;@\\
 \mbox{}\verb@        }@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape output}\nobreak\ {\footnotesize \NWlink{nuweb55d}{55d}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape output}\nobreak\ {\footnotesize \NWlink{nuweb58d}{58d}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape move on}\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape move on}\nobreak\ {\footnotesize \NWlink{nuweb59a}{59a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    }@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (W == R_NilValue)@\\
@@ -3929,7 +4161,7 @@ We put the code together in a dedicated \proglang{C} function
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51b}{51b}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54b}{54b}.
 
 \item{}
 \end{list}
@@ -3940,8 +4172,8 @@ The \proglang{R} user interface consists of some checks and a call to
 case we want a new set of weights for each observation.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap79}\raggedright\small
-\NWtarget{nuweb60a}{} $\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize {60a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap84}\raggedright\small
+\NWtarget{nuweb63a}{} $\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize {63a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3961,15 +4193,15 @@ case we want a new set of weights for each observation.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap80}\raggedright\small
-\NWtarget{nuweb60b}{} $\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize {60b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap85}\raggedright\small
+\NWtarget{nuweb63b}{} $\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize {63b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -3992,7 +4224,7 @@ case we want a new set of weights for each observation.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 
 \item{}
 \end{list}
@@ -4004,8 +4236,8 @@ case, we explicitly invert $\mL$ to give $\mC$ (both matrices are lower
 triangular, so this is fast).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap81}\raggedright\small
-\NWtarget{nuweb60c}{} $\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize {60c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap86}\raggedright\small
+\NWtarget{nuweb63c}{} $\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize {63c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4016,30 +4248,30 @@ triangular, so this is fast).
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap82}\raggedright\small
-\NWtarget{nuweb61}{} $\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize {61}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap87}\raggedright\small
+\NWtarget{nuweb64}{} $\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize {64}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, @\\
 \mbox{}\verb@                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb55}{55}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape standardise}\nobreak\ {\footnotesize \NWlink{nuweb53a}{53a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape standardise}\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize \NWlink{nuweb63b}{63b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- .Call(mvtnorm_R_lpmvnorm, ac, bc, unclass(C), as.double(center), @\\
 \mbox{}\verb@                 as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), @\\
@@ -4051,7 +4283,7 @@ triangular, so this is fast).
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51a}{51a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54a}{54a}.
 
 \item{}
 \end{list}
@@ -4129,8 +4361,8 @@ once, the chain rule rules, so to speak.
 We need the derivatives of $d$, $e$, $y$, and $f$ with respect to the $c$
 parameters
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap83}\raggedright\small
-\NWtarget{nuweb63a}{} $\langle\,${\itshape chol scores}\nobreak\ {\footnotesize {63a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap88}\raggedright\small
+\NWtarget{nuweb66a}{} $\langle\,${\itshape chol scores}\nobreak\ {\footnotesize {66a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4140,7 +4372,7 @@ parameters
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb63e}{63e}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb66e}{66e}.
 
 \item{}
 \end{list}
@@ -4149,8 +4381,8 @@ parameters
 and the derivates with respect to the mean
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap84}\raggedright\small
-\NWtarget{nuweb63b}{} $\langle\,${\itshape mean scores}\nobreak\ {\footnotesize {63b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap89}\raggedright\small
+\NWtarget{nuweb66b}{} $\langle\,${\itshape mean scores}\nobreak\ {\footnotesize {66b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4160,7 +4392,7 @@ and the derivates with respect to the mean
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb63e}{63e}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb66e}{66e}.
 
 \item{}
 \end{list}
@@ -4169,8 +4401,8 @@ and the derivates with respect to the mean
 and the derivates with respect to lower (\code{a})
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap85}\raggedright\small
-\NWtarget{nuweb63c}{} $\langle\,${\itshape lower scores}\nobreak\ {\footnotesize {63c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap90}\raggedright\small
+\NWtarget{nuweb66c}{} $\langle\,${\itshape lower scores}\nobreak\ {\footnotesize {66c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4180,7 +4412,7 @@ and the derivates with respect to lower (\code{a})
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb63e}{63e}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb66e}{66e}.
 
 \item{}
 \end{list}
@@ -4189,8 +4421,8 @@ and the derivates with respect to lower (\code{a})
 and the derivates with respect to upper (\code{b})
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap86}\raggedright\small
-\NWtarget{nuweb63d}{} $\langle\,${\itshape upper scores}\nobreak\ {\footnotesize {63d}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap91}\raggedright\small
+\NWtarget{nuweb66d}{} $\langle\,${\itshape upper scores}\nobreak\ {\footnotesize {66d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4200,7 +4432,7 @@ and the derivates with respect to upper (\code{b})
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb63e}{63e}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb66e}{66e}.
 
 \item{}
 \end{list}
@@ -4214,16 +4446,16 @@ finally with respect to the off-diagonal elements of the Cholesky factor
 (last $\J (\J - 1) / 2$ rows).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap87}\raggedright\small
-\NWtarget{nuweb63e}{} $\langle\,${\itshape score output object}\nobreak\ {\footnotesize {63e}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap92}\raggedright\small
+\NWtarget{nuweb66e}{} $\langle\,${\itshape score output object}\nobreak\ {\footnotesize {66e}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@int Jp = iJ * (iJ + 1) / 2;@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape chol scores}\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape mean scores}\nobreak\ {\footnotesize \NWlink{nuweb63b}{63b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape lower scores}\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape upper scores}\nobreak\ {\footnotesize \NWlink{nuweb63d}{63d}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape chol scores}\nobreak\ {\footnotesize \NWlink{nuweb66a}{66a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mean scores}\nobreak\ {\footnotesize \NWlink{nuweb66b}{66b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape lower scores}\nobreak\ {\footnotesize \NWlink{nuweb66c}{66c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape upper scores}\nobreak\ {\footnotesize \NWlink{nuweb66d}{66d}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@double dtmp, etmp, Wtmp, ytmp, xx;@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + 3 * iJ, iN));@\\
@@ -4234,7 +4466,7 @@ finally with respect to the off-diagonal elements of the Cholesky factor
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb69}{69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
 
 \item{}
 \end{list}
@@ -4258,8 +4490,8 @@ We start initialised the score wrt to $c^{(i)}_{11}$ (the parameter is non-exist
 here due to standardisation)
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap88}\raggedright\small
-\NWtarget{nuweb64a}{} $\langle\,${\itshape score c11}\nobreak\ {\footnotesize {64a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap93}\raggedright\small
+\NWtarget{nuweb67a}{} $\langle\,${\itshape score c11}\nobreak\ {\footnotesize {67a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4271,15 +4503,15 @@ here due to standardisation)
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb64c}{64c}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb67c}{67c}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap89}\raggedright\small
-\NWtarget{nuweb64b}{} $\langle\,${\itshape score a, b}\nobreak\ {\footnotesize {64b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap94}\raggedright\small
+\NWtarget{nuweb67b}{} $\langle\,${\itshape score a, b}\nobreak\ {\footnotesize {67b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4297,7 +4529,7 @@ here due to standardisation)
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb64c}{64c}\NWlink{nuweb69}{, 69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb67c}{67c}\NWlink{nuweb72}{, 72}.
 
 \item{}
 \end{list}
@@ -4306,20 +4538,20 @@ here due to standardisation)
 \item Repeat
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap90}\raggedright\small
-\NWtarget{nuweb64c}{} $\langle\,${\itshape init score loop}\nobreak\ {\footnotesize {64c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap95}\raggedright\small
+\NWtarget{nuweb67c}{} $\langle\,${\itshape init score loop}\nobreak\ {\footnotesize {67c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb53c}{53c}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape score c11}\nobreak\ {\footnotesize \NWlink{nuweb64a}{64a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape score a, b}\nobreak\ {\footnotesize \NWlink{nuweb64b}{64b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape score c11}\nobreak\ {\footnotesize \NWlink{nuweb67a}{67a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape score a, b}\nobreak\ {\footnotesize \NWlink{nuweb67b}{67b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb69}{69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
 
 \item{}
 \end{list}
@@ -4339,8 +4571,8 @@ We again either generate $w_{j - 1}$ on the fly or use pre-computed weights
 parameters.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap91}\raggedright\small
-\NWtarget{nuweb65a}{} $\langle\,${\itshape update yp for chol}\nobreak\ {\footnotesize {65a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap96}\raggedright\small
+\NWtarget{nuweb68a}{} $\langle\,${\itshape update yp for chol}\nobreak\ {\footnotesize {68a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4357,15 +4589,15 @@ parameters.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap92}\raggedright\small
-\NWtarget{nuweb65b}{} $\langle\,${\itshape update yp for means, lower and upper}\nobreak\ {\footnotesize {65b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap97}\raggedright\small
+\NWtarget{nuweb68b}{} $\langle\,${\itshape update yp for means, lower and upper}\nobreak\ {\footnotesize {68b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4395,7 +4627,7 @@ parameters.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
@@ -4417,8 +4649,8 @@ parameters.
 The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap93}\raggedright\small
-\NWtarget{nuweb66a}{} $\langle\,${\itshape score wrt new chol off-diagonals}\nobreak\ {\footnotesize {66a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap98}\raggedright\small
+\NWtarget{nuweb69a}{} $\langle\,${\itshape score wrt new chol off-diagonals}\nobreak\ {\footnotesize {69a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4441,7 +4673,7 @@ The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
@@ -4450,8 +4682,8 @@ The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap94}\raggedright\small
-\NWtarget{nuweb66b}{} $\langle\,${\itshape score wrt new chol diagonal}\nobreak\ {\footnotesize {66b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap99}\raggedright\small
+\NWtarget{nuweb69b}{} $\langle\,${\itshape score wrt new chol diagonal}\nobreak\ {\footnotesize {69b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4464,15 +4696,15 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap95}\raggedright\small
-\NWtarget{nuweb66c}{} $\langle\,${\itshape new score means, lower and upper}\nobreak\ {\footnotesize {66c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap100}\raggedright\small
+\NWtarget{nuweb69c}{} $\langle\,${\itshape new score means, lower and upper}\nobreak\ {\footnotesize {69c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4490,7 +4722,7 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
@@ -4499,8 +4731,8 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 We next update scores for parameters introduced for smaller $j$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap96}\raggedright\small
-\NWtarget{nuweb67a}{} $\langle\,${\itshape update score for chol}\nobreak\ {\footnotesize {67a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap101}\raggedright\small
+\NWtarget{nuweb70a}{} $\langle\,${\itshape update score for chol}\nobreak\ {\footnotesize {70a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4518,15 +4750,15 @@ We next update scores for parameters introduced for smaller $j$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap97}\raggedright\small
-\NWtarget{nuweb67b}{} $\langle\,${\itshape update score means, lower and upper}\nobreak\ {\footnotesize {67b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap102}\raggedright\small
+\NWtarget{nuweb70b}{} $\langle\,${\itshape update score means, lower and upper}\nobreak\ {\footnotesize {70b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4564,7 +4796,7 @@ We next update scores for parameters introduced for smaller $j$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb68a}{68a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb71a}{71a}.
 
 \item{}
 \end{list}
@@ -4573,34 +4805,34 @@ We next update scores for parameters introduced for smaller $j$
 We put everything together in a loop starting with the second dimension
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap98}\raggedright\small
-\NWtarget{nuweb68a}{} $\langle\,${\itshape inner score loop}\nobreak\ {\footnotesize {68a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap103}\raggedright\small
+\NWtarget{nuweb71a}{} $\langle\,${\itshape inner score loop}\nobreak\ {\footnotesize {71a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@for (j = 1; j < iJ; j++) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute y}\nobreak\ {\footnotesize \NWlink{nuweb54a}{54a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute y}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute x}\nobreak\ {\footnotesize \NWlink{nuweb54b}{54b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape compute x}\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update d, e}\nobreak\ {\footnotesize \NWlink{nuweb54c}{54c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update d, e}\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update yp for chol}\nobreak\ {\footnotesize \NWlink{nuweb65a}{65a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update yp for chol}\nobreak\ {\footnotesize \NWlink{nuweb68a}{68a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update yp for means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb65b}{65b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update yp for means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb68b}{68b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape score wrt new chol off-diagonals}\nobreak\ {\footnotesize \NWlink{nuweb66a}{66a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape score wrt new chol off-diagonals}\nobreak\ {\footnotesize \NWlink{nuweb69a}{69a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape score wrt new chol diagonal}\nobreak\ {\footnotesize \NWlink{nuweb66b}{66b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape score wrt new chol diagonal}\nobreak\ {\footnotesize \NWlink{nuweb69b}{69b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape new score means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb66c}{66c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape new score means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb69c}{69c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update score for chol}\nobreak\ {\footnotesize \NWlink{nuweb67a}{67a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update score for chol}\nobreak\ {\footnotesize \NWlink{nuweb70a}{70a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update score means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb67b}{67b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update score means, lower and upper}\nobreak\ {\footnotesize \NWlink{nuweb70b}{70b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape update f}\nobreak\ {\footnotesize \NWlink{nuweb55a}{55a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape update f}\nobreak\ {\footnotesize \NWlink{nuweb58a}{58a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -4608,7 +4840,7 @@ We put everything together in a loop starting with the second dimension
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb69}{69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
 
 \item{}
 \end{list}
@@ -4628,8 +4860,8 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap99}\raggedright\small
-\NWtarget{nuweb68b}{} $\langle\,${\itshape score output}\nobreak\ {\footnotesize {68b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap104}\raggedright\small
+\NWtarget{nuweb71b}{} $\langle\,${\itshape score output}\nobreak\ {\footnotesize {71b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4647,7 +4879,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb69}{69}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
 
 \item{}
 \end{list}
@@ -4658,8 +4890,8 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 We put everything together in \proglang{C}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap100}\raggedright\small
-\NWtarget{nuweb69}{} $\langle\,${\itshape R slpmvnorm}\nobreak\ {\footnotesize {69}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap105}\raggedright\small
+\NWtarget{nuweb72}{} $\langle\,${\itshape R slpmvnorm}\nobreak\ {\footnotesize {72}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4673,15 +4905,15 @@ We put everything together in \proglang{C}
 \mbox{}\verb@    double d0, e0, emd0, f0, q0, intsum;@\\
 \mbox{}\verb@    int p, idx;@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape dimensions}\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape pnorm}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape W length}\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape init center}\nobreak\ {\footnotesize \NWlink{nuweb58c}{58c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape dimensions}\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape pnorm}\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape W length}\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape init center}\nobreak\ {\footnotesize \NWlink{nuweb61c}{61c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    int start, j, k;@\\
 \mbox{}\verb@    double tmp, e, d, f, emd, x, x0, y[iJ - 1];@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape score output object}\nobreak\ {\footnotesize \NWlink{nuweb63e}{63e}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape score output object}\nobreak\ {\footnotesize \NWlink{nuweb66e}{66e}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    q0 = qnorm(dtol, 0.0, 1.0, 1L, 0L);@\\
 \mbox{}\verb@@\\
@@ -4693,9 +4925,9 @@ We put everything together in \proglang{C}
 \mbox{}\verb@@\\
 \mbox{}\verb@    for (int i = 0; i < iN; i++) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape initialisation}\nobreak\ {\footnotesize \NWlink{nuweb53b}{53b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape score c11}\nobreak\ {\footnotesize \NWlink{nuweb64a}{64a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape score a, b}\nobreak\ {\footnotesize \NWlink{nuweb64b}{64b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape initialisation}\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape score c11}\nobreak\ {\footnotesize \NWlink{nuweb67a}{67a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape score a, b}\nobreak\ {\footnotesize \NWlink{nuweb67b}{67b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        if (iM == 0) {@\\
 \mbox{}\verb@            dans[0] = intsum;@\\
@@ -4710,15 +4942,15 @@ We put everything together in \proglang{C}
 \mbox{}\verb@@\\
 \mbox{}\verb@        for (int m = 0; m < iM; m++) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape init score loop}\nobreak\ {\footnotesize \NWlink{nuweb64c}{64c}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape inner score loop}\nobreak\ {\footnotesize \NWlink{nuweb68a}{68a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@            @\hbox{$\langle\,${\itshape score output}\nobreak\ {\footnotesize \NWlink{nuweb68b}{68b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape init score loop}\nobreak\ {\footnotesize \NWlink{nuweb67c}{67c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape inner score loop}\nobreak\ {\footnotesize \NWlink{nuweb71a}{71a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@            @\hbox{$\langle\,${\itshape score output}\nobreak\ {\footnotesize \NWlink{nuweb71b}{71b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@            if (W != R_NilValue)@\\
 \mbox{}\verb@                dW += iJ - 1;@\\
 \mbox{}\verb@        }@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@        @\hbox{$\langle\,${\itshape move on}\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape move on}\nobreak\ {\footnotesize \NWlink{nuweb59a}{59a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        dans += Jp + 1 + 3 * iJ;@\\
 \mbox{}\verb@    }@\\
@@ -4734,7 +4966,7 @@ We put everything together in \proglang{C}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51b}{51b}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54b}{54b}.
 
 \item{}
 \end{list}
@@ -4745,8 +4977,8 @@ however, we need to undo the effect of standardisation once the scores have
 been computed
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap101}\raggedright\small
-\NWtarget{nuweb70a}{} $\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize {70a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap106}\raggedright\small
+\NWtarget{nuweb73a}{} $\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize {73a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4759,15 +4991,15 @@ been computed
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap102}\raggedright\small
-\NWtarget{nuweb70b}{} $\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize {70b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap107}\raggedright\small
+\NWtarget{nuweb73b}{} $\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize {73b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4779,15 +5011,15 @@ been computed
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap103}\raggedright\small
-\NWtarget{nuweb70c}{} $\langle\,${\itshape post differentiate upper score}\nobreak\ {\footnotesize {70c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap108}\raggedright\small
+\NWtarget{nuweb73c}{} $\langle\,${\itshape post differentiate upper score}\nobreak\ {\footnotesize {73c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4799,15 +5031,15 @@ been computed
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap104}\raggedright\small
-\NWtarget{nuweb70d}{} $\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize {70d}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap109}\raggedright\small
+\NWtarget{nuweb73d}{} $\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize {73d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4825,7 +5057,7 @@ been computed
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
@@ -4845,8 +5077,8 @@ implemented by the ``vec trick''~(Section~\ref{sec:vectrick})
 where $\svec = \text{vec}(\mS)$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap105}\raggedright\small
-\NWtarget{nuweb71a}{} $\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize {71a}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap110}\raggedright\small
+\NWtarget{nuweb74a}{} $\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize {74a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4859,7 +5091,7 @@ where $\svec = \text{vec}(\mS)$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
@@ -4871,8 +5103,8 @@ elements (use \code{Lower\_tri(, diag = FALSE)} to extract the lower
 triangular elements such that the scores match the input)
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap106}\raggedright\small
-\NWtarget{nuweb71b}{} $\langle\,${\itshape post process score}\nobreak\ {\footnotesize {71b}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap111}\raggedright\small
+\NWtarget{nuweb74b}{} $\langle\,${\itshape post process score}\nobreak\ {\footnotesize {74b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -4885,7 +5117,7 @@ triangular elements such that the scores match the input)
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb72}{72}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb75}{75}.
 
 \item{}
 \end{list}
@@ -4894,23 +5126,23 @@ triangular elements such that the scores match the input)
 We can now finally put everything together in a single score function.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap107}\raggedright\small
-\NWtarget{nuweb72}{} $\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize {72}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap112}\raggedright\small
+\NWtarget{nuweb75}{} $\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize {75}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, @\\
 \mbox{}\verb@                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb55}{55}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape standardise}\nobreak\ {\footnotesize \NWlink{nuweb53a}{53a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape standardise}\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize \NWlink{nuweb63b}{63b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- .Call(mvtnorm_R_slpmvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), @\\
 \mbox{}\verb@                 as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));@\\
@@ -4920,17 +5152,17 @@ We can now finally put everything together in a single score function.
 \mbox{}\verb@    m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)@\\
 \mbox{}\verb@    ret <- ret[-1L,,drop = FALSE] / m@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize \NWlink{nuweb70a}{70a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize \NWlink{nuweb70b}{70b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate upper score}\nobreak\ {\footnotesize \NWlink{nuweb70c}{70c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize \NWlink{nuweb73a}{73a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize \NWlink{nuweb73b}{73b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate upper score}\nobreak\ {\footnotesize \NWlink{nuweb73c}{73c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ret[1:Jp, , drop = FALSE]@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize \NWlink{nuweb70d}{70d}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize \NWlink{nuweb73d}{73d}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize \NWlink{nuweb71a}{71a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize \NWlink{nuweb74a}{74a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape post process score}\nobreak\ {\footnotesize \NWlink{nuweb71b}{71b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape post process score}\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
 \mbox{}\verb@@\\
@@ -4951,7 +5183,7 @@ We can now finally put everything together in a single score function.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb51a}{51a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb54a}{54a}.
 
 \item{}
 \end{list}
@@ -5090,12 +5322,12 @@ Yc <- Y - rowMeans(Y)
 
 ll <- function(parm) {
     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-    -sum(dmvnorm(x = Yc, chol = C, log = TRUE))
+    -ldmvnorm(obs = Yc, chol = C)
 }
 
 sc <- function(parm) {
     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-    -rowSums(unclass(sldmvnorm(x = Yc, chol = C)$chol))
+    -rowSums(unclass(sldmvnorm(obs = Yc, chol = C)$chol))
 }
 @
 
@@ -5444,11 +5676,13 @@ sqrt(diag(vcov(m1)))[-1L]
 @
 
 
+\chapter{Continuous-discrete Likelihoods}
+
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap108}\raggedright\small
-\NWtarget{nuweb83}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {83}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap113}\raggedright\small
+\NWtarget{nuweb87}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {87}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -5477,15 +5711,15 @@ sqrt(diag(vcov(m1)))[-1L]
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}\NWlink{nuweb51a}{, 51a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap109}\raggedright\small
-\NWtarget{nuweb84}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {84}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap114}\raggedright\small
+\NWtarget{nuweb88}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {88}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -5516,7 +5750,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb3a}{3a}\NWlink{nuweb51b}{, 51b}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
 
 \item{}
 \end{list}
@@ -5528,8 +5762,8 @@ sqrt(diag(vcov(m1)))[-1L]
 
 
 {\small\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \verb@"lpmvnorm.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb51b}{51b}.}
-\item \verb@"lpmvnorm.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb51a}{51a}.}
+\item \verb@"lpmvnorm.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb54b}{54b}.}
+\item \verb@"lpmvnorm.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb54a}{54a}.}
 \item \verb@"ltMatrices.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb3a}{3a}.}
 \item \verb@"ltMatrices.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb2}{2}.}
 \end{list}}
@@ -5542,24 +5776,25 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb51b}{, 51b}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb21b}{21b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22}{22}\NWlink{nuweb26}{, 26}\NWlink{nuweb37a}{, 37a}.
 }
 \item $\langle\,$call Lapack\nobreak\ {\footnotesize \NWlink{nuweb24b}{24b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
 \item $\langle\,$check A argument\nobreak\ {\footnotesize \NWlink{nuweb39a}{39a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
-\item $\langle\,$check and / or set integration weights\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item $\langle\,$check and / or set integration weights\nobreak\ {\footnotesize \NWlink{nuweb63b}{63b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 }
 \item $\langle\,$check C argument\nobreak\ {\footnotesize \NWlink{nuweb37b}{37b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
+\item $\langle\,$check obs\nobreak\ {\footnotesize \NWlink{nuweb49b}{49b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$check S argument\nobreak\ {\footnotesize \NWlink{nuweb38}{38}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb39b}{39b}.}
 \item $\langle\,$chol\nobreak\ {\footnotesize \NWlink{nuweb35}{35}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
-\item $\langle\,$chol scores\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
+\item $\langle\,$chol scores\nobreak\ {\footnotesize \NWlink{nuweb66a}{66a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66e}{66e}.}
 \item $\langle\,$chol syMatrices\nobreak\ {\footnotesize \NWlink{nuweb34}{34}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$Cholesky of precision\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item $\langle\,$Cholesky of precision\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 }
-\item $\langle\,$compute x\nobreak\ {\footnotesize \NWlink{nuweb54b}{54b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item $\langle\,$compute x\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 }
-\item $\langle\,$compute y\nobreak\ {\footnotesize \NWlink{nuweb54a}{54a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item $\langle\,$compute y\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 }
 \item $\langle\,$cond general\nobreak\ {\footnotesize \NWlink{nuweb46}{46}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb47b}{47b}.}
 \item $\langle\,$cond simple\nobreak\ {\footnotesize \NWlink{nuweb47a}{47a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb47b}{47b}.}
@@ -5571,7 +5806,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb16}{16}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dim ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$dimensions\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$dimensions\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
 \item $\langle\,$dimnames ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18}{, 18}\NWlink{nuweb20b}{, 20b}.
@@ -5580,26 +5815,29 @@ sqrt(diag(vcov(m1)))[-1L]
 }
 \item $\langle\,$IDX\nobreak\ {\footnotesize \NWlink{nuweb30b}{30b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb31}{31}\NWlink{nuweb37a}{, 37a}.
 }
-\item $\langle\,$increment\nobreak\ {\footnotesize \NWlink{nuweb55c}{55c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}.}
-\item $\langle\,$init center\nobreak\ {\footnotesize \NWlink{nuweb58c}{58c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$increment\nobreak\ {\footnotesize \NWlink{nuweb58c}{58c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
+\item $\langle\,$init center\nobreak\ {\footnotesize \NWlink{nuweb61c}{61c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$init logLik loop\nobreak\ {\footnotesize \NWlink{nuweb53c}{53c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb64c}{, 64c}.
+\item $\langle\,$init logLik loop\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb67c}{, 67c}.
 }
-\item $\langle\,$init random seed, reset on exit\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item $\langle\,$init random seed, reset on exit\nobreak\ {\footnotesize \NWlink{nuweb63a}{63a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 }
-\item $\langle\,$init score loop\nobreak\ {\footnotesize \NWlink{nuweb64c}{64c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
-\item $\langle\,$initialisation\nobreak\ {\footnotesize \NWlink{nuweb53b}{53b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$init score loop\nobreak\ {\footnotesize \NWlink{nuweb67c}{67c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
+\item $\langle\,$initialisation\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$inner logLik loop\nobreak\ {\footnotesize \NWlink{nuweb55b}{55b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}.}
-\item $\langle\,$inner score loop\nobreak\ {\footnotesize \NWlink{nuweb68a}{68a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
-\item $\langle\,$input checks\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb50}{50}\NWlink{nuweb61}{, 61}\NWlink{nuweb72}{, 72}.
+\item $\langle\,$inner logLik loop\nobreak\ {\footnotesize \NWlink{nuweb58b}{58b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
+\item $\langle\,$inner score loop\nobreak\ {\footnotesize \NWlink{nuweb71a}{71a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
+\item $\langle\,$input checks\nobreak\ {\footnotesize \NWlink{nuweb55}{55}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb53}{53}\NWlink{nuweb64}{, 64}\NWlink{nuweb75}{, 75}.
 }
 \item $\langle\,$kronecker vec trick\nobreak\ {\footnotesize \NWlink{nuweb39b}{39b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb41b}{41b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
-\item $\langle\,$lower scores\nobreak\ {\footnotesize \NWlink{nuweb63c}{63c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
+\item $\langle\,$ldmvnorm\nobreak\ {\footnotesize \NWlink{nuweb49a}{49a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$ldmvnorm chol\nobreak\ {\footnotesize \NWlink{nuweb50a}{50a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49a}{49a}.}
+\item $\langle\,$ldmvnorm invchol\nobreak\ {\footnotesize \NWlink{nuweb50b}{50b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49a}{49a}.}
+\item $\langle\,$lower scores\nobreak\ {\footnotesize \NWlink{nuweb66c}{66c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66e}{66e}.}
 \item $\langle\,$lower triangular elements\nobreak\ {\footnotesize \NWlink{nuweb14}{14}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb61}{61}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51a}{51a}.}
-\item $\langle\,$lpmvnormR\nobreak\ {\footnotesize \NWlink{nuweb50}{50}}$\,\rangle$ {\footnotesize {\NWtxtNoRef}.}
+\item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb64}{64}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
+\item $\langle\,$lpmvnormR\nobreak\ {\footnotesize \NWlink{nuweb53}{53}}$\,\rangle$ {\footnotesize {\NWtxtNoRef}.}
 \item $\langle\,$ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5a}{5a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$ltMatrices dim\nobreak\ {\footnotesize \NWlink{nuweb3b}{3b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb5a}{5a}.}
 \item $\langle\,$ltMatrices input\nobreak\ {\footnotesize \NWlink{nuweb4b}{4b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb5a}{5a}.}
@@ -5607,48 +5845,49 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$marginal\nobreak\ {\footnotesize \NWlink{nuweb45b}{45b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$mc input checks\nobreak\ {\footnotesize \NWlink{nuweb45a}{45a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45b}{45b}\NWlink{nuweb47b}{, 47b}.
 }
-\item $\langle\,$mean scores\nobreak\ {\footnotesize \NWlink{nuweb63b}{63b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
-\item $\langle\,$move on\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$mean scores\nobreak\ {\footnotesize \NWlink{nuweb66b}{66b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66e}{66e}.}
+\item $\langle\,$move on\nobreak\ {\footnotesize \NWlink{nuweb59a}{59a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
 \item $\langle\,$mult\nobreak\ {\footnotesize \NWlink{nuweb22}{22}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
 \item $\langle\,$mult ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb20b}{20b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$mult ltMatrices transpose\nobreak\ {\footnotesize \NWlink{nuweb20a}{20a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb20b}{20b}.}
 \item $\langle\,$names ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb6}{6}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$new score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb66c}{66c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$output\nobreak\ {\footnotesize \NWlink{nuweb55d}{55d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}.}
-\item $\langle\,$pnorm\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$new score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb69c}{69c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$output\nobreak\ {\footnotesize \NWlink{nuweb58d}{58d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
+\item $\langle\,$pnorm\nobreak\ {\footnotesize \NWlink{nuweb60a}{60a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$pnorm fast\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51b}{51b}.}
-\item $\langle\,$pnorm slow\nobreak\ {\footnotesize \NWlink{nuweb56c}{56c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51b}{51b}.}
-\item $\langle\,$post differentiate chol score\nobreak\ {\footnotesize \NWlink{nuweb70d}{70d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
-\item $\langle\,$post differentiate invchol score\nobreak\ {\footnotesize \NWlink{nuweb71a}{71a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
-\item $\langle\,$post differentiate lower score\nobreak\ {\footnotesize \NWlink{nuweb70b}{70b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
-\item $\langle\,$post differentiate mean score\nobreak\ {\footnotesize \NWlink{nuweb70a}{70a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
-\item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb70c}{70c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
-\item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb71b}{71b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
+\item $\langle\,$pnorm fast\nobreak\ {\footnotesize \NWlink{nuweb59b}{59b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
+\item $\langle\,$pnorm slow\nobreak\ {\footnotesize \NWlink{nuweb59c}{59c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
+\item $\langle\,$post differentiate chol score\nobreak\ {\footnotesize \NWlink{nuweb73d}{73d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
+\item $\langle\,$post differentiate invchol score\nobreak\ {\footnotesize \NWlink{nuweb74a}{74a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
+\item $\langle\,$post differentiate lower score\nobreak\ {\footnotesize \NWlink{nuweb73b}{73b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
+\item $\langle\,$post differentiate mean score\nobreak\ {\footnotesize \NWlink{nuweb73a}{73a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
+\item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb73c}{73c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
+\item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb83}{83}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb51a}{, 51a}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
 }
-\item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb59}{59}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51b}{51b}.}
-\item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51b}{51b}.}
+\item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb62}{62}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
+\item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
 \item $\langle\,$RC input\nobreak\ {\footnotesize \NWlink{nuweb21a}{21a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22}{22}\NWlink{nuweb26}{, 26}\NWlink{nuweb31}{, 31}\NWlink{nuweb37a}{, 37a}.
 }
 \item $\langle\,$reorder ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb10}{10}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$return objects\nobreak\ {\footnotesize \NWlink{nuweb25}{25}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
-\item $\langle\,$score a, b\nobreak\ {\footnotesize \NWlink{nuweb64b}{64b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64c}{64c}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$score a, b\nobreak\ {\footnotesize \NWlink{nuweb67b}{67b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb67c}{67c}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$score c11\nobreak\ {\footnotesize \NWlink{nuweb64a}{64a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64c}{64c}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$score c11\nobreak\ {\footnotesize \NWlink{nuweb67a}{67a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb67c}{67c}\NWlink{nuweb72}{, 72}.
 }
-\item $\langle\,$score output\nobreak\ {\footnotesize \NWlink{nuweb68b}{68b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
-\item $\langle\,$score output object\nobreak\ {\footnotesize \NWlink{nuweb63e}{63e}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
-\item $\langle\,$score wrt new chol diagonal\nobreak\ {\footnotesize \NWlink{nuweb66b}{66b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$score wrt new chol off-diagonals\nobreak\ {\footnotesize \NWlink{nuweb66a}{66a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
+\item $\langle\,$score output\nobreak\ {\footnotesize \NWlink{nuweb71b}{71b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
+\item $\langle\,$score output object\nobreak\ {\footnotesize \NWlink{nuweb66e}{66e}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb72}{72}.}
+\item $\langle\,$score wrt new chol diagonal\nobreak\ {\footnotesize \NWlink{nuweb69b}{69b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$score wrt new chol off-diagonals\nobreak\ {\footnotesize \NWlink{nuweb69a}{69a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
 \item $\langle\,$setup memory\nobreak\ {\footnotesize \NWlink{nuweb23}{23}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
-\item $\langle\,$setup return object\nobreak\ {\footnotesize \NWlink{nuweb58a}{58a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}.}
-\item $\langle\,$slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb51a}{51a}.}
+\item $\langle\,$setup return object\nobreak\ {\footnotesize \NWlink{nuweb61a}{61a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
+\item $\langle\,$sldmvnorm\nobreak\ {\footnotesize \NWlink{nuweb51}{51}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
 \item $\langle\,$solve\nobreak\ {\footnotesize \NWlink{nuweb26}{26}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
 \item $\langle\,$solve ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$standardise\nobreak\ {\footnotesize \NWlink{nuweb53a}{53a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}\NWlink{nuweb72}{, 72}.
+\item $\langle\,$standardise\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 }
 \item $\langle\,$subset ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb12}{12}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$t(C) S t(A)\nobreak\ {\footnotesize \NWlink{nuweb36}{36}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb37a}{37a}.}
@@ -5656,18 +5895,18 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$tcrossprod diagonal only\nobreak\ {\footnotesize \NWlink{nuweb29}{29}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb31}{31}.}
 \item $\langle\,$tcrossprod full\nobreak\ {\footnotesize \NWlink{nuweb30a}{30a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb31}{31}.}
 \item $\langle\,$tcrossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb32}{32}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$univariate problem\nobreak\ {\footnotesize \NWlink{nuweb58b}{58b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}.}
-\item $\langle\,$update d, e\nobreak\ {\footnotesize \NWlink{nuweb54c}{54c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item $\langle\,$univariate problem\nobreak\ {\footnotesize \NWlink{nuweb61b}{61b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
+\item $\langle\,$update d, e\nobreak\ {\footnotesize \NWlink{nuweb57c}{57c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 }
-\item $\langle\,$update f\nobreak\ {\footnotesize \NWlink{nuweb55a}{55a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb55b}{55b}\NWlink{nuweb68a}{, 68a}.
+\item $\langle\,$update f\nobreak\ {\footnotesize \NWlink{nuweb58a}{58a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb58b}{58b}\NWlink{nuweb71a}{, 71a}.
 }
-\item $\langle\,$update score for chol\nobreak\ {\footnotesize \NWlink{nuweb67a}{67a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$update score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb67b}{67b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$update yp for chol\nobreak\ {\footnotesize \NWlink{nuweb65a}{65a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$update yp for means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb65b}{65b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb68a}{68a}.}
-\item $\langle\,$upper scores\nobreak\ {\footnotesize \NWlink{nuweb63d}{63d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb63e}{63e}.}
+\item $\langle\,$update score for chol\nobreak\ {\footnotesize \NWlink{nuweb70a}{70a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$update score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb70b}{70b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$update yp for chol\nobreak\ {\footnotesize \NWlink{nuweb68a}{68a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$update yp for means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb68b}{68b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71a}{71a}.}
+\item $\langle\,$upper scores\nobreak\ {\footnotesize \NWlink{nuweb66d}{66d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66e}{66e}.}
 \item $\langle\,$vec trick\nobreak\ {\footnotesize \NWlink{nuweb37a}{37a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
-\item $\langle\,$W length\nobreak\ {\footnotesize \NWlink{nuweb57b}{57b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb59}{59}\NWlink{nuweb69}{, 69}.
+\item $\langle\,$W length\nobreak\ {\footnotesize \NWlink{nuweb60b}{60b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
 \end{list}}
 

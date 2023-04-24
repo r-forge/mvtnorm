@@ -82,6 +82,8 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
+\newcommand{\ND}{\mathcal{N}}
+\newcommand{\diag}{\text{diag}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
@@ -188,6 +190,9 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<aperm@>
 @<marginal@>
 @<conditional@>
+@<check obs@>
+@<ldmvnorm@>
+@<sldmvnorm@>
 @}
 
 @o ltMatrices.c -cc
@@ -2312,6 +2317,168 @@ chk(c(cm), c(cmv$mean))
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
+\section{Continuous Log-likelihoods}
+
+With $\rZ \sim \ND_J(0, \mI_J)$ and $\rY =  \mC_i \rZ + \muvec_i \sim
+\ND_J(\muvec_i, \mC_i \mC_i^\top)$ we want to evaluate the
+log-likelihood contributions for observations $\yvec_1, \dots, \yvec_N$ in a
+function called \code{ldmvnorm}
+
+@d ldmvnorm
+@{
+ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
+
+    stopifnot(xor(missing(chol), missing(invchol)))
+    p <- ncol(obs)
+
+    if (!missing(chol)) {
+         @<ldmvnorm chol@>
+    } else {
+         @<ldmvnorm invchol@>
+    }
+
+    names(logretval) <- colnames(obs)
+    if (logLik) return(sum(logretval))
+    return(logretval)
+}
+@}
+
+We first check if the observations $\yvec_1, \dots, \yvec_N$ are given in an
+$\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
+\muvec_N$ in \code{means}.
+
+@d check obs
+@{
+.check_obs <- function(obs, mean, J, N) {
+
+    if (!is.matrix(obs)) 
+        obs <- matrix(obs, ncol = length(obs))
+    nr <- nrow(obs)
+    nc <- ncol(obs)
+    if (nc != N)
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("obs and (inv)chol have non-conforming size")
+    if (identical(unique(mean), 0)) return(obs)
+    if (length(mean) == J) 
+        return(obs - c(mean))
+    if (!is.matrix(mean))
+        stop("obs and mean have non-conforming size")
+    if (nrow(mean) != nr)
+        stop("obs and mean have non-conforming size")
+    if (ncol(mean) != nc)
+        stop("obs and mean have non-conforming size")
+    return(obs - mean)
+}
+@}
+
+With $\mSigma_i
+= \mC_i \mC_i^\top$ the log-likelihood function for $\rY_i = \yvec_i$ is
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) = -\frac{k}{2} \log(2\pi) - \frac{1}{2} \log \mid
+\mSigma_i \mid - \frac{1}{2} (\yvec_i - \muvec_i)^\top \mSigma^{-1}_i (\yvec_i - \muvec_i)
+\end{eqnarray*}
+Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \mid
+\mC_i \mid = 2 \sum_{j = 1}^\J \log \diag(\mC_i)_j$ we get the simpler expression
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mC^{-\top} \mC^{-1} (\yvec - \muvec_i).
+\end{eqnarray*}
+
+@d ldmvnorm chol
+@{
+if (missing(chol))
+    stop("either chol or invchol must be given")
+## chol is given
+if (!inherits(chol, "ltMatrices"))
+    stop("chol is not an object of class ltMatrices")
+N <- dim(chol)[1L]
+N <- ifelse(N == 1, p, N)
+J <- dim(chol)[2L]
+obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+logretval <- colSums(dnorm(solve(chol, obs), log = TRUE))
+if (attr(chol, "diag"))
+    logretval <- logretval - colSums(log(diagonals(chol)))
+@}
+
+If $\mL_i = \mC_i^{-1}$ is given, we obtain
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mL_i) & = & -\frac{k}{2} \log(2\pi) + \sum_{j = 1}^\J \log \diag(\mL_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mL^\top \mL (\yvec - \muvec_i).
+\end{eqnarray*}
+
+@d ldmvnorm invchol
+@{
+## invchol is given
+if (!inherits(invchol, "ltMatrices"))
+    stop("invchol is not an object of class ltMatrices")
+N <- dim(invchol)[1L]
+N <- ifelse(N == 1, p, N)
+J <- dim(invchol)[2L]
+obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+## use dnorm (gets the normalizing factors right)
+## NOTE: obs is (J x N) 
+logretval <- colSums(dnorm(Mult(invchol, obs), log = TRUE))
+## note that the second summand gets recycled the correct number
+## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
+if (attr(invchol, "diag"))
+    logretval <- logretval + colSums(log(diagonals(invchol)))
+@}
+
+The score function with respect to \code{obs} is
+\begin{eqnarray*}
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i \yvec_i
+\end{eqnarray*}
+and with respect to \code{invchol} we have
+\begin{eqnarray*}
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \mL_i} = 
+- 2 \mL_i \yvec_i \yvec_i^\top + \diag(\mL_i)^{-1}.
+\end{eqnarray*}
+The score function with respect to \code{chol} post-processes the above
+score using the vec trick~(Section~\ref{sec:vectrick}).
+
+@d sldmvnorm
+@{
+sldmvnorm <- function(obs, mean = 0, chol, invchol) {
+
+    stopifnot(xor(missing(chol), missing(invchol)))
+
+    if (!missing(invchol)) {
+
+        N <- dim(invchol)[1L]
+        N <- ifelse(N == 1, ncol(obs), N)
+        J <- dim(invchol)[2L]
+        obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+
+        Mix <- Mult(invchol, obs)
+        sobs <- - Mult(invchol, Mix, transpose = TRUE)
+
+        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
+        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
+
+        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
+        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], 
+                          diag = attr(invchol, "diag"), byrow = FALSE)
+        ret <- ltMatrices(ret, 
+                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
+        if (attr(invchol, "diag")) {
+            ### recycle properly
+            diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))
+        } else {
+            diagonals(ret) <- 0
+        }
+        return(list(obs = sobs, invchol = ret))
+    }
+
+    invchol <- solve(chol)
+    ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)
+    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$invchol <- NULL
+    return(ret)
+}
+@}
+
 \section{Application Example}
 
 Let's say we have $\rY_i \sim \N_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
@@ -2335,15 +2502,15 @@ ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE
 chk(ll1, ll2)
 @@
 
-The \code{dmvnorm} function now also has \code{chol} and \code{invchol}
+The \code{ldmvnorm} function now also has \code{chol} and \code{invchol}
 arguments such that we can use
 <<ex-MV-d>>=
-ll3 <- sum(dmvnorm(Y, invchol = lt, log = TRUE))
+ll3 <- ldmvnorm(obs = Y, invchol = lt)
 chk(ll1, ll3)
 @@
-Note that argument \code{x} in \code{dmvnorm} is an $N \times \J$ matrix
-when \code{sigma} is given (the traditional interface) BUT expects
-an $\J \times \N$ matrix when \code{chol} or \code{invchol} are specified.
+Note that argument \code{obs} in \code{ldmvnorm} is an $\J \times \N$ matrix
+whereas the traditional interface in \code{dmvnorm} expects
+an $\N \times \J$ matrix \code{x}.
 The reason is that \code{Mult} or \code{solve} work with $\J \times \N$
 matrices and we want to avoid matrix transposes.
 
@@ -3649,12 +3816,12 @@ Yc <- Y - rowMeans(Y)
 
 ll <- function(parm) {
     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-    -sum(dmvnorm(x = Yc, chol = C, log = TRUE))
+    -ldmvnorm(obs = Yc, chol = C)
 }
 
 sc <- function(parm) {
     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-    -rowSums(unclass(sldmvnorm(x = Yc, chol = C)$chol))
+    -rowSums(unclass(sldmvnorm(obs = Yc, chol = C)$chol))
 }
 @@
 
@@ -4002,6 +4169,8 @@ informative exact observations
 sqrt(diag(vcov(m1)))[-1L]
 @@
 
+
+\chapter{Continuous-discrete Likelihoods}
 
 \chapter{Package Infrastructure}
 

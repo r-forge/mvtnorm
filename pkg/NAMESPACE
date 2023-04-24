@@ -7,7 +7,7 @@ importFrom("stats",
 	   rchisq, uniroot,
 	   cov2cor, optim, coef, glm, pcauchy, qcauchy, predict, quasi)
 
-export(rmvnorm, dmvnorm, sldmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
+export(rmvnorm, dmvnorm, ldmvnorm, sldmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, Tcrossprod, Crossprod, diagonals, 
        chol2cov, invchol2chol, chol2invchol, invchol2cov, 
        invchol2pre, chol2pre, Dchol, invcholD, chol2cor, invchol2cor,

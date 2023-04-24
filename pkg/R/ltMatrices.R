@@ -898,3 +898,116 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     return(list(mean = mean, invchol = solve(chol)))
 }
 
+# check obs
+
+.check_obs <- function(obs, mean, J, N) {
+
+    if (!is.matrix(obs)) 
+        obs <- matrix(obs, ncol = length(obs))
+    nr <- nrow(obs)
+    nc <- ncol(obs)
+    if (nc != N)
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("obs and (inv)chol have non-conforming size")
+    if (identical(unique(mean), 0)) return(obs)
+    if (length(mean) == J) 
+        return(obs - c(mean))
+    if (!is.matrix(mean))
+        stop("obs and mean have non-conforming size")
+    if (nrow(mean) != nr)
+        stop("obs and mean have non-conforming size")
+    if (ncol(mean) != nc)
+        stop("obs and mean have non-conforming size")
+    return(obs - mean)
+}
+
+# ldmvnorm
+
+ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
+
+    stopifnot(xor(missing(chol), missing(invchol)))
+    p <- ncol(obs)
+
+    if (!missing(chol)) {
+         # ldmvnorm chol
+         
+         if (missing(chol))
+             stop("either chol or invchol must be given")
+         ## chol is given
+         if (!inherits(chol, "ltMatrices"))
+             stop("chol is not an object of class ltMatrices")
+         N <- dim(chol)[1L]
+         N <- ifelse(N == 1, p, N)
+         J <- dim(chol)[2L]
+         obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+         logretval <- colSums(dnorm(solve(chol, obs), log = TRUE))
+         if (attr(chol, "diag"))
+             logretval <- logretval - colSums(log(diagonals(chol)))
+         
+    } else {
+         # ldmvnorm invchol
+         
+         ## invchol is given
+         if (!inherits(invchol, "ltMatrices"))
+             stop("invchol is not an object of class ltMatrices")
+         N <- dim(invchol)[1L]
+         N <- ifelse(N == 1, p, N)
+         J <- dim(invchol)[2L]
+         obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+         ## use dnorm (gets the normalizing factors right)
+         ## NOTE: obs is (J x N) 
+         logretval <- colSums(dnorm(Mult(invchol, obs), log = TRUE))
+         ## note that the second summand gets recycled the correct number
+         ## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
+         if (attr(invchol, "diag"))
+             logretval <- logretval + colSums(log(diagonals(invchol)))
+         
+    }
+
+    names(logretval) <- colnames(obs)
+    if (logLik) return(sum(logretval))
+    return(logretval)
+}
+
+# sldmvnorm
+
+sldmvnorm <- function(obs, mean = 0, chol, invchol) {
+
+    stopifnot(xor(missing(chol), missing(invchol)))
+
+    if (!missing(invchol)) {
+
+        N <- dim(invchol)[1L]
+        N <- ifelse(N == 1, ncol(obs), N)
+        J <- dim(invchol)[2L]
+        obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+
+        Mix <- Mult(invchol, obs)
+        sobs <- - Mult(invchol, Mix, transpose = TRUE)
+
+        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
+        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
+
+        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
+        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], 
+                          diag = attr(invchol, "diag"), byrow = FALSE)
+        ret <- ltMatrices(ret, 
+                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
+        if (attr(invchol, "diag")) {
+            ### recycle properly
+            diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))
+        } else {
+            diagonals(ret) <- 0
+        }
+        return(list(obs = sobs, invchol = ret))
+    }
+
+    invchol <- solve(chol)
+    ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)
+    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$invchol <- NULL
+    return(ret)
+}
+

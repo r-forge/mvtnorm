@@ -1,5 +1,6 @@
 \name{Mvnorm}
 \alias{dmvnorm}
+\alias{ldmvnorm}
 \alias{sldmvnorm}
 \alias{rmvnorm}
 \title{Multivariate Normal Density and Random Deviates}
@@ -10,26 +11,25 @@
   \code{sigma}.
 }
 \usage{
-dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE, 
-        chol, invchol)
-sldmvnorm(x, mean = 0, chol, invchol) 
+dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE)
+ldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
+sldmvnorm(obs, mean = 0, chol, invchol) 
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 }
 \arguments{
- \item{x}{vector or matrix of quantiles. In \code{dmvnorm}, when
-          \code{sigma} is given, and when \code{x} is a matrix, each
+ \item{x}{vector or matrix of quantiles. When \code{x} is a matrix, each
           row is taken to be a quantile and columns correspond to the number of dimensions, 
-          \code{p}. Otherwise, \code{x} is expected to be the transposed
-          version with rows corresponding to dimensions and columns to
-          observations. The reason for this quite dangerous arrangement is
+          \code{p}.}
+ \item{obs}{matrix of quantiles. Each column is taken to be a quantile and rows correspond to
+          dimensions, thus $\code{obs = t(x)}. The reason for this quite dangerous arrangement is
           that, for efficiency reasons, \code{\link{Mult}} or
           \code{\link{solve}} work with matrices where columns represent
-          observations.}
+          observations in \code{ldmvnorm} or \code{sldmvnorm}.}
  \item{n}{number of observations.}
  \item{mean}{mean vector, default is \code{rep(0, length = ncol(x))}.
-             If \code{chol} or \code{invchol} are given in \code{dmvnorm} or 
-             \code{sldmvnorm}, \code{mean} can also be a matrix with
+             In \code{ldmvnorm} or 
+             \code{sldmvnorm}, \code{mean} is a matrix with
              observation-specific means arranged in columns.}
  \item{sigma}{covariance matrix, default is \code{diag(ncol(x))}.}
  \item{log}{logical; if \code{TRUE}, densities d are given as log(d).}
@@ -55,18 +55,21 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
              potentially observation-specific covariance matrices via
              their inverse lower-triagular Cholesky factors (that is, a
              factorisation of the precision matrices).}
-
+ \item{logLik}{logical, if \code{TRUE}, the log-likelihood is returned,
+    otherwise the individual contributions to the sum are returned.
+}
 }
 \details{
 \code{dmvnorm} computes the density function of the multivariate normal
 specified by mean and the covariance matrix \code{sigma}. Alternatively,
 Cholesky factors of \code{sigma} (argument \code{chol}) or its inverse
-(argument \code{invchol}) can be used to specify the covariance structure.
-Note that rows and columns of \code{x} and \code{mean} are switched when
+(argument \code{invchol}) can be used to specify the covariance structure in
+the log-likelihood contributions \code{ldmvnorm}.
+Note that rows and columns of \code{mean} are switched when
 these objects specify the covariance structure (for internal efficiency
 reasons). This interface if also present in \code{\link{lpmvnorm}}.
 \code{slmvnorm} computes the gradients of the log-density with
-respect to \code{x} and \code{chol} (or \code{invchol}).
+respect to \code{obs} and \code{chol} (or \code{invchol}).
 
 \code{rmvnorm} generates multivariate normal variables. See the package
 vignette linked to below for simpler ways to do so based on \code{chol} or
@@ -88,7 +91,7 @@ dS <- dmvnorm(x, sigma = sigma)
 ### alternative interface
 C <- t(chol(sigma))
 (C <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE))
-dC <- dmvnorm(t(x), chol = C)
+dC <- exp(ldmvnorm(obs = t(x), chol = C, logLik = FALSE))
 all.equal(dS, dC)
 
 x <- rmvnorm(n=500, mean=c(1,2), sigma=sigma, method="chol")

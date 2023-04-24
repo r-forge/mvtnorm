@@ -856,7 +856,7 @@ attr(,"rcnames")
 
 > chk(ll1, ll2)
 
-> ll3 <- sum(dmvnorm(Y, invchol = lt, log = TRUE))
+> ll3 <- ldmvnorm(obs = Y, invchol = lt)
 
 > chk(ll1, ll3)
 
@@ -1137,12 +1137,12 @@ attr(,"rcnames")
 
 > ll <- function(parm) {
 +     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-+     -sum(dmvnorm(x = Yc, chol = C, log = TRUE))
++     -ldmvnorm(obs = Yc, chol = C)
 + }
 
 > sc <- function(parm) {
 +     C <- ltMatrices(parm, diag = TRUE, byrow = BYROW)
-+     -rowSums(unclass(sldmvnorm(x = Yc, chol = C)$chol))
++     -rowSums(unclass(sldmvnorm(obs = Yc, chol = C)$chol))
 + }
 
 > llim <- rep(-Inf, J * (J + 1)/2)
@@ -1424,4 +1424,4 @@ converged
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  8.449   0.147   8.596 
+  8.130   0.119   8.272 
