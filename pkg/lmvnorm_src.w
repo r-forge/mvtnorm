@@ -62,7 +62,7 @@ urlcolor={linkcolor}%
 
 \newcommand{\R}{\mathbb{R} }
 \newcommand{\Prob}{\mathbb{P} }
-\newcommand{\N}{\mathbb{N} }
+\newcommand{\ND}{\mathbb{N} }
 \newcommand{\J}{J}
 \newcommand{\V}{\mathbb{V}} %% cal{\mbox{\textnormal{Var}}} }
 \newcommand{\E}{\mathbb{E}} %%mathcal{\mbox{\textnormal{E}}} }
@@ -82,7 +82,6 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
-\newcommand{\ND}{\mathcal{N}}
 \newcommand{\diag}{\text{diag}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
@@ -134,7 +133,7 @@ where $\avec_i = (a^{(i)}_1, \dots, a^{(i)}_\J)^\top \in \R^\J$ and
 $\bvec_i = (b^{(i)}_1, \dots, b^{(i)}_\J)^\top \in \R^\J$ are integration
 limits, $\mC_i = (c^{(i)}_{j\jmath}) \in \R^{\J \times
 \J}$ is a lower triangular matrix with $c^{(i)}_{j \jmath} = 0$ for $1 \le
-j < \jmath < \J$, and thus $\rY_i \sim \N_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$ for $i = 1, \dots, N$.
+j < \jmath < \J$, and thus $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$ for $i = 1, \dots, N$.
 
 One application of these integrals is the estimation of the Cholesky factor
 $\mC$ of a $\J$-dimensional normal distribution based on $N$ interval-censored
@@ -2084,8 +2083,8 @@ chk(chol2cov(C)[,p], chol2cov(Cp))
 
 \section{Marginal and Conditional Normal Distributions}
 
-Marginal and conditional distributions from distributions $\rY_i \sim \N_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
-(\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim \N_\J(\mathbf{0}_\J, \mL_i^{-1} \mL_i^{-\top})$
+Marginal and conditional distributions from distributions $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
+(\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mL_i^{-1} \mL_i^{-\top})$
 (\code{invchol} argument for $\mL_i$ for $i = 1, \dots, N$) shall be
 computed.
 
@@ -2140,7 +2139,7 @@ on). For an arbitrary subset $\jvec
 given $\rY_{\jvec} = \yvec_{\jvec}$ is
 \begin{eqnarray*}
 \rY_{-\jvec} \mid \rY_{\jvec} = \yvec_{\jvec} \sim 
-  \N_{|\jvec|}\left(-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec}, 
+  \ND_{|\jvec|}\left(-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec}, 
                     \mP^{-1}_{-\jvec,-\jvec}\right)
 \end{eqnarray*}
 and we return a Cholesky factor $\tilde{\mC}$ such that
@@ -2481,10 +2480,10 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol) {
 
 \section{Application Example}
 
-Let's say we have $\rY_i \sim \N_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
+Let's say we have $\rY_i \sim \ND_\J(\mathbf{0}_J, \mC_i \mC_i^{\top})$
 for $i = 1, \dots, N$ and we know the Cholesky factors $\mL_i = \mC_i^{-1}$ of the $N$
 precision matrices $\Sigma^{-1} = \mL_i \mL_i^{\top}$. We generate $\rY_i = \mL_i^{-1}
-\rZ_i$ from $\rZ_i \sim \N_\J(\mathbf{0}_\J, \mI_\J)$.
+\rZ_i$ from $\rZ_i \sim \ND_\J(\mathbf{0}_\J, \mI_\J)$.
 Evaluating the corresponding log-likelihood is now straightforward and fast,
 compared to repeated calls to \code{dmvnorm}
 
@@ -2508,10 +2507,10 @@ arguments such that we can use
 ll3 <- ldmvnorm(obs = Y, invchol = lt)
 chk(ll1, ll3)
 @@
-Note that argument \code{obs} in \code{ldmvnorm} is an $\J \times \N$ matrix
+Note that argument \code{obs} in \code{ldmvnorm} is an $\J \times N$ matrix
 whereas the traditional interface in \code{dmvnorm} expects
-an $\N \times \J$ matrix \code{x}.
-The reason is that \code{Mult} or \code{solve} work with $\J \times \N$
+an $N \times \J$ matrix \code{x}.
+The reason is that \code{Mult} or \code{solve} work with $\J \times N$
 matrices and we want to avoid matrix transposes.
 
 
@@ -3787,9 +3786,9 @@ chk(C, as.array(lt)[,,1], check.attributes = FALSE)
 chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
 @@
 
-We generate some data from $\N_\J(\mathbf{0}_\J, \Sigma)$ by first sampling
-from $\rZ \sim \N_\J(\mathbf{0}_\J, \mI_\J)$ and then computing $\rY = \mC \rZ +
-\muvec \sim \N_\J(\muvec, \mC \mC^\top)$
+We generate some data from $\ND_\J(\mathbf{0}_\J, \Sigma)$ by first sampling
+from $\rZ \sim \ND_\J(\mathbf{0}_\J, \mI_\J)$ and then computing $\rY = \mC \rZ +
+\muvec \sim \ND_\J(\muvec, \mC \mC^\top)$
 
 <<ex-ML-data>>=
 N <- 100

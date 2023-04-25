@@ -1,7 +1,5 @@
 \name{Mvnorm}
 \alias{dmvnorm}
-\alias{ldmvnorm}
-\alias{sldmvnorm}
 \alias{rmvnorm}
 \title{Multivariate Normal Density and Random Deviates}
 \description{
@@ -12,8 +10,6 @@
 }
 \usage{
 dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE)
-ldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
-sldmvnorm(obs, mean = 0, chol, invchol) 
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
         method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
 }
@@ -21,11 +17,6 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
  \item{x}{vector or matrix of quantiles. When \code{x} is a matrix, each
           row is taken to be a quantile and columns correspond to the number of dimensions, 
           \code{p}.}
- \item{obs}{matrix of quantiles. Each column is taken to be a quantile and rows correspond to
-          dimensions, thus $\code{obs = t(x)}. The reason for this quite dangerous arrangement is
-          that, for efficiency reasons, \code{\link{Mult}} or
-          \code{\link{solve}} work with matrices where columns represent
-          observations in \code{ldmvnorm} or \code{sldmvnorm}.}
  \item{n}{number of observations.}
  \item{mean}{mean vector, default is \code{rep(0, length = ncol(x))}.
              In \code{ldmvnorm} or 
@@ -48,32 +39,12 @@ rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
    covariance matrix is symmetric or not. This will speed up the
    computation but may cause unexpected outputs when ill-behaved
    \code{sigma} is provided. The default value is \code{TRUE}.}
- \item{chol}{an object of class \code{\link{ltMatrices}} specifying
-             potentially observation-specific covariance matrices via
-             their lower-triagular Cholesky factors.}
- \item{invchol}{an object of class \code{\link{ltMatrices}} specifying
-             potentially observation-specific covariance matrices via
-             their inverse lower-triagular Cholesky factors (that is, a
-             factorisation of the precision matrices).}
- \item{logLik}{logical, if \code{TRUE}, the log-likelihood is returned,
-    otherwise the individual contributions to the sum are returned.
-}
 }
 \details{
 \code{dmvnorm} computes the density function of the multivariate normal
-specified by mean and the covariance matrix \code{sigma}. Alternatively,
-Cholesky factors of \code{sigma} (argument \code{chol}) or its inverse
-(argument \code{invchol}) can be used to specify the covariance structure in
-the log-likelihood contributions \code{ldmvnorm}.
-Note that rows and columns of \code{mean} are switched when
-these objects specify the covariance structure (for internal efficiency
-reasons). This interface if also present in \code{\link{lpmvnorm}}.
-\code{slmvnorm} computes the gradients of the log-density with
-respect to \code{obs} and \code{chol} (or \code{invchol}).
+specified by mean and the covariance matrix \code{sigma}. 
 
-\code{rmvnorm} generates multivariate normal variables. See the package
-vignette linked to below for simpler ways to do so based on \code{chol} or
-\code{invchol}.
+\code{rmvnorm} generates multivariate normal variables. 
 
 }
 \seealso{\code{\link{pmvnorm}}, \code{\link{rnorm}}, \code{\link{qmvnorm}},
