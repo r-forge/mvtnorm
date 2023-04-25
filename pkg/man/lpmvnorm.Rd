@@ -3,13 +3,15 @@
 \alias{slpmvnorm}
 \alias{ldmvnorm}
 \alias{sldmvnorm}
+\alias{ldpmvnorm}
+\alias{sldpmvnorm}
 \title{
     Multivariate Normal Log-likelihood and Score Functions
 }
 \description{
     Computes the log-likelihood (contributions) of multiple
-    exact or interval-censored observations from a multivariate normal and
-    corresponding scores.
+    exact or interval-censored observations (or a mix thereof) 
+    from a multivariate normal and corresponding scores.
 }
 \usage{
 lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
@@ -17,7 +19,9 @@ lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE,
 slpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
         M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 ldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
-sldmvnorm(obs, mean = 0, chol, invchol) 
+sldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
+ldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
+sldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).
@@ -66,13 +70,16 @@ as zero.
   \item{fast}{logical, if \code{TRUE}, a faster but less accurate version 
               of \code{pnorm} is used internally.
 }
+  \item{\dots}{additional arguments to \code{lpmvnorm}.
+}
 }
 \details{
   Evaluates the multivariate normal law defined by \code{means} and
   \code{chol} over boxes defined by \code{lower} and \code{upper} or for
   exact observations \code{obs}. By
   default, the log-likelihood is returned by \code{lpmvnorm} and
-  \code{ldmvnorm}.
+  \code{ldmvnorm}. If some observations are exact and some defined by boxes,
+  \code{ldpmvnorm} computes the corresponding likelihood.
 
   Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2002)
   integration is implemented, the latter with weights obtained, for example,
@@ -83,17 +90,19 @@ as zero.
   \code{slpmvnorm} computes both the individual log-likelihood contributions
   and the corresponding score matrix (of dimension \eqn{J \times (J + 1) / 2 \times N}) if
   \code{chol} contains diagonal elements. Otherwise, the dimension is \eqn{J
-  \times (J - 1) / 2 \times N}.
+  \times (J - 1) / 2 \times N}. The scores for exact or mixed exact-interval 
+  observations are computed by \code{sldmvnorm} and \code{sldpmvnorm},
+  respectively.
 
   More details can be found in the \code{lmvnorm_src} package vignette.
 
 }
 \value{
 The log-likelihood (\code{logLik = TRUE}) or the individual contributions to the log-likelihood.
-\code{slpmvnorm} or \code{sldmvnorm} return the score matrix and, optionally (\code{logLik =
-TRUE}), the individual log-likelihood contributions.
+\code{slpmvnorm}, \code{sldmvnorm}, and \code{sldpmvnorm} return the score
+matrices and, optionally (\code{logLik = TRUE}), the individual log-likelihood contributions.
 }
-\seealso{\code{\link{dmvnorm}}}
+\seealso{\code{\link{dmvnorm}}, \code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \references{
 
   Genz, A. (1992). Numerical computation of multivariate normal probabilities.

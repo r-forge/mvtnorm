@@ -88,7 +88,9 @@ urlcolor={linkcolor}%
 \newcommand{\svec}{\mathbf{s}}
 \newcommand{\jvec}{\mathbf{j}}
 \newcommand{\muvec}{\mathbf{\mu}}
+\newcommand{\etavec}{\mathbf{\eta}}
 \newcommand{\rY}{\mathbf{Y}}
+\newcommand{\rX}{\mathbf{X}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
 \newcommand{\mL}{\mathbf{L}}
@@ -170,12 +172,16 @@ and \proglang{C}) of Alan Genz' original \proglang{FORTRAN} code, focusing
 on efficient computation of the log-likelihood $\sum_{i = 1}^N \log(p_i)$
 and the corresponding score function.
 
-The document first describes a class and some useful methods for dealing with multiple lower triangular matrices $\mC_i, i = 1,
-\dots, N$ in Chapter~\ref{ltMatrices}.  The multivariate normal
-log-likelihood, and the corresponding score function, is implemented as
-outlined in Chapter~\ref{lpmvnorm}.  An example demonstrating
-maximum-likelihood estimation of Cholesky factors in the presence of
-interval-censored observations is discussed last in Chapter~\ref{ML}.
+The document first describes a class and some useful methods for dealing
+with multiple lower triangular matrices $\mC_i, i = 1, \dots, N$ in
+Chapter~\ref{ltMatrices}.  The multivariate normal log-likelihood, and the
+corresponding score function, is implemented as outlined in
+Chapter~\ref{lpmvnorm}.  An example demonstrating maximum-likelihood
+estimation of Cholesky factors in the presence of interval-censored
+observations is discussed last in Chapter~\ref{ML}.  We use the technology
+developed here to implement the log-likelihood and score function for
+situations where some variables have been observed exactly and others only
+in form of interval-censoring in Chapter~\ref{cdl}.
 
 \chapter{Lower Triangular Matrices} \label{ltMatrices}
 
@@ -185,7 +191,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5a}{5a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dimnames ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$}\verb@@\\
@@ -211,6 +217,8 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape check obs}\nobreak\ {\footnotesize \NWlink{nuweb49b}{49b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb49a}{49a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb51}{51}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -227,7 +235,7 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
@@ -3205,7 +3213,7 @@ score using the vec trick~(Section~\ref{sec:vectrick}).
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@sldmvnorm <- function(obs, mean = 0, chol, invchol) {@\\
+\mbox{}\verb@sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
 \mbox{}\verb@@\\
@@ -3233,7 +3241,10 @@ score using the vec trick~(Section~\ref{sec:vectrick}).
 \mbox{}\verb@        } else {@\\
 \mbox{}\verb@            diagonals(ret) <- 0@\\
 \mbox{}\verb@        }@\\
-\mbox{}\verb@        return(list(obs = sobs, invchol = ret))@\\
+\mbox{}\verb@        ret <- list(obs = sobs, invchol = ret)@\\
+\mbox{}\verb@        if (logLik) @\\
+\mbox{}\verb@            ret$logLik <- ldmvnorm(obs = obs, mean = mean, invchol = invchol, logLik = FALSE)@\\
+\mbox{}\verb@        return(ret)@\\
 \mbox{}\verb@    }@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    invchol <- solve(chol)@\\
@@ -3452,7 +3463,7 @@ We want to achieve the same result a bit more general and a bit faster.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb64}{64}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
@@ -3471,7 +3482,7 @@ We want to achieve the same result a bit more general and a bit faster.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
@@ -5674,14 +5685,269 @@ informative exact observations
 sqrt(diag(vcov(m1)))[-1L]
 @
 
+\chapter{Continuous-discrete Likelihoods} \label{cdl}
 
-\chapter{Continuous-discrete Likelihoods}
+We sometimes are faced with outcomes measured at different levels of
+precision. Some variables might have been observed very exactly, and
+therefore we might want to use the log-Lebesque density for defining the
+log-likelihood. Other variables might be available as relatively wide intervals
+only, and thus the log-likelihood is a log-probability. We can use the
+infrastructure developed so far to compute a joint likelihood. Let's assume 
+we have are interested in the joint distribution of $(\rY_i, \rX_i)$ and we
+observed $\rY_i = \yvec_i$ (that is, exact observations of $\rY$) and 
+$\avec_i < \rX_i \le \bvec_i$ (that is, interval-censored observations for
+$\rX_i$). We define the log-likelihood based on the joint normal distribution $(\rY_i,
+\rX_i) \sim \ND_J((\muvec_i, \etavec_i)^\top, \mC_i \mC_i^\top)$ as
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) + \log(\Prob(\avec_i < \rX_i \le \bvec_i \mid \mC_i, \etavec_i, \rY_i = \yvec_i)).
+\end{eqnarray*}
+The trick here is to decompose the joint likelihood into a product of the 
+marginal Lebesque density of $\rY_i$ and the conditional probability of
+$\rX_i$ given $\rY_i = \yvec_i$.
+
+We first check the data
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap113}\raggedright\small
+\NWtarget{nuweb86}{} $\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize {86}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@cJ <- nrow(obs)@\\
+\mbox{}\verb@dJ <- nrow(lower)@\\
+\mbox{}\verb@N <- ncol(obs)@\\
+\mbox{}\verb@stopifnot(N == ncol(lower))@\\
+\mbox{}\verb@stopifnot(N == ncol(upper))@\\
+\mbox{}\verb@if (all(mean == 0)) {@\\
+\mbox{}\verb@    cmean <- 0@\\
+\mbox{}\verb@    dmean <- 0@\\
+\mbox{}\verb@} else {@\\
+\mbox{}\verb@    if (!is.matrix(mean)) @\\
+\mbox{}\verb@        mean <- matrix(mean, nrow = cJ + dJ, ncol = N)@\\
+\mbox{}\verb@    stopifnot(nrow(mean) == cJ + dJ)@\\
+\mbox{}\verb@    stopifnot(ncol(mean) == N)@\\
+\mbox{}\verb@    cmean <- mean[1:cJ,, drop = FALSE]@\\
+\mbox{}\verb@    dmean <- mean[-(1:cJ),, drop = FALSE]@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb87}{87}\NWlink{nuweb88}{, 88}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+We can use \code{marg\_mvnorm} and \code{cond\_mvnorm} to compute the
+marginal and the conditional normal distributions and the joint log-likelihood
+is simply the sum of the two corresponding log-likelihoods.
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap114}\raggedright\small
+\NWtarget{nuweb87}{} $\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize {87}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
+\mbox{}\verb@                      logLik = TRUE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (missing(obs))@\\
+\mbox{}\verb@        return(lpmvnorm(lower = lower, upper = upper, mean = mean,@\\
+\mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik, ...))@\\
+\mbox{}\verb@    if (missing(lower) && missing(upper))@\\
+\mbox{}\verb@        return(ldmvnorm(obs = obs, mean = mean,@\\
+\mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb86}{86}}$\,\rangle$}\verb@    @\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!missing(invchol)) {@\\
+\mbox{}\verb@        J <- dim(invchol)[2L]@\\
+\mbox{}\verb@        stopifnot(cJ + dJ == J)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        md <- marg_mvnorm(invchol = invchol, which = 1:cJ)@\\
+\mbox{}\verb@        ret <- ldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, @\\
+\mbox{}\verb@                        logLik = logLik)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, @\\
+\mbox{}\verb@                          given = obs - cmean, center = TRUE)@\\
+\mbox{}\verb@        ret <- ret + lpmvnorm(lower = lower, upper = upper, mean = dmean, @\\
+\mbox{}\verb@                              invchol = cd$invchol, center = cd$center, @\\
+\mbox{}\verb@                              logLik = logLik, ...)@\\
+\mbox{}\verb@        return(ret)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    J <- dim(chol)[2L]@\\
+\mbox{}\verb@    stopifnot(cJ + dJ == J)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    md <- marg_mvnorm(chol = chol, which = 1:cJ)@\\
+\mbox{}\verb@    ret <- ldmvnorm(obs = obs, mean = cmean, chol = md$chol, logLik = logLik)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    cd <- cond_mvnorm(chol = chol, which_given = 1:cJ, @\\
+\mbox{}\verb@                      given = obs - cmean, center = TRUE)@\\
+\mbox{}\verb@    ret <- ret + lpmvnorm(lower = lower, upper = upper, mean = dmean, @\\
+\mbox{}\verb@                          chol = cd$chol, center = cd$center, @\\
+\mbox{}\verb@                          logLik = logLik, ...)@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+The score function requires a little extra work.
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap115}\raggedright\small
+\NWtarget{nuweb88}{} $\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize {88}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (missing(obs))@\\
+\mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, mean = mean,@\\
+\mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik, ...))@\\
+\mbox{}\verb@    if (missing(lower) && missing(upper))@\\
+\mbox{}\verb@        return(sldmvnorm(obs = obs, mean = mean,@\\
+\mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb86}{86}}$\,\rangle$}\verb@    @\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!missing(invchol)) {@\\
+\mbox{}\verb@        byrow_orig <- attr(invchol, "byrow")@\\
+\mbox{}\verb@        invchol <- ltMatrices(invchol, byrow = TRUE)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        J <- dim(invchol)[2L]@\\
+\mbox{}\verb@        stopifnot(cJ + dJ == J)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        md <- marg_mvnorm(invchol = invchol, which = 1:cJ)@\\
+\mbox{}\verb@        cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        obs_cmean <- obs - cmean@\\
+\mbox{}\verb@        cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, @\\
+\mbox{}\verb@                          given = obs_cmean, center = TRUE)@\\
+\mbox{}\verb@        ds <- slpmvnorm(lower = lower, upper = upper, mean = dmean, @\\
+\mbox{}\verb@                        center = cd$center, invchol = cd$invchol, @\\
+\mbox{}\verb@                        logLik = logLik, ...)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        tmp0 <- solve(cd$invchol, ds$mean, transpose = TRUE)@\\
+\mbox{}\verb@        tmp <- - tmp0[rep(1:dJ, each = cJ),,drop = FALSE] * @\\
+\mbox{}\verb@                 obs_cmean[rep(1:cJ, dJ),,drop = FALSE]@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        Jp <- nrow(unclass(invchol))@\\
+\mbox{}\verb@        diag <- attr(invchol, "diag")@\\
+\mbox{}\verb@        M <- as.array(ltMatrices(1:Jp, diag = diag, byrow = TRUE))[,,1]@\\
+\mbox{}\verb@        ret <- matrix(0, nrow = Jp, ncol = ncol(obs))@\\
+\mbox{}\verb@        M1 <- M[1:cJ, 1:cJ]@\\
+\mbox{}\verb@        idx <- t(M1)[upper.tri(M1, diag = diag)]@\\
+\mbox{}\verb@        ret[idx,] <- Lower_tri(cs$invchol, diag = diag)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        idx <- c(t(M[-(1:cJ), 1:cJ]))@\\
+\mbox{}\verb@        ret[idx,] <- tmp@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        M3 <- M[-(1:cJ), -(1:cJ)]@\\
+\mbox{}\verb@        idx <- t(M3)[upper.tri(M3, diag = diag)]@\\
+\mbox{}\verb@        ret[idx,] <- Lower_tri(ds$invchol, diag = diag)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        ret <- ltMatrices(ret, diag = diag, byrow = TRUE)@\\
+\mbox{}\verb@        if (!diag) diagonals(ret) <- 0@\\
+\mbox{}\verb@        ret <- ltMatrices(ret, byrow = byrow_orig)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        ### post differentiate mean @\\
+\mbox{}\verb@        aL <- as.array(invchol)[-(1:cJ), 1:cJ,,drop = FALSE]@\\
+\mbox{}\verb@        lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]@\\
+\mbox{}\verb@        if (dim(aL)[3] == 1)@\\
+\mbox{}\verb@            aL <- aL[,,rep(1, ncol(lst)), drop = FALSE]@\\
+\mbox{}\verb@        dim <- dim(aL)@\\
+\mbox{}\verb@        dobs <- -margin.table(aL * array(lst, dim = dim), 2:3)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@        ret <- c(list(invchol = ret, obs = cs$obs + dobs), @\\
+\mbox{}\verb@                 ds[c("lower", "upper")])@\\
+\mbox{}\verb@        ret$mean <- rbind(-ret$obs, ds$mean)@\\
+\mbox{}\verb@        return(ret)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    invchol <- solve(chol)@\\
+\mbox{}\verb@    ret <- sldpmvnorm(obs = obs, lower = lower, upper = upper, @\\
+\mbox{}\verb@                      mean = mean, invchol = invchol, logLik = logLik, ...)@\\
+\mbox{}\verb@    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)@\\
+\mbox{}\verb@    ret$chol <- - vectrick(invchol, ret$invchol)@\\
+\mbox{}\verb@    ret$invchol <- NULL@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+Let's assume we observed the first two dimensions exactly in our small
+example, and the remaining two dimensions are only known in intervals. The
+log-likelihood and score function for $\muvec$ and $\mC$ are 
+
+<<ex-ML-cd>>=
+ll_cd <- function(parm, J) {
+     m <- parm[1:J]             ### mean parameters
+     parm <- parm[-(1:J)]       ### chol parameters
+     C <- matrix(c(parm), ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+     -ldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),], 
+                upper = upr[-(1:2),], mean = m, chol = C, 
+                w = W[-(1:2),,drop = FALSE], M = M)
+}
+sc_cd <- function(parm, J) {
+    m <- parm[1:J]             ### mean parameters
+    parm <- parm[-(1:J)]       ### chol parameters
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+    ret <- sldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),],
+                      upper = upr[-(1:2),], mean = m, chol = C, 
+                      w = W[-(1:2),,drop = FALSE], M = M)
+    return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
+}
+@
+and the score function seems to be correct
+<<ex-ML-cd-score>>=
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll_cd, start, J = J), sc_cd(start, J = J), 
+        check.attributes = FALSE, tol = 1e-6)
+@
+
+We can now jointly estimate all model parameters via
+<<ex-ML-cd-optim>>=
+op <- optim(start, fn = ll_cd, gr = sc_cd, J = J, 
+            method = "L-BFGS-B", lower = llim, 
+            control = list(trace = TRUE))
+## estimated C
+ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+           diag = TRUE, byrow = BYROW)
+## compare with true C
+lt
+## estimated means
+op$par[1:J]
+## compare with true means
+mn
+@
 
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap113}\raggedright\small
-\NWtarget{nuweb87}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {87}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap116}\raggedright\small
+\NWtarget{nuweb91}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {91}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -5717,8 +5983,8 @@ sqrt(diag(vcov(m1)))[-1L]
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap114}\raggedright\small
-\NWtarget{nuweb88}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {88}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap117}\raggedright\small
+\NWtarget{nuweb92}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {92}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -5775,7 +6041,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb21b}{21b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22}{22}\NWlink{nuweb26}{, 26}\NWlink{nuweb37a}{, 37a}.
 }
@@ -5808,6 +6074,8 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$dimensions\nobreak\ {\footnotesize \NWlink{nuweb60c}{60c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}\NWlink{nuweb72}{, 72}.
 }
 \item $\langle\,$dimnames ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$dp input checks\nobreak\ {\footnotesize \NWlink{nuweb86}{86}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}\NWlink{nuweb88}{, 88}.
+}
 \item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb9}{9}\NWlink{nuweb10}{, 10}\NWlink{nuweb11}{, 11}\NWlink{nuweb14}{, 14}\NWlink{nuweb16}{, 16}\NWlink{nuweb18}{, 18}\NWlink{nuweb20b}{, 20b}.
 }
 \item $\langle\,$first element\nobreak\ {\footnotesize \NWlink{nuweb28}{28}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb29}{29}\NWlink{nuweb30a}{, 30a}.
@@ -5833,6 +6101,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$ldmvnorm\nobreak\ {\footnotesize \NWlink{nuweb49a}{49a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$ldmvnorm chol\nobreak\ {\footnotesize \NWlink{nuweb50a}{50a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49a}{49a}.}
 \item $\langle\,$ldmvnorm invchol\nobreak\ {\footnotesize \NWlink{nuweb50b}{50b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49a}{49a}.}
+\item $\langle\,$ldpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$lower scores\nobreak\ {\footnotesize \NWlink{nuweb66c}{66c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66e}{66e}.}
 \item $\langle\,$lower triangular elements\nobreak\ {\footnotesize \NWlink{nuweb14}{14}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb64}{64}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
@@ -5864,7 +6133,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb73c}{73c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb62}{62}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
@@ -5883,6 +6152,7 @@ sqrt(diag(vcov(m1)))[-1L]
 \item $\langle\,$setup memory\nobreak\ {\footnotesize \NWlink{nuweb23}{23}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
 \item $\langle\,$setup return object\nobreak\ {\footnotesize \NWlink{nuweb61a}{61a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62}{62}.}
 \item $\langle\,$sldmvnorm\nobreak\ {\footnotesize \NWlink{nuweb51}{51}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$sldpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
 \item $\langle\,$solve\nobreak\ {\footnotesize \NWlink{nuweb26}{26}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}
 \item $\langle\,$solve ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}

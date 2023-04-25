@@ -58,6 +58,13 @@ univariate problems are passed to \code{\link{pnorm}}.
 The multivariate normal density and random deviates are available using
 \code{\link{dmvnorm}} and \code{\link{rmvnorm}}.
 
+\code{pmvnorm} is based on original implementations by Alan Genz, Frank
+Bretz, and Tetsuhisa Miwa developed for computing accurate approximations to
+the normal integral. Users interested in computing log-likelihoods involving
+such normal probabilities should consider function \code{\link{lpmvnorm}},
+which is more flexible and efficient for this task and comes with the
+ability to evaluate score functions.
+
 }
 \value{
   The evaluated distribution function is returned, if \code{keepAttr} is true, with attributes
@@ -82,7 +89,7 @@ Genz, A. and Bretz, F. (2009), \emph{Computation of Multivariate Normal and
 t Probabilities}. Lecture Notes in Statistics, Vol. 195. Springer-Verlag,
 Heidelberg.
 
-Miwa, A., Hayter J. and Kuriki, S. (2003).
+Miwa, T., Hayter J. and Kuriki, S. (2003).
 The evaluation of general non-centred orthant probabilities.
 \emph{Journal of the Royal Statistical Society}, Ser. B, 65, 223--234.
 
@@ -93,7 +100,8 @@ The evaluation of general non-centred orthant probabilities.
 %  \url{http://www.sci.wsu.edu/math/faculty/genz/homepage}
 %}
 
-\seealso{\code{\link{qmvnorm}}}
+\seealso{\code{\link{qmvnorm}} for quantiles and \code{\link{lpmvnorm}} for
+log-likelihoods.}
 
 \examples{
 

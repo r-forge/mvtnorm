@@ -73,7 +73,9 @@ urlcolor={linkcolor}%
 \newcommand{\svec}{\mathbf{s}}
 \newcommand{\jvec}{\mathbf{j}}
 \newcommand{\muvec}{\mathbf{\mu}}
+\newcommand{\etavec}{\mathbf{\eta}}
 \newcommand{\rY}{\mathbf{Y}}
+\newcommand{\rX}{\mathbf{X}}
 \newcommand{\rZ}{\mathbf{Z}}
 \newcommand{\mC}{\mathbf{C}}
 \newcommand{\mL}{\mathbf{L}}
@@ -155,12 +157,16 @@ and \proglang{C}) of Alan Genz' original \proglang{FORTRAN} code, focusing
 on efficient computation of the log-likelihood $\sum_{i = 1}^N \log(p_i)$
 and the corresponding score function.
 
-The document first describes a class and some useful methods for dealing with multiple lower triangular matrices $\mC_i, i = 1,
-\dots, N$ in Chapter~\ref{ltMatrices}.  The multivariate normal
-log-likelihood, and the corresponding score function, is implemented as
-outlined in Chapter~\ref{lpmvnorm}.  An example demonstrating
-maximum-likelihood estimation of Cholesky factors in the presence of
-interval-censored observations is discussed last in Chapter~\ref{ML}.
+The document first describes a class and some useful methods for dealing
+with multiple lower triangular matrices $\mC_i, i = 1, \dots, N$ in
+Chapter~\ref{ltMatrices}.  The multivariate normal log-likelihood, and the
+corresponding score function, is implemented as outlined in
+Chapter~\ref{lpmvnorm}.  An example demonstrating maximum-likelihood
+estimation of Cholesky factors in the presence of interval-censored
+observations is discussed last in Chapter~\ref{ML}.  We use the technology
+developed here to implement the log-likelihood and score function for
+situations where some variables have been observed exactly and others only
+in form of interval-censoring in Chapter~\ref{cdl}.
 
 \chapter{Lower Triangular Matrices} \label{ltMatrices}
 
@@ -192,6 +198,8 @@ interval-censored observations is discussed last in Chapter~\ref{ML}.
 @<check obs@>
 @<ldmvnorm@>
 @<sldmvnorm@>
+@<ldpmvnorm@>
+@<sldpmvnorm@>
 @}
 
 @o ltMatrices.c -cc
@@ -2438,7 +2446,7 @@ score using the vec trick~(Section~\ref{sec:vectrick}).
 
 @d sldmvnorm
 @{
-sldmvnorm <- function(obs, mean = 0, chol, invchol) {
+sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 
     stopifnot(xor(missing(chol), missing(invchol)))
 
@@ -2466,7 +2474,10 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol) {
         } else {
             diagonals(ret) <- 0
         }
-        return(list(obs = sobs, invchol = ret))
+        ret <- list(obs = sobs, invchol = ret)
+        if (logLik) 
+            ret$logLik <- ldmvnorm(obs = obs, mean = mean, invchol = invchol, logLik = FALSE)
+        return(ret)
     }
 
     invchol <- solve(chol)
@@ -4168,8 +4179,224 @@ informative exact observations
 sqrt(diag(vcov(m1)))[-1L]
 @@
 
+\chapter{Continuous-discrete Likelihoods} \label{cdl}
 
-\chapter{Continuous-discrete Likelihoods}
+We sometimes are faced with outcomes measured at different levels of
+precision. Some variables might have been observed very exactly, and
+therefore we might want to use the log-Lebesque density for defining the
+log-likelihood. Other variables might be available as relatively wide intervals
+only, and thus the log-likelihood is a log-probability. We can use the
+infrastructure developed so far to compute a joint likelihood. Let's assume 
+we have are interested in the joint distribution of $(\rY_i, \rX_i)$ and we
+observed $\rY_i = \yvec_i$ (that is, exact observations of $\rY$) and 
+$\avec_i < \rX_i \le \bvec_i$ (that is, interval-censored observations for
+$\rX_i$). We define the log-likelihood based on the joint normal distribution $(\rY_i,
+\rX_i) \sim \ND_J((\muvec_i, \etavec_i)^\top, \mC_i \mC_i^\top)$ as
+\begin{eqnarray*}
+\ell_i(\muvec_i, \mC_i) + \log(\Prob(\avec_i < \rX_i \le \bvec_i \mid \mC_i, \etavec_i, \rY_i = \yvec_i)).
+\end{eqnarray*}
+The trick here is to decompose the joint likelihood into a product of the 
+marginal Lebesque density of $\rY_i$ and the conditional probability of
+$\rX_i$ given $\rY_i = \yvec_i$.
+
+We first check the data
+
+@d dp input checks
+@{
+stopifnot(xor(missing(chol), missing(invchol)))
+cJ <- nrow(obs)
+dJ <- nrow(lower)
+N <- ncol(obs)
+stopifnot(N == ncol(lower))
+stopifnot(N == ncol(upper))
+if (all(mean == 0)) {
+    cmean <- 0
+    dmean <- 0
+} else {
+    if (!is.matrix(mean)) 
+        mean <- matrix(mean, nrow = cJ + dJ, ncol = N)
+    stopifnot(nrow(mean) == cJ + dJ)
+    stopifnot(ncol(mean) == N)
+    cmean <- mean[1:cJ,, drop = FALSE]
+    dmean <- mean[-(1:cJ),, drop = FALSE]
+}
+@}
+
+We can use \code{marg\_mvnorm} and \code{cond\_mvnorm} to compute the
+marginal and the conditional normal distributions and the joint log-likelihood
+is simply the sum of the two corresponding log-likelihoods.
+
+@d ldpmvnorm
+@{
+ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+                      logLik = TRUE, ...) {
+
+    if (missing(obs))
+        return(lpmvnorm(lower = lower, upper = upper, mean = mean,
+                        chol = chol, invchol = invchol, logLik = logLik, ...))
+    if (missing(lower) && missing(upper))
+        return(ldmvnorm(obs = obs, mean = mean,
+                        chol = chol, invchol = invchol, logLik = logLik))
+
+    @<dp input checks@>    
+
+    if (!missing(invchol)) {
+        J <- dim(invchol)[2L]
+        stopifnot(cJ + dJ == J)
+
+        md <- marg_mvnorm(invchol = invchol, which = 1:cJ)
+        ret <- ldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, 
+                        logLik = logLik)
+
+        cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, 
+                          given = obs - cmean, center = TRUE)
+        ret <- ret + lpmvnorm(lower = lower, upper = upper, mean = dmean, 
+                              invchol = cd$invchol, center = cd$center, 
+                              logLik = logLik, ...)
+        return(ret)
+    }
+
+    J <- dim(chol)[2L]
+    stopifnot(cJ + dJ == J)
+
+    md <- marg_mvnorm(chol = chol, which = 1:cJ)
+    ret <- ldmvnorm(obs = obs, mean = cmean, chol = md$chol, logLik = logLik)
+
+    cd <- cond_mvnorm(chol = chol, which_given = 1:cJ, 
+                      given = obs - cmean, center = TRUE)
+    ret <- ret + lpmvnorm(lower = lower, upper = upper, mean = dmean, 
+                          chol = cd$chol, center = cd$center, 
+                          logLik = logLik, ...)
+    return(ret)
+}
+@}
+
+The score function requires a little extra work.
+
+@d sldpmvnorm
+@{
+sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {
+
+    if (missing(obs))
+        return(slpmvnorm(lower = lower, upper = upper, mean = mean,
+                         chol = chol, invchol = invchol, logLik = logLik, ...))
+    if (missing(lower) && missing(upper))
+        return(sldmvnorm(obs = obs, mean = mean,
+                         chol = chol, invchol = invchol, logLik = logLik))
+
+    @<dp input checks@>    
+
+    if (!missing(invchol)) {
+        byrow_orig <- attr(invchol, "byrow")
+        invchol <- ltMatrices(invchol, byrow = TRUE)
+
+        J <- dim(invchol)[2L]
+        stopifnot(cJ + dJ == J)
+
+        md <- marg_mvnorm(invchol = invchol, which = 1:cJ)
+        cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol)
+
+        obs_cmean <- obs - cmean
+        cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, 
+                          given = obs_cmean, center = TRUE)
+        ds <- slpmvnorm(lower = lower, upper = upper, mean = dmean, 
+                        center = cd$center, invchol = cd$invchol, 
+                        logLik = logLik, ...)
+
+        tmp0 <- solve(cd$invchol, ds$mean, transpose = TRUE)
+        tmp <- - tmp0[rep(1:dJ, each = cJ),,drop = FALSE] * 
+                 obs_cmean[rep(1:cJ, dJ),,drop = FALSE]
+
+        Jp <- nrow(unclass(invchol))
+        diag <- attr(invchol, "diag")
+        M <- as.array(ltMatrices(1:Jp, diag = diag, byrow = TRUE))[,,1]
+        ret <- matrix(0, nrow = Jp, ncol = ncol(obs))
+        M1 <- M[1:cJ, 1:cJ]
+        idx <- t(M1)[upper.tri(M1, diag = diag)]
+        ret[idx,] <- Lower_tri(cs$invchol, diag = diag)
+
+        idx <- c(t(M[-(1:cJ), 1:cJ]))
+        ret[idx,] <- tmp
+
+        M3 <- M[-(1:cJ), -(1:cJ)]
+        idx <- t(M3)[upper.tri(M3, diag = diag)]
+        ret[idx,] <- Lower_tri(ds$invchol, diag = diag)
+
+        ret <- ltMatrices(ret, diag = diag, byrow = TRUE)
+        if (!diag) diagonals(ret) <- 0
+        ret <- ltMatrices(ret, byrow = byrow_orig)
+
+        ### post differentiate mean 
+        aL <- as.array(invchol)[-(1:cJ), 1:cJ,,drop = FALSE]
+        lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
+        if (dim(aL)[3] == 1)
+            aL <- aL[,,rep(1, ncol(lst)), drop = FALSE]
+        dim <- dim(aL)
+        dobs <- -margin.table(aL * array(lst, dim = dim), 2:3)
+
+        ret <- c(list(invchol = ret, obs = cs$obs + dobs), 
+                 ds[c("lower", "upper")])
+        ret$mean <- rbind(-ret$obs, ds$mean)
+        return(ret)
+    }
+
+    invchol <- solve(chol)
+    ret <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
+                      mean = mean, invchol = invchol, logLik = logLik, ...)
+    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
+    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$invchol <- NULL
+    return(ret)
+}
+@}
+
+Let's assume we observed the first two dimensions exactly in our small
+example, and the remaining two dimensions are only known in intervals. The
+log-likelihood and score function for $\muvec$ and $\mC$ are 
+
+<<ex-ML-cd>>=
+ll_cd <- function(parm, J) {
+     m <- parm[1:J]             ### mean parameters
+     parm <- parm[-(1:J)]       ### chol parameters
+     C <- matrix(c(parm), ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+     -ldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),], 
+                upper = upr[-(1:2),], mean = m, chol = C, 
+                w = W[-(1:2),,drop = FALSE], M = M)
+}
+sc_cd <- function(parm, J) {
+    m <- parm[1:J]             ### mean parameters
+    parm <- parm[-(1:J)]       ### chol parameters
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+    ret <- sldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),],
+                      upper = upr[-(1:2),], mean = m, chol = C, 
+                      w = W[-(1:2),,drop = FALSE], M = M)
+    return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
+}
+@@
+and the score function seems to be correct
+<<ex-ML-cd-score>>=
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll_cd, start, J = J), sc_cd(start, J = J), 
+        check.attributes = FALSE, tol = 1e-6)
+@@
+
+We can now jointly estimate all model parameters via
+<<ex-ML-cd-optim>>=
+op <- optim(start, fn = ll_cd, gr = sc_cd, J = J, 
+            method = "L-BFGS-B", lower = llim, 
+            control = list(trace = TRUE))
+## estimated C
+ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+           diag = TRUE, byrow = BYROW)
+## compare with true C
+lt
+## estimated means
+op$par[1:J]
+## compare with true means
+mn
+@@
 
 \chapter{Package Infrastructure}
 

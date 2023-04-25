@@ -1421,7 +1421,57 @@ converged
         Y2         Y3         Y4 
 0.08229627 0.05039009 0.06246094 
 
+> ll_cd <- function(parm, J) {
++     m <- parm[1:J]
++     parm <- parm[-(1:J)]
++     C <- matrix(c(parm), ncol = 1)
++     C <- ltMatrices(C, diag = TR .... [TRUNCATED] 
+
+> sc_cd <- function(parm, J) {
++     m <- parm[1:J]
++     parm <- parm[-(1:J)]
++     C <- matrix(c(parm), ncol = 1)
++     C <- ltMatrices(C, diag = TR .... [TRUNCATED] 
+
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll_cd, 
++     start, J = J), sc_cd(start, J = J), check.attributes = FALSE, 
++     tol = 1e-06)
+
+> op <- optim(start, fn = ll_cd, gr = sc_cd, J = J, 
++     method = "L-BFGS-B", lower = llim, control = list(trace = TRUE))
+iter   10 value 655.707790
+final  value 655.707779 
+converged
+
+> ltMatrices(matrix(op$par[-(1:J)], ncol = 1), diag = TRUE, 
++     byrow = BYROW)
+, , 1
+
+           1           2          3         4
+1 0.68303340  0.00000000 0.00000000 0.0000000
+2 0.26504369  0.93466598 0.00000000 0.0000000
+3 0.53508534 -0.05736364 1.11260547 0.0000000
+4 0.06748574  0.95887388 0.07774847 0.9669178
+
+
+> lt
+, , 1
+
+          1          2         3         4
+1 0.7071068  0.0000000 0.0000000 0.0000000
+2 0.2500000  0.9682458 0.0000000 0.0000000
+3 0.6123724 -0.1581139 1.0488088 0.0000000
+4 0.0000000  1.0954451 0.1651446 0.8790491
+
+
+> op$par[1:J]
+       1        2        3        4 
+0.968533 2.126882 2.944105 3.989790 
+
+> mn
+[1] 1 2 3 4
+
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  8.130   0.119   8.272 
+  8.866   0.128   8.992 
