@@ -776,9 +776,9 @@ chol2pc <- function(x)
 
 # aperm
 
-aperm.ltMatrices <- function(a, perm, chol = FALSE, ...) {
+aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
 
-    if (chol) { ### a is Cholesky of covariance
+    if (is_chol) { ### a is Cholesky of covariance
         Sperm <- chol2cov(a)[,perm]
         return(chol(Sperm))
     }
@@ -1169,6 +1169,66 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
     ret$chol <- - vectrick(invchol, ret$invchol)
     ret$invchol <- NULL
+    return(ret)
+}
+
+# standardize
+
+standardize <- function(chol, invchol) {
+    stopifnot(xor(missing(chol), missing(invchol)))
+    if (!missing(invchol)) {
+        stopifnot(!attr(invchol, "diag"))
+        return(invcholD(invchol))
+    }
+    stopifnot(!attr(chol, "diag"))
+    return(Dchol(chol))
+}
+
+# destandardize
+
+destandardize <- function(chol = solve(invchol), invchol, score_schol)
+{
+    stopifnot(inherits(chol, "ltMatrices"))
+    J <- dim(chol)[2L]
+    stopifnot(!attr(chol, "diag"))
+    byrow_orig <- attr(chol, "byrow")
+    chol <- ltMatrices(chol, byrow = FALSE)
+    
+    if (inherits(score_schol, "ltMatrices"))
+        score_schol <- matrix(as.array(score_schol), 
+                              nrow = dim(score_schol)[2L]^2)
+    stopifnot(is.matrix(score_schol))
+    N <- ncol(score_schol)
+    stopifnot(J^2 == nrow(score_schol))
+
+    CCt <- Tcrossprod(chol, diag_only = TRUE)
+    DC <- Dchol(chol, D = Dinv <- 1 / sqrt(CCt))
+    SDC <- solve(DC)
+
+    IDX <- t(M <- matrix(1:J^2, nrow = J, ncol = J))
+    i <- cumsum(c(1, rep(J + 1, J - 1)))
+    ID <- diagonals(as.integer(J), byrow = FALSE)
+    if (dim(ID)[1L] != dim(chol)[1L])
+        ID <- ID[rep(1, dim(chol)[1L]),]
+
+    B <- vectrick(ID, score_schol, chol)
+    B[i,] <- B[i,] * (-.5) * c(CCt)^(-3/2)
+    B[-i,] <- 0
+
+    Dtmp <- Dchol(ID, D = Dinv)
+
+    ret <- vectrick(ID, B, chol, transpose = c(TRUE, FALSE)) +
+           vectrick(chol, B, ID)[IDX,] +
+           vectrick(Dtmp, score_schol, ID)
+
+    if (!missing(invchol)) {
+        ### this means: ret <- - vectrick(chol, ret, chol)
+        ret <- - vectrick(chol, ret)
+    }
+    ret <- ltMatrices(ret[M[lower.tri(M)],,drop = FALSE],
+                      diag = FALSE, byrow = FALSE)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+    diagonals(ret) <- 0
     return(ret)
 }
 

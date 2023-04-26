@@ -724,7 +724,7 @@ attr(,"rcnames")
 
 > J <- dim(L)[2]
 
-> Lp <- aperm(a = L, perm = p <- sample(1:J), chol = FALSE)
+> Lp <- aperm(a = L, perm = p <- sample(1:J), is_chol = FALSE)
 
 > chk(invchol2cov(L)[, p], invchol2cov(Lp))
 
@@ -732,7 +732,7 @@ attr(,"rcnames")
 
 > J <- dim(C)[2]
 
-> Cp <- aperm(a = C, perm = p <- sample(1:J), chol = TRUE)
+> Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
 
 > chk(chol2cov(C)[, p], chol2cov(Cp))
 
@@ -1471,7 +1471,105 @@ converged
 > mn
 [1] 1 2 3 4
 
+> data("iris")
+
+> J <- 4
+
+> Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank))/(nrow(iris) + 
++     1)))
+
+> (CR <- cor(t(Z)))
+             Sepal.Length Sepal.Width Petal.Length Petal.Width
+Sepal.Length   1.00000000 -0.09887012    0.8695177   0.7819059
+Sepal.Width   -0.09887012  1.00000000   -0.2709859  -0.2414218
+Petal.Length   0.86951767 -0.27098589    1.0000000   0.8713759
+Petal.Width    0.78190591 -0.24142185    0.8713759   1.0000000
+
+> ll <- function(parm) {
++     C <- ltMatrices(parm)
++     Cs <- standardize(C)
++     -ldmvnorm(obs = Z, chol = Cs)
++ }
+
+> sc <- function(parm) {
++     C <- ltMatrices(parm)
++     Cs <- standardize(C)
++     -rowSums(Lower_tri(destandardize(chol = C, score_schol = sldmvno .... [TRUNCATED] 
+
+> start <- t(chol(CR))
+
+> start <- start[lower.tri(start)]
+
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     start), sc(start), check.attributes = FALSE)
+
+> op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
++     hessian = TRUE)
+
+> op$value
+[1] 602.5055
+
+> chol2cov(standardize(ltMatrices(op$par)))
+, , 1
+
+           1          2          3          4
+1  1.0000000 -0.1139030  0.8768269  0.7962466
+2 -0.1139030  1.0000000 -0.2856045 -0.2574850
+3  0.8768269 -0.2856045  1.0000000  0.8816944
+4  0.7962466 -0.2574850  0.8816944  1.0000000
+
+
+> lwr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "min")) - 
++     1
+
+> upr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "max"))
+
+> lwr <- t(qnorm(lwr/nrow(iris)))
+
+> upr <- t(qnorm(upr/nrow(iris)))
+
+> M <- 500
+
+> if (require("qrng", quietly = TRUE)) {
++     W <- t(ghalton(M, d = J - 1))
++ } else {
++     W <- matrix(runif(M * (J - 1)), nrow = J - 1)
++ }
+
+> ll <- function(parm) {
++     C <- ltMatrices(parm)
++     Cs <- standardize(C)
++     -lpmvnorm(lower = lwr, upper = upr, chol = Cs, M = M, w = W)
++ }
+
+> sc <- function(parm) {
++     C <- ltMatrices(parm)
++     Cs <- standardize(C)
++     -rowSums(Lower_tri(destandardize(chol = C, score_schol = slpmvno .... [TRUNCATED] 
+
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     start), sc(start), check.attributes = FALSE)
+
+> op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", 
++     hessian = TRUE)
+
+> chol2cov(standardize(ltMatrices(op2$par)))
+, , 1
+
+            1           2          3          4
+1  1.00000000 -0.09784479  0.8734474  0.7833057
+2 -0.09784479  1.00000000 -0.2725805 -0.2482030
+3  0.87344738 -0.27258047  1.0000000  0.8849467
+4  0.78330571 -0.24820302  0.8849467  1.0000000
+
+
+> sqrt(diag(solve(op$hessian)))
+[1] 0.08122393 0.13679345 0.12621115 0.08761945 0.10787495 0.10101733
+
+> sqrt(diag(solve(op2$hessian)))
+[1] 0.07731393 0.13998635 0.13692018 0.08694021 0.11037006 0.11608864
+
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  8.866   0.128   8.992 
+ 13.766   0.160  13.922 

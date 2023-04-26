@@ -31,6 +31,8 @@
 \alias{invchol2pc}
 \alias{chol2pc}
 \alias{vectrick}
+\alias{standardize}
+\alias{destandardize}
 \title{
   Multiple Lower Triangular Matrices
 }
@@ -50,7 +52,7 @@ diagonals(x) <- value
 \S3method{diagonals}{syMatrices}(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
-\S3method{aperm}{ltMatrices}(a, perm, chol = FALSE, \dots)
+\S3method{aperm}{ltMatrices}(a, perm, is_chol = FALSE, \dots)
 Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
 Mult(x, y, transpose = FALSE)
 Tcrossprod(x, diag_only = FALSE)
@@ -68,6 +70,8 @@ invchol2cor(x)
 chol2pc(x)
 invchol2pc(x)
 vectrick(C, S, A, transpose = c(TRUE, TRUE))
+standardize(chol, invchol)
+destandardize(chol = solve(invchol), invchol, score_schol)
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
@@ -90,7 +94,7 @@ vectrick(C, S, A, transpose = c(TRUE, TRUE))
   \item{diag_only}{logical, compute diagonal elements of crossproduct only
 if \code{TRUE}.
 }
-  \item{x}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
+  \item{x,chol,invchol}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
 }
   \item{value}{a matrix of diagonal elements to be assigned (of dimension \eqn{J \times N}).
 }
@@ -98,7 +102,7 @@ if \code{TRUE}.
 }
   \item{perm}{a permutation of the covariance matrix corresponding to \code{a}.
 }
-  \item{chol}{a logical indicating if \code{a} is the Cholesky of the
+  \item{is_chol}{a logical indicating if \code{a} is the Cholesky of the
 covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with .
@@ -115,6 +119,7 @@ covariance (\code{chol = TRUE}) of the precision matrix.
                    For \code{solve}, this argument being true computes
                    \code{solve(t(a), b)} (in absence of a \code{t()} method for \code{ltMatrices}
                    objects).}
+  \item{score_schol}{score matrix for a standardized \code{chol} object.}
   \item{\dots}{additional arguments, currently ignored.
 }
 }

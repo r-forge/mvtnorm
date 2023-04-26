@@ -191,7 +191,7 @@ in form of interval-censoring in Chapter~\ref{cdl}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb95}{95}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5a}{5a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dimnames ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb5c}{5c}}$\,\rangle$}\verb@@\\
@@ -219,6 +219,8 @@ in form of interval-censoring in Chapter~\ref{cdl}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb51}{51}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb88}{88}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape standardize}\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape destandardize}\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -235,7 +237,7 @@ in form of interval-censoring in Chapter~\ref{cdl}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb96}{96}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
@@ -2703,9 +2705,9 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@aperm.ltMatrices <- function(a, perm, chol = FALSE, ...) {@\\
+\mbox{}\verb@aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (chol) { ### a is Cholesky of covariance@\\
+\mbox{}\verb@    if (is_chol) { ### a is Cholesky of covariance@\\
 \mbox{}\verb@        Sperm <- chol2cov(a)[,perm]@\\
 \mbox{}\verb@        return(chol(Sperm))@\\
 \mbox{}\verb@    }@\\
@@ -2727,12 +2729,12 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
 <<aperm-tests, eval= TRUE>>=
 L <- lxn
 J <- dim(L)[2L]
-Lp <- aperm(a = L, perm = p <- sample(1:J), chol = FALSE)
+Lp <- aperm(a = L, perm = p <- sample(1:J), is_chol = FALSE)
 chk(invchol2cov(L)[,p], invchol2cov(Lp))
 
 C <- lxn
 J <- dim(C)[2L]
-Cp <- aperm(a = C, perm = p <- sample(1:J), chol = TRUE)
+Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @
 
@@ -3463,7 +3465,7 @@ We want to achieve the same result a bit more general and a bit faster.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb95}{95}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb64}{64}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
@@ -3482,7 +3484,7 @@ We want to achieve the same result a bit more general and a bit faster.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb96}{96}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#include <R.h>@\\
 \mbox{}\verb@#include <Rmath.h>@\\
 \mbox{}\verb@#include <Rinternals.h>@\\
@@ -5943,11 +5945,164 @@ op$par[1:J]
 mn
 @
 
-\chapter{Package Infrastructure}
+\chapter{Unstructured Gaussian Copula Estimation}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap116}\raggedright\small
-\NWtarget{nuweb91}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {91}}$\,\rangle\equiv$
+\NWtarget{nuweb91}{} $\langle\,${\itshape standardize}\nobreak\ {\footnotesize {91}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@standardize <- function(chol, invchol) {@\\
+\mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@    if (!missing(invchol)) {@\\
+\mbox{}\verb@        stopifnot(!attr(invchol, "diag"))@\\
+\mbox{}\verb@        return(invcholD(invchol))@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    stopifnot(!attr(chol, "diag"))@\\
+\mbox{}\verb@    return(Dchol(chol))@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap117}\raggedright\small
+\NWtarget{nuweb92}{} $\langle\,${\itshape destandardize}\nobreak\ {\footnotesize {92}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@destandardize <- function(chol = solve(invchol), invchol, score_schol)@\\
+\mbox{}\verb@{@\\
+\mbox{}\verb@    stopifnot(inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@    J <- dim(chol)[2L]@\\
+\mbox{}\verb@    stopifnot(!attr(chol, "diag"))@\\
+\mbox{}\verb@    byrow_orig <- attr(chol, "byrow")@\\
+\mbox{}\verb@    chol <- ltMatrices(chol, byrow = FALSE)@\\
+\mbox{}\verb@    @\\
+\mbox{}\verb@    if (inherits(score_schol, "ltMatrices"))@\\
+\mbox{}\verb@        score_schol <- matrix(as.array(score_schol), @\\
+\mbox{}\verb@                              nrow = dim(score_schol)[2L]^2)@\\
+\mbox{}\verb@    stopifnot(is.matrix(score_schol))@\\
+\mbox{}\verb@    N <- ncol(score_schol)@\\
+\mbox{}\verb@    stopifnot(J^2 == nrow(score_schol))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    CCt <- Tcrossprod(chol, diag_only = TRUE)@\\
+\mbox{}\verb@    DC <- Dchol(chol, D = Dinv <- 1 / sqrt(CCt))@\\
+\mbox{}\verb@    SDC <- solve(DC)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    IDX <- t(M <- matrix(1:J^2, nrow = J, ncol = J))@\\
+\mbox{}\verb@    i <- cumsum(c(1, rep(J + 1, J - 1)))@\\
+\mbox{}\verb@    ID <- diagonals(as.integer(J), byrow = FALSE)@\\
+\mbox{}\verb@    if (dim(ID)[1L] != dim(chol)[1L])@\\
+\mbox{}\verb@        ID <- ID[rep(1, dim(chol)[1L]),]@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    B <- vectrick(ID, score_schol, chol)@\\
+\mbox{}\verb@    B[i,] <- B[i,] * (-.5) * c(CCt)^(-3/2)@\\
+\mbox{}\verb@    B[-i,] <- 0@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    Dtmp <- Dchol(ID, D = Dinv)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ret <- vectrick(ID, B, chol, transpose = c(TRUE, FALSE)) +@\\
+\mbox{}\verb@           vectrick(chol, B, ID)[IDX,] +@\\
+\mbox{}\verb@           vectrick(Dtmp, score_schol, ID)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (!missing(invchol)) {@\\
+\mbox{}\verb@        ### this means: ret <- - vectrick(chol, ret, chol)@\\
+\mbox{}\verb@        ret <- - vectrick(chol, ret)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    ret <- ltMatrices(ret[M[lower.tri(M)],,drop = FALSE],@\\
+\mbox{}\verb@                      diag = FALSE, byrow = FALSE)@\\
+\mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
+\mbox{}\verb@    diagonals(ret) <- 0@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+<<gc-classical>>=
+data("iris")
+J <- 4
+Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank)) / (nrow(iris) + 1)))
+(CR <- cor(t(Z)))
+ll <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -ldmvnorm(obs = Z, chol = Cs)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -rowSums(Lower_tri(destandardize(chol = C, 
+        score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
+}
+start <- t(chol(CR))
+start <- start[lower.tri(start)]
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
+op <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+op$value
+chol2cov(standardize(ltMatrices(op$par)))
+@
+
+<<gc-NPML>>=
+lwr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "min")) - 1L
+upr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "max"))
+lwr <- t(qnorm(lwr / nrow(iris)))
+upr <- t(qnorm(upr / nrow(iris)))
+
+M <- 500 
+if (require("qrng", quietly = TRUE)) {
+    ### quasi-Monte-Carlo
+    W <- t(ghalton(M, d = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
+}
+
+ll <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -lpmvnorm(lower = lwr, upper = upr, chol = Cs, M = M, w = W)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -rowSums(Lower_tri(destandardize(chol = C, 
+        score_schol = slpmvnorm(lower = lwr, upper = upr, chol = Cs, 
+                               M = M, w = W)$chol)))
+}
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
+op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+chol2cov(standardize(ltMatrices(op2$par)))
+
+sqrt(diag(solve(op$hessian)))
+sqrt(diag(solve(op2$hessian)))
+
+
+@
+
+\chapter{Package Infrastructure}
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap118}\raggedright\small
+\NWtarget{nuweb95}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {95}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -5983,8 +6138,8 @@ mn
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap117}\raggedright\small
-\NWtarget{nuweb92}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {92}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap119}\raggedright\small
+\NWtarget{nuweb96}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {96}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -6041,7 +6196,7 @@ mn
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb96}{96}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}\NWlink{nuweb54b}{, 54b}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb21b}{21b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22}{22}\NWlink{nuweb26}{, 26}\NWlink{nuweb37a}{, 37a}.
 }
@@ -6068,6 +6223,7 @@ mn
 \item $\langle\,$copy elements\nobreak\ {\footnotesize \NWlink{nuweb24a}{24a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb26}{26}.}
 \item $\langle\,$crossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb33}{33}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb41a}{41a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
+\item $\langle\,$destandardize\nobreak\ {\footnotesize \NWlink{nuweb92}{92}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb16}{16}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dim ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
@@ -6133,7 +6289,7 @@ mn
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb73c}{73c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb75}{75}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb95}{95}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb54a}{, 54a}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb62}{62}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb72}{72}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54b}{54b}.}
@@ -6158,6 +6314,7 @@ mn
 \item $\langle\,$solve ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$standardise\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb64}{64}\NWlink{nuweb75}{, 75}.
 }
+\item $\langle\,$standardize\nobreak\ {\footnotesize \NWlink{nuweb91}{91}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$subset ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb12}{12}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$t(C) S t(A)\nobreak\ {\footnotesize \NWlink{nuweb36}{36}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb37a}{37a}.}
 \item $\langle\,$tcrossprod\nobreak\ {\footnotesize \NWlink{nuweb31}{31}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3a}{3a}.}

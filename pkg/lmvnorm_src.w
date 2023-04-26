@@ -200,6 +200,8 @@ in form of interval-censoring in Chapter~\ref{cdl}.
 @<sldmvnorm@>
 @<ldpmvnorm@>
 @<sldpmvnorm@>
+@<standardize@>
+@<destandardize@>
 @}
 
 @o ltMatrices.c -cc
@@ -2065,9 +2067,9 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
 
 @d aperm
 @{
-aperm.ltMatrices <- function(a, perm, chol = FALSE, ...) {
+aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
 
-    if (chol) { ### a is Cholesky of covariance
+    if (is_chol) { ### a is Cholesky of covariance
         Sperm <- chol2cov(a)[,perm]
         return(chol(Sperm))
     }
@@ -2080,12 +2082,12 @@ aperm.ltMatrices <- function(a, perm, chol = FALSE, ...) {
 <<aperm-tests, eval= TRUE>>=
 L <- lxn
 J <- dim(L)[2L]
-Lp <- aperm(a = L, perm = p <- sample(1:J), chol = FALSE)
+Lp <- aperm(a = L, perm = p <- sample(1:J), is_chol = FALSE)
 chk(invchol2cov(L)[,p], invchol2cov(Lp))
 
 C <- lxn
 J <- dim(C)[2L]
-Cp <- aperm(a = C, perm = p <- sample(1:J), chol = TRUE)
+Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @@
 
@@ -4396,6 +4398,133 @@ lt
 op$par[1:J]
 ## compare with true means
 mn
+@@
+
+\chapter{Unstructured Gaussian Copula Estimation}
+
+@d standardize
+@{
+standardize <- function(chol, invchol) {
+    stopifnot(xor(missing(chol), missing(invchol)))
+    if (!missing(invchol)) {
+        stopifnot(!attr(invchol, "diag"))
+        return(invcholD(invchol))
+    }
+    stopifnot(!attr(chol, "diag"))
+    return(Dchol(chol))
+}
+@}
+
+@d destandardize
+@{
+destandardize <- function(chol = solve(invchol), invchol, score_schol)
+{
+    stopifnot(inherits(chol, "ltMatrices"))
+    J <- dim(chol)[2L]
+    stopifnot(!attr(chol, "diag"))
+    byrow_orig <- attr(chol, "byrow")
+    chol <- ltMatrices(chol, byrow = FALSE)
+    
+    if (inherits(score_schol, "ltMatrices"))
+        score_schol <- matrix(as.array(score_schol), 
+                              nrow = dim(score_schol)[2L]^2)
+    stopifnot(is.matrix(score_schol))
+    N <- ncol(score_schol)
+    stopifnot(J^2 == nrow(score_schol))
+
+    CCt <- Tcrossprod(chol, diag_only = TRUE)
+    DC <- Dchol(chol, D = Dinv <- 1 / sqrt(CCt))
+    SDC <- solve(DC)
+
+    IDX <- t(M <- matrix(1:J^2, nrow = J, ncol = J))
+    i <- cumsum(c(1, rep(J + 1, J - 1)))
+    ID <- diagonals(as.integer(J), byrow = FALSE)
+    if (dim(ID)[1L] != dim(chol)[1L])
+        ID <- ID[rep(1, dim(chol)[1L]),]
+
+    B <- vectrick(ID, score_schol, chol)
+    B[i,] <- B[i,] * (-.5) * c(CCt)^(-3/2)
+    B[-i,] <- 0
+
+    Dtmp <- Dchol(ID, D = Dinv)
+
+    ret <- vectrick(ID, B, chol, transpose = c(TRUE, FALSE)) +
+           vectrick(chol, B, ID)[IDX,] +
+           vectrick(Dtmp, score_schol, ID)
+
+    if (!missing(invchol)) {
+        ### this means: ret <- - vectrick(chol, ret, chol)
+        ret <- - vectrick(chol, ret)
+    }
+    ret <- ltMatrices(ret[M[lower.tri(M)],,drop = FALSE],
+                      diag = FALSE, byrow = FALSE)
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+    diagonals(ret) <- 0
+    return(ret)
+}
+@}
+
+<<gc-classical>>=
+data("iris")
+J <- 4
+Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank)) / (nrow(iris) + 1)))
+(CR <- cor(t(Z)))
+ll <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -ldmvnorm(obs = Z, chol = Cs)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -rowSums(Lower_tri(destandardize(chol = C, 
+        score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
+}
+start <- t(chol(CR))
+start <- start[lower.tri(start)]
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
+op <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+op$value
+chol2cov(standardize(ltMatrices(op$par)))
+@@
+
+<<gc-NPML>>=
+lwr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "min")) - 1L
+upr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "max"))
+lwr <- t(qnorm(lwr / nrow(iris)))
+upr <- t(qnorm(upr / nrow(iris)))
+
+M <- 500 
+if (require("qrng", quietly = TRUE)) {
+    ### quasi-Monte-Carlo
+    W <- t(ghalton(M, d = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
+}
+
+ll <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -lpmvnorm(lower = lwr, upper = upr, chol = Cs, M = M, w = W)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(C)
+    -rowSums(Lower_tri(destandardize(chol = C, 
+        score_schol = slpmvnorm(lower = lwr, upper = upr, chol = Cs, 
+                               M = M, w = W)$chol)))
+}
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
+op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+chol2cov(standardize(ltMatrices(op2$par)))
+
+sqrt(diag(solve(op$hessian)))
+sqrt(diag(solve(op2$hessian)))
+
+
 @@
 
 \chapter{Package Infrastructure}
