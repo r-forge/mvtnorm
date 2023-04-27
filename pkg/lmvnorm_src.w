@@ -4233,10 +4233,10 @@ is simply the sum of the two corresponding log-likelihoods.
 ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                       logLik = TRUE, ...) {
 
-    if (missing(obs))
+    if (missing(obs) || is.null(obs))
         return(lpmvnorm(lower = lower, upper = upper, mean = mean,
                         chol = chol, invchol = invchol, logLik = logLik, ...))
-    if (missing(lower) && missing(upper))
+    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
         return(ldmvnorm(obs = obs, mean = mean,
                         chol = chol, invchol = invchol, logLik = logLik))
 
@@ -4279,10 +4279,10 @@ The score function requires a little extra work.
 @{
 sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {
 
-    if (missing(obs))
+    if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean,
                          chol = chol, invchol = invchol, logLik = logLik, ...))
-    if (missing(lower) && missing(upper))
+    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
         return(sldmvnorm(obs = obs, mean = mean,
                          chol = chol, invchol = invchol, logLik = logLik))
 
