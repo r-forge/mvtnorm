@@ -1,0 +1,439 @@
+
+R version 4.2.3 (2023-03-15) -- "Shortstop Beagle"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library("mvtnorm")
+> 
+> set.seed(29081975)
+> 
+> chk <- function(...) 
++     stopifnot(all.equal(..., tol = 1e-5, check.attributes = FALSE))
+> 
+> EVAL <- function(...) {}
+> 
+> if (require("numDeriv", quietly = TRUE) && 
++     require("qrng", quietly = TRUE))
++   EVAL <- eval
+> 
+> N <- 10
+> M <- 10000
+> MM <- M / N
+> 
+> ### chol 
+> thischeck <- expression({
++   J <- cJ + dJ
++   W <- NULL
++   if (dJ > 1)
++     W <- t(ghalton(M, d = dJ - 1))
++ 
++   prm <- matrix(runif(J * (J - 1) / 2), ncol = 1)
++   C <- ltMatrices(prm, byrow = BYROW)
++   Z <- matrix(rnorm(J * N), ncol = N)
++   Y <- Mult(C, Z)
++   obs <- NULL
++   if (cJ)
++       obs <- Y[1:cJ,,drop = FALSE]
++   lwr <- upr <- NULL
++   if (dJ) {
++     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++   }
++ 
++   ll <- function(prm) {
++     C <- ltMatrices(prm, byrow = BYROW)
++     -ldpmvnorm(obs = obs, lower = lwr, upper = upr, chol = C, M = MM, w = W)
++   }
++ 
++   sc <- function(prm) {
++     C <- ltMatrices(prm, byrow = BYROW)
++     ret <- sldpmvnorm(obs = obs, lower = lwr, upper = upr, chol = C,
++                       M = MM, w = W)$chol
++     -rowSums(Lower_tri(ret))
++   }
++ 
++   theta <- runif(J * (J - 1) / 2)
++   print(ll(theta))
++   chk(grad(ll, theta), sc(theta))
++ })
+> 
+> BYROW <- FALSE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 148.008
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 110.9502
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 110.3443
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 107.9704
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 68.67776
+> 
+> 
+> BYROW <- TRUE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 188.8523
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 121.2793
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 80.10163
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 99.3477
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 55.17074
+> 
+> ### invchol
+> thischeck <- expression({
++   J <- cJ + dJ
++   W <- NULL
++   if (dJ > 1)
++     W <- t(ghalton(M, d = dJ - 1))
++ 
++   prm <- matrix(runif(J * (J - 1) / 2), ncol = 1)
++   C <- ltMatrices(prm, byrow = BYROW)
++   Z <- matrix(rnorm(J * N), ncol = N)
++   Y <- Mult(C, Z)
++   obs <- NULL
++   if (cJ)
++       obs <- Y[1:cJ,,drop = FALSE]
++   lwr <- upr <- NULL
++   if (dJ) {
++     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++   }
++ 
++   ll <- function(prm) {
++     L <- ltMatrices(prm, byrow = BYROW)
++     -ldpmvnorm(obs = obs, 
++               lower = lwr, upper = upr, invchol = L, M = MM, w = W)
++   }
++ 
++   sc <- function(prm) {
++     L <- ltMatrices(prm, byrow = BYROW)
++     ret <- sldpmvnorm(obs = obs, 
++                       lower = lwr, upper = upr, invchol = L,
++                       M = MM, w = W)$invchol
++     -rowSums(Lower_tri(ret))
++   }
++ 
++   theta <- runif(J * (J - 1) / 2)
++   C <- ltMatrices(matrix(theta, ncol = 1), byrow = BYROW)
++   theta <- Lower_tri(solve(C))
++   print(ll(theta))
++   chk(grad(ll, theta), sc(theta))
++ })
+> 
+> 
+> BYROW <- FALSE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 163.157
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 119.7356
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 91.77386
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 113.5597
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 70.16437
+> 
+> 
+> BYROW <- TRUE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 170.7659
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 117.5964
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 88.64351
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 100.61
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 56.95164
+> 
+> ### chol standardized
+> thischeck <- expression({
++   J <- cJ + dJ
++   W <- NULL
++   if (dJ > 1)
++     W <- t(ghalton(M, d = dJ - 1))
++ 
++   prm <- matrix(runif(J * (J - 1) / 2), ncol = 1)
++   C <- ltMatrices(prm)
++   C <- ltMatrices(C, byrow = BYROW)
++   Z <- matrix(rnorm(J * N), ncol = N)
++   Y <- Mult(C, Z)
++   obs <- NULL
++   if (cJ)
++       obs <- Y[1:cJ,,drop = FALSE]
++   lwr <- upr <- NULL
++   if (dJ) {
++     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++   }
++ 
++   ll <- function(prm) {
++     C <- ltMatrices(prm, byrow = BYROW)
++     Cs <- standardize(chol = C)
++     -ldpmvnorm(obs = obs, lower = lwr, upper = upr, chol = Cs, M = MM, w = W)
++   }
++ 
++   sc <- function(prm) {
++     C <- ltMatrices(prm, byrow = BYROW)
++     Cs <- standardize(chol = C)
++     ret <- sldpmvnorm(obs = obs, lower = lwr, upper = upr, chol = Cs,
++                       M = MM, w = W)$chol
++     ret <- destandardize(chol = C, score_schol = ret)
++     -rowSums(Lower_tri(ret))
++   }
++ 
++   theta <- runif(J * (J - 1) / 2)
++   print(ll(theta))
++   chk(grad(ll, theta), sc(theta))
++ })
+> 
+> BYROW <- FALSE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 214.201
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 110.0053
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 105.4335
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 106.6469
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 56.09638
+> 
+> 
+> BYROW <- TRUE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 175.4133
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 125.8602
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 86.49221
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 95.81591
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 61.12252
+> 
+> ### invchol standardized
+> thischeck <- expression({
++   J <- cJ + dJ
++   W <- NULL
++   if (dJ > 1)
++     W <- t(ghalton(M, d = dJ - 1))
++ 
++   prm <- matrix(runif(J * (J - 1) / 2), ncol = 1)
++   C <- ltMatrices(prm, byrow = BYROW)
++   Z <- matrix(rnorm(J * N), ncol = N)
++   Y <- Mult(C, Z)
++   obs <- NULL
++   if (cJ)
++       obs <- Y[1:cJ,,drop = FALSE]
++   lwr <- upr <- NULL
++   if (dJ) {
++     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
++       qy <- quantile(y, 1:9 / 10)
++       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
++     }))
++   }
++ 
++   ll <- function(prm) {
++     L <- ltMatrices(prm, byrow = BYROW)
++     Ls <- standardize(invchol = L)
++     -ldpmvnorm(obs = obs, 
++               lower = lwr, upper = upr, invchol = Ls, M = MM, w = W)
++   }
++ 
++   sc <- function(prm) {
++     L <- ltMatrices(prm, byrow = BYROW)
++     Cs <- standardize(chol = solve(L))
++     ret <- sldpmvnorm(obs = obs, 
++                       lower = lwr, upper = upr, chol = Cs,
++                       M = MM, w = W)$chol
++     ret <- destandardize(invchol = L, score_schol = ret)
++     -rowSums(Lower_tri(ret))
++   }
++ 
++   theta <- runif(J * (J - 1) / 2)
++   C <- ltMatrices(matrix(theta, ncol = 1), byrow = BYROW)
++   theta <- Lower_tri(solve(C))
++   print(ll(theta))
++   chk(grad(ll, theta), sc(theta))
++ })
+> 
+> 
+> BYROW <- FALSE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 208.907
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 140.3802
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 77.2782
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 95.19812
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 52.48746
+> 
+> 
+> BYROW <- TRUE
+> cJ <- 4
+> dJ <- 4
+> EVAL(thischeck)
+[1] 220.4959
+> 
+> cJ <- 1
+> dJ <- 4
+> EVAL(thischeck)
+[1] 137.3093
+> 
+> cJ <- 4
+> dJ <- 1
+> EVAL(thischeck)
+[1] 101.3044
+> 
+> cJ <- 0
+> dJ <- 4
+> EVAL(thischeck)
+[1] 94.07334
+> 
+> cJ <- 4
+> dJ <- 0
+> EVAL(thischeck)
+[1] 64.79248
+> 
+> proc.time()
+   user  system elapsed 
+ 12.318   0.099  12.426 
