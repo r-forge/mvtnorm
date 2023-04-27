@@ -1019,10 +1019,10 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                       logLik = TRUE, ...) {
 
-    if (missing(obs))
+    if (missing(obs) || is.null(obs))
         return(lpmvnorm(lower = lower, upper = upper, mean = mean,
                         chol = chol, invchol = invchol, logLik = logLik, ...))
-    if (missing(lower) && missing(upper))
+    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
         return(ldmvnorm(obs = obs, mean = mean,
                         chol = chol, invchol = invchol, logLik = logLik))
 
@@ -1081,10 +1081,10 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
 
 sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {
 
-    if (missing(obs))
+    if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean,
                          chol = chol, invchol = invchol, logLik = logLik, ...))
-    if (missing(lower) && missing(upper))
+    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
         return(sldmvnorm(obs = obs, mean = mean,
                          chol = chol, invchol = invchol, logLik = logLik))
 

@@ -5756,10 +5756,10 @@ is simply the sum of the two corresponding log-likelihoods.
 \mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
 \mbox{}\verb@                      logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (missing(obs))@\\
+\mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
 \mbox{}\verb@        return(lpmvnorm(lower = lower, upper = upper, mean = mean,@\\
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik, ...))@\\
-\mbox{}\verb@    if (missing(lower) && missing(upper))@\\
+\mbox{}\verb@    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))@\\
 \mbox{}\verb@        return(ldmvnorm(obs = obs, mean = mean,@\\
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
@@ -5815,10 +5815,10 @@ The score function requires a little extra work.
 \mbox{}\verb@@\\
 \mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (missing(obs))@\\
+\mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
 \mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, mean = mean,@\\
 \mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik, ...))@\\
-\mbox{}\verb@    if (missing(lower) && missing(upper))@\\
+\mbox{}\verb@    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))@\\
 \mbox{}\verb@        return(sldmvnorm(obs = obs, mean = mean,@\\
 \mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
