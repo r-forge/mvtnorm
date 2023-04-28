@@ -16,6 +16,8 @@ N <- 10
 M <- 10000
 MM <- M / N
 
+prb <- 1:3 / 4
+
 ### chol 
 thischeck <- expression({
   J <- cJ + dJ
@@ -33,11 +35,11 @@ thischeck <- expression({
   lwr <- upr <- NULL
   if (dJ) {
     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
   }
@@ -119,11 +121,11 @@ thischeck <- expression({
   lwr <- upr <- NULL
   if (dJ) {
     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
   }
@@ -211,11 +213,11 @@ thischeck <- expression({
   lwr <- upr <- NULL
   if (dJ) {
     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
   }
@@ -300,11 +302,11 @@ thischeck <- expression({
   lwr <- upr <- NULL
   if (dJ) {
     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-      qy <- quantile(y, 1:9 / 10)
+      qy <- quantile(y, prob = prb)
       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
     }))
   }

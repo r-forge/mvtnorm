@@ -33,6 +33,8 @@ Type 'q()' to quit R.
 > M <- 10000
 > MM <- M / N
 > 
+> prb <- 1:3 / 4
+> 
 > ### chol 
 > thischeck <- expression({
 +   J <- cJ + dJ
@@ -50,11 +52,11 @@ Type 'q()' to quit R.
 +   lwr <- upr <- NULL
 +   if (dJ) {
 +     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +   }
@@ -80,22 +82,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 148.008
+[1] 110.5571
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 110.9502
+[1] 61.73499
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 110.3443
+[1] 101.5923
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 107.9704
+[1] 62.74771
 > 
 > cJ <- 4
 > dJ <- 0
@@ -107,22 +109,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 188.8523
+[1] 126.3142
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 121.2793
+[1] 75.82315
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 80.10163
+[1] 69.16547
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 99.3477
+[1] 55.98251
 > 
 > cJ <- 4
 > dJ <- 0
@@ -146,11 +148,11 @@ Type 'q()' to quit R.
 +   lwr <- upr <- NULL
 +   if (dJ) {
 +     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +   }
@@ -181,22 +183,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 163.157
+[1] 119.9084
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 119.7356
+[1] 84.83088
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 91.77386
+[1] 79.17239
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 113.5597
+[1] 62.52789
 > 
 > cJ <- 4
 > dJ <- 0
@@ -208,22 +210,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 170.7659
+[1] 125.3092
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 117.5964
+[1] 69.96545
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 88.64351
+[1] 74.51345
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 100.61
+[1] 54.76586
 > 
 > cJ <- 4
 > dJ <- 0
@@ -248,11 +250,11 @@ Type 'q()' to quit R.
 +   lwr <- upr <- NULL
 +   if (dJ) {
 +     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +   }
@@ -281,22 +283,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 214.201
+[1] 181.3173
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 110.0053
+[1] 64.84017
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 105.4335
+[1] 92.57033
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 106.6469
+[1] 57.32839
 > 
 > cJ <- 4
 > dJ <- 0
@@ -308,22 +310,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 175.4133
+[1] 133.3763
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 125.8602
+[1] 83.61253
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 86.49221
+[1] 77.96918
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 95.81591
+[1] 56.77728
 > 
 > cJ <- 4
 > dJ <- 0
@@ -347,11 +349,11 @@ Type 'q()' to quit R.
 +   lwr <- upr <- NULL
 +   if (dJ) {
 +     lwr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(-Inf, qy)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +     upr <- t(apply(Y[cJ + (1:dJ),,drop = FALSE], 1, function(y) {
-+       qy <- quantile(y, 1:9 / 10)
++       qy <- quantile(y, prob = prb)
 +       c(qy, Inf)[cut(y, breaks = c(-Inf, qy, Inf))]
 +     }))
 +   }
@@ -385,22 +387,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 208.907
+[1] 144.6606
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 140.3802
+[1] 99.0809
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 77.2782
+[1] 69.28283
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 95.19812
+[1] 52.48012
 > 
 > cJ <- 4
 > dJ <- 0
@@ -412,22 +414,22 @@ Type 'q()' to quit R.
 > cJ <- 4
 > dJ <- 4
 > EVAL(thischeck)
-[1] 220.4959
+[1] 178.2047
 > 
 > cJ <- 1
 > dJ <- 4
 > EVAL(thischeck)
-[1] 137.3093
+[1] 98.60784
 > 
 > cJ <- 4
 > dJ <- 1
 > EVAL(thischeck)
-[1] 101.3044
+[1] 87.51641
 > 
 > cJ <- 0
 > dJ <- 4
 > EVAL(thischeck)
-[1] 94.07334
+[1] 49.60575
 > 
 > cJ <- 4
 > dJ <- 0
@@ -436,4 +438,4 @@ Type 'q()' to quit R.
 > 
 > proc.time()
    user  system elapsed 
- 12.318   0.099  12.426 
+ 10.731   0.088  10.832 
