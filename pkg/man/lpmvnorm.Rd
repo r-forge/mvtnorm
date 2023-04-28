@@ -9,9 +9,9 @@
     Multivariate Normal Log-likelihood and Score Functions
 }
 \description{
-    Computes the log-likelihood (contributions) of multiple
-    exact or interval-censored observations (or a mix thereof) 
-    from a multivariate normal and corresponding scores.
+    Computes the log-likelihood (contributions) of multiple exact or 
+    interval-censored observations (or a mix thereof) from multivariate 
+    normal distributions and evaluates corresponding scores functions.
 }
 \usage{
 lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
@@ -31,15 +31,15 @@ sldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...)
   \item{obs}{matrix of exact observations (one column for each observation, \eqn{J} rows).
 }
   \item{mean}{matrix of means (one column for each observation, length is
-recycled to length of \code{lower} and \code{upper}).
+recycled to length of \code{obs}, \code{lower} and \code{upper}).
 }
   \item{center}{matrix of negative rescaled means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}) as returned by
 \code{cond_mvnorm(..., center = TRUE)}. 
 }
   \item{chol}{Cholesky factors of covariance matrices as
-    \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and
-\code{upper}.
+    \code{\link{ltMatrices}} object, length is recylced to length of
+    \code{obs}, \code{lower} and \code{upper}.
 }
   \item{invchol}{Cholesky factors of precision matrices as
     \code{\link{ltMatrices}} object, length is recylced to length of \code{lower} and
@@ -100,7 +100,9 @@ as zero.
 \value{
 The log-likelihood (\code{logLik = TRUE}) or the individual contributions to the log-likelihood.
 \code{slpmvnorm}, \code{sldmvnorm}, and \code{sldpmvnorm} return the score
-matrices and, optionally (\code{logLik = TRUE}), the individual log-likelihood contributions.
+matrices and, optionally (\code{logLik = TRUE}), the individual log-likelihood contributions
+as well as scores for \code{obs}, \code{lower}, \code{upper}, and
+\code{mean}.
 }
 \seealso{\code{\link{dmvnorm}}, \code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \references{

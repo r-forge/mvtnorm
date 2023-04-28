@@ -172,10 +172,9 @@ df <- 130
 C <- c(1,1,1,0,0,-1,0,0,1,0,0,-1,0,0,1,0,0,0,-1,-1,0,0,-1,0,0)
 C <- matrix(C, ncol=5)
 ### scale matrix
-cv <- C \%*\% V \%*\% t(C)
+cv <- C \%*\% tcrossprod(V, C)
 ### correlation matrix
-dv <- t(1/sqrt(diag(cv)))
-cr <- cv * (t(dv) \%*\% dv)
+cr <- cov2cor(cv)
 delta <- rep(0,5)
 
 myfct <- function(q, alpha) {

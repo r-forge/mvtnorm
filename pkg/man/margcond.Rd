@@ -2,7 +2,7 @@
 \alias{marg_mvnorm}
 \alias{cond_mvnorm}
 \title{
-    Parameters of Marginal and Conditional Multivariate Normal Distributions
+    Marginal and Conditional Multivariate Normal Distributions
 }
 \description{
     Computes means and Cholesky factors of covariance or precision matrices
@@ -48,4 +48,5 @@ cond_mvnorm(chol, invchol, which_given = 1L, given, center = FALSE)
 \value{
 A named list.
 }
+\seealso{\code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \keyword{distribution}

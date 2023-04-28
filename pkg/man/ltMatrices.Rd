@@ -134,6 +134,7 @@ objects. Details can be found in the \code{lmvnorm_src} package vignette.
 The constructor \code{ltMatrices} returns objects of class \code{ltMatrices}
 with corresponding methods.
 }
+\seealso{\code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \examples{
 
   J <- 4L
