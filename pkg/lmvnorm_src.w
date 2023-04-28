@@ -4,7 +4,7 @@
 %%% Edit 'lmvnorm_src.w' and run 'nuweb -r lmvnorm_src.w'
 
 %% packages
-\usepackage{amsfonts,amstext,amsmath,amssymb,amsthm}
+\usepackage{amsfonts,amstext,amsmath,amssymb,amsthm,nicefrac}
 
 %\VignetteIndexEntry{Multivariate Normal Log-likelihoods}
 %\VignetteDepends{mvtnorm,qrng,numDeriv}
@@ -81,6 +81,8 @@ urlcolor={linkcolor}%
 \newcommand{\mL}{\mathbf{L}}
 \newcommand{\mP}{\mathbf{P}}
 \newcommand{\mR}{\mathbf{R}}
+\newcommand{\mT}{\mathbf{T}}
+\newcommand{\mB}{\mathbf{B}}
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
@@ -88,6 +90,7 @@ urlcolor={linkcolor}%
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
 \newcommand{\argmax}{\operatorname{argmax}\displaylimits}
+\newcommand{\vecop}{\text{vec}}
 
 
 \author{Torsten Hothorn \\ Universit\"at Z\"urich}
@@ -2389,10 +2392,10 @@ With $\mSigma_i
 \end{eqnarray*}
 Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \mid
 \mC_i \mid = 2 \sum_{j = 1}^\J \log \diag(\mC_i)_j$ we get the simpler expression
-\begin{eqnarray*}
+\begin{eqnarray} \label{ll_mC}
 \ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
 (\yvec_i - \muvec_i)^\top \mC^{-\top} \mC^{-1} (\yvec - \muvec_i).
-\end{eqnarray*}
+\end{eqnarray}
 
 @d ldmvnorm chol
 @{
@@ -2445,6 +2448,22 @@ and with respect to \code{invchol} we have
 \end{eqnarray*}
 The score function with respect to \code{chol} post-processes the above
 score using the vec trick~(Section~\ref{sec:vectrick}).
+For the log-likelihood~(\ref{ll_mC}), the score with respect to $\mC_i$ is the sum of the score 
+functions of the two terms. We start with the simpler first term
+\begin{eqnarray*}
+\frac{\partial - \sum_{j = 1}^\J \log \diag(\mC_i)_j}{\partial \mC_i} & = & - \diag(\mC_i)^{-1}
+\end{eqnarray*}
+
+The second term gives (we omit the mean for the sake of simplicity)
+\begin{eqnarray*}
+\frac{\partial  - \yvec_i^\top \mC_i^{-\top} \mC_i^{-1} \yvec_i}{\partial \mC_i}
+& = & - \left. \frac{\partial \yvec_i^\top \mA^\top \mA \yvec_i}{\partial \mA} \right|_{\mA = \mC^{-1}_i}
+        \left. \frac{\partial \mA^{-1}}{\partial \mA} \right|_{\mA = \mC_i} \\
+& = & - 2 \vecop(\mC_i^{-1} \yvec_i \yvec_i^\top)^\top (-1) (\mC_i^{-\top} \otimes \mC_i^{-1}) \\
+& = & 2 \vecop(\mC_i^{-\top} \mC_i^{-1} \yvec_i \yvec_i^\top \mC_i^{-\top})^\top
+\end{eqnarray*}
+In \code{sldmvnorm}, we compute the score with respect to $\mL_i$ and use
+the above relationship to compute the score with respect to $\mC_i$.
 
 @d sldmvnorm
 @{
@@ -4402,6 +4421,17 @@ mn
 
 \chapter{Unstructured Gaussian Copula Estimation}
 
+With $\rZ \sim \ND_\J(0, \mI_\J)$ and $\rY = \tilde{\mC} \rZ \sim \ND_\J(0, \tilde{\mC}
+\tilde{\mC}^\top)$ we want to estimate the off-diagonal elements of the
+lower triangular unit-diagonal matrix $\mC$. We have $\tilde{\mC}(\mC) := \diag(\mC \mC^\top)^{-\nicefrac{1}{2}} \mC$ 
+such that $\mSigma = \tilde{\mC} \tilde{\mC}^\top$
+is a correlation matrix ($\diag(\mSigma) = \mI_\J$). Note that directly
+estimating $\tilde{\mC}$ requires $\J (\J + 1) / 2$ parameters under
+constraints $\diag(\mSigma) = 1$ whereas only $\J (\J - 1) / 2$ parameters are necessary
+when estimating the lower triangular part of $\mC$. The standardisation by
+$\diag(\mC \mC^\top)^{-\nicefrac{1}{2}}$ ensures that $\diag(\mSigma)
+\equiv 1$, that is, unconstained optimisation can be applied.
+
 @d standardize
 @{
 standardize <- function(chol, invchol) {
@@ -4414,6 +4444,71 @@ standardize <- function(chol, invchol) {
     return(Dchol(chol))
 }
 @}
+
+<<ex-stand>>=
+C <- ltMatrices(runif(10))
+all.equal(as.array(chol2cov(standardize(chol = C))),
+          as.array(chol2cor(standardize(chol = C))))
+L <- solve(C)
+all.equal(as.array(invchol2cov(standardize(invchol = L))),
+          as.array(invchol2cor(standardize(invchol = L))))
+@@
+
+The log-likelihood function is $\ell_i(\mC_i)$ (we omit $i$ in the
+following) and we assume the score
+\begin{eqnarray*}
+\frac{\partial \ell(\mC)}{\partial \mC}
+\end{eqnarray*}
+is already available. We want to compute the score
+\begin{eqnarray*}
+\frac{\partial \ell(\tilde{\mC})}{\partial \mC}
+\end{eqnarray*}
+which gives
+\begin{eqnarray*}
+\frac{\partial \ell(\tilde{\mC})}{\partial \mC} & = & 
+\underbrace{\frac{\partial \ell(\tilde{\mC})}{\partial \tilde{\mC}}}_{=: \mT} \times \frac{\partial \tilde{\mC}(\mC)}{\partial \mC}
+\end{eqnarray*}
+
+We further have
+\begin{eqnarray*}
+\frac{\partial \tilde{\mC}(\mC)}{\partial \mC} = (\mC^\top \otimes \mI_\J)
+\frac{\partial \diag(\mC \mC^\top)^{-\nicefrac{1}{2}}}{\partial \mC} +
+(\mI_\J \otimes \diag(\mC \mC^\top)^{-\nicefrac{1}{2}})
+\end{eqnarray*}
+and thus
+\begin{eqnarray*}
+\frac{\partial \ell(\tilde{\mC})}{\partial \mC}
+& = & 
+\vecop(\mI_\J \mT \mC^\top)^\top \frac{\partial \diag(\mC \mC^\top)^{-\nicefrac{1}{2}}}{\partial \mC} + 
+    \vecop(\diag(\mC \mC^\top)^{-\nicefrac{1}{2}} \mT \mI_\J)^\top
+\end{eqnarray*}
+and with 
+\begin{eqnarray*}
+\frac{\partial \diag(\mC \mC^\top)^{-\nicefrac{1}{2}}}{\partial \mC} & = & 
+  \left. \frac{\partial \diag(\mA)^{-\nicefrac{1}{2}}}{\partial \mA} \right|_{\mA = \mC \mC^\top} \frac{\partial \mC \mC^\top}{\partial \mC} \\
+& = & 
+  -\frac{1}{2} \diag(\vecop(\diag(\mC \mC^\top)^{-\nicefrac{3}{2}})) \left[ (\mC \otimes \mI_\J) \frac{\partial \mC}{\partial \mC} + (\mI_\J \otimes \mC) \frac{\partial \mC^\top}{\partial \mC}\right]
+\end{eqnarray*}
+we can write
+\begin{eqnarray*}
+\vecop(\mI_\J \mT \mC^\top)^\top (-\frac{1}{2}) \diag(\vecop(\diag(\mC \mC^\top)^{-\nicefrac{3}{2}}))
+& = & 
+  -\frac{1}{2} \times \vecop(\mI_\J \mT \mC^\top)^\top \times \vecop(\diag(\mC \mC^\top)^{-\nicefrac{3}{2}})^\top =: \bvec^\top
+\end{eqnarray*}
+thus
+\begin{eqnarray*}
+\frac{\partial \ell(\tilde{\mC})}{\partial \mC}
+& = & 
+\bvec^\top \left[ (\mC \otimes \mI_\J) \frac{\partial \mC}{\partial \mC} + (\mI_\J \otimes \mC) \frac{\partial \mC^\top}{\partial \mC}\right] 
+  + \vecop(\diag(\mC \mC^\top)^{-\nicefrac{1}{2}} \mT \mI_\J)^\top \\
+& = & \vecop(\mI_\J \mB \mC)^\top + \vecop(\mC^\top \mB \mI_\J)^\top \frac{\partial \mC^\top}{\partial \mC}
+  + \vecop(\diag(\mC \mC^\top)^{-\nicefrac{1}{2}} \mT \mI_\J)^\top
+\end{eqnarray*}
+when $\bvec = \vecop(\mB)$. These scores are implemented in
+\code{destandardize} with \code{chol} $ = \mC$ and \code{score\_schol} $= \mT$.
+If the model was parameterised in $\mL = \mC^{-1}$, we have \code{invchol} $
+= \mL$, however, we would still need to compute $\mT$ (the score with
+respect to $\mC$).
 
 @d destandardize
 @{
@@ -4464,6 +4559,11 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
 }
 @}
 
+We can now set-up the log-likelihood and score functions for a Gaussian
+copula model. We start with the classical approach of generating the
+marginal observations $\rY$ from the ECDF with denominator $N + 1$ and
+subsequent use of the Lebesque density as likelihood.
+
 <<gc-classical>>=
 data("iris")
 J <- 4
@@ -4486,8 +4586,15 @@ if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
 op$value
-chol2cov(standardize(ltMatrices(op$par)))
+S_ML <- chol2cov(standardize(ltMatrices(op$par)))
 @@
+
+This approach is of course a bit strange, because we estimate the marginal
+distributions by nonparametric maximum likelihood whereas the joint
+distribution is estimated by plain maximum likelihood. For the latter, we
+can define the likelihood by boxes given by intervals obtained from the
+marginale ECDFs and estimate the Copula parameters by maximisation of this
+nonparametric likelihood.
 
 <<gc-NPML>>=
 lwr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "min")) - 1L
@@ -4519,13 +4626,24 @@ sc <- function(parm) {
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
-chol2cov(standardize(ltMatrices(op2$par)))
-
-sqrt(diag(solve(op$hessian)))
-sqrt(diag(solve(op2$hessian)))
-
-
+S_NPML <- chol2cov(standardize(ltMatrices(op2$par)))
 @@
+
+For $N = \Sexpr{nrow(iris)}$, the difference is (as expected) marginal:
+<<gc>>=
+S_ML
+S_NPML
+@@
+with relatively close standard errors
+<<gc-se>>=
+sd_ML <- ltMatrices(sqrt(diag(solve(op$hessian))))
+diagonals(sd_ML) <- 0
+sd_NPML <- ltMatrices(sqrt(diag(solve(op2$hessian))))
+diagonals(sd_NPML) <- 0
+sd_ML
+sd_NPML
+@@
+
 
 \chapter{Package Infrastructure}
 
@@ -4578,6 +4696,22 @@ sqrt(diag(solve(op2$hessian)))
     Edit 'lmvnorm_src.w' and run 'nuweb -r lmvnorm_src.w'
 */
 @}
+
+\chapter*{Appendix}
+
+This document uses the following matrix derivatives
+\begin{eqnarray*}
+\frac{\partial \yvec^\top \mA^\top \mA \yvec}{\partial \mA} & = & 2 \mA \yvec \yvec^\top \\
+\frac{\partial \mA^{-1}}{\partial \mA} & = & -(\mA^{-\top} \otimes \mA^{-1}) \\
+\frac{\partial \mA \mA^\top}{\partial \mA} & = & (\mA \otimes \mI_J) \frac{\partial \mA}{\partial \mA} + (\mI_J \otimes \mA) \frac{\partial \mA^\top}{\partial \mA}
+\\
+& = & (\mA \otimes \mI_J) + (\mI_J \otimes \mA) \frac{\partial \mA^\top}{\partial \mA} \\
+\frac{\partial \diag(\mA)}{\partial \mA} & = & \diag(\vecop(\mI_J)) \\
+\frac{\partial \mA}{\partial \mA} & = & \diag(I_{J^2}) \\
+\frac{\yvec^\top \mA \yvec}{\partial \yvec} & = & \yvec^\top (\mA + \mA^\top)
+\end{eqnarray*}
+and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
+\rX \mB)^\top$.
 
 
 \chapter*{Index}
