@@ -2714,20 +2714,15 @@ if (attr(chol, "diag")) {
     stopifnot(all(abs(dchol) > (.Machine$double.eps)))
     ac <- lower / c(dchol)
     bc <- upper / c(dchol)
-    ### the following is equivalent to Dchol(chol, D = 1 / dchol)
-    ### but returns an object without diagonal elements (expected by
-    ### R_lpmvnorm)
-    ### CHECK if dimensions are correct
-    C <- unclass(chol) / c(dchol[rep(1:J, 1:J),])
+    C <- Dchol(chol, D = 1 / dchol)
+    uC <- unclass(C)
     if (J > 1) ### else: univariate problem; C is no longer used
-        C <- ltMatrices(C[-cumsum(c(1, 2:J)), , drop = FALSE], 
-                        byrow = TRUE, diag = FALSE)
-} else {
-    ac <- lower
-    bc <- upper
-    C <- ltMatrices(chol, byrow = TRUE)
-}
-uC <- unclass(C)
+       uC <- Lower_tri(C)
+    } else {
+        ac <- lower
+        bc <- upper
+        uC <- Lower_tri(chol)
+    }
 @}
 
 
@@ -3129,7 +3124,7 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLi
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_lpmvnorm, ac, bc, unclass(C), as.double(center), 
+    ret <- .Call(mvtnorm_R_lpmvnorm, ac, bc, uC, as.double(center), 
                  as.integer(N), as.integer(J), w, as.integer(M), as.double(tol), 
                  as.logical(logLik), as.logical(fast));
     return(ret)
@@ -3678,7 +3673,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
 
     @<check and / or set integration weights@>
 
-    ret <- .Call(mvtnorm_R_slpmvnorm, ac, bc, unclass(C), as.double(center), as.integer(N), 
+    ret <- .Call(mvtnorm_R_slpmvnorm, ac, bc, uC, as.double(center), as.integer(N), 
                  as.integer(J), w, as.integer(M), as.double(tol), as.logical(fast));
 
     ll <- log(pmax(ret[1L,], tol)) - log(M)
