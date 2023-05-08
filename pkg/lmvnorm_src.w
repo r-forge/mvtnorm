@@ -1834,6 +1834,8 @@ a <- ltMatrices(C[lower.tri(C, diag = TRUE)], diag = TRUE, byrow = FALSE)
 b <- ltMatrices(x, diag = TRUE, byrow = FALSE)
 
 SD2 <- -vectrick(a, b, a)
+SD2a <- -vectrick(a, b)
+chk(SD2, SD2a)
 
 chk(SD0[lower.tri(SD0, diag = d)], 
     SD1[lower.tri(SD1, diag = d)])
@@ -1843,6 +1845,8 @@ chk(SD0[lower.tri(SD0, diag = d)],
 ### same; but SD2 is vec(SD0)
 S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
 SD2 <- -vectrick(a, S, a)
+SD2a <- -vectrick(a, S)
+chk(SD2, SD2a)
 
 chk(c(SD0), c(SD2))
 
@@ -3639,7 +3643,8 @@ where $\svec = \text{vec}(\mS)$.
 @{
 if (!missing(invchol)) {
     ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
-    ret <- - unclass(vectrick(chol, ret, chol))
+    ### this means vectrick(chol, ret, chol)
+    ret <- - unclass(vectrick(chol, ret))
 }
 @}
 

@@ -581,6 +581,10 @@ attr(,"rcnames")
 
 > SD2 <- -vectrick(a, b, a)
 
+> SD2a <- -vectrick(a, b)
+
+> chk(SD2, SD2a)
+
 > chk(SD0[lower.tri(SD0, diag = d)], SD1[lower.tri(SD1, 
 +     diag = d)])
 
@@ -589,6 +593,10 @@ attr(,"rcnames")
 > S <- t(matrix(as.array(b), byrow = FALSE, nrow = 1))
 
 > SD2 <- -vectrick(a, S, a)
+
+> SD2a <- -vectrick(a, S)
+
+> chk(SD2, SD2a)
 
 > chk(c(SD0), c(SD2))
 
@@ -1610,4 +1618,4 @@ Petal.Width    0.78190591 -0.24142185    0.8713759   1.0000000
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 12.235   0.083  12.322 
+ 12.910   0.100  13.008 
