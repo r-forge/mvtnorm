@@ -261,7 +261,8 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     
     if (!missing(invchol)) {
         ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
-        ret <- - unclass(vectrick(chol, ret, chol))
+        ### this means vectrick(chol, ret, chol)
+        ret <- - unclass(vectrick(chol, ret))
     }
     
 
