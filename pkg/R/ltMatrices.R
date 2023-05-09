@@ -902,8 +902,6 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
 .check_obs <- function(obs, mean, J, N) {
 
-    if (!is.matrix(obs)) 
-        obs <- matrix(obs, ncol = length(obs))
     nr <- nrow(obs)
     nc <- ncol(obs)
     if (nc != N)
@@ -927,6 +925,7 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 
     stopifnot(xor(missing(chol), missing(invchol)))
+    if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)
     p <- ncol(obs)
 
     if (!missing(chol)) {
@@ -975,6 +974,7 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 
     stopifnot(xor(missing(chol), missing(invchol)))
+    if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)
 
     if (!missing(invchol)) {
 

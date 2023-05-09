@@ -3060,6 +3060,7 @@ function called \code{ldmvnorm}
 \mbox{}\verb@ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@    if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)@\\
 \mbox{}\verb@    p <- ncol(obs)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(chol)) {@\\
@@ -3095,8 +3096,6 @@ $\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
 \mbox{}\verb@@\\
 \mbox{}\verb@.check_obs <- function(obs, mean, J, N) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (!is.matrix(obs)) @\\
-\mbox{}\verb@        obs <- matrix(obs, ncol = length(obs))@\\
 \mbox{}\verb@    nr <- nrow(obs)@\\
 \mbox{}\verb@    nc <- ncol(obs)@\\
 \mbox{}\verb@    if (nc != N)@\\
@@ -3241,6 +3240,7 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@    if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(invchol)) {@\\
 \mbox{}\verb@@\\
