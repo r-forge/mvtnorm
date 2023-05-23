@@ -51,7 +51,7 @@
 *     INFORM INTEGER, termination status parameter:
 *            if INFORM = 0, normal completion with ERROR < EPS;
 *            if INFORM = 1, completion with ERROR > EPS and MAXPTS 
-*                           function vaules used; increase MAXPTS to 
+*                           function values used; increase MAXPTS to 
 *                           decrease ERROR;
 *            if INFORM = 2, N > 1000 or N < 1.
 *            if INFORM = 3, correlation matrix not positive semi-definite.
