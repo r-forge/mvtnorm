@@ -1248,7 +1248,7 @@
 *     Uniform (0,1) random number generator
 *
 *     use R's random number generator directly
-*     the way `Writing R extentions' advertises.
+*     the way `Writing R extensions' advertises.
 *
       DOUBLE PRECISION unifrnd, x
 
