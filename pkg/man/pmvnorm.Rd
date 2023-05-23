@@ -10,7 +10,7 @@ distribution for arbitrary limits and correlation matrices.
 \usage{
 pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
         corr=NULL, sigma=NULL, algorithm = GenzBretz(), keepAttr=TRUE, seed = NULL, 
-        ...)
+        \dots)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
@@ -33,7 +33,7 @@ pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
     attached to the return value.  The default, \code{TRUE} is back compatible.}
   \item{seed}{an object specifying if and how the random number generator
           should be initialized, see \code{\link[stats]{simulate}}.}
-  \item{\dots}{ additional parameters (currently given to \code{GenzBretz} for
+  \item{\dots}{ additional parameters (currently given to \code{\link{GenzBretz}} for
               backward compatibility issues). }
 }
 \details{
