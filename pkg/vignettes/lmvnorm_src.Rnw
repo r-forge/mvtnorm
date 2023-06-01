@@ -5181,7 +5181,8 @@ We can now finally put everything together in a single score function.
 \mbox{}\verb@    ll <- log(pmax(ret[1L,], tol)) - log(M)@\\
 \mbox{}\verb@    intsum <- ret[1L,]@\\
 \mbox{}\verb@    m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)@\\
-\mbox{}\verb@    ret <- ret[-1L,,drop = FALSE] / m@\\
+\mbox{}\verb@    ret <- ret[-1L,,drop = FALSE] / m ### NOTE: division by zero MAY happen,@\\
+\mbox{}\verb@                                      ### catch outside@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize \NWlink{nuweb74a}{74a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$}\verb@@\\

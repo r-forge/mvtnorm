@@ -220,7 +220,8 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     ll <- log(pmax(ret[1L,], tol)) - log(M)
     intsum <- ret[1L,]
     m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
-    ret <- ret[-1L,,drop = FALSE] / m
+    ret <- ret[-1L,,drop = FALSE] / m ### NOTE: division by zero MAY happen,
+                                      ### catch outside
 
     # post differentiate mean score
     
