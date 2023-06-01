@@ -1110,6 +1110,8 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
         
 
     if (!missing(invchol)) {
+        # sldpmvnorm invchol
+        
         byrow_orig <- attr(invchol, "byrow")
         invchol <- ltMatrices(invchol, byrow = TRUE)
 
@@ -1153,7 +1155,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
         aL <- as.array(invchol)[-(1:cJ), 1:cJ,,drop = FALSE]
         lst <- tmp0[rep(1:dJ, cJ),,drop = FALSE]
         if (dim(aL)[3] == 1)
-            aL <- aL[,,rep(1, ncol(lst)), drop = FALSE]
+              aL <- aL[,,rep(1, ncol(lst)), drop = FALSE]
         dim <- dim(aL)
         dobs <- -margin.table(aL * array(lst, dim = dim), 2:3)
 
@@ -1161,6 +1163,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
                  ds[c("lower", "upper")])
         ret$mean <- rbind(-ret$obs, ds$mean)
         return(ret)
+        
     }
 
     invchol <- solve(chol)

@@ -72,11 +72,15 @@ double C_pnorm_slow (double x, double m) {
 SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
+    /* R slpmvnorm variables */
+    
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double *dcenter;
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, l0, lM, x0, intsum;
+    double d0, e0, emd0, f0, q0;
+    
+    double l0, lM, x0, intsum;
     int p, len;
 
     Rboolean RlogLik = asLogical(logLik);
@@ -88,7 +92,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
     if (Rfast)
         pnorm_ptr = C_pnorm_fast;
     
-
     /* dimensions */
     
     int iM = INTEGER(M)[0]; 
@@ -105,7 +108,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
     else 
         p = LENGTH(C) / iN;
     
-
     /* W length */
     
     int pW = 0;
@@ -120,7 +122,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
         dW = REAL(W);
     }
     
-
     /* init center */
     
     dcenter = REAL(center);
@@ -185,7 +186,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
             emd = emd0;
             start = 0;
             
-
             /* inner logLik loop */
             
             for (j = 1; j < iJ; j++) {
@@ -231,7 +231,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
                 
             }
             
-
             /* increment */
             
             intsum += f;
@@ -247,7 +246,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
         if (!RlogLik)
             dans += 1L;
         
-
         /* move on */
         
         da += iJ;
@@ -269,11 +267,15 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
 SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, 
                SEXP M, SEXP tol, SEXP fast) {
 
+    /* R slpmvnorm variables */
+    
     SEXP ans;
     double *da, *db, *dC, *dW, *dans, dtol = REAL(tol)[0];
     double *dcenter;
     double mdtol = 1.0 - dtol;
-    double d0, e0, emd0, f0, q0, intsum;
+    double d0, e0, emd0, f0, q0;
+    
+    double intsum;
     int p, idx;
 
     /* dimensions */
