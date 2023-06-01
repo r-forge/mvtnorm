@@ -13,7 +13,7 @@ Package \pkg{mvtnorm} provides functionality for dealing with multivariate
 normal and t-distributions. The package interfaces \proglang{FORTRAN} and
 \code{C} code for evaluating multivariate normal probabilities written by
 Alan Genz and Tetsuhisa Miwa. Functions \code{\link{pmvnorm}},
-\code{\link{pmvt}}, \code{\link{qmnorm}}, and \code{\link{qmvt}} return
+\code{\link{pmvt}}, \code{\link{qmvnorm}}, and \code{\link{qmvt}} return
 normal and t probabilities or corresponding quantiles computed by these
 original implementations. Users interested in the computation of such
 probabilities or quantiles, for example for multiple testing purposes,
