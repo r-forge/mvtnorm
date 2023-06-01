@@ -37,7 +37,7 @@
   Multiple Lower Triangular Matrices
 }
 \description{
-  A class representing multiple lower triangular matrices and some methods
+  A class representing multiple lower triangular matrices and some methods.
 }
 \usage{
 ltMatrices(object, diag = FALSE, byrow = FALSE, names = TRUE)
@@ -105,7 +105,7 @@ if \code{TRUE}.
   \item{is_chol}{a logical indicating if \code{a} is the Cholesky of the
 covariance (\code{chol = TRUE}) of the precision matrix.
 }
-  \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with .
+  \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with.
 }
   \item{y}{matrix with \eqn{J} rows.
 }
@@ -113,7 +113,7 @@ covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{C}{an object of class \code{ltMatrices}.}
   \item{S}{an object of class \code{ltMatrices} or a matrix with \eqn{J^2} rows 
-           representing multiple $J x J$ matrices (columns of vec operators).}
+           representing multiple \eqn{J x J} matrices (columns of vec operators).}
   \item{A}{an object of class \code{ltMatrices}.}
   \item{transpose}{a logical of length two indicating if \code{A} or \code{B} shall be transposed in \code{vectrick}.
                    For \code{solve}, this argument being true computes

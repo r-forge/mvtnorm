@@ -11,7 +11,8 @@
 \usage{
 dmvnorm(x, mean = rep(0, p), sigma = diag(p), log = FALSE, checkSymmetry = TRUE)
 rmvnorm(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
-        method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
+           method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, 
+           checkSymmetry = TRUE)
 }
 \arguments{
  \item{x}{vector or matrix of quantiles. When \code{x} is a matrix, each

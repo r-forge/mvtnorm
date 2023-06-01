@@ -10,11 +10,10 @@ finding algorithm described in Bornkamp (2018).
 
 }
 \usage{
-qmvt(p, interval = NULL, tail = c("lower.tail",
-     "upper.tail", "both.tails"), df = 1, delta = 0, corr = NULL,
-     sigma = NULL, algorithm = GenzBretz(),
-     type = c("Kshirsagar", "shifted"),
-     ptol = 0.001, maxiter = 500, trace = FALSE, seed = NULL, ...)
+qmvt(p, interval = NULL, tail = c("lower.tail", "upper.tail", "both.tails"), 
+     df = 1, delta = 0, corr = NULL, sigma = NULL, algorithm = GenzBretz(),
+     type = c("Kshirsagar", "shifted"), ptol = 0.001, maxiter = 500, 
+     trace = FALSE, seed = NULL, ...)
 }
 \arguments{
   \item{p}{ probability.}
@@ -43,8 +42,8 @@ qmvt(p, interval = NULL, tail = c("lower.tail",
   \item{algorithm}{ an object of class \code{\link{GenzBretz}} or
                     \code{\link{TVPACK}} defining the
                     hyper parameters of this algorithm.}
-  \item{type}{ type of the noncentral multivariate t distribution
-              to be computed. \code{type = "Kshirsagar"} corresponds
+  \item{type}{type of the noncentral multivariate t distribution
+              to be computed. The choice \code{type = "Kshirsagar"} corresponds
               to formula (1.4) in Genz and Bretz (2009) (see also
 	      Chapter 5.1 in Kotz and Nadarajah (2004)) and
 	      \code{type = "shifted"} corresponds to the formula before

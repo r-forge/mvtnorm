@@ -11,13 +11,13 @@
 \description{
     Computes the log-likelihood (contributions) of multiple exact or 
     interval-censored observations (or a mix thereof) from multivariate 
-    normal distributions and evaluates corresponding scores functions.
+    normal distributions and evaluates corresponding score functions.
 }
 \usage{
 lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
-        M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
+         M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 slpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
-        M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
+          M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 ldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
 sldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
 ldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
@@ -74,12 +74,9 @@ as zero.
 }
 }
 \details{
-  Evaluates the multivariate normal law defined by \code{means} and
+  Evaluates the multivariate normal log-likelihood defined by \code{means} and
   \code{chol} over boxes defined by \code{lower} and \code{upper} or for
-  exact observations \code{obs}. By
-  default, the log-likelihood is returned by \code{lpmvnorm} and
-  \code{ldmvnorm}. If some observations are exact and some defined by boxes,
-  \code{ldpmvnorm} computes the corresponding likelihood.
+  exact observations \code{obs}. 
 
   Monte-Carlo (Genz, 1992, the default) and quasi-Monte-Carlo (Genz & Bretz, 2002)
   integration is implemented, the latter with weights obtained, for example,

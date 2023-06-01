@@ -10,9 +10,8 @@ finding algorithm described in Bornkamp (2018).
 
 }
 \usage{
-qmvnorm(p, interval = NULL, tail = c("lower.tail", 
-        "upper.tail", "both.tails"), mean = 0, corr = NULL, 
-        sigma = NULL, algorithm = GenzBretz(),
+qmvnorm(p, interval = NULL, tail = c("lower.tail", "upper.tail", "both.tails"), 
+        mean = 0, corr = NULL, sigma = NULL, algorithm = GenzBretz(),
         ptol = 0.001, maxiter = 500, trace = FALSE, seed = NULL, ...)
 }
 %- maybe also 'usage' for other objects documented here.

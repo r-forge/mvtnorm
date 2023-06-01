@@ -30,7 +30,7 @@ pmvt(lower=-Inf, upper=Inf, delta=rep(0, length(lower)),
   \item{algorithm}{ an object of class \code{\link{GenzBretz}} or
     \code{\link{TVPACK}} defining the hyper parameters of this algorithm.}
   \item{type}{ type of the noncentral multivariate t distribution
-              to be computed. \code{type = "Kshirsagar"} corresponds
+              to be computed. The choice \code{type = "Kshirsagar"} corresponds
               to formula (1.4) in Genz and Bretz (2009) (see also
 	      Chapter 5.1 in Kotz and Nadarajah (2004)). This is the
 	      noncentral t-distribution needed for calculating

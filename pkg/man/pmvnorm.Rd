@@ -9,8 +9,8 @@ distribution for arbitrary limits and correlation matrices.
 }
 \usage{
 pmvnorm(lower=-Inf, upper=Inf, mean=rep(0, length(lower)),
-        corr=NULL, sigma=NULL, algorithm = GenzBretz(), keepAttr=TRUE, seed = NULL, 
-        \dots)
+           corr=NULL, sigma=NULL, algorithm = GenzBretz(), keepAttr=TRUE, 
+           seed = NULL, \dots)
 }
 \arguments{
   \item{lower}{ the vector of lower limits of length n.}
