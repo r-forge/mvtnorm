@@ -442,7 +442,6 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
     @<extract slots@>
 
     class(x) <- class(x)[-1L]
-    x <- t(x)
 
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
@@ -458,7 +457,7 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
         L <- L + t(L)
         diag(L) <- dg
     }
-    ret <- t(cbind(0, 1, x)[, c(L), drop = FALSE])
+    ret <- rbind(0, 1, x)[c(L), , drop = FALSE]
     class(ret) <- "array"
     dim(ret) <- d[3:1]
     dimnames(ret) <- dn[3:1]
@@ -1770,8 +1769,7 @@ if (SltM) {
     }
     ## argument A in dtrmm is not in packed form, so expand in J x J
     ## matrix
-    S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
-    class(S) <- class(S)[-1L]
+    S <- matrix(as.array(S), ncol = dS[1L])
 } else {
     stopifnot(is.matrix(S))
     stopifnot(nrow(S) == J^2)

@@ -587,7 +587,6 @@ triangular matrix to by interpreted as a symmetric matrix.
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    class(x) <- class(x)[-1L]@\\
-\mbox{}\verb@    x <- t(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    L <- matrix(1L, nrow = J, ncol = J)@\\
 \mbox{}\verb@    diag(L) <- 2L@\\
@@ -603,7 +602,7 @@ triangular matrix to by interpreted as a symmetric matrix.
 \mbox{}\verb@        L <- L + t(L)@\\
 \mbox{}\verb@        diag(L) <- dg@\\
 \mbox{}\verb@    }@\\
-\mbox{}\verb@    ret <- t(cbind(0, 1, x)[, c(L), drop = FALSE])@\\
+\mbox{}\verb@    ret <- rbind(0, 1, x)[c(L), , drop = FALSE]@\\
 \mbox{}\verb@    class(ret) <- "array"@\\
 \mbox{}\verb@    dim(ret) <- d[3:1]@\\
 \mbox{}\verb@    dimnames(ret) <- dn[3:1]@\\
@@ -2330,8 +2329,9 @@ featuring columns of vectorised $\J \times \J$ matrices
 \mbox{}\verb@    }@\\
 \mbox{}\verb@    ## argument A in dtrmm is not in packed form, so expand in J x J@\\
 \mbox{}\verb@    ## matrix@\\
-\mbox{}\verb@    S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))@\\
-\mbox{}\verb@    class(S) <- class(S)[-1L]@\\
+\mbox{}\verb@    S <- matrix(as.array(S), ncol = dS[1L])@\\
+\mbox{}\verb@#    S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))@\\
+\mbox{}\verb@#    class(S) <- class(S)[-1L]@\\
 \mbox{}\verb@} else {@\\
 \mbox{}\verb@    stopifnot(is.matrix(S))@\\
 \mbox{}\verb@    stopifnot(nrow(S) == J^2)@\\
