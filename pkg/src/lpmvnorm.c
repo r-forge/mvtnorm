@@ -70,7 +70,7 @@ double C_pnorm_slow (double x, double m) {
 /* R lpmvnorm */
 
 SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
-               SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
+                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     /* R slpmvnorm variables */
     
@@ -203,7 +203,6 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
                         y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
                 }
                 
-
                 /* compute x */
                 
                 x = 0.0;
@@ -216,14 +215,12 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
                         x += dC[start + k] * y[k];
                 }
                 
-
                 /* update d, e */
                 
                 d = pnorm_ptr(da[j], x);
                 e = pnorm_ptr(db[j], x);
                 emd = e - d;
                 
-
                 /* update f */
                 
                 start += j;
@@ -392,7 +389,8 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
         fp_l[0] = -dp_m[0];
         fp_u[0] = ep_m[0];
         
-
+        /* init dans */
+        
         if (iM == 0) {
             dans[0] = intsum;
             dans[1] = fp_c[0];
@@ -400,6 +398,7 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
             dans[3] = fp_l[0];
             dans[4] = fp_u[0];
         }
+        
 
         if (W != R_NilValue && pW == 0)
             dW = REAL(W);
@@ -451,7 +450,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                         y[j - 1] = qnorm(tmp, 0.0, 1.0, 1L, 0L);
                 }
                 
-
                 /* compute x */
                 
                 x = 0.0;
@@ -464,14 +462,12 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                         x += dC[start + k] * y[k];
                 }
                 
-
                 /* update d, e */
                 
                 d = pnorm_ptr(da[j], x);
                 e = pnorm_ptr(db[j], x);
                 emd = e - d;
                 
-
                 /* update yp for chol */
                 
                 ytmp = exp(- dnorm(y[j - 1], 0.0, 1.0, 1L)); // = 1 / dnorm(y[j - 1], 0.0, 1.0, 0L)
@@ -483,7 +479,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                     yp_c[idx * (iJ - 1) + (j - 1)] *= (dp_c[idx] + Wtmp * (ep_c[idx] - dp_c[idx]));
                 }
                 
-
                 /* update yp for means, lower and upper */
                 
                 for (k = 0; k < iJ; k++)
@@ -508,7 +503,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                     yp_u[idx * (iJ - 1) + (j - 1)] *= (ep_l[idx] + Wtmp * (ep_u[idx] - ep_l[idx]));
                 }
                 
-
                 /* score wrt new chol off-diagonals */
                 
                 dtmp = dnorm(da[j], x, 1.0, 0L);
@@ -526,7 +520,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                     fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
                 }
                 
-
                 /* score wrt new chol diagonal */
                 
                 idx = (j + 1) * (j + 2) / 2 - 1;
@@ -534,7 +527,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                 ep_c[idx] = (R_FINITE(db[j]) ? etmp * (db[j] - x - dcenter[j]) : 0);
                 fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
                 
-
                 /* new score means, lower and upper */
                 
                 dp_m[j] = (R_FINITE(da[j]) ? dtmp : 0);
@@ -547,7 +539,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                 fp_u[j] = ep_m[j] * f;
                 fp_m[j] = fp_u[j] + fp_l[j];
                 
-
                 /* update score for chol */
                 
                 for (idx = 0; idx < j * (j + 1) / 2; idx++) {
@@ -560,7 +551,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                     fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f + emd * fp_c[idx];
                 }
                 
-
                 /* update score means, lower and upper */
                 
                 for (idx = 0; idx < j; idx++) {
@@ -593,7 +583,6 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
                     fp_u[idx] = (ep_u[idx] - ep_l[idx]) * f + emd * fp_u[idx];
                 }
                 
-
                 /* update f */
                 
                 start += j;

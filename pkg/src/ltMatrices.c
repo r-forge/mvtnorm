@@ -52,7 +52,6 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
     /* p = J * (J - 1) / 2 + diag * J */
     int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
     
-
     /* C length */
     
     int p;
@@ -133,7 +132,6 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
                 dansx[j] = dy[j];
         }
         
-
         /* call Lapack */
         
         if (y == R_NilValue) {
@@ -177,7 +175,8 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
 #define IDX(i, j, n, d) ((i) >= (j) ? (n) * ((j) - 1) - ((j) - 2) * ((j) - 1)/2 + (i) - (j) - (!d) * (j) : 0)
 
 
-SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only, SEXP transpose) {
+SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, 
+                              SEXP diag_only, SEXP transpose) {
 
     SEXP ans;
     double *dans;
@@ -201,7 +200,6 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only,
     Rboolean Rtranspose = asLogical(transpose);
 
     if (Rdiag_only) {
-
         /* tcrossprod diagonal only */
         
         PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
@@ -236,9 +234,7 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only,
             dC += len;
         }
         
-
     } else {
-
         /* tcrossprod full */
         
         nrow = iJ * (iJ + 1) / 2;
@@ -292,7 +288,6 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only,
             dC += len;
         }
         
-
     }
     UNPROTECT(1);
     return(ans);
@@ -319,7 +314,6 @@ SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
     /* p = J * (J - 1) / 2 + diag * J */
     int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
     
-
     /* C length */
     
     int p;

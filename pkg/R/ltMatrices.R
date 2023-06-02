@@ -36,12 +36,12 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
         return(ret)
     }
     
-
     # ltMatrices dim
     
     J <- floor((1 + sqrt(1 + 4 * 2 * nrow(object))) / 2 - diag)
-    stopifnot(nrow(object) == J * (J - 1) / 2 + diag * J)
-    
+    if (nrow(object) != J * (J - 1) / 2 + diag * J)
+        stop("Dimension of object does not correspond to lower 
+              triangular part of a square matrix")
     
     # ltMatrices names
     
@@ -862,7 +862,6 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
         return(list(mean = -solve(L, centerm), invchol = L))
     }
     
-
     # cond general
     
     stopifnot(!center)

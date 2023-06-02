@@ -1,7 +1,12 @@
 
-> library("mvtnorm")
+> year <- substr(packageDescription("mvtnorm")$Date, 
++     1, 4)
+
+> version <- packageDescription("mvtnorm")$Version
 
 > chk <- function(...) stopifnot(isTRUE(all.equal(...)))
+
+> library("mvtnorm")
 
 > set.seed(290875)
 
@@ -15,11 +20,11 @@
 
 > Jn <- J * (J - 1)/2
 
-> xn <- t(matrix(runif(N * Jn), nrow = N, byrow = TRUE))
+> xn <- matrix(runif(N * Jn), ncol = N)
 
 > colnames(xn) <- rn
 
-> xd <- t(matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE))
+> xd <- matrix(runif(N * (Jn + J)), ncol = N)
 
 > colnames(xd) <- rn
 
@@ -884,8 +889,6 @@ attr(,"rcnames")
 
 > set.seed(270312)
 
-> library("mvtnorm")
-
 > lpmvnormR <- function(lower, upper, mean = 0, center = NULL, 
 +     chol, logLik = TRUE, ...) {
 +     if (!is.matrix(lower)) 
@@ -1618,4 +1621,4 @@ Petal.Width    0.78190591 -0.24142185    0.8713759   1.0000000
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 12.910   0.100  13.008 
+ 11.461   0.080  11.542 

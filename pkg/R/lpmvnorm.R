@@ -24,8 +24,9 @@
 
 # lpmvnorm
 
-lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
+lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, 
+                     logLik = TRUE, M = NULL, w = NULL, seed = NULL, 
+                     tol = .Machine$double.eps, fast = FALSE) {
 
     # init random seed, reset on exit
     
@@ -41,13 +42,11 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLi
         on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
     }
     
-
     # Cholesky of precision
     
     stopifnot(xor(missing(chol), missing(invchol)))
     if (missing(chol)) chol <- solve(invchol)
     
-
     # input checks
     
     if (!is.matrix(lower)) lower <- matrix(lower, ncol = 1)
@@ -75,7 +74,6 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLi
         stopifnot(nrow(center) == J && ncol(center == N))
     }
     
-
     # standardise
     
     if (attr(chol, "diag")) {
@@ -96,7 +94,6 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLi
             uC <- Lower_tri(chol)
         }
     
-
     # check and / or set integration weights
     
     if (!is.null(w) && J > 1) {
@@ -140,13 +137,11 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
     }
     
-
     # Cholesky of precision
     
     stopifnot(xor(missing(chol), missing(invchol)))
     if (missing(chol)) chol <- solve(invchol)
     
-
     # input checks
     
     if (!is.matrix(lower)) lower <- matrix(lower, ncol = 1)
@@ -174,7 +169,6 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         stopifnot(nrow(center) == J && ncol(center == N))
     }
     
-
     # standardise
     
     if (attr(chol, "diag")) {
@@ -195,7 +189,6 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
             uC <- Lower_tri(chol)
         }
     
-
     # check and / or set integration weights
     
     if (!is.null(w) && J > 1) {
@@ -257,7 +250,6 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         ret[idx,] <- -ret[idx,]
     }
     
-
     # post differentiate invchol score
     
     if (!missing(invchol)) {
@@ -266,7 +258,6 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         ret <- - unclass(vectrick(chol, ret))
     }
     
-
     # post process score
     
     if (!attr(chol, "diag"))

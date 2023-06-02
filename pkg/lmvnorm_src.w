@@ -73,8 +73,8 @@ urlcolor={linkcolor}%
 \newcommand{\xvec}{\mathbf{x}}
 \newcommand{\svec}{\mathbf{s}}
 \newcommand{\jvec}{\mathbf{j}}
-\newcommand{\muvec}{\mathbf{\mu}}
-\newcommand{\etavec}{\mathbf{\eta}}
+\newcommand{\muvec}{\boldsymbol{\mu}}
+\newcommand{\etavec}{\boldsymbol{\eta}}
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rX}{\mathbf{X}}
 \newcommand{\rZ}{\mathbf{Z}}
@@ -94,15 +94,30 @@ urlcolor={linkcolor}%
 \newcommand{\vecop}{\text{vec}}
 
 
+<<mvtnorm-citation, echo = FALSE>>=
+year <- substr(packageDescription("mvtnorm")$Date, 1, 4)
+version <- packageDescription("mvtnorm")$Version
+@@
+
 \author{Torsten Hothorn}
 
-\title{Multivariate Normal Log-likelihoods in the \pkg{mvtnorm} Package}
+\date{Version \Sexpr{version}}
+
+\title{Multivariate Normal Log-likelihoods \\ in the \pkg{mvtnorm} Package
+\footnote{Please cite this document as: Torsten Hothorn (\Sexpr{year})
+Multivariate Normal Log-likelihoods in the \pkg{mvtnorm} Package.
+\textsf{R} package vignette version \Sexpr{version}, 
+URL \url{https://CRAN.R-project.org/package=mvtnorm}.}
+}
 
 \begin{document}
 
 \pagenumbering{roman}
 \maketitle
+
+
 \tableofcontents
+
 
 \chapter*{Licence}
 
@@ -151,7 +166,7 @@ In other applications, the Cholesky factor might also depend on $i$ in some
 structured way.
 
 Function \code{pmvnorm} in package \code{mvtnorm} computes $p_i$ based on
-the covariance matrix $\mC_i \mC_i^\top$. However, the Cholesky $\mC_i$ is
+the covariance matrix $\mC_i \mC_i^\top$. However, the Cholesky factor $\mC_i$ is
 computed in \proglang{FORTRAN}. Function \code{pmvnorm} is not vectorised
 over $i = 1, \dots, N$ and thus separate calls to this function are
 necessary in order to compute likelihood contributions.
@@ -167,10 +182,12 @@ Chapter~\ref{ltMatrices}.  The multivariate normal log-likelihood, and the
 corresponding score function, is implemented as outlined in
 Chapter~\ref{lpmvnorm}.  An example demonstrating maximum-likelihood
 estimation of Cholesky factors in the presence of interval-censored
-observations is discussed last in Chapter~\ref{ML}.  We use the technology
+observations is discussed in Chapter~\ref{ML}.  We use the technology
 developed here to implement the log-likelihood and score function for
 situations where some variables have been observed exactly and others only
-in form of interval-censoring in Chapter~\ref{cdl}.
+in form of interval-censoring in Chapter~\ref{cdl} and for nonparametric
+maximum-likelihood estimation in unstructured Gaussian copulae in
+Chapter~\ref{copula}.
 
 \chapter{Lower Triangular Matrices} \label{ltMatrices}
 
@@ -225,7 +242,7 @@ in form of interval-censoring in Chapter~\ref{cdl}.
 @}
 
 
-We first need infrastructure for dealing with multiple lower triangular matrices
+We first define and implement infrastructure for dealing with multiple lower triangular matrices
 $\mC_i \in \R^{\J \times \J}$ for $i = 1, \dots, N$. We note that each such matrix
 $\mC$ can be stored in a vector of length $\J (\J + 1) / 2$. If all
 diagonal elements are one (that is, $c^{(i)}_{jj} \equiv 1, j = 1, \dots,
@@ -269,7 +286,9 @@ Based on some matrix \code{object}, the dimension $\J$ is computed and checked a
 @d ltMatrices dim
 @{
 J <- floor((1 + sqrt(1 + 4 * 2 * nrow(object))) / 2 - diag)
-stopifnot(nrow(object) == J * (J - 1) / 2 + diag * J)
+if (nrow(object) != J * (J - 1) / 2 + diag * J)
+    stop("Dimension of object does not correspond to lower 
+          triangular part of a square matrix")
 @}
 
 Typically the $\J$ dimensions are associated with names, and we therefore
@@ -323,9 +342,7 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
         object <- matrix(object, ncol = 1L)
 
     @<ltMatrices input@>
-
     @<ltMatrices dim@>
-    
     @<ltMatrices names@>
 
     attr(object, "J")       <- J
@@ -338,9 +355,6 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 }
 @}
 
-Symmetric matrices are represented by lower triangular matrix objects, but
-we change the class from \code{ltMatrices} to \code{syMatrices} (which
-disables all functionality except printing and coersion to arrays).
 
 The dimensions of such an object are always $N \times \J \times \J$ and are given by
 
@@ -373,23 +387,26 @@ names.ltMatrices <- function(x) {
 names.syMatrices <- names.ltMatrices
 @}
 
-Let's set-up an example for illustration:
+Let's set-up an example for illustration. Throughout this document, we will
+compare numerical results using
+<<chk>>=
+chk <- function(...) stopifnot(isTRUE(all.equal(...)))
+@@
+We start with a a simple example demonstrating how to set-up
+\code{ltMatrices} objects
 
 <<example>>=
 library("mvtnorm")
-
-chk <- function(...) stopifnot(isTRUE(all.equal(...)))
-
 set.seed(290875)
-N <- 4
-J <- 5
+N <- 4L
+J <- 5L
 rn <- paste0("C_", 1:N)
 nm <- LETTERS[1:J]
 Jn <- J * (J - 1) / 2
 ## data
-xn <- t(matrix(runif(N * Jn), nrow = N, byrow = TRUE))
+xn <- matrix(runif(N * Jn), ncol = N)
 colnames(xn) <- rn
-xd <- t(matrix(runif(N * (Jn + J)), nrow = N, byrow = TRUE))
+xd <- matrix(runif(N * (Jn + J)), ncol = N)
 colnames(xd) <- rn
 
 (lxn <- ltMatrices(xn, byrow = TRUE, names = nm))
@@ -405,8 +422,8 @@ lxn
 
 \section{Printing}
 
-For pretty printing, we coerse object of class \code{ltMatrices} to
-\code{array}. The method has an \code{symmetric} argument forcing the lower
+For pretty printing, we coerse objects of class \code{ltMatrices} to
+\code{array}. The method has a logical argument called \code{symmetric}, forcing the lower
 triangular matrix to by interpreted as a symmetric matrix.
 
 @d extract slots
@@ -458,6 +475,9 @@ print.syMatrices <- function(x, ...)
     print(as.array(x))
 @}
 
+Symmetric matrices are represented by lower triangular matrix objects, but
+we change the class from \code{ltMatrices} to \code{syMatrices} (which
+disables all functionality except printing and coersion to arrays).
 
 \section{Reordering}
 
@@ -494,19 +514,23 @@ and row-major order
 <<ex-reorder>>=
 ## constructor + .reorder + as.array
 a <- as.array(ltMatrices(xn, byrow = TRUE))
-b <- as.array(ltMatrices(ltMatrices(xn, byrow = TRUE), byrow = FALSE))
+b <- as.array(ltMatrices(ltMatrices(xn, byrow = TRUE), 
+                         byrow = FALSE))
 chk(a, b)
 
 a <- as.array(ltMatrices(xn, byrow = FALSE))
-b <- as.array(ltMatrices(ltMatrices(xn, byrow = FALSE), byrow = TRUE))
+b <- as.array(ltMatrices(ltMatrices(xn, byrow = FALSE), 
+                         byrow = TRUE))
 chk(a, b)
 
 a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))
-b <- as.array(ltMatrices(ltMatrices(xd, byrow = TRUE, diag = TRUE), byrow = FALSE))
+b <- as.array(ltMatrices(ltMatrices(xd, byrow = TRUE, diag = TRUE), 
+                         byrow = FALSE))
 chk(a, b)
 
 a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))
-b <- as.array(ltMatrices(ltMatrices(xd, byrow = FALSE, diag = TRUE), byrow = TRUE))
+b <- as.array(ltMatrices(ltMatrices(xd, byrow = FALSE, diag = TRUE), 
+                         byrow = TRUE))
 chk(a, b)
 @@
 
@@ -665,7 +689,8 @@ chk(a, b)
 @@
 
 Extracting the lower triangular elements from an \code{ltMatrices} object
-(or from an object of class \code{syMatrices}) returns a matrix with $N$ columns
+(or from an object of class \code{syMatrices}) returns a matrix with $N$
+columns, undoing the effect of \code{ltMatrices}
 
 @d lower triangular elements
 @{
@@ -867,14 +892,14 @@ I5
 
 \section{Multiplication}
 
-Multiplications $\mC_i \yvec_i$ or $\mC^\top_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
+Products $\mC_i \yvec_i$ or $\mC^\top_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
 N$ can be computed with $\code{y}$ being an $J \times N$ matrix of
 columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 \yvec_N)$. If \code{y} is a single vector, it is recycled $N$ times.
 
 If the number of columns of a matrix \code{y} is neither one nor $N$, 
 we compute $\mC_i \yvec_j$ for all $i = 1, \dots, N$ and $j$. This is
-dangerous but needed in \code{cond\_mvnorm} alter on.
+dangerous but needed in \code{cond\_mvnorm} later on.
 
 We start with $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), which can
 conveniently be computed in \proglang{R} (although no attention is paid to
@@ -898,7 +923,7 @@ if (transpose) {
 @}
 
 For $\mC_i \yvec_i$, we call \proglang{C} code computing the product
-efficiently without copying data by using the lower triangular structure of
+efficiently without copying data by leveraging the lower triangular structure of
 \code{x}
 
 @d mult ltMatrices
@@ -980,7 +1005,6 @@ SEXP R_ltMatrices_Mult (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
     int i, j, k, start;
 
     @<RC input@>
-
     @<C length@>
 
     PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
@@ -1017,12 +1041,14 @@ lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE)
 y <- matrix(runif(N * J), nrow = J)
 a <- Mult(lxn, y)
 A <- as.array(lxn)
-b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
 chk(a, t(b), check.attributes = FALSE)
 
 a <- Mult(lxd, y)
 A <- as.array(lxd)
-b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
 chk(a, t(b), check.attributes = FALSE)
 
 ### recycle C
@@ -1045,12 +1071,14 @@ and for $\mC^\top_i \yvec_i$
 <<ex-tmult>>=
 a <- Mult(lxn, y, transpose = TRUE)
 A <- as.array(lxn)
-b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
 chk(a, t(b), check.attributes = FALSE)
 
 a <- Mult(lxd, y, transpose = TRUE)
 A <- as.array(lxd)
-b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
 chk(a, t(b), check.attributes = FALSE)
 
 ### recycle C
@@ -1064,8 +1092,8 @@ chk(Mult(lxn, y[,1], transpose = TRUE),
 
 \section{Solving Linear Systems}
 
-Compute $\mC_i^{-1}$ or solve $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
-all $i = 1, \dots, N$. We sometimes also need $\mC^\top_i \xvec_i =
+Computeing $\mC_i^{-1}$ or solving $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
+all $i = 1, \dots, N$ is another important task. We sometimes also need $\mC^\top_i \xvec_i =
 \yvec_i$ triggered by \code{transpose = TRUE}.
 
 \code{C} is $\mC_i, i = 1, \dots, N$ in column-major order
@@ -1075,7 +1103,7 @@ all $i = 1, \dots, N$. We sometimes also need $\mC^\top_i \xvec_i =
 \xvec_N)$ of solutions.
 
 If \code{y} is not given, $\mC_i^{-1}$ is returned in 
-column-major order (matrix of dimension $\J (\J \pm 1) / 2  \times N$). If
+the same order as the orginal matrix $\mC_i$. If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
 @d setup memory
@@ -1170,7 +1198,6 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
     int i, j, k, info, nrow, ncol, jj, idx, ONE = 1;
 
     @<RC input@>
-
     @<C length@>
 
     char di, lo = 'L', tr = 'N';
@@ -1198,7 +1225,6 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
     for (i = 0; i < iN; i++) {
 
         @<copy elements@>
-
         @<call Lapack@>
 
         /* next matrix */
@@ -1269,12 +1295,14 @@ and some checks
 A <- as.array(lxn)
 a <- solve(lxn)
 a <- as.array(a)
-b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), dim = rev(dim(lxn)))
+b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), 
+           dim = rev(dim(lxn)))
 chk(a, b, check.attributes = FALSE)
 
 A <- as.array(lxd)
 a <- as.array(solve(lxd))
-b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), dim = rev(dim(lxd)))
+b <- array(apply(A, 3L, function(x) solve(x), simplify = TRUE), 
+           dim = rev(dim(lxd)))
 chk(a, b, check.attributes = FALSE)
 
 chk(solve(lxn, y), Mult(solve(lxn), y))
@@ -1403,7 +1431,8 @@ and put both cases together
 
 @<IDX@>
 
-SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only, SEXP transpose) {
+SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, 
+                              SEXP diag_only, SEXP transpose) {
 
     SEXP ans;
     double *dans;
@@ -1415,13 +1444,9 @@ SEXP R_ltMatrices_tcrossprod (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP diag_only,
     Rboolean Rtranspose = asLogical(transpose);
 
     if (Rdiag_only) {
-
         @<tcrossprod diagonal only@>
-
     } else {
-
         @<tcrossprod full@>
-
     }
     UNPROTECT(1);
     return(ans);
@@ -1533,7 +1558,7 @@ chk(d, diagonals(Crossprod(lxd)))
 
 \section{Cholesky Factorisation}
 
-There might arise needs to compute the Cholesky factorisation $\mSigma_i = \mC_i
+One might want to compute the Cholesky factorisations $\mSigma_i = \mC_i
 \mC_i^\top$ for multiple symmetric matrices $\mSigma_i$, stored as a matrix
 in class \code{syMatrices}.
 
@@ -1726,7 +1751,7 @@ storage.mode(C) <- "double"
 @}
 
 \code{S} can be an \code{ltMatrices} object or a $\J^2 \times N$ matrix
-whose columns of vectorised $\J \times \J$ matrices
+featuring columns of vectorised $\J \times \J$ matrices
 
 @d check S argument
 @{
@@ -1852,7 +1877,7 @@ chk(SD2, SD2a)
 chk(c(SD0), c(SD2))
 
 ### N > 1
-N <- 4
+N <- 4L
 prm <- runif(J * (J - 1) / 2)
 C <- ltMatrices(prm)
 S <- matrix(runif(J^2 * N), ncol = N)
@@ -2072,6 +2097,7 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
     check.attributes = FALSE)
 @@
 
+We also add an \code{aperm} method for class \code{ltMatrices}
 
 @d aperm
 @{
@@ -2246,7 +2272,6 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     stopifnot(is.matrix(given) && nrow(given) == length(which))
 
     @<cond simple@>
-
     @<cond general@>
 
     chol <- base::chol(S)
@@ -2525,8 +2550,8 @@ Evaluating the corresponding log-likelihood is now straightforward and fast,
 compared to repeated calls to \code{dmvnorm}
 
 <<ex-MV>>=
-N <- 1000
-J <- 50
+N <- 1000L
+J <- 50L
 lt <- ltMatrices(matrix(runif(N * J * (J + 1) / 2) + 1, ncol = N), 
                  diag = TRUE, byrow = FALSE)
 Z <- matrix(rnorm(N * J), ncol = N)
@@ -2581,12 +2606,11 @@ We now discuss code for evaluating the log-likelihood
 \sum_{i = 1}^N \log(p_i(\mC_i \mid \avec_i, \bvec_i))
 \end{eqnarray*}
 
-This is relatively simple to achieve using the existing \code{pmvnorm}, so a
-prototype might look like
+This is relatively simple to achieve using the existing \code{pmvnorm}
+function, so a prototype might look like
 
 @d lpmvnormR
 @{
-library("mvtnorm")
 lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
 
     @<input checks@>
@@ -2621,14 +2645,14 @@ Repeated calls to \proglang{FORTRAN} also cost some time. The code \citep[based
 on and evaluated in][]{Genz_Bretz_2002} implements a
 specific form of quasi-Monte-Carlo integration without allowing the user to
 change the scheme (or to fall-back to simple Monte-Carlo). We therefore
-implement our own, and simplistic version, with the aim to speed-things up
+implement our own simplified version, with the aim to speed-things up
 such that maximum-likelihood estimation becomes a bit faster.
 
 Let's look at an example first. This code estimates $p_1, \dots, p_{10}$ for
 a $5$-dimensional normal
 <<ex-lpmvnorm_R>>=
-J <- 5
-N <- 10
+J <- 5L
+N <- 10L
 
 x <- matrix(runif(N * J * (J + 1) / 2), ncol = N)
 lx <- ltMatrices(x, byrow = TRUE, diag = TRUE)
@@ -2641,7 +2665,9 @@ b[sample(J * N)[1:2]] <- Inf
 (phat <- c(lpmvnormR(a, b, chol = lx, logLik = FALSE)))
 @@
 
-We want to achieve the same result a bit more general and a bit faster.
+We want to achieve the same result a bit more general and a bit faster, by
+making the code more modular and, most importantly, by providing score
+functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 
 \section{Algorithm}
 
@@ -2829,11 +2855,8 @@ We put everything together in a loop starting with the second dimension
 for (j = 1; j < iJ; j++) {
 
     @<compute y@>
-
     @<compute x@>
-
     @<update d, e@>
-
     @<update f@>
 }
 @}
@@ -2863,7 +2886,7 @@ if (!RlogLik)
     dans += 1L;
 @}
 
-and move on to the next observation (note that \code{p} might be 0, in case
+and move on to the next observation (note that \code{p} might be $0$ in case
 $\mC_i \equiv \mC$).
 
 @d move on
@@ -3010,7 +3033,7 @@ double d0, e0, emd0, f0, q0;
 @d R lpmvnorm
 @{
 SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, 
-               SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
+                SEXP W, SEXP M, SEXP tol, SEXP logLik, SEXP fast) {
 
     @<R slpmvnorm variables@>
     double l0, lM, x0, intsum;
@@ -3116,17 +3139,14 @@ if (missing(chol)) chol <- solve(invchol)
 
 @d lpmvnorm
 @{
-lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
+lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, 
+                     logLik = TRUE, M = NULL, w = NULL, seed = NULL, 
+                     tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
-
     @<Cholesky of precision@>
-
     @<input checks@>
-
     @<standardise@>
-
     @<check and / or set integration weights@>
 
     ret <- .Call(mvtnorm_R_lpmvnorm, ac, bc, uC, as.double(center), 
@@ -3155,7 +3175,7 @@ responsibility to make sure things work as intended. If you are unsure, you
 should use \code{pmvnorm} which provides a well-tested configuration.
 
 <<ex-lpmvnorm>>= )
-M <- 10000
+M <- 10000L
 if (require("qrng", quietly = TRUE)) {
     ### quasi-Monte-Carlo
     W <- t(ghalton(M, d = J - 1))
@@ -3168,13 +3188,17 @@ if (require("qrng", quietly = TRUE)) {
 pGB <- lpmvnormR(a, b, chol = lx, logLik = FALSE, 
                 algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 ### Genz 1992 with quasi-Monte-Carlo, fast pnorm
-pGqf <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = TRUE))
+pGqf <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, 
+                     fast = TRUE))
 ### Genz 1992, original Monte-Carlo, fast pnorm
-pGf <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = TRUE))
+pGf <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, 
+                    fast = TRUE))
 ### Genz 1992 with quasi-Monte-Carlo, R::pnorm
-pGqs <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, fast = FALSE))
+pGqs <- exp(lpmvnorm(a, b, chol = lx, w = W, M = M, logLik = FALSE, 
+                     fast = FALSE))
 ### Genz 1992, original Monte-Carlo, R::pnorm
-pGs <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, fast = FALSE))
+pGs <- exp(lpmvnorm(a, b, chol = lx, w = NULL, M = M, logLik = FALSE, 
+                    fast = FALSE))
 
 cbind(pGB, pGqf, pGf, pGqs, pGs)
 @@
@@ -3463,25 +3487,15 @@ We put everything together in a loop starting with the second dimension
 for (j = 1; j < iJ; j++) {
 
     @<compute y@>
-
     @<compute x@>
-
     @<update d, e@>
-
     @<update yp for chol@>
-
     @<update yp for means, lower and upper@>
-
     @<score wrt new chol off-diagonals@>
-
     @<score wrt new chol diagonal@>
-
     @<new score means, lower and upper@>
-
     @<update score for chol@>
-
     @<update score means, lower and upper@>
-
     @<update f@>
 
 }
@@ -3514,6 +3528,17 @@ for (j = 0; j < iJ; j++) {
 @}
 
 \end{enumerate}
+
+@d init dans
+@{
+if (iM == 0) {
+    dans[0] = intsum;
+    dans[1] = fp_c[0];
+    dans[2] = fp_m[0];
+    dans[3] = fp_l[0];
+    dans[4] = fp_u[0];
+}
+@}
 
 We put everything together in \proglang{C}
 
@@ -3549,14 +3574,7 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
         @<initialisation@>
         @<score c11@>
         @<score a, b@>
-
-        if (iM == 0) {
-            dans[0] = intsum;
-            dans[1] = fp_c[0];
-            dans[2] = fp_m[0];
-            dans[3] = fp_l[0];
-            dans[4] = fp_u[0];
-        }
+        @<init dans@>
 
         if (W != R_NilValue && pW == 0)
             dW = REAL(W);
@@ -3646,7 +3664,7 @@ if (!missing(invchol)) {
 }
 @}
 
-If the diagonal elements were constants, we set them to zero. The function
+If the diagonal elements are constants, we set them to zero. The function
 always returns an object of class \code{ltMatrices} with explicit diagonal
 elements (use \code{Lower\_tri(, diag = FALSE)} to extract the lower
 triangular elements such that the scores match the input)
@@ -3667,13 +3685,9 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
                     w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
 
     @<init random seed, reset on exit@>
-
     @<Cholesky of precision@>
-
     @<input checks@>
-
     @<standardise@>
-
     @<check and / or set integration weights@>
 
     ret <- .Call(mvtnorm_R_slpmvnorm, ac, bc, uC, as.double(center), as.integer(N), 
@@ -3692,9 +3706,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     ret <- ret[1:Jp, , drop = FALSE]
 
     @<post differentiate chol score@>
-
     @<post differentiate invchol score@>
-
     @<post process score@>
 
     ret <- ltMatrices(ret, byrow = byrow_orig)
@@ -3717,8 +3729,8 @@ Let's look at an example, where we use \code{numDeriv::grad} to check the
 results
 
 <<ex-score>>=
-J <- 5
-N <- 4
+J <- 5L
+N <- 4L
 
 S <- crossprod(matrix(runif(J^2), nrow = J))
 prm <- t(chol(S))[lower.tri(S, diag = TRUE)]
@@ -3731,7 +3743,7 @@ b <- a + 4
 a[2,] <- -Inf
 b[3,] <- Inf
 
-M <- 10000
+M <- 10000L
 W <- matrix(runif(M * (J - 1)), ncol = M)
 
 lli <- c(lpmvnorm(a, b, chol = mC, w = W, M = M, logLik = FALSE))
@@ -3822,7 +3834,7 @@ from $\rZ \sim \ND_\J(\mathbf{0}_\J, \mI_\J)$ and then computing $\rY = \mC \rZ 
 \muvec \sim \ND_\J(\muvec, \mC \mC^\top)$
 
 <<ex-ML-data>>=
-N <- 100
+N <- 100L
 Z <- matrix(rnorm(N * J), nrow = J)
 Y <- Mult(lt, Z) + (mn <- 1:J)
 @@
@@ -3921,23 +3933,25 @@ deterministic function to be optimised)
 <<ex-ML-chk, eval = FALSE>>=
 M <- floor(exp(0:25/10) * 1000)
 lGB <- sapply(M, function(m) {
-    st <- system.time(ret <- lpmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = 
-                                      GenzBretz(maxpts = m, abseps = 0, releps = 0)))
+    st <- system.time(ret <- 
+        lpmvnormR(lwr, upr, mean = mn, chol = lt, algorithm = 
+                  GenzBretz(maxpts = m, abseps = 0, releps = 0)))
     return(c(st["user.self"], ll = ret))
 })
 lH <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng", quietly = TRUE))
         W <- t(ghalton(m, d = J - 1))
-    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m))
+    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, 
+                                      chol = lt, w = W, M = m))
     return(c(st["user.self"], ll = ret))
 })
 lHf <- sapply(M, function(m) {
     W <- NULL
     if (require("qrng", quietly = TRUE))
         W <- t(ghalton(m, d = J - 1))
-    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = m, 
-                                     fast = TRUE))
+    st <- system.time(ret <- lpmvnorm(lwr, upr, mean = mn, chol = lt, 
+                                      w = W, M = m, fast = TRUE))
     return(c(st["user.self"], ll = ret))
 })
 @@
@@ -4049,7 +4063,8 @@ ll <- function(parm, J) {
      parm <- parm[-(1:J)]	### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     -lpmvnorm(lower = lwr, upper = upr, mean = m, chol = C, w = W, M = M, logLik = TRUE)
+     -lpmvnorm(lower = lwr, upper = upr, mean = m, chol = C, 
+               w = W, M = M, logLik = TRUE)
 }
 @@
 
@@ -4060,7 +4075,8 @@ ll(prm, J = J)
 lpmvnormR(lwr, upr, mean = mn, chol = lt, 
          algorithm = GenzBretz(maxpts = M, abseps = 0, releps = 0))
 (llprm <- lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M))
-chk(llprm, sum(lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, M = M, logLik = FALSE)))
+chk(llprm, sum(lpmvnorm(lwr, upr, mean = mn, chol = lt, w = W, 
+                        M = M, logLik = FALSE)))
 @@
 
 Before we hand over to the optimiser, we define the score function with
@@ -4193,7 +4209,7 @@ giving us a sample we can use to compute standard errors from
 rbeta <- cond_mvnorm(chol = rC, which = 2:J, given = diag(J - 1))$mean
 sqrt(rowMeans((rbeta - rowMeans(rbeta))^2))
 @@
-which are, as expected, slightly larger than the ones obtained from the more
+which are, as expected, slightly different from the ones obtained from the more
 informative exact observations
 <<se-ex>>=
 sqrt(diag(vcov(m1)))[-1L]
@@ -4213,7 +4229,7 @@ $\avec_i < \rX_i \le \bvec_i$ (that is, interval-censored observations for
 $\rX_i$). We define the log-likelihood based on the joint normal distribution $(\rY_i,
 \rX_i) \sim \ND_J((\muvec_i, \etavec_i)^\top, \mC_i \mC_i^\top)$ as
 \begin{eqnarray*}
-\ell_i(\muvec_i, \mC_i) + \log(\Prob(\avec_i < \rX_i \le \bvec_i \mid \mC_i, \etavec_i, \rY_i = \yvec_i)).
+\ell_i(\muvec_i, \etavec_i, \mC_i) = \ell_i(\muvec_i, \mC_i) + \log(\Prob(\avec_i < \rX_i \le \bvec_i \mid \mC_i, \etavec_i, \rY_i = \yvec_i)).
 \end{eqnarray*}
 The trick here is to decompose the joint likelihood into a product of the 
 marginal Lebesque density of $\rY_i$ and the conditional probability of
@@ -4427,7 +4443,7 @@ op$par[1:J]
 mn
 @@
 
-\chapter{Unstructured Gaussian Copula Estimation}
+\chapter{Unstructured Gaussian Copula Estimation} \label{copula}
 
 With $\rZ \sim \ND_\J(0, \mI_\J)$ and $\rY = \tilde{\mC} \rZ \sim \ND_\J(0, \tilde{\mC}
 \tilde{\mC}^\top)$ we want to estimate the off-diagonal elements of the
