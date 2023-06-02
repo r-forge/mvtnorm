@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-0 (2023-06-01)}{
+\section{Changes in Version 1.2-0 (2023-06-02)}{
   \itemize{
     \item New \code{lpmvnorm} function for computing multivariate normal log-likelihoods for interval-censored observations.
     \item New \code{slpmvnorm} function for computing the corresponding score function for interval-censored observations.
