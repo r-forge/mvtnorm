@@ -630,8 +630,6 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
         ## argument A in dtrmm is not in packed form, so expand in J x J
         ## matrix
         S <- matrix(as.array(S), ncol = dS[1L])
-    #    S <- t(matrix(as.array(S), byrow = TRUE, nrow = dS[1L]))
-    #    class(S) <- class(S)[-1L]
     } else {
         stopifnot(is.matrix(S))
         stopifnot(nrow(S) == J^2)
