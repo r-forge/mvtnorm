@@ -3045,7 +3045,7 @@ SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J,
     @<init center@>
 
     int start, j, k;
-    double tmp, Wtmp, e, d, f, emd, x, y[iJ - 1];
+    double tmp, Wtmp, e, d, f, emd, x, y[(iJ > 1 ? iJ - 1 : 1)];
 
     @<setup return object@>
 
@@ -3232,28 +3232,28 @@ We need the derivatives of $d$, $e$, $y$, and $f$ with respect to the $c$
 parameters
 @d chol scores
 @{
-double dp_c[Jp], ep_c[Jp], fp_c[Jp], yp_c[(iJ - 1) * Jp];
+double dp_c[Jp], ep_c[Jp], fp_c[Jp], yp_c[(iJ > 1 ? iJ - 1 : 1) * Jp];
 @}
 
 and the derivates with respect to the mean
 
 @d mean scores
 @{
-double dp_m[Jp], ep_m[Jp], fp_m[Jp], yp_m[(iJ - 1) * Jp];
+double dp_m[Jp], ep_m[Jp], fp_m[Jp], yp_m[(iJ > 1 ? iJ - 1 : 1) * Jp];
 @}
 
 and the derivates with respect to lower (\code{a})
 
 @d lower scores
 @{
-double dp_l[Jp], ep_l[Jp], fp_l[Jp], yp_l[(iJ - 1) * Jp];
+double dp_l[Jp], ep_l[Jp], fp_l[Jp], yp_l[(iJ > 1 ? iJ - 1 : 1) * Jp];
 @}
 
 and the derivates with respect to upper (\code{b})
 
 @d upper scores
 @{
-double dp_u[Jp], ep_u[Jp], fp_u[Jp], yp_u[(iJ - 1) * Jp];
+double dp_u[Jp], ep_u[Jp], fp_u[Jp], yp_u[(iJ > 1 ? iJ - 1 : 1) * Jp];
 @}
 
 and we start allocating the necessary memory. The output object contains the
@@ -3555,7 +3555,7 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
     @<init center@>
 
     int start, j, k;
-    double tmp, e, d, f, emd, x, x0, y[iJ - 1];
+    double tmp, e, d, f, emd, x, x0, y[(iJ > 1 ? iJ - 1 : 1)];
 
     @<score output object@>
 
@@ -4660,10 +4660,12 @@ with relatively close standard errors
 <<gc-se>>=
 sd_ML <- ltMatrices(sqrt(diag(solve(op$hessian))))
 diagonals(sd_ML) <- 0
-sd_NPML <- ltMatrices(sqrt(diag(solve(op2$hessian))))
-diagonals(sd_NPML) <- 0
-sd_ML
-sd_NPML
+sd_NPML <- try(ltMatrices(sqrt(diag(solve(op2$hessian)))))
+if (!inherits(sd_NPML, "try-error")) {
+    diagonals(sd_NPML) <- 0
+    print(sd_ML)
+    print(sd_NPML)
+}
 @@
 
 
