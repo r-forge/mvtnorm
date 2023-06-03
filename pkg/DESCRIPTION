@@ -1,6 +1,6 @@
 Package: mvtnorm
 Title: Multivariate Normal and t Distributions
-Version: 1.2-0
+Version: 1.2-1
 Date: 2023-06-02
 Authors@R: c(person("Alan", "Genz", role = "aut"),
              person("Frank", "Bretz", role = "aut"),
