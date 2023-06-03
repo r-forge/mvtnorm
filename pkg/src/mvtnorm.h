@@ -4,7 +4,6 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <Rconfig.h>
-#include <R_ext/Lapack.h>
 
 void F77_NAME(mvtdst)(int *n, int *nu, double *lower, double *upper,
                       int *infin, double *corr, double *delta,
