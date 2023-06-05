@@ -1399,7 +1399,10 @@ converged
 > H <- optim(op$par, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
 +     lower = llim, hessian = TRUE)$hessian
 
-> L <- t(chol(H))
+> L <- try(t(chol(H)))
+
+> if (inherits(L, "try-error")) L <- t(chol(H + 1e-04 * 
++     diag(nrow(H))))
 
 > L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE)
 
@@ -1621,4 +1624,4 @@ Petal.Width    0.78190591 -0.24142185    0.8713759   1.0000000
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 11.319   0.087  11.419 
+ 12.431   0.080  12.527 
