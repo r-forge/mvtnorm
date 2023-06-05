@@ -4194,7 +4194,10 @@ H <- optim(op$par, fn = ll, gr = sc, J = J, method = "L-BFGS-B",
 and next we sample from the distribution of the maximum-likelihood
 estimators
 <<ML-sample>>=
-L <- t(chol(H))
+L <- try(t(chol(H)))
+### some check on r-oldrel-macos-arm64
+if (inherits(L, "try-error"))
+    L <- t(chol(H + 1e-4 * diag(nrow(H))))
 L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE)
 Nsim <- 50000
 Z <- matrix(rnorm(Nsim * nrow(H)), ncol = Nsim)
