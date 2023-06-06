@@ -1,6 +1,8 @@
 
 library("mvtnorm")
 
+options(warn = -1)
+
 pmvnorm <- function(lower = -Inf, upper = Inf, mean = rep(0, length(lower)), 
                     corr = NULL, sigma = NULL, algorithm = GenzBretz(), ...) {
 
