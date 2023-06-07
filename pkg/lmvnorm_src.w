@@ -4118,9 +4118,10 @@ mn
 We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
-Tcrossprod(lt)		### true Sigma
-Tcrossprod(C)           ### interval-censored obs
-Shat                    ### "exact" obs
+### ATLAS print issues
+round(Tcrossprod(lt), 7)  ### true Sigma
+round(Tcrossprod(C), 7)   ### interval-censored obs
+round(Shat, 7)            ### "exact" obs
 @@
 
 This looks reasonably close.

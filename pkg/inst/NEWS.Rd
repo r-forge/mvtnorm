@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-2 (2023-06-05)}{
+\section{Changes in Version 1.2-2 (2023-06-07)}{
   \subsection{Bugfixes}{
     \itemize{
       \item Fix overflow problem reported by ASAN.
