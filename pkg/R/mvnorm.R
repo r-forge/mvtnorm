@@ -1,7 +1,8 @@
 # $Id$
 
 rmvnorm <- function(n, mean = rep(0, nrow(sigma)), sigma = diag(length(mean)),
-                    method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE)
+                    method=c("eigen", "svd", "chol"), pre0.9_9994 = FALSE, checkSymmetry = TRUE, 
+                    rnorm = stats::rnorm)
 {
 
     if (checkSymmetry && !isSymmetric(sigma, tol = sqrt(.Machine$double.eps),

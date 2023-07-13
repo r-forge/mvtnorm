@@ -2,6 +2,15 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.2-3 (2023-07-13)}{
+  \subsection{Features}{
+    \itemize{
+      \item Allow to change \code{rnorm} in \code{rmvnorm}, feature request
+            by Ralf Stubner.
+    }
+  }
+}
+
 \section{Changes in Version 1.2-2 (2023-06-07)}{
   \subsection{Bugfixes}{
     \itemize{
