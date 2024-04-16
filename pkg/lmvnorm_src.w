@@ -2421,7 +2421,7 @@ Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \m
 \mC_i \mid = 2 \sum_{j = 1}^\J \log \diag(\mC_i)_j$ we get the simpler expression
 \begin{eqnarray} \label{ll_mC}
 \ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
-(\yvec_i - \muvec_i)^\top \mC^{-\top} \mC^{-1} (\yvec - \muvec_i).
+(\yvec_i - \muvec_i)^\top \mC_i^{-\top} \mC_i^{-1} (\yvec - \muvec_i).
 \end{eqnarray}
 
 @d ldmvnorm chol
@@ -2443,7 +2443,7 @@ if (attr(chol, "diag"))
 If $\mL_i = \mC_i^{-1}$ is given, we obtain
 \begin{eqnarray*}
 \ell_i(\muvec_i, \mL_i) & = & -\frac{k}{2} \log(2\pi) + \sum_{j = 1}^\J \log \diag(\mL_i)_j - \frac{1}{2}
-(\yvec_i - \muvec_i)^\top \mL^\top \mL (\yvec - \muvec_i).
+(\yvec_i - \muvec_i)^\top \mL_i^\top \mL_i (\yvec - \muvec_i).
 \end{eqnarray*}
 
 @d ldmvnorm invchol
