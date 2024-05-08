@@ -2,6 +2,14 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.2-5 (2024-05-08)}{
+  \subsection{Features}{
+    \itemize{
+      \item Update the \code{Using mvtnorm} package vignette and references therein.
+    }
+  }
+}
+
 \section{Changes in Version 1.2-4 (2023-11-27)}{
   \subsection{Bugfixes}{
     \itemize{
