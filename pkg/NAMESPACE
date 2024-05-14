@@ -36,6 +36,7 @@ S3method("diagonals<-", "ltMatrices")
 S3method("diagonals<-", "syMatrices")
 S3method("chol", "syMatrices")
 S3method("aperm", "ltMatrices")
+S3method("Mult", "ltMatrices")
 ### internal methods
 S3method("probval", "GenzBretz")
 S3method("probval", "Miwa")

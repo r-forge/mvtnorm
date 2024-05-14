@@ -4,6 +4,7 @@
 \alias{Crossprod}
 \alias{diagonals}
 \alias{Mult}
+\alias{Mult.ltMatrices}
 \alias{solve.ltMatrices}
 \alias{as.array.ltMatrices}
 \alias{as.array.syMatrices}
@@ -53,10 +54,10 @@ diagonals(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{ltMatrices}(a, perm, is_chol = FALSE, \dots)
-Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
-Mult(x, y, transpose = FALSE)
+\S3method{Mult}{ltMatrices}(x, y, transpose = FALSE, \dots)
 Tcrossprod(x, diag_only = FALSE)
 Crossprod(x, diag_only = FALSE)
+Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
 chol2cov(x)
 invchol2chol(x)
 chol2invchol(x)

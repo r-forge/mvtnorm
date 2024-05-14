@@ -909,15 +909,17 @@ efficiently without copying data by leveraging the lower triangular structure of
 @d mult ltMatrices
 @{
 ### C %*% y
-Mult <- function(x, y, transpose = FALSE) {
-
-    if (!inherits(x, "ltMatrices")) {
-        if (!transpose) return(x %*% y)
-        return(crossprod(x, y))
-    }
+Mult <- function(x, y, transpose = FALSE, ...)
+    UseMethod("Mult")
+Mult.default <- function(x, y, transpose = FALSE, ...) {
+    if (!transpose) return(x %*% y)
+    return(crossprod(x, y))
+}
+Mult.ltMatrices <- function(x, y, transpose = FALSE, ...) {
 
     @<extract slots@>
 
+    stopifnot(is.numeric(y))
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
     stopifnot(nrow(y) == d[2L])
