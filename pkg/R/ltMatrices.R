@@ -76,6 +76,16 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
     object
 }
 
+# syMatrices
+
+as.syMatrices <- function(object) {
+    stopifnot(inherits(object, "ltMatrices"))
+    class(object)[1L] <- "syMatrices"
+    return(object)
+}
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+    as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, names = names))
+
 # dim ltMatrices
 
 dim.ltMatrices <- function(x) {
@@ -330,7 +340,7 @@ diagonals.integer <- function(x, ...)
 # mult ltMatrices
 
 ### C %*% y
-Mult <- function(x, y, transpose = FALSE, ...)
+Mult <- function(x, y, ...)
     UseMethod("Mult")
 Mult.default <- function(x, y, transpose = FALSE, ...) {
     if (!transpose) return(x %*% y)
@@ -385,6 +395,30 @@ Mult.ltMatrices <- function(x, y, transpose = FALSE, ...) {
     rownames(ret) <- dn[[2L]]
     if (length(dn[[1L]]) == N)
         colnames(ret) <- dn[[1L]]
+    return(ret)
+}
+
+# mult syMatrices
+
+Mult.syMatrices <- function(x, y, ...) {
+
+    # extract slots
+    
+    diag <- attr(x, "diag")
+    byrow <- attr(x, "byrow")
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
+    
+
+    class(x)[1L] <- "ltMatrices"
+    stopifnot(is.numeric(y))
+    if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
+    N <- ifelse(d[1L] == 1, ncol(y), d[1L])
+    stopifnot(nrow(y) == d[2L])
+    stopifnot(ncol(y) == N)
+
+    ret <- Mult(x, y) + Mult(x, y, transpose = TRUE) - y * c(diagonals(x))
     return(ret)
 }
 
@@ -465,8 +499,7 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
         rownames(ret) <- dn[[2L]]
     } else {
         ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = dn[[2L]])
-        ret <- ltMatrices(ret, byrow = byrow_orig)
-        class(ret)[1L] <- "syMatrices"
+        ret <- as.syMatrices(ltMatrices(ret, byrow = byrow_orig))
     }
     return(ret)
 }

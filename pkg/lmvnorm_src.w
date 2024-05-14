@@ -195,6 +195,7 @@ Chapter~\ref{copula}.
 @{
 @<R Header@>
 @<ltMatrices@>
+@<syMatrices@>
 @<dim ltMatrices@>
 @<dimnames ltMatrices@>
 @<names ltMatrices@>
@@ -205,6 +206,7 @@ Chapter~\ref{copula}.
 @<diagonals ltMatrices@>
 @<diagonal matrix@>
 @<mult ltMatrices@>
+@<mult syMatrices@>
 @<solve ltMatrices@>
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
@@ -356,6 +358,19 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 }
 @}
 
+For the sake of completeness, we also add a constructor for symmetric
+multiple symmetric matrices
+
+@d syMatrices
+@{
+as.syMatrices <- function(object) {
+    stopifnot(inherits(object, "ltMatrices"))
+    class(object)[1L] <- "syMatrices"
+    return(object)
+}
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+    as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, names = names))
+@}
 
 The dimensions of such an object are always $N \times \J \times \J$ and are given by
 
@@ -417,9 +432,11 @@ lxd <- ltMatrices(xd, byrow = TRUE, diag = TRUE, names = nm)
 dim(lxd)
 dimnames(lxd)
 
-class(lxn) <- "syMatrices"
+lxn <- as.syMatrices(lxn)
 lxn
 @@
+
+
 
 \section{Printing}
 
@@ -682,7 +699,7 @@ triangular matrices, only for symmetric matrices)
 j <- sample(1:J)
 ltM <- ltMatrices(xn, byrow = FALSE)
 try(ltM[1:2, j])
-class(ltM) <- "syMatrices"
+ltM <- as.syMatrices(ltM)
 a <- as.array(ltM[1:2, j])
 b <- as.array(ltM)[j, j, 1:2]
 chk(a, b)
@@ -909,7 +926,7 @@ efficiently without copying data by leveraging the lower triangular structure of
 @d mult ltMatrices
 @{
 ### C %*% y
-Mult <- function(x, y, transpose = FALSE, ...)
+Mult <- function(x, y, ...)
     UseMethod("Mult")
 Mult.default <- function(x, y, transpose = FALSE, ...) {
     if (!transpose) return(x %*% y)
@@ -1133,6 +1150,57 @@ chk(Mult(lxn[rep(1, N),], y, transpose = TRUE),
 ### recycle y
 chk(Mult(lxn, y[,1], transpose = TRUE), 
     Mult(lxn, y[,rep(1, N)], transpose = TRUE))
+@@
+
+Now we can add a \code{Mult} method for multiple symmetric matrices, noting
+that for a symmetric matrix $\mC = \mA + \mA^\top - \text{diag}(\mA)$ with lower triangular
+part $\mA$ (including the diagonal) we can compute $\mC \yvec = \mA \yvec + \mA^\top \yvec - \text{diag}(\mA)
+\yvec$ using \code{Mult} applied to the lower trianular part:
+
+@d mult syMatrices
+@{
+Mult.syMatrices <- function(x, y, ...) {
+
+    @<extract slots@>
+
+    class(x)[1L] <- "ltMatrices"
+    stopifnot(is.numeric(y))
+    if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
+    N <- ifelse(d[1L] == 1, ncol(y), d[1L])
+    stopifnot(nrow(y) == d[2L])
+    stopifnot(ncol(y) == N)
+
+    ret <- Mult(x, y) + Mult(x, y, transpose = TRUE) - y * c(diagonals(x))
+    return(ret)
+}
+@}
+
+<<ex-symult>>=
+J <- 5
+N1 <- 10
+ex <- expression({
+  C <- syMatrices(matrix(runif(N2 * J * (J + c(-1, 1)[DIAG + 1L] ) / 2), ncol = N2), 
+                  diag = DIAG)
+  x <- matrix(runif(N1 * J), nrow = J)
+  Ca <- as.array(C)
+  p1 <- do.call("cbind", lapply(1:N1, function(i) 
+      Ca[,,c(1,i)[(N2 > 1) + 1]] %*% x[,i]))
+  p2 <- Mult(C, x)
+  chk(p1, p2)
+})
+
+N2 <- N1
+DIAG <- TRUE
+eval(ex)
+N2 <- 1
+DIAG <- TRUE
+eval(ex)
+N2 <- 1
+DIAG <- FALSE
+eval(ex)
+N2 <- N1
+DIAG <- FALSE
+eval(ex)
 @@
 
 \section{Solving Linear Systems}
@@ -1530,8 +1598,7 @@ with \proglang{R} interface
         rownames(ret) <- dn[[2L]]
     } else {
         ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = dn[[2L]])
-        ret <- ltMatrices(ret, byrow = byrow_orig)
-        class(ret)[1L] <- "syMatrices"
+        ret <- as.syMatrices(ltMatrices(ret, byrow = byrow_orig))
     }
     return(ret)
 }
