@@ -237,6 +237,7 @@ Chapter~\ref{copula}.
 @<solve@>
 @<tcrossprod@>
 @<mult@>
+@<mult transpose@>
 @<chol@>
 @<vec trick@>
 @}
@@ -900,26 +901,6 @@ If the number of columns of a matrix \code{y} is neither one nor $N$,
 we compute $\mC_i \yvec_j$ for all $i = 1, \dots, N$ and $j$. This is
 dangerous but needed in \code{cond\_mvnorm} later on.
 
-We start with $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), which can
-conveniently be computed in \proglang{R} (although no attention is paid to
-the lower triangular structure of \code{x})
-
-@d mult ltMatrices transpose
-@{
-if (transpose) {
-    J <- dim(x)[2L]
-    if (dim(x)[1L] == 1L) x <- x[rep(1, N),]
-    ax <- as.array(x)
-    ay <- array(y[rep(1:J, J),,drop = FALSE], dim = dim(ax), 
-                dimnames = dimnames(ax))
-    ret <- ay * ax
-    ### was: return(margin.table(ret, 2:3))
-    ret <- matrix(colSums(matrix(ret, nrow = dim(ret)[1L])), 
-                  nrow = dim(ret)[2L], ncol = dim(ret)[3L],
-                  dimnames = dimnames(ret)[-1L])
-    return(ret)
-}
-@}
 
 For $\mC_i \yvec_i$, we call \proglang{C} code computing the product
 efficiently without copying data by leveraging the lower triangular structure of
@@ -1065,7 +1046,70 @@ b <- as.array(Tcrossprod(lxn[i,]))[,,1]
 chk(a, b, check.attributes = FALSE)
 @@
 
-and for $\mC^\top_i \yvec_i$
+For $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), we add a dedicated
+\proglang{C} function paying attention to the lower triangular structure of
+\code{x}). This function assumes \code{x} in column-major order, so we
+coerce this object when necessary:
+
+@d mult ltMatrices transpose
+@{
+if (transpose) {
+    x <- ltMatrices(x, byrow = FALSE)
+
+    class(x) <- class(x)[-1L]
+    storage.mode(x) <- "double"
+    storage.mode(y) <- "double"
+
+    ret <- .Call(mvtnorm_R_ltMatrices_Mult_transpose, x, y, as.integer(N), 
+                 as.integer(d[2L]), as.logical(diag))
+
+    rownames(ret) <- dn[[2L]]
+    if (length(dn[[1L]]) == N)
+        colnames(ret) <- dn[[1L]]
+    return(ret)
+}
+@}
+
+before moving to \proglang{C} for the low-level computations:
+
+@d mult transpose
+@{
+SEXP R_ltMatrices_Mult_transpose (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag) {
+
+    SEXP ans;
+    double *dans, *dy = REAL(y);
+    int i, j, k, start;
+
+    @<RC input@>
+    @<C length@>
+
+    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
+    dans = REAL(ans);
+    
+    for (i = 0; i < iN; i++) {
+        start = 0;
+        for (j = 0; j < iJ; j++) {
+            dans[j] = 0.0;
+            if (Rdiag) {
+                dans[j] += dC[start] * dy[j];
+                start++;
+            } else {
+                dans[j] += dy[j]; 
+            }
+            for (k = 0; k < (iJ - j - 1); k++)
+                dans[j] += dC[start + k] * dy[j + k + 1];
+            start += iJ - j - 1;
+        }
+        dC += p;
+        dy += iJ;
+        dans += iJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+and wrap-up with some tests for computing $\mC^\top_i \yvec_i$
 
 <<ex-tmult>>=
 a <- Mult(lxn, y, transpose = TRUE)

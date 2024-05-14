@@ -355,16 +355,18 @@ Mult <- function(x, y, transpose = FALSE) {
     # mult ltMatrices transpose
     
     if (transpose) {
-        J <- dim(x)[2L]
-        if (dim(x)[1L] == 1L) x <- x[rep(1, N),]
-        ax <- as.array(x)
-        ay <- array(y[rep(1:J, J),,drop = FALSE], dim = dim(ax), 
-                    dimnames = dimnames(ax))
-        ret <- ay * ax
-        ### was: return(margin.table(ret, 2:3))
-        ret <- matrix(colSums(matrix(ret, nrow = dim(ret)[1L])), 
-                      nrow = dim(ret)[2L], ncol = dim(ret)[3L],
-                      dimnames = dimnames(ret)[-1L])
+        x <- ltMatrices(x, byrow = FALSE)
+
+        class(x) <- class(x)[-1L]
+        storage.mode(x) <- "double"
+        storage.mode(y) <- "double"
+
+        ret <- .Call(mvtnorm_R_ltMatrices_Mult_transpose, x, y, as.integer(N), 
+                     as.integer(d[2L]), as.logical(diag))
+
+        rownames(ret) <- dn[[2L]]
+        if (length(dn[[1L]]) == N)
+            colnames(ret) <- dn[[1L]]
         return(ret)
     }
     

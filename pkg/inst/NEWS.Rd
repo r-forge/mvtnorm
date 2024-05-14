@@ -2,10 +2,11 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-5 (2024-05-08)}{
+\section{Changes in Version 1.2-5 (2024-05-14)}{
   \subsection{Features}{
     \itemize{
       \item Update the \code{Using mvtnorm} package vignette and references therein.
+      \item Speed up \code{Mult(<ltMatrices>, transpose = TRUE)}.
     }
   }
 }
