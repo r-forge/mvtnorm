@@ -29,6 +29,7 @@ all:	lmvnorm_src.pdf
 clean:	
 	./cleanup
 	rm -rf *~
+	rm -rf *.~
 	rm -rf lmvnorm_src*.pdf
 	rm -rf lmvnorm_src.R
 	rm -rf lmvnorm_src.Rnw
