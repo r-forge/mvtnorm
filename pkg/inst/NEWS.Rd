@@ -7,6 +7,7 @@
     \itemize{
       \item Update the \code{Using mvtnorm} package vignette and references therein.
       \item Speed up \code{Mult(<ltMatrices>, transpose = TRUE)}.
+      \item Speed up \code{ldmvnorm()}.
       \item Add constructor \code{syMatrices} for multiple symmetric
             matrices and \code{as.syMatrices} for coercion from \code{ltMatrices}.
     }

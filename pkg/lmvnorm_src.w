@@ -220,6 +220,7 @@ Chapter~\ref{copula}.
 @<conditional@>
 @<check obs@>
 @<ldmvnorm@>
+@<colSumsdnorm ltMatrices@>
 @<sldmvnorm@>
 @<ldpmvnorm@>
 @<sldpmvnorm@>
@@ -236,6 +237,7 @@ Chapter~\ref{copula}.
 #include <Rdefines.h>
 #include <Rconfig.h>
 #include <R_ext/Lapack.h> /* for dtptri */
+@<colSumsdnorm@>
 @<solve@>
 @<tcrossprod@>
 @<mult@>
@@ -2537,6 +2539,50 @@ Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \m
 (\yvec_i - \muvec_i)^\top \mC_i^{-\top} \mC_i^{-1} (\yvec - \muvec_i).
 \end{eqnarray}
 
+We need to compute \code{colSums(dnorm(z, log = TRUE))} quite often. This
+turns out to be time-consuming and memory intensive, so we provide a small
+internal helper function focusing on the necessary computations.
+
+@d colSumsdnorm
+@{
+SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {
+    /* number of columns */
+    int iN = INTEGER(N)[0];
+    /* number of rows */
+    int iJ = INTEGER(J)[0];
+    SEXP ans;
+    double *dans, Jl2pi, *dz;
+
+    Jl2pi = iJ * log(2 * PI);
+    PROTECT(ans = allocVector(REALSXP, iN));
+    dans = REAL(ans);
+    dz = REAL(z);
+
+    for (int i = 0; i < iN; i++) {
+        dans[i] = 0.0;
+        for (int j = 0; j < iJ; j++)
+            dans[i] += pow(dz[j], 2);
+        dans[i] = - 0.5 * (Jl2pi + dans[i]);
+        dz += iJ;
+    }
+    
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+@d colSumsdnorm ltMatrices
+@{
+.colSumsdnorm <- function(z) {
+    stopifnot(is.numeric(z))
+    if (!is.matrix(z))
+        z <- matrix(z, nrow = 1, ncol = length(z))
+    ret <- .Call(mvtnorm_R_ltMatrices_colSumsdnorm, z, ncol(z), nrow(z))
+    names(ret) <- colnames(z)
+    return(ret)
+}
+@}
+
 @d ldmvnorm chol
 @{
 if (missing(chol))
@@ -2548,7 +2594,8 @@ N <- dim(chol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(chol)[2L]
 obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-logretval <- colSums(dnorm(solve(chol, obs), log = TRUE))
+z <- solve(chol, obs)
+logretval <- .colSumsdnorm(z)
 if (attr(chol, "diag"))
     logretval <- logretval - colSums(log(diagonals(chol)))
 @}
@@ -2568,9 +2615,10 @@ N <- dim(invchol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(invchol)[2L]
 obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-## use dnorm (gets the normalizing factors right)
 ## NOTE: obs is (J x N) 
-logretval <- colSums(dnorm(Mult(invchol, obs), log = TRUE))
+## dnorm takes rather long
+z <- Mult(invchol, obs)
+logretval <- .colSumsdnorm(z)
 ## note that the second summand gets recycled the correct number
 ## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
 if (attr(invchol, "diag"))

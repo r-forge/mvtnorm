@@ -30,6 +30,33 @@
 #include <Rdefines.h>
 #include <Rconfig.h>
 #include <R_ext/Lapack.h> /* for dtptri */
+/* colSumsdnorm */
+
+SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {
+    /* number of columns */
+    int iN = INTEGER(N)[0];
+    /* number of rows */
+    int iJ = INTEGER(J)[0];
+    SEXP ans;
+    double *dans, Jl2pi, *dz;
+
+    Jl2pi = iJ * log(2 * PI);
+    PROTECT(ans = allocVector(REALSXP, iN));
+    dans = REAL(ans);
+    dz = REAL(z);
+
+    for (int i = 0; i < iN; i++) {
+        dans[i] = 0.0;
+        for (int j = 0; j < iJ; j++)
+            dans[i] += pow(dz[j], 2);
+        dans[i] = - 0.5 * (Jl2pi + dans[i]);
+        dz += iJ;
+    }
+    
+    UNPROTECT(1);
+    return(ans);
+}
+
 /* solve */
 
 SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpose)

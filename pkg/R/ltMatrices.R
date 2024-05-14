@@ -974,7 +974,8 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
          N <- ifelse(N == 1, p, N)
          J <- dim(chol)[2L]
          obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-         logretval <- colSums(dnorm(solve(chol, obs), log = TRUE))
+         z <- solve(chol, obs)
+         logretval <- .colSumsdnorm(z)
          if (attr(chol, "diag"))
              logretval <- logretval - colSums(log(diagonals(chol)))
          
@@ -988,9 +989,10 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
          N <- ifelse(N == 1, p, N)
          J <- dim(invchol)[2L]
          obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-         ## use dnorm (gets the normalizing factors right)
          ## NOTE: obs is (J x N) 
-         logretval <- colSums(dnorm(Mult(invchol, obs), log = TRUE))
+         ## dnorm takes rather long
+         z <- Mult(invchol, obs)
+         logretval <- .colSumsdnorm(z)
          ## note that the second summand gets recycled the correct number
          ## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
          if (attr(invchol, "diag"))
@@ -1001,6 +1003,17 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
     names(logretval) <- colnames(obs)
     if (logLik) return(sum(logretval))
     return(logretval)
+}
+
+# colSumsdnorm ltMatrices
+
+.colSumsdnorm <- function(z) {
+    stopifnot(is.numeric(z))
+    if (!is.matrix(z))
+        z <- matrix(z, nrow = 1, ncol = length(z))
+    ret <- .Call(mvtnorm_R_ltMatrices_colSumsdnorm, z, ncol(z), nrow(z))
+    names(ret) <- colnames(z)
+    return(ret)
 }
 
 # sldmvnorm

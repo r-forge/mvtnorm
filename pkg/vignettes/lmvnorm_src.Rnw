@@ -458,6 +458,7 @@ multiple symmetric matrices
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@as.syMatrices <- function(object) {@\\
+\mbox{}\verb@    stopifnot(inherits(object, "ltMatrices"))@\\
 \mbox{}\verb@    class(object)[1L] <- "syMatrices"@\\
 \mbox{}\verb@    return(object)@\\
 \mbox{}\verb@}@\\
