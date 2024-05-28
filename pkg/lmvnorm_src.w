@@ -2869,14 +2869,16 @@ if (attr(chol, "diag")) {
     ac <- lower / c(dchol)
     bc <- upper / c(dchol)
     C <- Dchol(chol, D = 1 / dchol)
-    uC <- unclass(C)
-    if (J > 1) ### else: univariate problem; C is no longer used
+    if (J > 1) { ### else: univariate problem; C is no longer used
         uC <- Lower_tri(C)
     } else {
-        ac <- lower
-        bc <- upper
-        uC <- Lower_tri(chol)
+        uC <- unclass(C)
     }
+} else {
+    ac <- lower
+    bc <- upper
+    uC <- Lower_tri(chol)
+}
 @}
 
 

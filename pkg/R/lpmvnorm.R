@@ -85,14 +85,16 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol,
         ac <- lower / c(dchol)
         bc <- upper / c(dchol)
         C <- Dchol(chol, D = 1 / dchol)
-        uC <- unclass(C)
-        if (J > 1) ### else: univariate problem; C is no longer used
+        if (J > 1) { ### else: univariate problem; C is no longer used
             uC <- Lower_tri(C)
         } else {
-            ac <- lower
-            bc <- upper
-            uC <- Lower_tri(chol)
+            uC <- unclass(C)
         }
+    } else {
+        ac <- lower
+        bc <- upper
+        uC <- Lower_tri(chol)
+    }
     
     # check and / or set integration weights
     
@@ -180,14 +182,16 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
         ac <- lower / c(dchol)
         bc <- upper / c(dchol)
         C <- Dchol(chol, D = 1 / dchol)
-        uC <- unclass(C)
-        if (J > 1) ### else: univariate problem; C is no longer used
+        if (J > 1) { ### else: univariate problem; C is no longer used
             uC <- Lower_tri(C)
         } else {
-            ac <- lower
-            bc <- upper
-            uC <- Lower_tri(chol)
+            uC <- unclass(C)
         }
+    } else {
+        ac <- lower
+        bc <- upper
+        uC <- Lower_tri(chol)
+    }
     
     # check and / or set integration weights
     

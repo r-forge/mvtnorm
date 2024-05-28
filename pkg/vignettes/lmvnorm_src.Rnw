@@ -533,7 +533,7 @@ The names identifying rows and columns in each $\mC_i$ are
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@names.ltMatrices <- function(x) {@\\
-\mbox{}\verb@    return(rownames(unclass(x)))@\\
+\mbox{}\verb@    return(attr(x, "dimnames")[[1L]])@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@names.syMatrices <- names.ltMatrices@\\
 \mbox{}\verb@@{\NWsep}
@@ -620,7 +620,7 @@ triangular matrix to by interpreted as a symmetric matrix.
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    x <- unclass(x) #class(x) <- class(x)[-1L]@\\
+\mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    L <- matrix(1L, nrow = J, ncol = J)@\\
 \mbox{}\verb@    diag(L) <- 2L@\\
@@ -685,7 +685,7 @@ between the two forms
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    x <- unclass(x) #class(x) <- class(x)[-1L]@\\
+\mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    rL <- cL <- diag(0, nrow = J)@\\
 \mbox{}\verb@    rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)@\\
@@ -752,7 +752,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    x <- unclass(x) #class(x) <- class(x)[-1L]@\\
+\mbox{}\verb@    x <- unclass(x) @\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(j)) {@\\
 \mbox{}\verb@@\\
@@ -994,7 +994,7 @@ always returned as an $\J \times N$ matrix.
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb8}{8}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    x <- unclass(x) #class(x) <- class(x)[-1L]@\\
+\mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!diag) {@\\
 \mbox{}\verb@        ret <- matrix(1, nrow = J, ncol = ncol(x))@\\
@@ -1060,7 +1060,7 @@ defined without diagonal elements.
 \mbox{}\verb@    D <- diag(J)@\\
 \mbox{}\verb@    ret <- matrix(D[lower.tri(D, diag = TRUE)], @\\
 \mbox{}\verb@                  nrow = J * (J + 1) / 2, ncol = N)@\\
-\mbox{}\verb@    colnames(ret) <- colnames(unclass(x))@\\
+\mbox{}\verb@    colnames(ret) <- dimnames(x)[[1L]]@\\
 \mbox{}\verb@    ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = nm)@\\
@@ -1223,8 +1223,6 @@ efficiently without copying data by leveraging the lower triangular structure of
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize \NWlink{nuweb22}{22}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- ltMatrices(x, byrow = TRUE)@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@    # x <- unclass(x) #class(x) <- class(x)[-1L]@\\
 \mbox{}\verb@    if (!is.double(x)) storage.mode(x) <- "double"@\\
 \mbox{}\verb@    if (!is.double(y)) storage.mode(y) <- "double"@\\
 \mbox{}\verb@@\\
@@ -1403,8 +1401,6 @@ coerce this object when necessary:
 \mbox{}\verb@@\\
 \mbox{}\verb@if (transpose) {@\\
 \mbox{}\verb@    x <- ltMatrices(x, byrow = FALSE)@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@    # x <- unclass(x) #class(x) <- class(x)[-1L]@\\
 \mbox{}\verb@    if (!is.double(x)) storage.mode(x) <- "double"@\\
 \mbox{}\verb@    if (!is.double(y)) storage.mode(y) <- "double"@\\
 \mbox{}\verb@@\\
@@ -1569,7 +1565,7 @@ eval(ex)
 
 \section{Solving Linear Systems}
 
-Computeing $\mC_i^{-1}$ or solving $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
+Computing $\mC_i^{-1}$ or solving $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
 all $i = 1, \dots, N$ is another important task. We sometimes also need $\mC^\top_i \xvec_i =
 \yvec_i$ triggered by \code{transpose = TRUE}.
 
@@ -1583,7 +1579,7 @@ If \code{y} is not given, $\mC_i^{-1}$ is returned in
 the same order as the orginal matrix $\mC_i$. If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
-The start with some options for the \proglang{LAPACK} workhorses 
+We start with some options for the \proglang{LAPACK} workhorses 
 
 
 \begin{flushleft} \small
@@ -1622,7 +1618,7 @@ The start with some options for the \proglang{LAPACK} workhorses
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
-We first set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yvec_i$
+and set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yvec_i$
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap29}\raggedright\small
@@ -1671,7 +1667,7 @@ We first set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i =
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
-and second for $\mC_i^{-1}$
+and then for computing $\mC_i^{-1}$ explicitly
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap30}\raggedright\small
@@ -1741,7 +1737,6 @@ with \proglang{R} interface
 \mbox{}\verb@    d <- dim(x)@\\
 \mbox{}\verb@    J <- d[2L]@\\
 \mbox{}\verb@    dn <- dimnames(x)@\\
-\mbox{}\verb@    # x <- unclass(x)@\\
 \mbox{}\verb@    if (!is.double(x)) storage.mode(x) <- "double"@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(b)) {@\\
@@ -2043,7 +2038,6 @@ with \proglang{R} interface
 \mbox{}\verb@    dn <- dimnames(x)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- ltMatrices(x, byrow = FALSE)@\\
-\mbox{}\verb@    # x <- unclass(x) #class(x) <- class(x)[-1L]@\\
 \mbox{}\verb@    if (!is.double(x)) storage.mode(x) <- "double"@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- .Call(mvtnorm_R_ltMatrices_tcrossprod, x, as.integer(N), as.integer(J), @\\
@@ -3794,7 +3788,7 @@ For each $i = 1, \dots, N$, do
 \mbox{}\verb@    C <- Dchol(chol, D = 1 / dchol)@\\
 \mbox{}\verb@    uC <- unclass(C)@\\
 \mbox{}\verb@    if (J > 1) ### else: univariate problem; C is no longer used@\\
-\mbox{}\verb@       uC <- Lower_tri(C)@\\
+\mbox{}\verb@        uC <- Lower_tri(C)@\\
 \mbox{}\verb@    } else {@\\
 \mbox{}\verb@        ac <- lower@\\
 \mbox{}\verb@        bc <- upper@\\
