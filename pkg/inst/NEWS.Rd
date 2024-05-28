@@ -2,6 +2,19 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.2-6 (2024-05-28)}{
+  \subsection{Features}{
+    \itemize{
+      \item Speed up \code{solve(<ltMatrices>, ...)}.
+    }
+  }
+  \subsection{Bugfixes}{
+    \itemize{
+      \item Avoid unnecessary copying of large data objects.
+    }
+  }
+}
+
 \section{Changes in Version 1.2-5 (2024-05-18)}{
   \subsection{Features}{
     \itemize{
@@ -25,6 +38,7 @@
     }
   }
 }
+
 
 \section{Changes in Version 1.2-4 (2023-11-27)}{
   \subsection{Bugfixes}{

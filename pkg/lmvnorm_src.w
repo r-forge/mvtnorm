@@ -239,6 +239,7 @@ Chapter~\ref{copula}.
 #include <R_ext/Lapack.h> /* for dtptri */
 @<colSumsdnorm@>
 @<solve@>
+@<solve C@>
 @<tcrossprod@>
 @<mult@>
 @<mult transpose@>
@@ -380,8 +381,7 @@ The dimensions of such an object are always $N \times \J \times \J$ and are give
 @{
 dim.ltMatrices <- function(x) {
     J <- attr(x, "J")
-    class(x) <- class(x)[-1L]
-    return(c(ncol(x), J, J))
+    return(c(attr(x, "dim")[2L], J, J)) ### ncol(unclass(x)) may trigger gc
 }
 dim.syMatrices <- dim.ltMatrices
 @}
@@ -391,7 +391,7 @@ The corresponding dimnames can be extracted as
 @d dimnames ltMatrices
 @{
 dimnames.ltMatrices <- function(x)
-    return(list(colnames(unclass(x)), attr(x, "rcnames"), attr(x, "rcnames")))
+    return(list(attr(x, "dimnames")[[2L]], attr(x, "rcnames"), attr(x, "rcnames")))
 dimnames.syMatrices <- dimnames.ltMatrices
 @}
 
@@ -400,7 +400,7 @@ The names identifying rows and columns in each $\mC_i$ are
 @d names ltMatrices
 @{
 names.ltMatrices <- function(x) {
-    return(rownames(unclass(x)))
+    return(attr(x, "dimnames")[[1L]])
 }
 names.syMatrices <- names.ltMatrices
 @}
@@ -461,7 +461,7 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
 
     @<extract slots@>
 
-    class(x) <- class(x)[-1L]
+    x <- unclass(x)
 
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
@@ -513,7 +513,7 @@ between the two forms
 
     @<extract slots@>
 
-    class(x) <- class(x)[-1L]
+    x <- unclass(x)
 
     rL <- cL <- diag(0, nrow = J)
     rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)
@@ -567,7 +567,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 
     @<extract slots@>
 
-    class(x) <- class(x)[-1L]
+    x <- unclass(x) 
 
     if (!missing(j)) {
 
@@ -770,7 +770,7 @@ diagonals.ltMatrices <- function(x, ...) {
 
     @<extract slots@>
 
-    class(x) <- class(x)[-1L]
+    x <- unclass(x)
 
     if (!diag) {
         ret <- matrix(1, nrow = J, ncol = ncol(x))
@@ -823,7 +823,7 @@ defined without diagonal elements.
     D <- diag(J)
     ret <- matrix(D[lower.tri(D, diag = TRUE)], 
                   nrow = J * (J + 1) / 2, ncol = N)
-    colnames(ret) <- colnames(unclass(x))
+    colnames(ret) <- dimnames(x)[[1L]]
     ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)
 
     ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = nm)
@@ -948,10 +948,8 @@ Mult.ltMatrices <- function(x, y, transpose = FALSE, ...) {
     @<mult ltMatrices transpose@>
 
     x <- ltMatrices(x, byrow = TRUE)
-
-    class(x) <- class(x)[-1L]
-    storage.mode(x) <- "double"
-    storage.mode(y) <- "double"
+    if (!is.double(x)) storage.mode(x) <- "double"
+    if (!is.double(y)) storage.mode(y) <- "double"
 
     ret <- .Call(mvtnorm_R_ltMatrices_Mult, x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(diag))
@@ -1076,10 +1074,8 @@ coerce this object when necessary:
 @{
 if (transpose) {
     x <- ltMatrices(x, byrow = FALSE)
-
-    class(x) <- class(x)[-1L]
-    storage.mode(x) <- "double"
-    storage.mode(y) <- "double"
+    if (!is.double(x)) storage.mode(x) <- "double"
+    if (!is.double(y)) storage.mode(y) <- "double"
 
     ret <- .Call(mvtnorm_R_ltMatrices_Mult_transpose, x, y, as.integer(N), 
                  as.integer(d[2L]), as.logical(diag))
@@ -1207,7 +1203,7 @@ eval(ex)
 
 \section{Solving Linear Systems}
 
-Computeing $\mC_i^{-1}$ or solving $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
+Computing $\mC_i^{-1}$ or solving $\mC_i \xvec_i = \yvec_i$ for $\xvec_i$ for
 all $i = 1, \dots, N$ is another important task. We sometimes also need $\mC^\top_i \xvec_i =
 \yvec_i$ triggered by \code{transpose = TRUE}.
 
@@ -1221,135 +1217,103 @@ If \code{y} is not given, $\mC_i^{-1}$ is returned in
 the same order as the orginal matrix $\mC_i$. If
 all $\mC_i$ have unit diagonals, so will $\mC_i^{-1}$.
 
-@d setup memory
+We start with some options for the \proglang{LAPACK} workhorses 
+
+
+@d lapack options
 @{
-/* return object: include unit diagonal elements if Rdiag == 0 */
-
-/* add diagonal elements (expected by Lapack) */
-nrow = (Rdiag ? len : len + iJ);
-ncol = (p > 0 ? iN : 1);
-PROTECT(ans = allocMatrix(REALSXP, nrow, ncol));
-dans = REAL(ans);
-
-ansx = ans;
-dansx = dans;
-dy = dans;
-if (y != R_NilValue) {
-    dy = REAL(y);
-    PROTECT(ansx = allocMatrix(REALSXP, iJ, iN));
-    dansx = REAL(ansx);
-}
-@}
-
-The \proglang{LAPACK} functions \code{dtptri} and \code{dtpsv} assume that
-diagonal elements are present, even for unit diagonal matrices.
-
-@d copy elements
-@{
-/* copy data and insert unit diagonal elements when necessary */
-if (p > 0 || i == 0) {
-    jj = 0;
-    k = 0;
-    idx = 0;
-    j = 0;
-    while(j < len) {
-        if (!Rdiag && (jj == idx)) {
-            dans[jj] = 1.0;
-            idx = idx + (iJ - k);
-            k++;
-        } else {
-            dans[jj] = dC[j];
-            j++;
-        }
-        jj++;
-    }
-    if (!Rdiag) dans[idx] = 1.0;
-}
-
-if (y != R_NilValue) {
-    for (j = 0; j < iJ; j++)
-        dansx[j] = dy[j];
-}
-@}
-
-The \proglang{LAPACK} workhorses are called here
-
-@d call Lapack
-@{
-if (y == R_NilValue) {
-    /* compute inverse */
-    F77_CALL(dtptri)(&lo, &di, &iJ, dans, &info FCONE FCONE);
-    if (info != 0)
-        error("Cannot solve ltmatices");
+char di, lo = 'L', tr = 'N';
+if (Rdiag) {
+    /* non-unit diagonal elements */
+    di = 'N';
 } else {
-    /* solve linear system */
-    F77_CALL(dtpsv)(&lo, &tr, &di, &iJ, dans, dansx, &ONE FCONE FCONE FCONE);
-    dansx += iJ;
-    dy += iJ;
+    /* unit diagonal elements; NOTE: these diagonals 1s ARE always present but
+       ignored in the computations */
+    di = 'U';
 }
-@}
 
-@d return objects
-@{
-if (y == R_NilValue) {
-    UNPROTECT(1);
-    /* note: ans always includes diagonal elements */
-    return(ans);
+/* t(C) instead of C */
+Rboolean Rtranspose = asLogical(transpose);
+if (Rtranspose) {
+    /* t(C) */
+    tr = 'T';
 } else {
-    UNPROTECT(2);
-    return(ansx);
+    /* C */
+    tr = 'N';
 }
 @}
 
-We finally put everything together in a dedicated \proglang{C} function
+and set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yvec_i$
 
 @d solve
 @{
 SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpose)
 {
 
-    SEXP ans, ansx;
-    double *dans, *dansx, *dy;
-    int i, j, k, info, nrow, ncol, jj, idx, ONE = 1;
+    SEXP ans;
+    double *dans, *dy;
+    int i, j, info, ONE = 1;
 
     @<RC input@>
+    /* diagonal elements are always present */
+    if (!Rdiag) len += iJ;
     @<C length@>
+    @<lapack options@>
 
-    char di, lo = 'L', tr = 'N';
-    if (Rdiag) {
-        /* non-unit diagonal elements */
-        di = 'N';
-    } else {
-        /* unit diagonal elements */
-        di = 'U';
-    }
-
-    /* t(C) instead of C */
-    Rboolean Rtranspose = asLogical(transpose);
-    if (Rtranspose) {
-        /* t(C) */
-        tr = 'T';
-    } else {
-        /* C */
-        tr = 'N';
-    }
-
-    @<setup memory@>
+    dy = REAL(y);
+    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
+    dans = REAL(ans);
+    memcpy(dans, dy, iJ * iN * sizeof(double));
     
     /* loop over matrices, ie columns of C  / y */    
     for (i = 0; i < iN; i++) {
 
-        @<copy elements@>
-        @<call Lapack@>
-
-        /* next matrix */
-        if (p > 0) {
-            dans += nrow;
-            dC += p;
-        }
+        /* solve linear system */
+        F77_CALL(dtpsv)(&lo, &tr, &di, &iJ, dC, dans, &ONE FCONE FCONE FCONE);
+        dans += iJ;
+        dC += p;
     }
 
-    @<return objects@>
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+and then for computing $\mC_i^{-1}$ explicitly
+
+@d solve C
+@{
+SEXP R_ltMatrices_solve_C (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP transpose)
+{
+
+    SEXP ans;
+    double *dans;
+    int i, j, info, jj, idx, ONE = 1;
+
+    @<RC input@>
+    /* diagonal elements are always present */
+    if (!Rdiag) len += iJ;
+    @<C length@>
+    @<lapack options@>
+
+    PROTECT(ans = allocMatrix(REALSXP, len, iN));
+    dans = REAL(ans);
+    memcpy(dans, dC, iN * len * sizeof(double));
+    
+    /* loop over matrices, ie columns of C  / y */    
+    for (i = 0; i < iN; i++) {
+
+        /* compute inverse */
+        F77_CALL(dtptri)(&lo, &di, &iJ, dans, &info FCONE FCONE);
+        if (info != 0)
+            error("Cannot solve ltmatices");
+
+        dans += len;
+    }
+
+    UNPROTECT(1);
+    /* note: ans always includes diagonal elements */
+    return(ans);
 }
 @}
 
@@ -1363,18 +1327,19 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
 
     x <- ltMatrices(a, byrow = FALSE)
     diag <- attr(x, "diag")
+    ### dtptri and dtpsv require diagonal elements being present
+    if (!diag) diagonals(x) <- diagonals(x)
     d <- dim(x)
     J <- d[2L]
     dn <- dimnames(x)
-    class(x) <- class(x)[-1L]
-    storage.mode(x) <- "double"
+    if (!is.double(x)) storage.mode(x) <- "double"
 
     if (!missing(b)) {
-        if (!is.matrix(b)) b <- matrix(b, nrow = J, ncol = ncol(x))
+        if (!is.matrix(b)) b <- matrix(b, nrow = J, ncol = d[1L])
         stopifnot(nrow(b) == J)
         N <- ifelse(d[1L] == 1, ncol(b), d[1L])
         stopifnot(ncol(b) == N)
-        storage.mode(b) <- "double"
+        if (!is.double(b)) storage.mode(b) <- "double"
         ret <- .Call(mvtnorm_R_ltMatrices_solve, x, b, 
                      as.integer(N), as.integer(J), as.logical(diag),
                      as.logical(transpose))
@@ -1388,8 +1353,8 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     }
 
     if (transpose) stop("cannot compute inverse of t(a)")
-    ret <- try(.Call(mvtnorm_R_ltMatrices_solve, x, NULL,
-                     as.integer(ncol(x)), as.integer(J), as.logical(diag),
+    ret <- try(.Call(mvtnorm_R_ltMatrices_solve_C, x, 
+                     as.integer(d[1L]), as.integer(J), as.logical(diag),
                      as.logical(FALSE)))
     colnames(ret) <- dn[[1L]]
 
@@ -1585,13 +1550,12 @@ with \proglang{R} interface
     byrow_orig <- attr(x, "byrow")
     diag <- attr(x, "diag")
     d <- dim(x)
+    N <- d[1L]
     J <- d[2L]
     dn <- dimnames(x)
 
     x <- ltMatrices(x, byrow = FALSE)
-    class(x) <- class(x)[-1L]
-    N <- d[1L]
-    storage.mode(x) <- "double"
+    if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_ltMatrices_tcrossprod, x, as.integer(N), as.integer(J), 
                  as.logical(diag), as.logical(diag_only), as.logical(transpose))
@@ -1690,8 +1654,8 @@ chol.syMatrices <- function(x, ...) {
     x <- ltMatrices(unclass(x), diag = TRUE, 
                     byrow = byrow_orig, names = dnm[[2L]])
     x <- ltMatrices(x, byrow = FALSE)
-    class(x) <- class(x)[-1]
-    storage.mode(x) <- "double"
+    # class(x) <- class(x)[-1]
+    if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
@@ -1861,7 +1825,7 @@ nm <- attr(C, "rcnames")
 N <- dC[1L]
 J <- dC[2L]
 class(C) <- class(C)[-1L]
-storage.mode(C) <- "double"
+if (!is.double(C)) storage.mode(C) <- "double"
 @}
 
 \code{S} can be an \code{ltMatrices} object or a $\J^2 \times N$ matrix
@@ -1894,7 +1858,7 @@ if (SltM) {
         N <- ncol(S)
     }
 }
-storage.mode(S) <- "double"
+if (!is.double(S)) storage.mode(S) <- "double"
 @}
 
 \code{A} is an \code{ltMatrices} object
@@ -1912,7 +1876,7 @@ if (missing(A)) {
     dA <- dim(A)
     stopifnot(dC[2L] == dA[2L])
     class(A) <- class(A)[-1L]
-    storage.mode(A) <- "double"
+    if (!is.double(A)) storage.mode(A) <- "double"
     if (dC[1L] != dA[1L]) {
         if (dC[1L] == 1L)
             C <- C[, rep(1, N), drop = FALSE]
@@ -2907,7 +2871,7 @@ if (attr(chol, "diag")) {
     C <- Dchol(chol, D = 1 / dchol)
     uC <- unclass(C)
     if (J > 1) ### else: univariate problem; C is no longer used
-       uC <- Lower_tri(C)
+        uC <- Lower_tri(C)
     } else {
         ac <- lower
         bc <- upper
@@ -3275,7 +3239,7 @@ if (!is.null(w) && J > 1) {
     if (is.null(M))
         M <- ncol(w)
     stopifnot(ncol(w) %in% c(M, M * N))
-    storage.mode(w) <- "double"
+    if (!is.double(w)) storage.mode(w) <- "double"
 } else {
     if (J > 1) {
         if (is.null(M)) stop("either w or M must be specified")
