@@ -1069,7 +1069,7 @@ chk(a, b, check.attributes = FALSE)
 
 For $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), we add a dedicated
 \proglang{C} function paying attention to the lower triangular structure of
-\code{x}). This function assumes \code{x} in column-major order, so we
+\code{x}. This function assumes \code{x} in column-major order, so we
 coerce this object when necessary:
 
 @d mult ltMatrices transpose
