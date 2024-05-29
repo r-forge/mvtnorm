@@ -208,6 +208,7 @@ Chapter~\ref{copula}.
 @<mult ltMatrices@>
 @<mult syMatrices@>
 @<solve ltMatrices@>
+@<logdet ltMatrices@>
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
 @<chol syMatrices@>
@@ -240,6 +241,7 @@ Chapter~\ref{copula}.
 @<colSumsdnorm@>
 @<solve@>
 @<solve C@>
+@<logdet@>
 @<tcrossprod@>
 @<mult@>
 @<mult transpose@>
@@ -1353,9 +1355,9 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     }
 
     if (transpose) stop("cannot compute inverse of t(a)")
-    ret <- try(.Call(mvtnorm_R_ltMatrices_solve_C, x, 
-                     as.integer(d[1L]), as.integer(J), as.logical(diag),
-                     as.logical(FALSE)))
+    ret <- .Call(mvtnorm_R_ltMatrices_solve_C, x, 
+                 as.integer(d[1L]), as.integer(J), as.logical(diag),
+                 as.logical(FALSE))
     colnames(ret) <- dn[[1L]]
 
     if (!diag)
@@ -1401,6 +1403,79 @@ also for $\mC^\top_i \xvec_i = \yvec_i$
 <<ex-tsolve>>=
 chk(solve(lxn[1,], y, transpose = TRUE), 
     t(as.array(solve(lxn[1,]))[,,1]) %*% y)
+@@
+
+\section{Log-determinants}
+
+For computing the log-determinant $\log(\text{det}(\mC_i)) = \sum_{j = 1}^J \log(\diag(\mC_i)_j)$
+we sum over the log-diagonal entries of a lower triangular matrix in
+\proglang{C}, both when the data are stored in row- and column-major order:
+
+@d logdet
+@{
+SEXP R_ltMatrices_logdet (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP byrow) {
+
+    SEXP ans;
+    double *dans;
+    int i, j, k;
+
+    @<RC input@>
+    Rboolean Rbyrow = asLogical(byrow);
+    @<C length@>
+
+    PROTECT(ans = allocVector(REALSXP, iN));
+    dans = REAL(ans);
+
+    for (i = 0; i < iN; i++) {
+        dans[i] = 0.0;
+        if (Rdiag) {
+            k = 1;
+            for (j = 0; j < iJ; j++) {
+                dans[i] += log(dC[k - 1]);
+                k += (Rbyrow ? j + 2 : iJ - j);
+            }
+            dC += p;
+        }
+    }
+    
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+The \proglang{R} interface now simply calls this low-level function
+
+@d logdet ltMatrices
+@{
+logdet <- function(x) {
+
+    if (!inherits(x, "ltMatrices"))
+        stop("x is not an ltMatrices object")
+
+    byrow <- attr(x, "byrow")
+    diag <- attr(x, "diag")
+    d <- dim(x)
+    J <- d[2L]
+    dn <- dimnames(x)
+    if (!is.double(x)) storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_ltMatrices_logdet, x, 
+                 as.integer(d[1L]), as.integer(J), as.logical(diag), 
+                 as.logical(byrow))
+    names(ret) <- dn[[1L]]
+    return(ret) 
+}
+@}
+
+We test the functionality by extracting the diagonal elements from different
+matrices and summing over their logarithms
+
+<<ex-logdet>>=
+chk(logdet(lxn), colSums(log(diagonals(lxn))))
+chk(logdet(lxd[1,]), colSums(log(diagonals(lxd[1,]))))
+chk(logdet(lxd), colSums(log(diagonals(lxd))))
+lxd2 <- ltMatrices(lxd, byrow = !attr(lxd, "byrow"))
+chk(logdet(lxd2), colSums(log(diagonals(lxd2))))
 @@
 
 \section{Crossproducts}
@@ -2547,6 +2622,8 @@ SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {
 }
 @}
 
+The main part is now
+
 @d ldmvnorm chol
 @{
 if (missing(chol))
@@ -2561,8 +2638,11 @@ obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
 z <- solve(chol, obs)
 logretval <- .colSumsdnorm(z)
 if (attr(chol, "diag"))
-    logretval <- logretval - colSums(log(diagonals(chol)))
+    logretval <- logretval - logdet(chol)
 @}
+
+where we can use the efficient implementations of \code{solve} and
+\code{logdet}.
 
 If $\mL_i = \mC_i^{-1}$ is given, we obtain
 \begin{eqnarray*}
@@ -2586,7 +2666,7 @@ logretval <- .colSumsdnorm(z)
 ## note that the second summand gets recycled the correct number
 ## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
 if (attr(invchol, "diag"))
-    logretval <- logretval + colSums(log(diagonals(invchol)))
+    logretval <- logretval + logdet(invchol)
 @}
 
 The score function with respect to \code{obs} is

@@ -209,6 +209,58 @@ SEXP R_ltMatrices_solve_C (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP transpose)
     return(ans);
 }
 
+/* logdet */
+
+SEXP R_ltMatrices_logdet (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP byrow) {
+
+    SEXP ans;
+    double *dans;
+    int i, j, k;
+
+    /* RC input */
+    
+    /* pointer to C matrices */
+    double *dC = REAL(C);
+    /* number of matrices */
+    int iN = INTEGER(N)[0];
+    /* dimension of matrices */
+    int iJ = INTEGER(J)[0];
+    /* C contains diagonal elements */
+    Rboolean Rdiag = asLogical(diag);
+    /* p = J * (J - 1) / 2 + diag * J */
+    int len = iJ * (iJ - 1) / 2 + Rdiag * iJ;
+    
+    Rboolean Rbyrow = asLogical(byrow);
+    /* C length */
+    
+    int p;
+    if (LENGTH(C) == len)
+        /* C is constant for i = 1, ..., N */
+        p = 0;
+    else 
+        /* C contains C_1, ...., C_N */
+        p = len;
+    
+
+    PROTECT(ans = allocVector(REALSXP, iN));
+    dans = REAL(ans);
+
+    for (i = 0; i < iN; i++) {
+        dans[i] = 0.0;
+        if (Rdiag) {
+            k = 1;
+            for (j = 0; j < iJ; j++) {
+                dans[i] += log(dC[k - 1]);
+                k += (Rbyrow ? j + 2 : iJ - j);
+            }
+            dC += p;
+        }
+    }
+    
+    UNPROTECT(1);
+    return(ans);
+}
+
 /* tcrossprod */
 
 
