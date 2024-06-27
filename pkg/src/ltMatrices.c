@@ -28,8 +28,14 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
+#ifndef  USE_FC_LEN_T
+# define USE_FC_LEN_T
+#endif
 #include <Rconfig.h>
 #include <R_ext/Lapack.h> /* for dtptri */
+#ifndef FCONE
+# define FCONE
+#endif
 /* colSumsdnorm */
 
 SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {

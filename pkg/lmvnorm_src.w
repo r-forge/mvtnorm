@@ -236,8 +236,14 @@ Chapter~\ref{copula}.
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
+#ifndef  USE_FC_LEN_T
+# define USE_FC_LEN_T
+#endif
 #include <Rconfig.h>
 #include <R_ext/Lapack.h> /* for dtptri */
+#ifndef FCONE
+# define FCONE
+#endif
 @<colSumsdnorm@>
 @<solve@>
 @<solve C@>
@@ -2884,12 +2890,17 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 @o lpmvnorm.c -cc
 @{
 @<C Header@>
+#define STRICT_R_HEADERS
+#define USE_FC_LEN_T
 #include <R.h>
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <Rconfig.h>
 #include <R_ext/BLAS.h> /* for dtrmm */
+#ifndef FCONE
+# define FCONE
+#endif
 @<pnorm fast@>
 @<pnorm slow@>
 @<R lpmvnorm@>
