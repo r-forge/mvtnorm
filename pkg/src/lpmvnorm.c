@@ -24,17 +24,18 @@
     Edit 'lmvnorm_src.w' and run 'nuweb -r lmvnorm_src.w'
 */
 
-#define STRICT_R_HEADERS
-#define USE_FC_LEN_T
-#include <R.h>
-#include <Rmath.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
+#ifndef  USE_FC_LEN_T
+# define USE_FC_LEN_T
+#endif
 #include <Rconfig.h>
 #include <R_ext/BLAS.h> /* for dtrmm */
 #ifndef FCONE
 # define FCONE
 #endif
+#include <R.h>
+#include <Rmath.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
 /* pnorm fast */
 
 /* see https://doi.org/10.2139/ssrn.2842681  */

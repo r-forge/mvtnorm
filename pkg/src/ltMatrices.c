@@ -24,10 +24,6 @@
     Edit 'lmvnorm_src.w' and run 'nuweb -r lmvnorm_src.w'
 */
 
-#include <R.h>
-#include <Rmath.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
 #ifndef  USE_FC_LEN_T
 # define USE_FC_LEN_T
 #endif
@@ -36,6 +32,10 @@
 #ifndef FCONE
 # define FCONE
 #endif
+#include <R.h>
+#include <Rmath.h>
+#include <Rinternals.h>
+#include <Rdefines.h>
 /* colSumsdnorm */
 
 SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {
