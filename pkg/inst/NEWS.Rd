@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-6 (2024-05-28)}{
+\section{Changes in Version 1.2-6 (2024-08-12)}{
   \subsection{Features}{
     \itemize{
       \item Add \code{logdet()} function for computing log-determinants from
@@ -13,6 +13,7 @@
   \subsection{Bugfixes}{
     \itemize{
       \item Avoid unnecessary copying of large data objects.
+      \item -1/2 -> -1 for det(C) in lmvnorm_src vignette; spotted by Kurt Hornik
     }
   }
 }
