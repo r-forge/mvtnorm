@@ -2598,7 +2598,7 @@ SEXP R_ltMatrices_colSumsdnorm (SEXP z, SEXP N, SEXP J) {
     SEXP ans;
     double *dans, Jl2pi, *dz;
 
-    Jl2pi = iJ * log(2 * PI);
+    Jl2pi = iJ * log(2 * M_PI);
     PROTECT(ans = allocVector(REALSXP, iN));
     dans = REAL(ans);
     dz = REAL(z);
