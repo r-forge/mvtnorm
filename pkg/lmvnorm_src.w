@@ -4934,7 +4934,8 @@ This document uses the following matrix derivatives
 & = & (\mA \otimes \mI_J) + (\mI_J \otimes \mA) \frac{\partial \mA^\top}{\partial \mA} \\
 \frac{\partial \diag(\mA)}{\partial \mA} & = & \diag(\vecop(\mI_J)) \\
 \frac{\partial \mA}{\partial \mA} & = & \diag(I_{J^2}) \\
-\frac{\yvec^\top \mA \yvec}{\partial \yvec} & = & \yvec^\top (\mA + \mA^\top)
+\frac{\partial \yvec^\top \mA \yvec}{\partial \yvec} & = & \yvec^\top (\mA + \mA^\top) \\
+\frac{\partial \mB \mA}{\partial \mA} & = & (\mI_J \otimes \mB)
 \end{eqnarray*}
 and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \rX \mB)^\top$.
