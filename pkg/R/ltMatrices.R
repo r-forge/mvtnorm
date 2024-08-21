@@ -829,13 +829,16 @@ chol2pc <- function(x)
 
 aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
 
-    if (is_chol) { ### a is Cholesky of covariance
-        Sperm <- chol2cov(a)[,perm]
-        return(chol(Sperm))
-    }
+    stopifnot(inherits(a, "ltMatrices"))
+    J <- dim(a)[2L]
+    if (missing(perm)) return(a)
+    if (is.character(perm)) 
+        perm <- match(perm, dimnames(a)[[2L]])
+    stopifnot(all(perm %in% 1:J))
 
-    Sperm <- invchol2cov(a)[,perm]
-    chol2invchol(chol(Sperm))
+    if (is_chol) ### a is Cholesky of covariance
+        return(chol(chol2cov(a)[,perm]))
+    return(chol2invchol(chol(invchol2cov(a)[,perm])))
 }
 
 # marginal
@@ -851,6 +854,9 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
+
+    if (missing(which)) return(x)
+
     if (is.character(which)) which <- match(which, dimnames(x)[[2L]])
     stopifnot(all(which %in% 1:J))
     
@@ -860,9 +866,12 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        if (missing(chol)) x <- solve(x)
-        tmp <- base::chol(Tcrossprod(x)[,which])
-        if (missing(chol)) tmp <- solve(tmp)
+        if (missing(chol)) x <- invchol2chol(x)
+        ### note: aperm would work but computes
+        ### Cholesky of J^2, here only length(which)^2
+        ### is needed
+        tmp <- base::chol(chol2cov(x)[,which])
+        if (missing(chol)) tmp <- chol2invchol(tmp)
     }
 
     if (missing(chol))
@@ -887,6 +896,9 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
+
+    if (missing(which)) return(x)
+
     if (is.character(which)) which <- match(which, dimnames(x)[[2L]])
     stopifnot(all(which %in% 1:J))
     
@@ -915,7 +927,18 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     
     # cond general
     
+
     stopifnot(!center)
+
+    ### only works for N == 1
+    #perm <- c(which, (1:J)[!(1:J) %in% which])
+    #if (!missing(chol))
+    #    return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+    #                       which_given = 1:length(which), given = given, 
+    #                       center = center))
+    #return(cond_mvnorm(invchol = aperm(invchol, perm = perm, is_chol = FALSE),
+    #                   which_given = 1:length(which), given = given, 
+    #                   center = center))
 
     if (!missing(chol)) ### chol is C = Cholesky of covariance
         P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1

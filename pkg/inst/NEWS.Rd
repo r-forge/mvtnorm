@@ -2,6 +2,14 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.2-7 (2024-08-xx)}{
+  \subsection{Features}{
+    \itemize{
+      \item Vignette updates
+    }
+  }
+}
+
 \section{Changes in Version 1.2-6 (2024-08-17)}{
   \subsection{Features}{
     \itemize{
@@ -18,15 +26,6 @@
     }
   }
 }
-
-\section{Changes in Version 1.2-7 (2024-07-11)}{
-  \subsection{Bugfixes}{
-    \itemize{
-      \item Fix typos in package vignette.
-    }
-  }
-}
-
 
 \section{Changes in Version 1.2-5 (2024-05-18)}{
   \subsection{Features}{
