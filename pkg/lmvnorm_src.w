@@ -2255,19 +2255,35 @@ chk(unlist(PC), c(as.array(chol2pc(C))),
     check.attributes = FALSE)
 @@
 
-We also add an \code{aperm} method for class \code{ltMatrices}
+We also add an \code{aperm} method for class \code{ltMatrices}, 
+implementing the parameters ($\tilde{\mC}_i$ or $\tilde{\mL}_i$) 
+for permuted versions of the
+random vectors $\rY_i$. Let $\pi$ denote a permutation of $1, \dots, J$ and
+$\Pi$ the corresponding permutation matrix. Then, we have 
+$\Pi \rY_i \sim \ND_\J(\mathbf{0}_\J, \Pi \mC_i \mC_i^\top \Pi^\top)$.
+Unfortunately, $\Pi \mC_i$ is no longer lower triangular, so we have to find
+the Cholesky decompositon $\tilde{\mC}_i \tilde{\mC}_i^\top$ of $\Pi \mC_i \mC_i^\top
+\Pi^\top$. Of course, $\tilde{\mL}_i = \tilde{\mC}_i^{-1}$.
+
+The function \code{aperm}, with argument \code{perm} $=\pi$, 
+now computes the Cholesky factor $\tilde{\mC}_i$
+of the permuted covariance matrix, or the inverse thereof (in case
+\code{is\_chol = FALSE} was specified)
 
 @d aperm
 @{
 aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
 
-    if (is_chol) { ### a is Cholesky of covariance
-        Sperm <- chol2cov(a)[,perm]
-        return(chol(Sperm))
-    }
+    stopifnot(inherits(a, "ltMatrices"))
+    J <- dim(a)[2L]
+    if (missing(perm)) return(a)
+    if (is.character(perm)) 
+        perm <- match(perm, dimnames(a)[[2L]])
+    stopifnot(all(perm %in% 1:J))
 
-    Sperm <- invchol2cov(a)[,perm]
-    chol2invchol(chol(Sperm))
+    if (is_chol) ### a is Cholesky of covariance
+        return(chol(chol2cov(a)[,perm]))
+    return(chol2invchol(chol(invchol2cov(a)[,perm])))
 }
 @}
 
@@ -2290,6 +2306,7 @@ Marginal and conditional distributions from distributions $\rY_i \sim \ND_\J(\ma
 (\code{invchol} argument for $\mL_i$ for $i = 1, \dots, N$) shall be
 computed.
 
+
 @d mc input checks
 @{
 stopifnot(xor(missing(chol), missing(invchol)))
@@ -2299,6 +2316,9 @@ stopifnot(inherits(x, "ltMatrices"))
 
 N <- dim(x)[1L]
 J <- dim(x)[2L]
+
+if (missing(which)) return(x)
+
 if (is.character(which)) which <- match(which, dimnames(x)[[2L]])
 stopifnot(all(which %in% 1:J))
 @}
@@ -2320,9 +2340,12 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        if (missing(chol)) x <- solve(x)
-        tmp <- base::chol(Tcrossprod(x)[,which])
-        if (missing(chol)) tmp <- solve(tmp)
+        if (missing(chol)) x <- invchol2chol(x)
+        ### note: aperm would work but computes
+        ### Cholesky of J^2, here only length(which)^2
+        ### is needed
+        tmp <- base::chol(chol2cov(x)[,which])
+        if (missing(chol)) tmp <- chol2invchol(tmp)
     }
 
     if (missing(chol))
@@ -2351,7 +2374,18 @@ given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 We can implement this as
 @d cond general
 @{
+
 stopifnot(!center)
+
+### only works for N == 1
+#perm <- c(which, (1:J)[!(1:J) %in% which])
+#if (!missing(chol))
+#    return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+#                       which_given = 1:length(which), given = given, 
+#                       center = center))
+#return(cond_mvnorm(invchol = aperm(invchol, perm = perm, is_chol = FALSE),
+#                   which_given = 1:length(which), given = given, 
+#                   center = center))
 
 if (!missing(chol)) ### chol is C = Cholesky of covariance
     P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
@@ -2470,7 +2504,7 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 
 cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
 
-chk(cm, cmv$mean)
+chk(cm, cmv$mean, check.attributes = FALSE)
 chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
 
 Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
@@ -2483,7 +2517,7 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 
 cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
 
-chk(cm, cmv$mean)
+chk(cm, cmv$mean, check.attributes = FALSE)
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
