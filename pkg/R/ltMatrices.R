@@ -836,6 +836,10 @@ aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
         perm <- match(perm, dimnames(a)[[2L]])
     stopifnot(all(perm %in% 1:J))
 
+    args <- list(...)
+    if (length(args) > 0L)
+        warning("Additional arguments", names(args), "ignored")
+
     if (is_chol) ### a is Cholesky of covariance
         return(chol(chol2cov(a)[,perm]))
     return(chol2invchol(chol(invchol2cov(a)[,perm])))
@@ -1278,6 +1282,70 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
     ret$chol <- - vectrick(invchol, ret$invchol)
     ret$invchol <- NULL
+    return(ret)
+}
+
+# deperma
+
+deperma <- function(chol, permuted_chol, perm, score_schol) {
+
+    # deperma input checks chol
+    
+    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(inherits(permuted_chol, "ltMatrices"))
+    stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
+    J <- dim(chol)[2L]
+    stopifnot(attr(chol, "diag"))
+    byrow_orig <- attr(chol, "byrow")
+    
+    # deperma input checks perm
+    
+    if (missing(perm)) return(score_schol)
+    stopifnot(isTRUE(all.equal(sort(perm), 1:J)))
+    if (max(abs(perm - 1:J)) == 0) return(score_schol)
+    
+    # deperma input checks schol
+    
+    if (inherits(score_schol, "ltMatrices")) {
+        byrow_orig_s <- attr(score_schol, "byrow")
+        score_schol <- ltMatrices(score_schol, byrow = byrow_orig)
+        score_schol <- unclass(score_schol)
+    }
+    stopifnot(is.matrix(score_schol))
+    N <- ncol(score_schol)
+    stopifnot(J * (J + 1) / 2 == nrow(score_schol))
+    
+
+    # deperma indices
+    
+    idx <- matrix(1:J^2, nrow = J, ncol = J)
+    tidx <- c(t(idx))
+    ltT <- idx[lower.tri(idx, diag = TRUE)]
+    P <- matrix(0, nrow = J, ncol = J)
+    P[cbind(1:J, perm)] <- 1
+    ID <- diag(J)
+    IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1
+    
+
+    Nc <- dim(chol)[1L]
+    mC <- as.array(chol)[perm,,,drop = FALSE]
+    Ct <- as.array(permuted_chol)
+    ret <- lapply(1:Nc, function(i) {
+        B1 <- (mC[,,i] %x% ID) + (ID %x% mC[,,i])[,tidx]
+        #                                        ^^^^^^^ <- d t(A) / d A
+        B1 <- B1 %*% IDP
+        B2 <- (Ct[,,i] %x% ID) + (ID %x% Ct[,,i])[,tidx]
+        B2 <- B2[,ltT] ### relevant columns of B2
+        B3 <- try(solve(crossprod(B2), crossprod(B2, B1)))
+        if (inherits(B3, "try-error")) 
+            stop("failure computing permutation score")
+        if (Nc == 1L)
+            return(crossprod(score_schol, B3))
+        return(crossprod(score_schol[,i,drop], B3))
+    })
+    ret <- do.call("rbind", ret)
+    ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), 
+                      byrow = byrow_orig)
     return(ret)
 }
 

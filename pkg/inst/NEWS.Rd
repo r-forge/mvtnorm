@@ -5,7 +5,10 @@
 \section{Changes in Version 1.2-7 (2024-08-xx)}{
   \subsection{Features}{
     \itemize{
-      \item Vignette updates
+      \item Explain \code{cond\_mvnorm} a bit better in the vignette.
+      \item Add the possibility to compute log-likelihood and score
+            functions for permutations of variables (function \code{deperma})
+            and explain the derivation of the gradient in the vignette.
     }
   }
 }

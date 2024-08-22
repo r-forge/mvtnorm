@@ -212,7 +212,7 @@ Chapter~\ref{copula}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb111}{111}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
@@ -244,8 +244,9 @@ Chapter~\ref{copula}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb58}{58}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb97}{97}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb99}{99}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape standardize}\nobreak\ {\footnotesize \NWlink{nuweb101}{101}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape destandardize}\nobreak\ {\footnotesize \NWlink{nuweb103}{103}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape deperma}\nobreak\ {\footnotesize \NWlink{nuweb103b}{103b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape standardize}\nobreak\ {\footnotesize \NWlink{nuweb105}{105}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape destandardize}\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -262,7 +263,7 @@ Chapter~\ref{copula}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb108}{108}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -2686,7 +2687,7 @@ chk(A, B)
 @
 
 
-\section{Convenience Functions}
+\section{Convenience Functions} \label{sec:conv}
 
 
 We add a few convenience functions for computing covariance matrices
@@ -2958,6 +2959,10 @@ of the permuted covariance matrix, or the inverse thereof (in case
 \mbox{}\verb@    if (is.character(perm)) @\\
 \mbox{}\verb@        perm <- match(perm, dimnames(a)[[2L]])@\\
 \mbox{}\verb@    stopifnot(all(perm %in% 1:J))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    args <- list(...)@\\
+\mbox{}\verb@    if (length(args) > 0L)@\\
+\mbox{}\verb@        warning("Additional arguments", names(args), "ignored")@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (is_chol) ### a is Cholesky of covariance@\\
 \mbox{}\verb@        return(chol(chol2cov(a)[,perm]))@\\
@@ -3851,7 +3856,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb111}{111}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb71}{71}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
@@ -3870,7 +3875,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb108}{108}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -6327,24 +6332,26 @@ example, and the remaining two dimensions are only known in intervals. The
 log-likelihood and score function for $\muvec$ and $\mC$ are 
 
 <<ex-ML-cd>>=
+ic <- 1:2 	### position of continuous variables
 ll_cd <- function(parm, J) {
      m <- parm[1:J]             ### mean parameters
      parm <- parm[-(1:J)]       ### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     -ldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),], 
-                upper = upr[-(1:2),], mean = m, chol = C, 
-                w = W[-(1:2),,drop = FALSE], M = M)
+     -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
+                upper = upr[-ic,], mean = m, chol = C, 
+                w = W[-ic,,drop = FALSE], M = M)
 }
 sc_cd <- function(parm, J) {
     m <- parm[1:J]             ### mean parameters
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-    ret <- sldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),],
-                      upper = upr[-(1:2),], mean = m, chol = C, 
-                      w = W[-(1:2),,drop = FALSE], M = M)
-    return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
+    ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
+                      upper = upr[-ic,], mean = m, chol = C, 
+                      w = W[-ic,,drop = FALSE], M = M)
+    return(-c(rowSums(ret$mean),
+              rowSums(Lower_tri(ret$chol, diag = TRUE))))
 }
 @
 and the score function seems to be correct
@@ -6370,6 +6377,294 @@ op$par[1:J]
 mn
 @
 
+The one restriction in both \code{ldpmvnorm} and \code{sldpmvnorm} is that the
+continuous variables $\rY$ are ranked before the discrete variables $\rX$ in
+the observation $(\rY_i, \rX_i)$, and thus also in $(\muvec, \etavec)$ and $\mC$
+(the subscript $i$ is dropped from the parameters in the following paragraph
+to keep the notational complexity in check).
+
+While the means can be simply permuted, this is not the case for the
+Cholesky factor $\mC$ (see function \code{aperm} in
+Section~\ref{sec:conv}). Of course, we can simply permute $\hat{\mC}_i$, but
+we loose standard errors in this process. Alternatively, we can permute the
+order of variables in $\mC$ to our liking in the log-likelihood function (while
+keeping the original order of the observations and for the mean parameters)
+
+<<ex-ML-ap>>=
+### discrete variables first
+perm <- c((1:J)[-ic], ic)
+ll_ap <- function(parm, J) {
+     m <- parm[1:J]             ### mean parameters; NOT permuted
+     parm <- parm[-(1:J)]       ### chol parameters
+     C <- matrix(c(parm), ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+     Ct <- aperm(C, perm = perm, is_chol = TRUE)
+     -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
+                upper = upr[-ic,], mean = m, chol = Ct, 
+                w = W[-ic,,drop = FALSE], M = M)
+}
+@
+
+Unfortunately, this distorts the score function and we need to
+``de-permute'' the scores. We start with $\mSigma = \mC \mC^\top$, the
+Cholesky decomposition of a quadratic positive definite $\J \times \J$ covariance
+matrix. There are $\J \times (\J + 1) / 2$ parameters in the lower
+triagular part (including the diagonal) of $\mC$. Changing the order of the
+variables by a permutation $\pi$ with permutation matrix $\Pi$ gives a
+covariance $\Pi \mC \mC^\top \Pi^\top$. This is no longer a Cholesky
+decomposition, because $\Pi \mC$ is not lower triangular. The new
+decomposition is
+\begin{eqnarray*}
+\Pi \mC \mC^\top \Pi^\top = \tilde{\mC} \tilde{\mC}^\top
+\end{eqnarray*}
+($\tilde{\mC}$ is what \code{aperm} computes). As $\mC$, the Cholesky factor
+$\tilde{\mC}$ is lower triangular with $\J \times (\J + 1) / 2$ parameters.
+We could write this operation as a function
+\begin{eqnarray*}
+& & f_3: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times (\J + 1) / 2} \\
+& & f_3(\mC) = \tilde{\mC},
+\end{eqnarray*}
+where in fact $f_3 = $\code{aperm}, and we are interested in its gradient. Deriving the gradient of a Cholesky
+decomposition might seem hopeless (it certainly did, at least to me, for a
+very long time), but there is a trick. Let us define two other functions:
+\begin{eqnarray*}
+& & f_1: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times \J} \\
+& & f_1(\mC) = \Pi \mC \mC^\top \Pi^\top \\
+& & f_2: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times \J} \\
+& & f_2(\tilde{\mC}) = \tilde{\mC} \tilde{\mC}^\top.
+\end{eqnarray*}
+Exploiting the chain rule for the composition $f_1 = f_2 \circ f_3$, 
+we can write the gradient of $f_1$ as the product
+of the gradients of $f_2$ and $f_3$:
+\begin{eqnarray} \label{fm:chain}
+\frac{\partial f_1(\mC)}{\partial \mC} = 
+\frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} \frac{\partial f_3(\mC)}{\partial \mC}.
+\end{eqnarray}
+The last factor is what we want to compute. It turns out that it is simpler
+to compute the first two gradients first and, in a second step, to derive
+the last factor. In more detail
+\begin{eqnarray*}
+\frac{\partial f_1(\mC)}{\partial \mC} & = & \frac{\partial \Pi \mC \mC^\top \Pi^\top}{\partial \mC} \\ 
+& = & \frac{\partial \Pi \mC \mC^\top \Pi^\top}{\partial \Pi \mC} \frac{\partial \Pi \mC}{\mC} \\
+& = & \left( (\Pi \mC \otimes \mI_\J) + (\mI_\J \otimes \Pi \mC) \frac{\partial \mA^\top}{\partial \mA} \right) (\mI_\J \otimes \Pi).
+\end{eqnarray*}
+($\mA$ is a quadratic matrix and the gradient of its transpose is a
+permutation matrix). This analytic expression only contains known elements
+and can be computed. The same applies to
+\begin{eqnarray*}
+\frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} & = & \frac{\partial \tilde{\mC} \tilde{\mC}^\top \Pi}{\partial \tilde{\mC}} \\
+&= & (\tilde{\mC} \otimes \mI_\J) + (\mI_\J \otimes \tilde{\mC}) \frac{\partial \mA^\top}{\partial \mA}
+\end{eqnarray*}
+Both expressions treat $\mC$ or $\tilde{\mC}$ as full matrices, we are only
+interested in the score contributions by the $\J \times (\J + 1) / 2$ lower
+triangular elements. Using sloppy notation, we collect the relevant columns
+in matrices $\mB_1 = \frac{\partial f_1(\mC)}{\partial \mC} \in \R^{\J^2 \times \J \times (\J + 1) / 2}$
+and $\mB_2 = \frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} \in \R^{\J^2 \times \J \times (\J + 1) /
+2}$. For the last, unknown, factor, we write $\mB_3 = \frac{\partial f_3(\tilde{\mC})}{\partial \tilde{\mC}} \in
+\R^{\J \times (\J + 1) / 2 \times \J \times (\J + 1) / 2}$ and, with
+formula~(\ref{fm:chain}), $\mB_1 = \mB_2 \mB_3$. We can then solve for
+$\mB_3$ in the system $\mB_1^\top \mB_1 = \mB_1^\top \mB_2 \mB_3$.
+
+With \code{chol} $ = \mC$, \code{permuted\_chol} $ = \tilde{\mC}$,
+\code{perm} $ = \pi$ and score \code{score\_schol} of the log-likelihood $\ell(\tilde{\mC})$
+with respect to the parameters in $\tilde{\mC}$, we can now implement this
+de-permutation of the scores. Starting with some basic sanity checks, we
+require lower triangular matrix objects as inputs, with diagonal elements,
+and check if the dimensions match
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap124}\raggedright\small
+\NWtarget{nuweb102a}{} $\langle\,${\itshape deperma input checks chol}\nobreak\ {\footnotesize {102a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@stopifnot(inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(inherits(permuted_chol, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)@\\
+\mbox{}\verb@J <- dim(chol)[2L]@\\
+\mbox{}\verb@stopifnot(attr(chol, "diag"))@\\
+\mbox{}\verb@byrow_orig <- attr(chol, "byrow")@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb103b}{103b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+Regarding \code{perm}, we check if this is an actual permutation 
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap125}\raggedright\small
+\NWtarget{nuweb102b}{} $\langle\,${\itshape deperma input checks perm}\nobreak\ {\footnotesize {102b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (missing(perm)) return(score_schol)@\\
+\mbox{}\verb@stopifnot(isTRUE(all.equal(sort(perm), 1:J)))@\\
+\mbox{}\verb@if (max(abs(perm - 1:J)) == 0) return(score_schol)@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb103b}{103b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+The scores with respect to $\tilde{\mC}$ have been compute elsewhere, we
+just check the dimensions
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
+\NWtarget{nuweb102c}{} $\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize {102c}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (inherits(score_schol, "ltMatrices")) {@\\
+\mbox{}\verb@    byrow_orig_s <- attr(score_schol, "byrow")@\\
+\mbox{}\verb@    score_schol <- ltMatrices(score_schol, byrow = byrow_orig)@\\
+\mbox{}\verb@    score_schol <- unclass(score_schol)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@stopifnot(is.matrix(score_schol))@\\
+\mbox{}\verb@N <- ncol(score_schol)@\\
+\mbox{}\verb@stopifnot(J * (J + 1) / 2 == nrow(score_schol))@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb103b}{103b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+We'll have to loop over $i = 1, \dots, N$ eventually and therefore coerce
+all objects to objects of class \code{matrix}, there is no need to worry
+about row or column storage order. We set-up indices matrices and the
+permutation matrix $\Pi$
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
+\NWtarget{nuweb103a}{} $\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize {103a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@idx <- matrix(1:J^2, nrow = J, ncol = J)@\\
+\mbox{}\verb@tidx <- c(t(idx))@\\
+\mbox{}\verb@ltT <- idx[lower.tri(idx, diag = TRUE)]@\\
+\mbox{}\verb@P <- matrix(0, nrow = J, ncol = J)@\\
+\mbox{}\verb@P[cbind(1:J, perm)] <- 1@\\
+\mbox{}\verb@ID <- diag(J)@\\
+\mbox{}\verb@IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb103b}{103b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+and are now ready for the main course
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap128}\raggedright\small
+\NWtarget{nuweb103b}{} $\langle\,${\itshape deperma}\nobreak\ {\footnotesize {103b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@deperma <- function(chol, permuted_chol, perm, score_schol) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks chol}\nobreak\ {\footnotesize \NWlink{nuweb102a}{102a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks perm}\nobreak\ {\footnotesize \NWlink{nuweb102b}{102b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize \NWlink{nuweb102c}{102c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize \NWlink{nuweb103a}{103a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    Nc <- dim(chol)[1L]@\\
+\mbox{}\verb@    mC <- as.array(chol)[perm,,,drop = FALSE]@\\
+\mbox{}\verb@    Ct <- as.array(permuted_chol)@\\
+\mbox{}\verb@    ret <- lapply(1:Nc, function(i) {@\\
+\mbox{}\verb@        B1 <- (mC[,,i] %x% ID) + (ID %x% mC[,,i])[,tidx]@\\
+\mbox{}\verb@        #                                        ^^^^^^^ <- d t(A) / d A@\\
+\mbox{}\verb@        B1 <- B1 %*% IDP@\\
+\mbox{}\verb@        B2 <- (Ct[,,i] %x% ID) + (ID %x% Ct[,,i])[,tidx]@\\
+\mbox{}\verb@        B2 <- B2[,ltT] ### relevant columns of B2@\\
+\mbox{}\verb@        B3 <- try(solve(crossprod(B2), crossprod(B2, B1)))@\\
+\mbox{}\verb@        if (inherits(B3, "try-error")) @\\
+\mbox{}\verb@            stop("failure computing permutation score")@\\
+\mbox{}\verb@        if (Nc == 1L)@\\
+\mbox{}\verb@            return(crossprod(score_schol, B3))@\\
+\mbox{}\verb@        return(crossprod(score_schol[,i,drop], B3))@\\
+\mbox{}\verb@    })@\\
+\mbox{}\verb@    ret <- do.call("rbind", ret)@\\
+\mbox{}\verb@    ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), @\\
+\mbox{}\verb@                      byrow = byrow_orig)@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+We can now use this function to estimate the Cholesky factor for $(\rX, \rY)$
+when the data comes as $(\rY, \rX)$ (which is needed because continuous
+variables come first in our implementation of log-likehood and score
+function).
+
+<<ex-ML-ap-score>>=
+sc_ap <- function(parm, J) {
+    m <- parm[1:J]               ### mean parameters; NOT permuted
+    parm <- parm[-(1:J)]         ### chol parameters
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+    ### permutation
+    Ct <- aperm(C, perm = perm, is_chol = TRUE)
+    ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
+                      upper = upr[-ic,], mean = m, chol = Ct, 
+                      w = W[-ic,,drop = FALSE], M = M)
+    ### undo permutation for chol
+    retC <- deperma(chol = C, permuted_chol = Ct, 
+                   perm = perm, score_schol = ret$chol)
+    return(-c(rowSums(ret$mean),
+              rowSums(Lower_tri(retC, diag = TRUE))))
+}
+@
+and the score function seems to be correct
+<<ex-ML-ap-grad>>=
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll_ap, start, J = J), sc_ap(start, J = J), 
+        check.attributes = FALSE, tol = 1e-6)
+@
+
+We can now jointly estimate all model parameters via
+<<ex-ML-ap-optim->>=
+op <- optim(start, fn = ll_ap, gr = sc_ap, J = J, 
+            method = "L-BFGS-B", lower = llim, 
+            control = list(trace = TRUE))
+## estimated C for (X, Y)
+ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+           diag = TRUE, byrow = BYROW)
+## compare with true _permuted_ C for (X, Y)
+aperm(lt, perm = perm, is_chol = TRUE)
+@
+
+
 \chapter{Unstructured Gaussian Copula Estimation} \label{copula}
 
 With $\rZ \sim \ND_\J(0, \mI_\J)$ and $\rY = \tilde{\mC} \rZ \sim \ND_\J(0, \tilde{\mC}
@@ -6384,8 +6679,8 @@ $\diag(\mC \mC^\top)^{-\nicefrac{1}{2}}$ ensures that $\diag(\mSigma)
 \equiv 1$, that is, unconstained optimisation can be applied.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap124}\raggedright\small
-\NWtarget{nuweb101}{} $\langle\,${\itshape standardize}\nobreak\ {\footnotesize {101}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap129}\raggedright\small
+\NWtarget{nuweb105}{} $\langle\,${\itshape standardize}\nobreak\ {\footnotesize {105}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -6418,7 +6713,7 @@ all.equal(as.array(invchol2cov(standardize(invchol = L))),
           as.array(invchol2cor(standardize(invchol = L))))
 @
 
-The log-likelihood function is $\ell_i(\mC_i)$ (we omit $i$ in the
+The log-likelihood function is $\ell_i(\mC)$ (we omit $i$ in the
 following) and we assume the score
 \begin{eqnarray*}
 \frac{\partial \ell(\mC)}{\partial \mC}
@@ -6475,8 +6770,8 @@ If the model was parameterised in $\mL = \mC^{-1}$, we have \code{invchol} $
 respect to $\mC$).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap125}\raggedright\small
-\NWtarget{nuweb103}{} $\langle\,${\itshape destandardize}\nobreak\ {\footnotesize {103}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap130}\raggedright\small
+\NWtarget{nuweb107}{} $\langle\,${\itshape destandardize}\nobreak\ {\footnotesize {107}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -6627,8 +6922,8 @@ if (!inherits(sd_NPML, "try-error")) {
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
-\NWtarget{nuweb107}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {107}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap131}\raggedright\small
+\NWtarget{nuweb111}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {111}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -6664,8 +6959,8 @@ if (!inherits(sd_NPML, "try-error")) {
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
-\NWtarget{nuweb108}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {108}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap132}\raggedright\small
+\NWtarget{nuweb112}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {112}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -6740,7 +7035,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb108}{108}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb61b}{, 61b}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb61b}{, 61b}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb22a}{22a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22b}{22b}\NWlink{nuweb24}{, 24}\NWlink{nuweb27}{, 27}\NWlink{nuweb28}{, 28}\NWlink{nuweb31a}{, 31a}\NWlink{nuweb40a}{, 40a}.
 }
@@ -6767,7 +7062,12 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$convenience functions\nobreak\ {\footnotesize \NWlink{nuweb45}{45}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$crossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb36}{36}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
-\item $\langle\,$destandardize\nobreak\ {\footnotesize \NWlink{nuweb103}{103}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$deperma\nobreak\ {\footnotesize \NWlink{nuweb103b}{103b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$deperma indices\nobreak\ {\footnotesize \NWlink{nuweb103a}{103a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb103b}{103b}.}
+\item $\langle\,$deperma input checks chol\nobreak\ {\footnotesize \NWlink{nuweb102a}{102a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb103b}{103b}.}
+\item $\langle\,$deperma input checks perm\nobreak\ {\footnotesize \NWlink{nuweb102b}{102b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb103b}{103b}.}
+\item $\langle\,$deperma input checks schol\nobreak\ {\footnotesize \NWlink{nuweb102c}{102c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb103b}{103b}.}
+\item $\langle\,$destandardize\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb20}{20}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dim ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
@@ -6840,7 +7140,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb82c}{82c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb83b}{83b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb10}{10}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb61a}{, 61a}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb111}{111}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb61a}{, 61a}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61b}{61b}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb81}{81}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61b}{61b}.}
@@ -6867,7 +7167,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$solve ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb29}{29}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$standardise\nobreak\ {\footnotesize \NWlink{nuweb62b}{62b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71}{71}\NWlink{nuweb84}{, 84}.
 }
-\item $\langle\,$standardize\nobreak\ {\footnotesize \NWlink{nuweb101}{101}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$standardize\nobreak\ {\footnotesize \NWlink{nuweb105}{105}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$subset ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb13}{13}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$syMatrices\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$t(C) S t(A)\nobreak\ {\footnotesize \NWlink{nuweb39}{39}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb40a}{40a}.}

@@ -225,6 +225,7 @@ Chapter~\ref{copula}.
 @<sldmvnorm@>
 @<ldpmvnorm@>
 @<sldpmvnorm@>
+@<deperma@>
 @<standardize@>
 @<destandardize@>
 @}
@@ -2051,7 +2052,7 @@ chk(A, B)
 @@
 
 
-\section{Convenience Functions}
+\section{Convenience Functions} \label{sec:conv}
 
 
 We add a few convenience functions for computing covariance matrices
@@ -2280,6 +2281,10 @@ aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
     if (is.character(perm)) 
         perm <- match(perm, dimnames(a)[[2L]])
     stopifnot(all(perm %in% 1:J))
+
+    args <- list(...)
+    if (length(args) > 0L)
+        warning("Additional arguments", names(args), "ignored")
 
     if (is_chol) ### a is Cholesky of covariance
         return(chol(chol2cov(a)[,perm]))
@@ -4677,24 +4682,26 @@ example, and the remaining two dimensions are only known in intervals. The
 log-likelihood and score function for $\muvec$ and $\mC$ are 
 
 <<ex-ML-cd>>=
+ic <- 1:2 	### position of continuous variables
 ll_cd <- function(parm, J) {
      m <- parm[1:J]             ### mean parameters
      parm <- parm[-(1:J)]       ### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     -ldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),], 
-                upper = upr[-(1:2),], mean = m, chol = C, 
-                w = W[-(1:2),,drop = FALSE], M = M)
+     -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
+                upper = upr[-ic,], mean = m, chol = C, 
+                w = W[-ic,,drop = FALSE], M = M)
 }
 sc_cd <- function(parm, J) {
     m <- parm[1:J]             ### mean parameters
     parm <- parm[-(1:J)]       ### chol parameters
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-    ret <- sldpmvnorm(obs = Y[1:2,], lower = lwr[-(1:2),],
-                      upper = upr[-(1:2),], mean = m, chol = C, 
-                      w = W[-(1:2),,drop = FALSE], M = M)
-    return(-c(rowSums(ret$mean), rowSums(unclass(ret$chol))))
+    ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
+                      upper = upr[-ic,], mean = m, chol = C, 
+                      w = W[-ic,,drop = FALSE], M = M)
+    return(-c(rowSums(ret$mean),
+              rowSums(Lower_tri(ret$chol, diag = TRUE))))
 }
 @@
 and the score function seems to be correct
@@ -4719,6 +4726,229 @@ op$par[1:J]
 ## compare with true means
 mn
 @@
+
+The one restriction in both \code{ldpmvnorm} and \code{sldpmvnorm} is that the
+continuous variables $\rY$ are ranked before the discrete variables $\rX$ in
+the observation $(\rY_i, \rX_i)$, and thus also in $(\muvec, \etavec)$ and $\mC$
+(the subscript $i$ is dropped from the parameters in the following paragraph
+to keep the notational complexity in check).
+
+While the means can be simply permuted, this is not the case for the
+Cholesky factor $\mC$ (see function \code{aperm} in
+Section~\ref{sec:conv}). Of course, we can simply permute $\hat{\mC}_i$, but
+we loose standard errors in this process. Alternatively, we can permute the
+order of variables in $\mC$ to our liking in the log-likelihood function (while
+keeping the original order of the observations and for the mean parameters)
+
+<<ex-ML-ap>>=
+### discrete variables first
+perm <- c((1:J)[-ic], ic)
+ll_ap <- function(parm, J) {
+     m <- parm[1:J]             ### mean parameters; NOT permuted
+     parm <- parm[-(1:J)]       ### chol parameters
+     C <- matrix(c(parm), ncol = 1L)
+     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+     Ct <- aperm(C, perm = perm, is_chol = TRUE)
+     -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
+                upper = upr[-ic,], mean = m, chol = Ct, 
+                w = W[-ic,,drop = FALSE], M = M)
+}
+@@
+
+Unfortunately, this distorts the score function and we need to
+``de-permute'' the scores. We start with $\mSigma = \mC \mC^\top$, the
+Cholesky decomposition of a quadratic positive definite $\J \times \J$ covariance
+matrix. There are $\J \times (\J + 1) / 2$ parameters in the lower
+triagular part (including the diagonal) of $\mC$. Changing the order of the
+variables by a permutation $\pi$ with permutation matrix $\Pi$ gives a
+covariance $\Pi \mC \mC^\top \Pi^\top$. This is no longer a Cholesky
+decomposition, because $\Pi \mC$ is not lower triangular. The new
+decomposition is
+\begin{eqnarray*}
+\Pi \mC \mC^\top \Pi^\top = \tilde{\mC} \tilde{\mC}^\top
+\end{eqnarray*}
+($\tilde{\mC}$ is what \code{aperm} computes). As $\mC$, the Cholesky factor
+$\tilde{\mC}$ is lower triangular with $\J \times (\J + 1) / 2$ parameters.
+We could write this operation as a function
+\begin{eqnarray*}
+& & f_3: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times (\J + 1) / 2} \\
+& & f_3(\mC) = \tilde{\mC},
+\end{eqnarray*}
+where in fact $f_3 = $\code{aperm}, and we are interested in its gradient. Deriving the gradient of a Cholesky
+decomposition might seem hopeless (it certainly did, at least to me, for a
+very long time), but there is a trick. Let us define two other functions:
+\begin{eqnarray*}
+& & f_1: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times \J} \\
+& & f_1(\mC) = \Pi \mC \mC^\top \Pi^\top \\
+& & f_2: \R^{\J \times (\J + 1) / 2} \rightarrow \R^{\J \times \J} \\
+& & f_2(\tilde{\mC}) = \tilde{\mC} \tilde{\mC}^\top.
+\end{eqnarray*}
+Exploiting the chain rule for the composition $f_1 = f_2 \circ f_3$, 
+we can write the gradient of $f_1$ as the product
+of the gradients of $f_2$ and $f_3$:
+\begin{eqnarray} \label{fm:chain}
+\frac{\partial f_1(\mC)}{\partial \mC} = 
+\frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} \frac{\partial f_3(\mC)}{\partial \mC}.
+\end{eqnarray}
+The last factor is what we want to compute. It turns out that it is simpler
+to compute the first two gradients first and, in a second step, to derive
+the last factor. In more detail
+\begin{eqnarray*}
+\frac{\partial f_1(\mC)}{\partial \mC} & = & \frac{\partial \Pi \mC \mC^\top \Pi^\top}{\partial \mC} \\ 
+& = & \frac{\partial \Pi \mC \mC^\top \Pi^\top}{\partial \Pi \mC} \frac{\partial \Pi \mC}{\mC} \\
+& = & \left( (\Pi \mC \otimes \mI_\J) + (\mI_\J \otimes \Pi \mC) \frac{\partial \mA^\top}{\partial \mA} \right) (\mI_\J \otimes \Pi).
+\end{eqnarray*}
+($\mA$ is a quadratic matrix and the gradient of its transpose is a
+permutation matrix). This analytic expression only contains known elements
+and can be computed. The same applies to
+\begin{eqnarray*}
+\frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} & = & \frac{\partial \tilde{\mC} \tilde{\mC}^\top \Pi}{\partial \tilde{\mC}} \\
+&= & (\tilde{\mC} \otimes \mI_\J) + (\mI_\J \otimes \tilde{\mC}) \frac{\partial \mA^\top}{\partial \mA}
+\end{eqnarray*}
+Both expressions treat $\mC$ or $\tilde{\mC}$ as full matrices, we are only
+interested in the score contributions by the $\J \times (\J + 1) / 2$ lower
+triangular elements. Using sloppy notation, we collect the relevant columns
+in matrices $\mB_1 = \frac{\partial f_1(\mC)}{\partial \mC} \in \R^{\J^2 \times \J \times (\J + 1) / 2}$
+and $\mB_2 = \frac{\partial f_2(\tilde{\mC})}{\partial \tilde{\mC}} \in \R^{\J^2 \times \J \times (\J + 1) /
+2}$. For the last, unknown, factor, we write $\mB_3 = \frac{\partial f_3(\tilde{\mC})}{\partial \tilde{\mC}} \in
+\R^{\J \times (\J + 1) / 2 \times \J \times (\J + 1) / 2}$ and, with
+formula~(\ref{fm:chain}), $\mB_1 = \mB_2 \mB_3$. We can then solve for
+$\mB_3$ in the system $\mB_1^\top \mB_1 = \mB_1^\top \mB_2 \mB_3$.
+
+With \code{chol} $ = \mC$, \code{permuted\_chol} $ = \tilde{\mC}$,
+\code{perm} $ = \pi$ and score \code{score\_schol} of the log-likelihood $\ell(\tilde{\mC})$
+with respect to the parameters in $\tilde{\mC}$, we can now implement this
+de-permutation of the scores. Starting with some basic sanity checks, we
+require lower triangular matrix objects as inputs, with diagonal elements,
+and check if the dimensions match
+
+@d deperma input checks chol
+@{
+stopifnot(inherits(chol, "ltMatrices"))
+stopifnot(inherits(permuted_chol, "ltMatrices"))
+stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
+J <- dim(chol)[2L]
+stopifnot(attr(chol, "diag"))
+byrow_orig <- attr(chol, "byrow")
+@}
+
+Regarding \code{perm}, we check if this is an actual permutation 
+
+@d deperma input checks perm	
+@{
+if (missing(perm)) return(score_schol)
+stopifnot(isTRUE(all.equal(sort(perm), 1:J)))
+if (max(abs(perm - 1:J)) == 0) return(score_schol)
+@}
+
+The scores with respect to $\tilde{\mC}$ have been compute elsewhere, we
+just check the dimensions
+
+@d deperma input checks schol
+@{
+if (inherits(score_schol, "ltMatrices")) {
+    byrow_orig_s <- attr(score_schol, "byrow")
+    score_schol <- ltMatrices(score_schol, byrow = byrow_orig)
+    score_schol <- unclass(score_schol)
+}
+stopifnot(is.matrix(score_schol))
+N <- ncol(score_schol)
+stopifnot(J * (J + 1) / 2 == nrow(score_schol))
+@}
+
+We'll have to loop over $i = 1, \dots, N$ eventually and therefore coerce
+all objects to objects of class \code{matrix}, there is no need to worry
+about row or column storage order. We set-up indices matrices and the
+permutation matrix $\Pi$
+
+@d deperma indices
+@{
+idx <- matrix(1:J^2, nrow = J, ncol = J)
+tidx <- c(t(idx))
+ltT <- idx[lower.tri(idx, diag = TRUE)]
+P <- matrix(0, nrow = J, ncol = J)
+P[cbind(1:J, perm)] <- 1
+ID <- diag(J)
+IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1
+@}
+
+and are now ready for the main course
+
+@d deperma
+@{
+deperma <- function(chol, permuted_chol, perm, score_schol) {
+
+    @<deperma input checks chol@>
+    @<deperma input checks perm@>
+    @<deperma input checks schol@>
+
+    @<deperma indices@>
+
+    Nc <- dim(chol)[1L]
+    mC <- as.array(chol)[perm,,,drop = FALSE]
+    Ct <- as.array(permuted_chol)
+    ret <- lapply(1:Nc, function(i) {
+        B1 <- (mC[,,i] %x% ID) + (ID %x% mC[,,i])[,tidx]
+        #                                        ^^^^^^^ <- d t(A) / d A
+        B1 <- B1 %*% IDP
+        B2 <- (Ct[,,i] %x% ID) + (ID %x% Ct[,,i])[,tidx]
+        B2 <- B2[,ltT] ### relevant columns of B2
+        B3 <- try(solve(crossprod(B2), crossprod(B2, B1)))
+        if (inherits(B3, "try-error")) 
+            stop("failure computing permutation score")
+        if (Nc == 1L)
+            return(crossprod(score_schol, B3))
+        return(crossprod(score_schol[,i,drop], B3))
+    })
+    ret <- do.call("rbind", ret)
+    ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), 
+                      byrow = byrow_orig)
+    return(ret)
+}
+@}
+
+We can now use this function to estimate the Cholesky factor for $(\rX, \rY)$
+when the data comes as $(\rY, \rX)$ (which is needed because continuous
+variables come first in our implementation of log-likehood and score
+function).
+
+<<ex-ML-ap-score>>=
+sc_ap <- function(parm, J) {
+    m <- parm[1:J]               ### mean parameters; NOT permuted
+    parm <- parm[-(1:J)]         ### chol parameters
+    C <- matrix(c(parm), ncol = 1L)
+    C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
+    ### permutation
+    Ct <- aperm(C, perm = perm, is_chol = TRUE)
+    ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
+                      upper = upr[-ic,], mean = m, chol = Ct, 
+                      w = W[-ic,,drop = FALSE], M = M)
+    ### undo permutation for chol
+    retC <- deperma(chol = C, permuted_chol = Ct, 
+                   perm = perm, score_schol = ret$chol)
+    return(-c(rowSums(ret$mean),
+              rowSums(Lower_tri(retC, diag = TRUE))))
+}
+@@
+and the score function seems to be correct
+<<ex-ML-ap-grad>>=
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll_ap, start, J = J), sc_ap(start, J = J), 
+        check.attributes = FALSE, tol = 1e-6)
+@@
+
+We can now jointly estimate all model parameters via
+<<ex-ML-ap-optim->>=
+op <- optim(start, fn = ll_ap, gr = sc_ap, J = J, 
+            method = "L-BFGS-B", lower = llim, 
+            control = list(trace = TRUE))
+## estimated C for (X, Y)
+ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
+           diag = TRUE, byrow = BYROW)
+## compare with true _permuted_ C for (X, Y)
+aperm(lt, perm = perm, is_chol = TRUE)
+@@
+
 
 \chapter{Unstructured Gaussian Copula Estimation} \label{copula}
 
@@ -4755,7 +4985,7 @@ all.equal(as.array(invchol2cov(standardize(invchol = L))),
           as.array(invchol2cor(standardize(invchol = L))))
 @@
 
-The log-likelihood function is $\ell_i(\mC_i)$ (we omit $i$ in the
+The log-likelihood function is $\ell_i(\mC)$ (we omit $i$ in the
 following) and we assume the score
 \begin{eqnarray*}
 \frac{\partial \ell(\mC)}{\partial \mC}
