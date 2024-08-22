@@ -913,32 +913,52 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
         ### which is 1:j
         L <- if (missing(invchol)) solve(chol) else invchol
         tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which))
-        centerm <- Mult(L, rbind(given, tmp))[-which,,drop = FALSE]
+        centerm <- Mult(L, rbind(given, tmp))               
+        ### if ncol(given) is not N = dim(L)[1L] > 1, then
+        ### solve() below won't work and we loop over
+        ### columns of centerm
+        if (dim(L)[1L] > 1 && ncol(given) != N) {
+            centerm <- lapply(1:ncol(centerm), function(j)
+                matrix(centerm[,j], nrow = J, ncol = N)[-which,,drop = FALSE]
+            )
+        } else {
+            centerm <- centerm[-which,,drop = FALSE]
+        }
         L <- L[,-which]
+        ct <- centerm
+        if (!is.matrix(ct)) ct <- do.call("rbind", ct)
+        if (is.matrix(centerm)) {
+            m <- -solve(L, centerm)
+        } else {
+            m <- do.call("rbind", lapply(centerm, function(cm) -solve(L, cm)))
+        }
         if (missing(invchol)) {
             if (center)
-                return(list(center = centerm, chol = solve(L)))
-            return(list(mean = -solve(L, centerm), chol = solve(L)))
+                return(list(center = ct, chol = solve(L)))
+            return(list(mean = m, chol = solve(L)))
         }
         if (center)
-            return(list(center = centerm, invchol = L))
-        return(list(mean = -solve(L, centerm), invchol = L))
+            return(list(center = ct, invchol = L))
+        return(list(mean = m, invchol = L))
     }
     
+
+    ### general with center = TRUE => permute first and go simple
+    if (center) {
+        perm <- c(which, (1:J)[!(1:J) %in% which])
+        if (!missing(chol))
+        return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+                           which_given = 1:length(which), given = given,
+                           center = center))
+        return(cond_mvnorm(invchol = aperm(invchol, perm = perm, 
+                                           is_chol = FALSE),
+                           which_given = 1:length(which), given = given,
+                           center = center))
+    }
+
     # cond general
     
-
     stopifnot(!center)
-
-    ### only works for N == 1
-    #perm <- c(which, (1:J)[!(1:J) %in% which])
-    #if (!missing(chol))
-    #    return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
-    #                       which_given = 1:length(which), given = given, 
-    #                       center = center))
-    #return(cond_mvnorm(invchol = aperm(invchol, perm = perm, is_chol = FALSE),
-    #                   which_given = 1:length(which), given = given, 
-    #                   center = center))
 
     if (!missing(chol)) ### chol is C = Cholesky of covariance
         P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1

@@ -917,7 +917,7 @@ I5
 @@
 
 
-\section{Multiplication}
+\section{Multiplication} \label{sec:multiplication}
 
 Products $\mC_i \yvec_i$ or $\mC^\top_i \yvec_i$ with $\yvec_i \in \R^\J$ for $i = 1, \dots,
 N$ can be computed with $\code{y}$ being an $J \times N$ matrix of
@@ -926,7 +926,7 @@ columns-wise stacked vectors $(\yvec_1 \mid \yvec_2 \mid \dots \mid
 
 If the number of columns of a matrix \code{y} is neither one nor $N$, 
 we compute $\mC_i \yvec_j$ for all $i = 1, \dots, N$ and $j$. This is
-dangerous but needed in \code{cond\_mvnorm} later on.
+dangerous but needed in Section~\ref{sec:margcond} for defining \code{cond\_mvnorm} later on.
 
 
 For $\mC_i \yvec_i$, we call \proglang{C} code computing the product
@@ -2299,7 +2299,7 @@ Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @@
 
-\section{Marginal and Conditional Normal Distributions}
+\section{Marginal and Conditional Normal Distributions} \label{sec:margcond}
 
 Marginal and conditional distributions from distributions $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
 (\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mL_i^{-1} \mL_i^{-\top})$
@@ -2374,18 +2374,7 @@ given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 We can implement this as
 @d cond general
 @{
-
 stopifnot(!center)
-
-### only works for N == 1
-#perm <- c(which, (1:J)[!(1:J) %in% which])
-#if (!missing(chol))
-#    return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
-#                       which_given = 1:length(which), given = given, 
-#                       center = center))
-#return(cond_mvnorm(invchol = aperm(invchol, perm = perm, is_chol = FALSE),
-#                   which_given = 1:length(which), given = given, 
-#                   center = center))
 
 if (!missing(chol)) ### chol is C = Cholesky of covariance
     P <- Crossprod(solve(chol)) ### P = t(L) %*% L with L = C^-1
@@ -2439,19 +2428,43 @@ if (which[1] == 1L && (length(which) == 1L ||
     ### which is 1:j
     L <- if (missing(invchol)) solve(chol) else invchol
     tmp <- matrix(0, ncol = ncol(given), nrow = J - length(which))
-    centerm <- Mult(L, rbind(given, tmp))[-which,,drop = FALSE]
+    centerm <- Mult(L, rbind(given, tmp))		
+    ### if ncol(given) is not N = dim(L)[1L] > 1, then
+    ### solve() below won't work and we loop over
+    ### columns of centerm
+    if (dim(L)[1L] > 1 && ncol(given) != N) {
+        centerm <- lapply(1:ncol(centerm), function(j)
+            matrix(centerm[,j], nrow = J, ncol = N)[-which,,drop = FALSE]
+        )
+    } else {
+        centerm <- centerm[-which,,drop = FALSE]
+    }
     L <- L[,-which]
+    ct <- centerm
+    if (!is.matrix(ct)) ct <- do.call("rbind", ct)
+    if (is.matrix(centerm)) {
+        m <- -solve(L, centerm)
+    } else {
+        m <- do.call("rbind", lapply(centerm, function(cm) -solve(L, cm)))
+    }
     if (missing(invchol)) {
         if (center)
-            return(list(center = centerm, chol = solve(L)))
-        return(list(mean = -solve(L, centerm), chol = solve(L)))
+            return(list(center = ct, chol = solve(L)))
+        return(list(mean = m, chol = solve(L)))
     }
     if (center)
-        return(list(center = centerm, invchol = L))
-    return(list(mean = -solve(L, centerm), invchol = L))
+        return(list(center = ct, invchol = L))
+    return(list(mean = m, invchol = L))
 }
 @}
 
+Note that we could have avoided the general case altogether by first
+computing a Cholesky decomposition of the permuted covariance matrix (such
+that the conditioning variables come first). The code above only
+decomposes the marginal (and thus lower-dimensional) covariance. However, we
+didn't implement the \code{center = TRUE} case, so we can fall back on the
+permuted version if this option is requested. Putting everything together
+gives
 
 @d conditional
 @{
@@ -2464,6 +2477,20 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     stopifnot(is.matrix(given) && nrow(given) == length(which))
 
     @<cond simple@>
+
+    ### general with center = TRUE => permute first and go simple
+    if (center) {
+        perm <- c(which, (1:J)[!(1:J) %in% which])
+        if (!missing(chol))
+        return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+                           which_given = 1:length(which), given = given,
+                           center = center))
+        return(cond_mvnorm(invchol = aperm(invchol, perm = perm, 
+                                           is_chol = FALSE),
+                           which_given = 1:length(which), given = given,
+                           center = center))
+    }
+
     @<cond general@>
 
     chol <- base::chol(S)
@@ -2504,7 +2531,7 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 
 cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
 
-chk(cm, cmv$mean, check.attributes = FALSE)
+chk(cm, cmv$mean)
 chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
 
 Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
@@ -2517,7 +2544,7 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 
 cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
 
-chk(cm, cmv$mean, check.attributes = FALSE)
+chk(cm, cmv$mean)
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
@@ -4394,10 +4421,26 @@ Interval-censoring in the response could have been handled by some Tobit model, 
 what about interval-censoring in the explanatory variables? Based on the
 multivariate distribution just estimated, we can obtain the regression
 coefficients $\beta_j$ as
-
 <<regressions>>=
 c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 1))$mean)
 @@
+Alternatively, we can compute these regressions from a permuted Cholesky
+factor (this goes into the ``simple'' conditional distribution in Section~\ref{sec:margcond})
+<<regressionsC>>=
+c(cond_mvnorm(chol = aperm(C, perm = c(2:J, 1), is_chol = TRUE), 
+              which = 1:(J - 1), given = diag(J - 1))$mean)
+@@
+or, as a third option, from the last row of the precision matrix of the 
+permuted Cholesky factor
+<<regressionsP>>=
+x <- as.array(chol2pre(aperm(C, perm = c(2:J, 1), is_chol = TRUE)))[J,,1]
+c(-x[-J] / x[J])
+@@
+In higher dimensions, the first option is to be preferred, because it
+only involves computing the Cholesky decomposition of a $(\J - 1) \times (\J -
+1)$ matrix, whereas the latter two options are based on a decomposition of
+the full $\J \times \J$ covariance matrix.
+
 We can compare these estimated regression coefficients with those obtained
 from a linear model fitted to the exact observations
 <<lm-ex>>=

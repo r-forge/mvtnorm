@@ -1439,6 +1439,17 @@ converged
 +     1))$mean)
 [1]  0.2602003  0.2270392 -0.1298560
 
+> c(cond_mvnorm(chol = aperm(C, perm = c(2:J, 1), is_chol = TRUE), 
++     which = 1:(J - 1), given = diag(J - 1))$mean)
+[1]  0.2602003  0.2270392 -0.1298560
+
+> x <- as.array(chol2pre(aperm(C, perm = c(2:J, 1), 
++     is_chol = TRUE)))[J, , 1]
+
+> c(-x[-J]/x[J])
+         2          3          4 
+ 0.2602003  0.2270392 -0.1298560 
+
 > dY <- as.data.frame(t(Y))
 
 > colnames(dY) <- paste0("Y", 1:J)
@@ -1675,4 +1686,4 @@ Petal.Width    0.78190591 -0.24142185    0.8713759   1.0000000
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 10.496   0.083  10.660 
+ 10.124   0.047  10.173 
