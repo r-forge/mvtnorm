@@ -4825,11 +4825,14 @@ and check if the dimensions match
 @d deperma input checks chol
 @{
 stopifnot(inherits(chol, "ltMatrices"))
+byrow_orig <- attr(chol, "byrow")
+chol <- ltMatrices(chol, byrow = FALSE)
 stopifnot(inherits(permuted_chol, "ltMatrices"))
+permuted_chol <- ltMatrices(permuted_chol, byrow = FALSE)
 stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
 J <- dim(chol)[2L]
 stopifnot(attr(chol, "diag"))
-byrow_orig <- attr(chol, "byrow")
+INVCHOL <- !missing(invchol)
 @}
 
 Regarding \code{perm}, we check if this is an actual permutation 
@@ -4842,14 +4845,21 @@ if (max(abs(perm - 1:J)) == 0) return(score_schol)
 @}
 
 The scores with respect to $\tilde{\mC}$ have been compute elsewhere, we
-just check the dimensions
+just check the dimensions. In case we were given the scores with respect to
+$\mL$, we first compute the scores with respect to $\mC$ (as we were lazy
+and only derived the results for $\mC$). As in \code{standardize}, the
+argument \code{score\_schol} gives the score with respect to $\mC$ and it is
+the user's responsibility to provide this quantity (even when \code{invchol}
+is given).
 
 @d deperma input checks schol
 @{
 if (inherits(score_schol, "ltMatrices")) {
     byrow_orig_s <- attr(score_schol, "byrow")
-    score_schol <- ltMatrices(score_schol, byrow = byrow_orig)
-    score_schol <- unclass(score_schol)
+    score_schol <- ltMatrices(score_schol, byrow = FALSE)
+    ### don't do this here!
+    ### if (INVCHOL) score_schol <- -vectrick(permuted_invchol, score_schol)
+    score_schol <- unclass(score_schol) ### this preserves byrow
 }
 stopifnot(is.matrix(score_schol))
 N <- ncol(score_schol)
@@ -4863,17 +4873,18 @@ permutation matrix $\Pi$
 
 @d deperma indices
 @{
-idx <- matrix(1:J^2, nrow = J, ncol = J)
+idx <- matrix(1:J^2, nrow = J, ncol = J)	### assuming byrow = TRUE
 tidx <- c(t(idx))
 ltT <- idx[lower.tri(idx, diag = TRUE)]
 P <- matrix(0, nrow = J, ncol = J)
 P[cbind(1:J, perm)] <- 1
 ID <- diag(J)
-IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1
+IDP <- (ID %x% P)
 @}
 
 and are now ready for the main course. We are gentle and also allow
-\code{invchol}$ = \mL$ as input
+\code{invchol}$ = \mL$ as input, and we clean-up by post-differentiation at
+the very end in this case.
 
 @d deperma
 @{
@@ -4894,6 +4905,7 @@ deperma <- function(chol = solve(invchol),
         B1 <- (mC[,,i] %x% ID) + (ID %x% mC[,,i])[,tidx]
         #                                        ^^^^^^^ <- d t(A) / d A
         B1 <- B1 %*% IDP
+        B1 <- B1[,ltT] ### relevant columns of B1
         B2 <- (Ct[,,i] %x% ID) + (ID %x% Ct[,,i])[,tidx]
         B2 <- B2[,ltT] ### relevant columns of B2
         B3 <- try(solve(crossprod(B2), crossprod(B2, B1)))
@@ -4904,14 +4916,10 @@ deperma <- function(chol = solve(invchol),
         return(crossprod(score_schol[,i,drop], B3))
     })
     ret <- do.call("rbind", ret)
-    ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), 
-                      byrow = byrow_orig)
-
-    ### if invchol was given, post-differentiate
-    if (!missing(invchol))
-        ### this means: ret <- - vectrick(chol, ret, chol)
-        ret <- - vectrick(chol, ret)
-
+    ret <-ltMatrices(t(ret), diag = TRUE, byrow = FALSE)
+    if (INVCHOL)
+        ret <- -vectrick(chol, ret)
+    ret <- ltMatrices(ret, byrow = byrow_orig_s)
     return(ret)
 }
 @}
@@ -5047,8 +5055,9 @@ thus
 when $\bvec = \vecop(\mB)$. These scores are implemented in
 \code{destandardize} with \code{chol} $ = \mC$ and \code{score\_schol} $= \mT$.
 If the model was parameterised in $\mL = \mC^{-1}$, we have \code{invchol} $
-= \mL$, however, we would still need to compute $\mT$ (the score with
-respect to $\mC$).
+= \mL$, however, we would still need to compute $\mT$ (\code{score\_schol}, the score with
+respect to $\mC$, and it is the user's responsibility to provide this
+quantity).
 
 @d destandardize
 @{
@@ -5060,6 +5069,8 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = FALSE)
     
+    ### TODO: check byrow in score_schol?
+
     if (inherits(score_schol, "ltMatrices"))
         score_schol <- matrix(as.array(score_schol), 
                               nrow = dim(score_schol)[2L]^2)
