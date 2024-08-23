@@ -220,14 +220,7 @@ Chapter~\ref{copula}.
 @<marginal@>
 @<conditional@>
 @<check obs@>
-@<ldmvnorm@>
 @<colSumsdnorm ltMatrices@>
-@<sldmvnorm@>
-@<ldpmvnorm@>
-@<sldpmvnorm@>
-@<deperma@>
-@<standardize@>
-@<destandardize@>
 @}
 
 @o ltMatrices.c -cc
@@ -2951,6 +2944,13 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 @<R Header@>
 @<lpmvnorm@>
 @<slpmvnorm@>
+@<ldmvnorm@>
+@<sldmvnorm@>
+@<ldpmvnorm@>
+@<sldpmvnorm@>
+@<deperma@>
+@<standardize@>
+@<destandardize@>
 @}
 
 @o lpmvnorm.c -cc
