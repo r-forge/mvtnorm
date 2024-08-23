@@ -544,7 +544,9 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
 
 # deperma
 
-deperma <- function(chol, permuted_chol, perm, score_schol) {
+deperma <- function(chol = solve(invchol), 
+                    permuted_chol = solve(permuted_invchol), 
+                    invchol, permuted_invchol, perm, score_schol) {
 
     # deperma input checks chol
     
@@ -603,6 +605,10 @@ deperma <- function(chol, permuted_chol, perm, score_schol) {
     ret <- do.call("rbind", ret)
     ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), 
                       byrow = byrow_orig)
+
+    if (!missing(invchol))
+        ret <- - vectrick(chol, ret)
+
     return(ret)
 }
 

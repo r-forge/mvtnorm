@@ -4872,11 +4872,14 @@ ID <- diag(J)
 IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1
 @}
 
-and are now ready for the main course
+and are now ready for the main course. We are gentle and also allow
+\code{invchol}$ = \mL$ as input
 
 @d deperma
 @{
-deperma <- function(chol, permuted_chol, perm, score_schol) {
+deperma <- function(chol = solve(invchol), 
+                    permuted_chol = solve(permuted_invchol), 
+                    invchol, permuted_invchol, perm, score_schol) {
 
     @<deperma input checks chol@>
     @<deperma input checks perm@>
@@ -4903,6 +4906,12 @@ deperma <- function(chol, permuted_chol, perm, score_schol) {
     ret <- do.call("rbind", ret)
     ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), 
                       byrow = byrow_orig)
+
+    ### if invchol was given, post-differentiate
+    if (!missing(invchol))
+        ### this means: ret <- - vectrick(chol, ret, chol)
+        ret <- - vectrick(chol, ret)
+
     return(ret)
 }
 @}

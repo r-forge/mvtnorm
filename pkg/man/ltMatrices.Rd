@@ -61,7 +61,8 @@ diagonals(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{ltMatrices}(a, perm, is_chol = FALSE, \dots)
-deperma(chol, permuted_chol, perm, score_schol)
+deperma(chol = solve(invchol), permuted_chol = solve(permuted_invchol), 
+        invchol, permuted_invchol, perm, score_schol)
 \S3method{Mult}{ltMatrices}(x, y, transpose = FALSE, \dots)
 \S3method{Mult}{syMatrices}(x, y, \dots)
 Tcrossprod(x, diag_only = FALSE)
@@ -105,7 +106,7 @@ destandardize(chol = solve(invchol), invchol, score_schol)
   \item{diag_only}{logical, compute diagonal elements of crossproduct only
 if \code{TRUE}.
 }
-  \item{x,chol,invchol,permuted_chol}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
+  \item{x,chol,invchol,permuted_chol,permuted_invchol}{object of class \code{ltMatrices} or \code{syMatrices} (for \code{chol}).
 }
   \item{value}{a matrix of diagonal elements to be assigned (of dimension \eqn{J \times N}).
 }
