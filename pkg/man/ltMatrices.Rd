@@ -19,9 +19,16 @@
 \alias{diagonals<-.ltMatrices}
 \alias{diagonals<-.syMatrices}
 \alias{diagonals.integer}
+\alias{is.ltMatrices}
+\alias{is.syMatrices}
+\alias{is.chol}
+\alias{is.invchol}
+\alias{as.chol}
+\alias{as.invchol}
 \alias{Lower_tri}
 \alias{chol.syMatrices}
-\alias{aperm.ltMatrices}
+\alias{aperm.chol}
+\alias{aperm.invchol}
 \alias{deperma}
 \alias{adddiag}
 \alias{chol2cov}
@@ -60,7 +67,8 @@ diagonals(x) <- value
 \S3method{diagonals}{syMatrices}(x) <- value
 \S3method{solve}{ltMatrices}(a, b, transpose = FALSE, \dots)
 \S3method{chol}{syMatrices}(x, \dots)
-\S3method{aperm}{ltMatrices}(a, perm, is_chol = FALSE, \dots)
+\S3method{aperm}{chol}(a, perm, \dots)
+\S3method{aperm}{invchol}(a, perm, \dots)
 deperma(chol = solve(invchol), permuted_chol = solve(permuted_invchol), 
         invchol, permuted_invchol, perm, score_schol)
 \S3method{Mult}{ltMatrices}(x, y, transpose = FALSE, \dots)
@@ -69,6 +77,12 @@ Tcrossprod(x, diag_only = FALSE)
 Crossprod(x, diag_only = FALSE)
 logdet(x)
 Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
+is.ltMatrices(x)
+is.syMatrices(x)
+is.chol(x)
+is.invchol(x)
+as.chol(x)
+as.invchol(x)
 chol2cov(x)
 invchol2chol(x)
 chol2invchol(x)
@@ -113,9 +127,6 @@ if \code{TRUE}.
   \item{a}{object of class \code{ltMatrices}.
 }
   \item{perm}{a permutation of the covariance matrix corresponding to \code{a}.
-}
-  \item{is_chol}{a logical indicating if \code{a} is the Cholesky of the
-covariance (\code{chol = TRUE}) of the precision matrix.
 }
   \item{D}{a matrix (of dimension \eqn{J \times N}) of diagonal elements to be multiplied with.
 }

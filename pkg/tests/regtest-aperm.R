@@ -22,7 +22,7 @@ if (isTRUE(all.equal(p, 1:J)))
 P <- matrix(0, nrow = J, ncol = J)
 P[cbind(1:J, p)] <- 1
 
-L <- ltMatrices(1 + runif(J * (J + 1) / 2), diag = TRUE, byrow = BYROW)
+L <- as.invchol(ltMatrices(1 + runif(J * (J + 1) / 2), diag = TRUE, byrow = BYROW))
 mL <- as.array(L)[,,1]
 S <- invchol2cov(L)
 mS <- as.array(S)[,,1]
@@ -42,17 +42,17 @@ chk(P %*% mC %*% t(mC) %*% t(P), mSp)
 Ct <- t(chol(mS[p,p]))
 chk(Ct %*% t(Ct), mSp)
 
-chk(as.array(invchol2cov(aperm(L, perm = p, is_chol = FALSE)))[,,1], mSp)
-chk(as.array(chol2cov(aperm(C, perm = p, is_chol = TRUE)))[,,1], mSp)
+chk(as.array(invchol2cov(aperm(L, perm = p)))[,,1], mSp)
+chk(as.array(chol2cov(aperm(C, perm = p)))[,,1], mSp)
 
 N <- 10000
 obs <- matrix(rnorm(J * N), ncol = N)
 obs <- Mult(C, obs)
 
 ll1 <- ldmvnorm(obs = obs, chol = C)
-ll2 <- ldmvnorm(obs = obs[p,], chol = aperm(C, perm = p, is_chol = TRUE))
+ll2 <- ldmvnorm(obs = obs[p,], chol = aperm(C, perm = p))
 ll3 <- ldmvnorm(obs = obs, invchol = L)
-ll4 <- ldmvnorm(obs = obs[p,], invchol = aperm(L, perm = p, is_chol = FALSE))
+ll4 <- ldmvnorm(obs = obs[p,], invchol = aperm(L, perm = p))
 chk(ll1, ll2)
 chk(ll1, ll3)
 chk(ll1, ll4)
@@ -60,14 +60,14 @@ chk(ll1, ll4)
 ### C
 ### diag = TRUE w/o stand
 ll <- function(x) {
-    C <- ltMatrices(x, diag = TRUE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = TRUE)
+    C <- as.chol(ltMatrices(x, diag = TRUE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     -ldmvnorm(obs = obs[p,], chol = Ct)
 }
 
 s <- function(x) {
-    C <- ltMatrices(x, diag = TRUE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = TRUE)
+    C <- as.chol(ltMatrices(x, diag = TRUE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     sC <- sldmvnorm(obs = obs[p,], chol = Ct)$chol
     ret <- deperma(chol = C, permuted_chol = Ct, perm = p, score_schol = sC)
     -rowSums(Lower_tri(ret, diag = TRUE))
@@ -102,16 +102,16 @@ Cd <- ltMatrices(runif(J * (J - 1) / 2), byrow = BYROW)
 
 ### w/ standardisation (1. stand, 2. perm)
 ll <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
-    Cs <- standardize(C)
-    Ct <- aperm(Cs, perm = p, is_chol = TRUE)
+    C <- as.chol(ltMatrices(x, diag = FALSE, byrow = BYROW))
+    Cs <- standardize(chol = C)
+    Ct <- aperm(Cs, perm = p)
     -ldmvnorm(obs = obs[p,], chol = Ct)
 }
 
 s <- function(x) {
     C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
-    Cs <- standardize(C)
-    Ct <- aperm(Cs, perm = p, is_chol = TRUE)
+    Cs <- standardize(chol = C)
+    Ct <- aperm(Cs, perm = p)
     sC <- sldmvnorm(obs = obs[p,], chol = Ct)$chol
     ret <- deperma(chol = Cs, permuted_chol = Ct, perm = p, score_schol = sC)
     ret <- destandardize(chol = C, score_schol = ret)
@@ -122,15 +122,15 @@ chk(grad(ll, c(Cd)), s(c(Cd)))
 
 ### w/o standardisation 
 ll <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = TRUE)
+    C <- as.chol(ltMatrices(x, diag = FALSE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     -ldmvnorm(obs = obs[p,], chol = Ct)
 }
 
 s <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
+    C <- as.chol(ltMatrices(x, diag = FALSE, byrow = BYROW))
     diagonals(C) <- 1		### deperma expects diagonals
-    Ct <- aperm(C, perm = p, is_chol = TRUE)
+    Ct <- aperm(as.chol(C), perm = p)
     sC <- sldmvnorm(obs = obs[p,], chol = Ct)$chol
     ret <- deperma(chol = C, permuted_chol = Ct, perm = p, score_schol = sC)
     -rowSums(Lower_tri(ret, diag = FALSE))
@@ -141,14 +141,14 @@ chk(grad(ll, c(Cd)), s(c(Cd)))
 ### L
 ### diag = TRUE w/o stand
 ll <- function(x) {
-    C <- ltMatrices(x, diag = TRUE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = FALSE)
+    C <- as.invchol(ltMatrices(x, diag = TRUE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     -ldmvnorm(obs = obs[p,], invchol = Ct)
 }
 
 s <- function(x) {
-    C <- ltMatrices(x, diag = TRUE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = FALSE)
+    C <- as.invchol(ltMatrices(x, diag = TRUE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     sC <- sldmvnorm(obs = obs[p,], invchol = Ct)$invchol
     ret <- deperma(invchol = C, permuted_invchol = Ct, perm = p, score_schol = -vectrick(Ct, sC))
     -rowSums(Lower_tri(ret, diag = TRUE))
@@ -181,16 +181,16 @@ Ld <- ltMatrices(runif(J * (J - 1) / 2), byrow = BYROW)
 
 ### w/ standardisation (1. stand, 2. perm)
 ll <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
+    C <- as.invchol(ltMatrices(x, diag = FALSE, byrow = BYROW))
     Cs <- standardize(invchol = C)
-    Ct <- aperm(Cs, perm = p, is_chol = FALSE)
+    Ct <- aperm(Cs, perm = p)
     -ldmvnorm(obs = obs[p,], invchol = Ct)
 }
 
 s <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
+    C <- as.invchol(ltMatrices(x, diag = FALSE, byrow = BYROW))
     Cs <- standardize(invchol = C)
-    Ct <- aperm(Cs, perm = p, is_chol = FALSE)
+    Ct <- aperm(Cs, perm = p)
     sC <- sldmvnorm(obs = obs[p,], invchol = Ct)$invchol
     ret <- deperma(invchol = Cs, permuted_invchol = Ct, perm = p, score_schol = -vectrick(Ct, sC))
     ret <- destandardize(invchol = C, score_schol = -vectrick(Cs, ret))
@@ -201,15 +201,15 @@ chk(grad(ll, c(Ld)), s(c(Ld)))
 
 ### w/o standardisation 
 ll <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
-    Ct <- aperm(C, perm = p, is_chol = FALSE)
+    C <- as.invchol(ltMatrices(x, diag = FALSE, byrow = BYROW))
+    Ct <- aperm(C, perm = p)
     -ldmvnorm(obs = obs[p,], invchol = Ct)
 }
 
 s <- function(x) {
-    C <- ltMatrices(x, diag = FALSE, byrow = BYROW)
+    C <- as.invchol(ltMatrices(x, diag = FALSE, byrow = BYROW))
     diagonals(C) <- 1		### deperma expects diagonals
-    Ct <- aperm(C, perm = p, is_chol = FALSE)
+    Ct <- aperm(as.invchol(C), perm = p)
     sC <- sldmvnorm(obs = obs[p,], invchol = Ct)$invchol
     ret <- deperma(invchol = C, permuted_invchol = Ct, perm = p, score_schol = -vectrick(Ct, sC))
     -rowSums(Lower_tri(ret, diag = FALSE))

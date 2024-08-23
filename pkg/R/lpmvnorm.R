@@ -53,7 +53,7 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol,
     if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))          ### is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = TRUE)
     d <- dim(chol)
@@ -150,7 +150,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))          ### is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = TRUE)
     d <- dim(chol)
@@ -299,7 +299,7 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
          if (missing(chol))
              stop("either chol or invchol must be given")
          ## chol is given
-         if (!inherits(chol, "ltMatrices"))
+         if (!is.ltMatrices(chol))       ### NOTE: replace with is.chol
              stop("chol is not an object of class ltMatrices")
          N <- dim(chol)[1L]
          N <- ifelse(N == 1, p, N)
@@ -314,7 +314,7 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
          # ldmvnorm invchol
          
          ## invchol is given
-         if (!inherits(invchol, "ltMatrices"))
+         if (!is.ltMatrices(invchol))    ### NOTE: replace with is.invchol
              stop("invchol is not an object of class ltMatrices")
          N <- dim(invchol)[1L]
          N <- ifelse(N == 1, p, N)
@@ -376,7 +376,7 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
     invchol <- solve(chol)
     ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
-    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))
     ret$invchol <- NULL
     return(ret)
 }
@@ -537,7 +537,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
     ret <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
                       mean = mean, invchol = invchol, logLik = logLik, ...)
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
-    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))
     ret$invchol <- NULL
     return(ret)
 }
@@ -550,10 +550,10 @@ deperma <- function(chol = solve(invchol),
 
     # deperma input checks chol
     
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))  ### is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = FALSE)
-    stopifnot(inherits(permuted_chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(permuted_chol)) ### is.chol
     permuted_chol <- ltMatrices(permuted_chol, byrow = FALSE)
     stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
     J <- dim(chol)[2L]
@@ -568,7 +568,7 @@ deperma <- function(chol = solve(invchol),
     
     # deperma input checks schol
     
-    if (inherits(score_schol, "ltMatrices")) {
+    if (is.ltMatrices(score_schol)) { 
         byrow_orig_s <- attr(score_schol, "byrow")
         score_schol <- ltMatrices(score_schol, byrow = FALSE)
         ### don't do this here!
@@ -632,7 +632,7 @@ standardize <- function(chol, invchol) {
 
 destandardize <- function(chol = solve(invchol), invchol, score_schol)
 {
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))      ### is.chol; dispatch?
     J <- dim(chol)[2L]
     stopifnot(!attr(chol, "diag"))
     byrow_orig <- attr(chol, "byrow")
@@ -640,7 +640,7 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
     
     ### TODO: check byrow in score_schol?
 
-    if (inherits(score_schol, "ltMatrices"))
+    if (is.ltMatrices(score_schol))
         score_schol <- matrix(as.array(score_schol), 
                               nrow = dim(score_schol)[2L]^2)
     stopifnot(is.matrix(score_schol))

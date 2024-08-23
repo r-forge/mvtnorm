@@ -9,6 +9,8 @@
       \item Add the possibility to compute log-likelihood and score
             functions for permutations of variables (function \code{deperma})
             and explain the derivation of the gradient in the vignette.
+      \item Add \code{chol} and \code{invchol} classes, mainly to avoid
+            confusion.
     }
   }
 }

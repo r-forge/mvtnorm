@@ -218,7 +218,8 @@ Chapter~\ref{copula}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dimnames ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb7a}{7a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape names ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb7b}{7b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape print ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb10}{10}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape is.ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb7c}{7c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape print ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb10b}{10b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape reorder ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb11}{11}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape subset ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb13}{13}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lower triangular elements}\nobreak\ {\footnotesize \NWlink{nuweb15}{15}}$\,\rangle$}\verb@@\\
@@ -235,7 +236,7 @@ Chapter~\ref{copula}.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize \NWlink{nuweb42}{42}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape convenience functions}\nobreak\ {\footnotesize \NWlink{nuweb45}{45}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape aperm}\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape aperm}\nobreak\ {\footnotesize \NWlink{nuweb48a}{48a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape marginal}\nobreak\ {\footnotesize \NWlink{nuweb49}{49}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape conditional}\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape check obs}\nobreak\ {\footnotesize \NWlink{nuweb54b}{54b}}$\,\rangle$}\verb@@\\
@@ -401,7 +402,7 @@ change the storage form from row- to column-major or the other way round.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@if (inherits(object, "ltMatrices")) {@\\
+\mbox{}\verb@if (is.ltMatrices(object)) {@\\
 \mbox{}\verb@    ret <- .reorder(object, byrow = byrow)@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
@@ -463,7 +464,7 @@ multiple symmetric matrices
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@as.syMatrices <- function(object) {@\\
-\mbox{}\verb@    stopifnot(inherits(object, "ltMatrices"))@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(object))@\\
 \mbox{}\verb@    class(object)[1L] <- "syMatrices"@\\
 \mbox{}\verb@    return(object)@\\
 \mbox{}\verb@}@\\
@@ -549,6 +550,27 @@ The names identifying rows and columns in each $\mC_i$ are
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
+Finally, let's add two functions for checking the class
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap11}\raggedright\small
+\NWtarget{nuweb7c}{} $\langle\,${\itshape is.ltMatrices}\nobreak\ {\footnotesize {7c}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@is.ltMatrices <- function(x) inherits(x, "ltMatrices")@\\
+\mbox{}\verb@is.syMatrices <- function(x) inherits(x, "syMatrices")@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb2}{2}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
 Let's set-up an example for illustration. Throughout this document, we will
 compare numerical results using
 <<chk>>=
@@ -591,8 +613,8 @@ For pretty printing, we coerse objects of class \code{ltMatrices} to
 triangular matrix to by interpreted as a symmetric matrix.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap11}\raggedright\small
-\NWtarget{nuweb9}{} $\langle\,${\itshape extract slots}\nobreak\ {\footnotesize {9}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap12}\raggedright\small
+\NWtarget{nuweb10a}{} $\langle\,${\itshape extract slots}\nobreak\ {\footnotesize {10a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -606,21 +628,21 @@ triangular matrix to by interpreted as a symmetric matrix.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb10}{10}\NWlink{nuweb11}{, 11}\NWlink{nuweb12}{, 12}\NWlink{nuweb15}{, 15}\NWlink{nuweb17}{, 17}\NWlink{nuweb19}{, 19}\NWlink{nuweb21a}{, 21a}\NWlink{nuweb25}{, 25}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb10b}{10b}\NWlink{nuweb11}{, 11}\NWlink{nuweb12}{, 12}\NWlink{nuweb15}{, 15}\NWlink{nuweb17}{, 17}\NWlink{nuweb19}{, 19}\NWlink{nuweb21a}{, 21a}\NWlink{nuweb25}{, 25}.
 
 \item{}
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap12}\raggedright\small
-\NWtarget{nuweb10}{} $\langle\,${\itshape print ltMatrices}\nobreak\ {\footnotesize {10}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap13}\raggedright\small
+\NWtarget{nuweb10b}{} $\langle\,${\itshape print ltMatrices}\nobreak\ {\footnotesize {10b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
@@ -675,17 +697,17 @@ either column- or row-major order and this little helper function switches
 between the two forms
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap13}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap14}\raggedright\small
 \NWtarget{nuweb11}{} $\langle\,${\itshape reorder ltMatrices}\nobreak\ {\footnotesize {11}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@.reorder <- function(x, byrow = FALSE) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    stopifnot(inherits(x, "ltMatrices"))@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(x))@\\
 \mbox{}\verb@    if (attr(x, "byrow") == byrow) return(x)@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
@@ -742,7 +764,7 @@ We might want to select subsets of observations $i \in \{1, \dots, N\}$ or
 rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$. 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap14}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap15}\raggedright\small
 \NWtarget{nuweb12}{} $\langle\,${\itshape .subset ltMatrices}\nobreak\ {\footnotesize {12}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -752,7 +774,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \mbox{}\verb@    if (drop) warning("argument drop is ignored")@\\
 \mbox{}\verb@    if (missing(i) && missing(j)) return(x)@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x) @\\
 \mbox{}\verb@@\\
@@ -801,7 +823,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap15}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap16}\raggedright\small
 \NWtarget{nuweb13}{} $\langle\,${\itshape subset ltMatrices}\nobreak\ {\footnotesize {13}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -921,20 +943,20 @@ Extracting the lower triangular elements from an \code{ltMatrices} object
 columns, undoing the effect of \code{ltMatrices}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap16}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap17}\raggedright\small
 \NWtarget{nuweb15}{} $\langle\,${\itshape lower triangular elements}\nobreak\ {\footnotesize {15}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (inherits(x, "syMatrices"))@\\
+\mbox{}\verb@    if (is.syMatrices(x))@\\
 \mbox{}\verb@        class(x)[1L] <- "ltMatrices"@\\
-\mbox{}\verb@    stopifnot(inherits(x, "ltMatrices"))@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(x))@\\
 \mbox{}\verb@    adiag <- diag@\\
 \mbox{}\verb@    x <- ltMatrices(x, byrow = byrow)@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (diag == adiag)@\\
 \mbox{}\verb@        return(unclass(x))@\\
@@ -984,7 +1006,7 @@ The diagonal elements of each matrix $\mC_i$ can be extracted and are
 always returned as an $\J \times N$ matrix.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap17}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap18}\raggedright\small
 \NWtarget{nuweb17}{} $\langle\,${\itshape diagonals ltMatrices}\nobreak\ {\footnotesize {17}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -994,7 +1016,7 @@ always returned as an $\J \times N$ matrix.
 \mbox{}\verb@@\\
 \mbox{}\verb@diagonals.ltMatrices <- function(x, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x)@\\
 \mbox{}\verb@@\\
@@ -1037,14 +1059,14 @@ Sometimes we need to add diagonal elements to an \code{ltMatrices} object
 defined without diagonal elements.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap18}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap19}\raggedright\small
 \NWtarget{nuweb18}{} $\langle\,${\itshape add diagonal elements}\nobreak\ {\footnotesize {18}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@.adddiag <- function(x) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    stopifnot(inherits(x, "ltMatrices")) @\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(x))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (attr(x, "diag")) return(x)@\\
 \mbox{}\verb@@\\
@@ -1082,7 +1104,7 @@ defined without diagonal elements.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap19}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap20}\raggedright\small
 \NWtarget{nuweb19}{} $\langle\,${\itshape assign diagonal elements}\nobreak\ {\footnotesize {19}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1092,7 +1114,7 @@ defined without diagonal elements.
 \mbox{}\verb@@\\
 \mbox{}\verb@"diagonals<-.ltMatrices" <- function(x, value) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (byrow)@\\
 \mbox{}\verb@        idx <- cumsum(c(1, 2:J))@\\
@@ -1157,7 +1179,7 @@ A unit diagonal matrix is not treated as a special case but as an
 \code{ltMatrices} object with all lower triangular elements being zero
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap20}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap21}\raggedright\small
 \NWtarget{nuweb20}{} $\langle\,${\itshape diagonal matrix}\nobreak\ {\footnotesize {20}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1199,7 +1221,7 @@ efficiently without copying data by leveraging the lower triangular structure of
 \code{x}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap21}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap22}\raggedright\small
 \NWtarget{nuweb21a}{} $\langle\,${\itshape mult ltMatrices}\nobreak\ {\footnotesize {21a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1213,7 +1235,7 @@ efficiently without copying data by leveraging the lower triangular structure of
 \mbox{}\verb@}@\\
 \mbox{}\verb@Mult.ltMatrices <- function(x, y, transpose = FALSE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    stopifnot(is.numeric(y))@\\
 \mbox{}\verb@    if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])@\\
@@ -1251,7 +1273,7 @@ The underlying \proglang{C} code assumes $\mC_i$ (here called \code{C}) to
 be in row-major order.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap22}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap23}\raggedright\small
 \NWtarget{nuweb21b}{} $\langle\,${\itshape RC input}\nobreak\ {\footnotesize {21b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1282,7 +1304,7 @@ We also allow $\mC_i$ to be constant ($N$ is then determined from
 $\mC_i$ if \code{dim(x)[1L] > 1}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap23}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap24}\raggedright\small
 \NWtarget{nuweb22a}{} $\langle\,${\itshape C length}\nobreak\ {\footnotesize {22a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1308,7 +1330,7 @@ $\mC_i$ if \code{dim(x)[1L] > 1}
 The \proglang{C} workhorse is now
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap24}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap25}\raggedright\small
 \NWtarget{nuweb22b}{} $\langle\,${\itshape mult}\nobreak\ {\footnotesize {22b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1396,7 +1418,7 @@ For $\mC^\top_i \yvec_i$ (\code{transpose = TRUE}), we add a dedicated
 coerce this object when necessary:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap25}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap26}\raggedright\small
 \NWtarget{nuweb23}{} $\langle\,${\itshape mult ltMatrices transpose}\nobreak\ {\footnotesize {23}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1428,7 +1450,7 @@ coerce this object when necessary:
 before moving to \proglang{C} for the low-level computations:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap26}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap27}\raggedright\small
 \NWtarget{nuweb24}{} $\langle\,${\itshape mult transpose}\nobreak\ {\footnotesize {24}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1507,14 +1529,14 @@ part $\mA$ (including the diagonal) we can compute $\mC \yvec = \mA \yvec + \mA^
 \yvec$ using \code{Mult} applied to the lower trianular part:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap27}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap28}\raggedright\small
 \NWtarget{nuweb25}{} $\langle\,${\itshape mult syMatrices}\nobreak\ {\footnotesize {25}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@Mult.syMatrices <- function(x, y, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape extract slots}\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    class(x)[1L] <- "ltMatrices"@\\
 \mbox{}\verb@    stopifnot(is.numeric(y))@\\
@@ -1585,7 +1607,7 @@ We start with some options for the \proglang{LAPACK} workhorses
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap28}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap29}\raggedright\small
 \NWtarget{nuweb26}{} $\langle\,${\itshape lapack options}\nobreak\ {\footnotesize {26}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1623,7 +1645,7 @@ We start with some options for the \proglang{LAPACK} workhorses
 and set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yvec_i$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap29}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap30}\raggedright\small
 \NWtarget{nuweb27}{} $\langle\,${\itshape solve}\nobreak\ {\footnotesize {27}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1672,7 +1694,7 @@ and set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yve
 and then for computing $\mC_i^{-1}$ explicitly
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap30}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap31}\raggedright\small
 \NWtarget{nuweb28}{} $\langle\,${\itshape solve C}\nobreak\ {\footnotesize {28}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1723,7 +1745,7 @@ and then for computing $\mC_i^{-1}$ explicitly
 with \proglang{R} interface
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap31}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap32}\raggedright\small
 \NWtarget{nuweb29}{} $\langle\,${\itshape solve ltMatrices}\nobreak\ {\footnotesize {29}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1826,7 +1848,7 @@ we sum over the log-diagonal entries of a lower triangular matrix in
 \proglang{C}, both when the data are stored in row- and column-major order:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap32}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap33}\raggedright\small
 \NWtarget{nuweb31a}{} $\langle\,${\itshape logdet}\nobreak\ {\footnotesize {31a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1873,14 +1895,14 @@ we sum over the log-diagonal entries of a lower triangular matrix in
 The \proglang{R} interface now simply calls this low-level function
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap33}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap34}\raggedright\small
 \NWtarget{nuweb31b}{} $\langle\,${\itshape logdet ltMatrices}\nobreak\ {\footnotesize {31b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@logdet <- function(x) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (!inherits(x, "ltMatrices"))@\\
+\mbox{}\verb@    if (!is.ltMatrices(x))@\\
 \mbox{}\verb@        stop("x is not an ltMatrices object")@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    byrow <- attr(x, "byrow")@\\
@@ -1931,7 +1953,7 @@ We differentiate between computation of the diagonal elements of the
 crossproduct
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap34}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap35}\raggedright\small
 \NWtarget{nuweb32a}{} $\langle\,${\itshape first element}\nobreak\ {\footnotesize {32a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1955,7 +1977,7 @@ crossproduct
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap35}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap36}\raggedright\small
 \NWtarget{nuweb32b}{} $\langle\,${\itshape tcrossprod diagonal only}\nobreak\ {\footnotesize {32b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -1996,7 +2018,7 @@ crossproduct
 and computation of the full $\J \times \J$ crossproduct matrix
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap36}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap37}\raggedright\small
 \NWtarget{nuweb33a}{} $\langle\,${\itshape tcrossprod full}\nobreak\ {\footnotesize {33a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2056,7 +2078,7 @@ and computation of the full $\J \times \J$ crossproduct matrix
 and put both cases together
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap37}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap38}\raggedright\small
 \NWtarget{nuweb33b}{} $\langle\,${\itshape IDX}\nobreak\ {\footnotesize {33b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2074,7 +2096,7 @@ and put both cases together
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap38}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap39}\raggedright\small
 \NWtarget{nuweb34}{} $\langle\,${\itshape tcrossprod}\nobreak\ {\footnotesize {34}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2116,7 +2138,7 @@ and put both cases together
 with \proglang{R} interface
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap39}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap40}\raggedright\small
 \NWtarget{nuweb35}{} $\langle\,${\itshape tcrossprod ltMatrices}\nobreak\ {\footnotesize {35}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2125,7 +2147,7 @@ with \proglang{R} interface
 \mbox{}\verb@### diag(C %*% t(C)) => returns matrix of diagonal elements@\\
 \mbox{}\verb@.Tcrossprod <- function(x, diag_only = FALSE, transpose = FALSE) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (!inherits(x, "ltMatrices")) {@\\
+\mbox{}\verb@    if (!is.ltMatrices(x)) {@\\
 \mbox{}\verb@        ret <- tcrossprod(x)@\\
 \mbox{}\verb@        if (diag_only) ret <- diag(ret)@\\
 \mbox{}\verb@        return(ret)@\\
@@ -2196,7 +2218,7 @@ We also add \code{Crossprod}, which is a call to \code{Tcrossprod} with the
 \code{transpose} switch turned on
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap40}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap41}\raggedright\small
 \NWtarget{nuweb36}{} $\langle\,${\itshape crossprod ltMatrices}\nobreak\ {\footnotesize {36}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2247,7 +2269,7 @@ One might want to compute the Cholesky factorisations $\mSigma_i = \mC_i
 in class \code{syMatrices}.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap41}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap42}\raggedright\small
 \NWtarget{nuweb37}{} $\langle\,${\itshape chol syMatrices}\nobreak\ {\footnotesize {37}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2293,7 +2315,7 @@ so we swiftly loop over $i = 1, \dots, N$ in \proglang{C} and hand over to
 \code{LAPACK}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap42}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap43}\raggedright\small
 \NWtarget{nuweb38}{} $\langle\,${\itshape chol}\nobreak\ {\footnotesize {38}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2367,7 +2389,7 @@ trick'', we have $\text{vec}(\mS)^\top (\mA^\top \otimes \mC) =
 matrices, so we simply call this function looping over $i = 1, \dots, N$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap43}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap44}\raggedright\small
 \NWtarget{nuweb39}{} $\langle\,${\itshape t(C) S t(A)}\nobreak\ {\footnotesize {39}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2428,7 +2450,7 @@ matrices, so we simply call this function looping over $i = 1, \dots, N$.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap44}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap45}\raggedright\small
 \NWtarget{nuweb40a}{} $\langle\,${\itshape vec trick}\nobreak\ {\footnotesize {40a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2473,12 +2495,12 @@ argument in \code{vectrick}.  Argument \code{C} is an \code{ltMatrices}
 object
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap45}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap46}\raggedright\small
 \NWtarget{nuweb40b}{} $\langle\,${\itshape check C argument}\nobreak\ {\footnotesize {40b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@stopifnot(inherits(C, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(is.ltMatrices(C))@\\
 \mbox{}\verb@if (!attr(C, "diag")) diagonals(C) <- 1@\\
 \mbox{}\verb@C_byrow_orig <- attr(C, "byrow")@\\
 \mbox{}\verb@C <- ltMatrices(C, byrow = FALSE)@\\
@@ -2503,12 +2525,12 @@ object
 featuring columns of vectorised $\J \times \J$ matrices
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap46}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap47}\raggedright\small
 \NWtarget{nuweb41a}{} $\langle\,${\itshape check S argument}\nobreak\ {\footnotesize {41a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@SltM <- inherits(S, "ltMatrices")@\\
+\mbox{}\verb@SltM <- is.ltMatrices(S)@\\
 \mbox{}\verb@if (SltM) {@\\
 \mbox{}\verb@    if (!attr(S, "diag")) diagonals(S) <- 1@\\
 \mbox{}\verb@    S_byrow_orig <- attr(S, "byrow")@\\
@@ -2548,7 +2570,7 @@ featuring columns of vectorised $\J \times \J$ matrices
 \code{A} is an \code{ltMatrices} object
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap47}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap48}\raggedright\small
 \NWtarget{nuweb41b}{} $\langle\,${\itshape check A argument}\nobreak\ {\footnotesize {41b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2556,7 +2578,7 @@ featuring columns of vectorised $\J \times \J$ matrices
 \mbox{}\verb@if (missing(A)) {@\\
 \mbox{}\verb@    A <- C@\\
 \mbox{}\verb@} else {@\\
-\mbox{}\verb@    stopifnot(inherits(A, "ltMatrices"))@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(A))@\\
 \mbox{}\verb@    if (!attr(A, "diag")) diagonals(A) <- 1@\\
 \mbox{}\verb@    A_byrow_orig <- attr(A, "byrow")@\\
 \mbox{}\verb@    stopifnot(C_byrow_orig == A_byrow_orig)@\\
@@ -2587,7 +2609,7 @@ featuring columns of vectorised $\J \times \J$ matrices
 We put everything together in function \code{vectrick}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap48}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap49}\raggedright\small
 \NWtarget{nuweb42}{} $\langle\,${\itshape kronecker vec trick}\nobreak\ {\footnotesize {42}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -2692,14 +2714,54 @@ $\tilde{\mL}_i = \mL_i \text{diag}(\mL_i^\top \mL_i)^{-\frac{1}{2}}$
 from $\mL_i$ (\code{invchol}) or $\mC_i =
 \mL_i^{-1}$ (\code{chol}) for $i = 1, \dots, N$. 
 
+Before we start, let us put a label on lower triangular matrices, such that
+we can differentiate between $\mC$ and $\mL$.
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap50}\raggedright\small
+\NWtarget{nuweb43}{} $\langle\,${\itshape chol classes}\nobreak\ {\footnotesize {43}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@is.chol <- function(x) inherits(x, "chol")@\\
+\mbox{}\verb@as.chol <- function(x) {@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(x))@\\
+\mbox{}\verb@    if (is.chol(x)) return(x)@\\
+\mbox{}\verb@    if (is.invchol(x))@\\
+\mbox{}\verb@        return(invchol2chol(x))@\\
+\mbox{}\verb@    class(x) <- c("chol", class(x))@\\
+\mbox{}\verb@    return(x)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@is.invchol <- function(x) inherits(x, "invchol")@\\
+\mbox{}\verb@as.invchol <- function(x) {@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(x))@\\
+\mbox{}\verb@    if (is.invchol(x)) return(x)@\\
+\mbox{}\verb@    if (is.chol(x))@\\
+\mbox{}\verb@        return(chol2invchol(x))@\\
+\mbox{}\verb@    class(x) <- c("invchol", class(x))@\\
+\mbox{}\verb@    return(x)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb45}{45}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
 First, we set-up functions for computing $\tilde{\mC}_i$
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap49}\raggedright\small
-\NWtarget{nuweb43}{} $\langle\,${\itshape D times C}\nobreak\ {\footnotesize {43}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap51}\raggedright\small
+\NWtarget{nuweb44a}{} $\langle\,${\itshape D times C}\nobreak\ {\footnotesize {44a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (is.invchol(x)) stop("Dchol cannot work with invchol objects")@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- .adddiag(x)@\\
 \mbox{}\verb@@\\
@@ -2714,7 +2776,7 @@ First, we set-up functions for computing $\tilde{\mC}_i$
 \mbox{}\verb@    x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, names = nm)@\\
-\mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
+\mbox{}\verb@    ret <- as.chol(ltMatrices(ret, byrow = byrow_orig))@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -2731,13 +2793,15 @@ First, we set-up functions for computing $\tilde{\mC}_i$
 and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{2}}$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap50}\raggedright\small
-\NWtarget{nuweb44}{} $\langle\,${\itshape L times D}\nobreak\ {\footnotesize {44}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap52}\raggedright\small
+\NWtarget{nuweb44b}{} $\langle\,${\itshape L times D}\nobreak\ {\footnotesize {44b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@### invcholD = solve(Dchol)@\\
 \mbox{}\verb@invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (is.chol(x)) stop("invcholD cannot work with chol objects")@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- .adddiag(x)@\\
 \mbox{}\verb@@\\
@@ -2752,7 +2816,7 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 \mbox{}\verb@    x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, names = nm)@\\
-\mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
+\mbox{}\verb@    ret <- as.invchol(ltMatrices(ret, byrow = byrow_orig))@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -2769,13 +2833,14 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 and now the convenience functions are one-liners:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap51}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap53}\raggedright\small
 \NWtarget{nuweb45}{} $\langle\,${\itshape convenience functions}\nobreak\ {\footnotesize {45}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape D times C}\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape L times D}\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape chol classes}\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape D times C}\nobreak\ {\footnotesize \NWlink{nuweb44a}{44a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape L times D}\nobreak\ {\footnotesize \NWlink{nuweb44b}{44b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### C -> Sigma@\\
 \mbox{}\verb@chol2cov <- function(x)@\\
@@ -2783,11 +2848,11 @@ and now the convenience functions are one-liners:
 \mbox{}\verb@@\\
 \mbox{}\verb@### L -> C@\\
 \mbox{}\verb@invchol2chol <- function(x)@\\
-\mbox{}\verb@    solve(x)@\\
+\mbox{}\verb@    as.chol(solve(x))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### C -> L@\\
 \mbox{}\verb@chol2invchol <- function(x)@\\
-\mbox{}\verb@    solve(x)@\\
+\mbox{}\verb@    as.invchol(solve(x))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@### L -> Sigma@\\
 \mbox{}\verb@invchol2cov <- function(x)@\\
@@ -2936,29 +3001,52 @@ the Cholesky decompositon $\tilde{\mC}_i \tilde{\mC}_i^\top$ of $\Pi \mC_i \mC_i
 The function \code{aperm}, with argument \code{perm} $=\pi$, 
 now computes the Cholesky factor $\tilde{\mC}_i$
 of the permuted covariance matrix, or the inverse thereof (in case
-\code{is\_chol = FALSE} was specified)
+\code{x} is of class \code{invchol}). We start with some tests
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap52}\raggedright\small
-\NWtarget{nuweb47}{} $\langle\,${\itshape aperm}\nobreak\ {\footnotesize {47}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap54}\raggedright\small
+\NWtarget{nuweb47}{} $\langle\,${\itshape aperm checks}\nobreak\ {\footnotesize {47}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {@\\
+\mbox{}\verb@J <- dim(a)[2L]@\\
+\mbox{}\verb@if (missing(perm)) return(a)@\\
+\mbox{}\verb@if (is.character(perm)) @\\
+\mbox{}\verb@    perm <- match(perm, dimnames(a)[[2L]])@\\
+\mbox{}\verb@stopifnot(all(perm %in% 1:J))@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    stopifnot(inherits(a, "ltMatrices"))@\\
-\mbox{}\verb@    J <- dim(a)[2L]@\\
-\mbox{}\verb@    if (missing(perm)) return(a)@\\
-\mbox{}\verb@    if (is.character(perm)) @\\
-\mbox{}\verb@        perm <- match(perm, dimnames(a)[[2L]])@\\
-\mbox{}\verb@    stopifnot(all(perm %in% 1:J))@\\
+\mbox{}\verb@args <- list(...)@\\
+\mbox{}\verb@if (length(args) > 0L)@\\
+\mbox{}\verb@    warning("Additional arguments", names(args), "ignored")@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb48a}{48a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+and then implement the two methods
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap55}\raggedright\small
+\NWtarget{nuweb48a}{} $\langle\,${\itshape aperm}\nobreak\ {\footnotesize {48a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@    args <- list(...)@\\
-\mbox{}\verb@    if (length(args) > 0L)@\\
-\mbox{}\verb@        warning("Additional arguments", names(args), "ignored")@\\
+\mbox{}\verb@aperm.chol <- function(a, perm, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    if (is_chol) ### a is Cholesky of covariance@\\
-\mbox{}\verb@        return(chol(chol2cov(a)[,perm]))@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape aperm checks}\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    return(as.chol(chol(chol2cov(a)[,perm])))@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@aperm.invchol <- function(a, perm, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape aperm checks}\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\\
 \mbox{}\verb@    return(chol2invchol(chol(invchol2cov(a)[,perm])))@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -2973,14 +3061,14 @@ of the permuted covariance matrix, or the inverse thereof (in case
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 <<aperm-tests, eval= TRUE>>=
-L <- lxn
+L <- as.invchol(lxn)
 J <- dim(L)[2L]
-Lp <- aperm(a = L, perm = p <- sample(1:J), is_chol = FALSE)
+Lp <- aperm(a = L, perm = p <- sample(1:J))
 chk(invchol2cov(L)[,p], invchol2cov(Lp))
 
-C <- lxn
+C <- as.chol(lxn)
 J <- dim(C)[2L]
-Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
+Cp <- aperm(a = C, perm = p <- sample(1:J))
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @
 
@@ -2993,15 +3081,15 @@ computed.
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap53}\raggedright\small
-\NWtarget{nuweb48}{} $\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize {48}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap56}\raggedright\small
+\NWtarget{nuweb48b}{} $\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize {48b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@stopifnot(xor(missing(chol), missing(invchol)))@\\
 \mbox{}\verb@x <- if (missing(chol)) invchol else chol@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@stopifnot(inherits(x, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(is.ltMatrices(x))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@N <- dim(x)[1L]@\\
 \mbox{}\verb@J <- dim(x)[2L]@\\
@@ -3028,14 +3116,14 @@ corresponding Cholesky factor (such that we can use \code{lpmvnorm} later
 on).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap54}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap57}\raggedright\small
 \NWtarget{nuweb49}{} $\langle\,${\itshape marginal}\nobreak\ {\footnotesize {49}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@marg_mvnorm <- function(chol, invchol, which = 1L) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize \NWlink{nuweb48}{48}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize \NWlink{nuweb48b}{48b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (which[1] == 1L && (length(which) == 1L || @\\
 \mbox{}\verb@                           all(diff(which) == 1L))) {@\\
@@ -3084,7 +3172,7 @@ given) or $\tilde{\mL} = \tilde{\mC}^{-1}$ (if \code{invchol} was given).
 
 We can implement this as
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap55}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap58}\raggedright\small
 \NWtarget{nuweb50}{} $\langle\,${\itshape cond general}\nobreak\ {\footnotesize {50}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3146,7 +3234,7 @@ be returned.
 The implementation reads
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap56}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap59}\raggedright\small
 \NWtarget{nuweb51}{} $\langle\,${\itshape cond simple}\nobreak\ {\footnotesize {51}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3204,7 +3292,7 @@ permuted version if this option is requested. Putting everything together
 gives
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap57}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap60}\raggedright\small
 \NWtarget{nuweb52}{} $\langle\,${\itshape conditional}\nobreak\ {\footnotesize {52}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3212,7 +3300,7 @@ gives
 \mbox{}\verb@cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    which <- which_given@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize \NWlink{nuweb48}{48}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape mc input checks}\nobreak\ {\footnotesize \NWlink{nuweb48b}{48b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (N == 1) N <- NCOL(given)@\\
 \mbox{}\verb@    stopifnot(is.matrix(given) && nrow(given) == length(which))@\\
@@ -3223,11 +3311,10 @@ gives
 \mbox{}\verb@    if (center) {@\\
 \mbox{}\verb@        perm <- c(which, (1:J)[!(1:J) %in% which])@\\
 \mbox{}\verb@        if (!missing(chol))@\\
-\mbox{}\verb@        return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),@\\
+\mbox{}\verb@        return(cond_mvnorm(chol = aperm(as.chol(chol), perm = perm),@\\
 \mbox{}\verb@                           which_given = 1:length(which), given = given,@\\
 \mbox{}\verb@                           center = center))@\\
-\mbox{}\verb@        return(cond_mvnorm(invchol = aperm(invchol, perm = perm, @\\
-\mbox{}\verb@                                           is_chol = FALSE),@\\
+\mbox{}\verb@        return(cond_mvnorm(invchol = aperm(as.invchol(invchol), perm = perm),@\\
 \mbox{}\verb@                           which_given = 1:length(which), given = given,@\\
 \mbox{}\verb@                           center = center))@\\
 \mbox{}\verb@    }@\\
@@ -3336,7 +3423,7 @@ log-likelihood contributions for observations $\yvec_1, \dots, \yvec_N$ in a
 function called \code{ldmvnorm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap58}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap61}\raggedright\small
 \NWtarget{nuweb54a}{} $\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize {54a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3373,7 +3460,7 @@ $\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
 \muvec_N$ in \code{means}.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap59}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap62}\raggedright\small
 \NWtarget{nuweb54b}{} $\langle\,${\itshape check obs}\nobreak\ {\footnotesize {54b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3426,7 +3513,7 @@ turns out to be time-consuming and memory intensive, so we provide a small
 internal helper function focusing on the necessary computations.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap60}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap63}\raggedright\small
 \NWtarget{nuweb55a}{} $\langle\,${\itshape colSumsdnorm}\nobreak\ {\footnotesize {55a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3467,7 +3554,7 @@ internal helper function focusing on the necessary computations.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap61}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap64}\raggedright\small
 \NWtarget{nuweb55b}{} $\langle\,${\itshape colSumsdnorm ltMatrices}\nobreak\ {\footnotesize {55b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3494,7 +3581,7 @@ internal helper function focusing on the necessary computations.
 The main part is now
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap62}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap65}\raggedright\small
 \NWtarget{nuweb56a}{} $\langle\,${\itshape ldmvnorm chol}\nobreak\ {\footnotesize {56a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3502,7 +3589,7 @@ The main part is now
 \mbox{}\verb@if (missing(chol))@\\
 \mbox{}\verb@    stop("either chol or invchol must be given")@\\
 \mbox{}\verb@## chol is given@\\
-\mbox{}\verb@if (!inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@if (!is.ltMatrices(chol))       ### NOTE: replace with is.chol@\\
 \mbox{}\verb@    stop("chol is not an object of class ltMatrices")@\\
 \mbox{}\verb@N <- dim(chol)[1L]@\\
 \mbox{}\verb@N <- ifelse(N == 1, p, N)@\\
@@ -3533,13 +3620,13 @@ If $\mL_i = \mC_i^{-1}$ is given, we obtain
 \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap63}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap66}\raggedright\small
 \NWtarget{nuweb56b}{} $\langle\,${\itshape ldmvnorm invchol}\nobreak\ {\footnotesize {56b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@## invchol is given@\\
-\mbox{}\verb@if (!inherits(invchol, "ltMatrices"))@\\
+\mbox{}\verb@if (!is.ltMatrices(invchol))    ### NOTE: replace with is.invchol@\\
 \mbox{}\verb@    stop("invchol is not an object of class ltMatrices")@\\
 \mbox{}\verb@N <- dim(invchol)[1L]@\\
 \mbox{}\verb@N <- ifelse(N == 1, p, N)@\\
@@ -3593,7 +3680,7 @@ In \code{sldmvnorm}, we compute the score with respect to $\mL_i$ and use
 the above relationship to compute the score with respect to $\mC_i$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap64}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap67}\raggedright\small
 \NWtarget{nuweb58}{} $\langle\,${\itshape sldmvnorm}\nobreak\ {\footnotesize {58}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3636,7 +3723,7 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@    invchol <- solve(chol)@\\
 \mbox{}\verb@    ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)@\\
 \mbox{}\verb@    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)@\\
-\mbox{}\verb@    ret$chol <- - vectrick(invchol, ret$invchol)@\\
+\mbox{}\verb@    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))@\\
 \mbox{}\verb@    ret$invchol <- NULL@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
@@ -3721,7 +3808,7 @@ This is relatively simple to achieve using the existing \code{pmvnorm}
 function, so a prototype might look like
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap65}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap68}\raggedright\small
 \NWtarget{nuweb60}{} $\langle\,${\itshape lpmvnormR}\nobreak\ {\footnotesize {60}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3768,7 +3855,7 @@ lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE
     if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))		### is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = TRUE)
     d <- dim(chol)
@@ -3844,7 +3931,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \section{Algorithm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap66}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap69}\raggedright\small
 \NWtarget{nuweb61}{} \verb@"lpmvnorm.R"@\nobreak\ {\footnotesize {61}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3870,7 +3957,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap67}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap70}\raggedright\small
 \NWtarget{nuweb62a}{} \verb@"lpmvnorm.c"@\nobreak\ {\footnotesize {62a}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3913,7 +4000,7 @@ For each $i = 1, \dots, N$, do
 (\code{upper}), and control parameters $\alpha$, $\epsilon$, and $M_\text{max}$ (\code{M}).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap68}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap71}\raggedright\small
 \NWtarget{nuweb62b}{} $\langle\,${\itshape input checks}\nobreak\ {\footnotesize {62b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3922,7 +4009,7 @@ For each $i = 1, \dots, N$, do
 \mbox{}\verb@if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)@\\
 \mbox{}\verb@stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@stopifnot(inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(is.ltMatrices(chol))          ### is.chol@\\
 \mbox{}\verb@byrow_orig <- attr(chol, "byrow")@\\
 \mbox{}\verb@chol <- ltMatrices(chol, byrow = TRUE)@\\
 \mbox{}\verb@d <- dim(chol)@\\
@@ -3957,7 +4044,7 @@ For each $i = 1, \dots, N$, do
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap69}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap72}\raggedright\small
 \NWtarget{nuweb63a}{} $\langle\,${\itshape standardise}\nobreak\ {\footnotesize {63a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -3997,7 +4084,7 @@ For each $i = 1, \dots, N$, do
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap70}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap73}\raggedright\small
 \NWtarget{nuweb63b}{} $\langle\,${\itshape initialisation}\nobreak\ {\footnotesize {63b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4024,7 +4111,7 @@ For each $i = 1, \dots, N$, do
 \item Repeat
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap71}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap74}\raggedright\small
 \NWtarget{nuweb63c}{} $\langle\,${\itshape init logLik loop}\nobreak\ {\footnotesize {63c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4057,7 +4144,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 (\code{w}).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap72}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap75}\raggedright\small
 \NWtarget{nuweb64a}{} $\langle\,${\itshape compute y}\nobreak\ {\footnotesize {64a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4088,7 +4175,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap73}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap76}\raggedright\small
 \NWtarget{nuweb64b}{} $\langle\,${\itshape compute x}\nobreak\ {\footnotesize {64b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4119,7 +4206,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
         \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap74}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap77}\raggedright\small
 \NWtarget{nuweb64c}{} $\langle\,${\itshape update d, e}\nobreak\ {\footnotesize {64c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4143,7 +4230,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
        \end{eqnarray*}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap75}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap78}\raggedright\small
 \NWtarget{nuweb65a}{} $\langle\,${\itshape update f}\nobreak\ {\footnotesize {65a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4164,7 +4251,7 @@ We either generate $w_{j - 1}$ on the fly or use pre-computed weights
 We put everything together in a loop starting with the second dimension
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap76}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap79}\raggedright\small
 \NWtarget{nuweb65b}{} $\langle\,${\itshape inner logLik loop}\nobreak\ {\footnotesize {65b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4191,7 +4278,7 @@ We put everything together in a loop starting with the second dimension
             and $\text{error} = \sqrt{(\text{varsum}/M - (\text{intsum}/M)^2) / M}$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap77}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap80}\raggedright\small
 \NWtarget{nuweb65c}{} $\langle\,${\itshape increment}\nobreak\ {\footnotesize {65c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4218,7 +4305,7 @@ We refrain from early stopping and error estimation.
 We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap78}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap81}\raggedright\small
 \NWtarget{nuweb65d}{} $\langle\,${\itshape output}\nobreak\ {\footnotesize {65d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4241,7 +4328,7 @@ and move on to the next observation (note that \code{p} might be $0$ in case
 $\mC_i \equiv \mC$).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap79}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap82}\raggedright\small
 \NWtarget{nuweb66a}{} $\langle\,${\itshape move on}\nobreak\ {\footnotesize {66a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4268,7 +4355,7 @@ alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
 (\code{fast = TRUE} in the calls to \code{lpmvnorm} and \code{slpmvnorm}):
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap80}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap83}\raggedright\small
 \NWtarget{nuweb66b}{} $\langle\,${\itshape pnorm fast}\nobreak\ {\footnotesize {66b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4313,7 +4400,7 @@ alternative \citep[suggested by][]{Matic_Radoicic_Stefanica_2018} can be used
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap81}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap84}\raggedright\small
 \NWtarget{nuweb66c}{} $\langle\,${\itshape pnorm slow}\nobreak\ {\footnotesize {66c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4336,7 +4423,7 @@ The \code{fast} argument can be used to switch on the faster but less
 accurate version of \code{pnorm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap82}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap85}\raggedright\small
 \NWtarget{nuweb67a}{} $\langle\,${\itshape pnorm}\nobreak\ {\footnotesize {67a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4361,7 +4448,7 @@ observations. In the former case, the number of columns is $M \times N$ and
 in the latter just $M$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap83}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap86}\raggedright\small
 \NWtarget{nuweb67b}{} $\langle\,${\itshape W length}\nobreak\ {\footnotesize {67b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4389,7 +4476,7 @@ in the latter just $M$.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap84}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap87}\raggedright\small
 \NWtarget{nuweb67c}{} $\langle\,${\itshape dimensions}\nobreak\ {\footnotesize {67c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4419,7 +4506,7 @@ in the latter just $M$.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap85}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap88}\raggedright\small
 \NWtarget{nuweb68a}{} $\langle\,${\itshape setup return object}\nobreak\ {\footnotesize {68a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4443,7 +4530,7 @@ in the latter just $M$.
 The case $\J = 1$ does not loop over $M$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap86}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap89}\raggedright\small
 \NWtarget{nuweb68b}{} $\langle\,${\itshape univariate problem}\nobreak\ {\footnotesize {68b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4466,7 +4553,7 @@ The case $\J = 1$ does not loop over $M$
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap87}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap90}\raggedright\small
 \NWtarget{nuweb68c}{} $\langle\,${\itshape init center}\nobreak\ {\footnotesize {68c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4490,7 +4577,7 @@ The case $\J = 1$ does not loop over $M$
 We put the code together in a dedicated \proglang{C} function
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap88}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap91}\raggedright\small
 \NWtarget{nuweb68d}{} $\langle\,${\itshape R slpmvnorm variables}\nobreak\ {\footnotesize {68d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4512,7 +4599,7 @@ We put the code together in a dedicated \proglang{C} function
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap89}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap92}\raggedright\small
 \NWtarget{nuweb69}{} $\langle\,${\itshape R lpmvnorm}\nobreak\ {\footnotesize {69}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4588,7 +4675,7 @@ The \proglang{R} user interface consists of some checks and a call to
 case we want a new set of weights for each observation.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap90}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap93}\raggedright\small
 \NWtarget{nuweb70a}{} $\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize {70a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4616,7 +4703,7 @@ case we want a new set of weights for each observation.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap91}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap94}\raggedright\small
 \NWtarget{nuweb70b}{} $\langle\,${\itshape check and / or set integration weights}\nobreak\ {\footnotesize {70b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4652,7 +4739,7 @@ case, we explicitly invert $\mL$ to give $\mC$ (both matrices are lower
 triangular, so this is fast).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap92}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap95}\raggedright\small
 \NWtarget{nuweb70c}{} $\langle\,${\itshape Cholesky of precision}\nobreak\ {\footnotesize {70c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4671,7 +4758,7 @@ triangular, so this is fast).
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap93}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap96}\raggedright\small
 \NWtarget{nuweb71}{} $\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize {71}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4778,7 +4865,7 @@ once, the chain rule rules, so to speak.
 We need the derivatives of $d$, $e$, $y$, and $f$ with respect to the $c$
 parameters
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap94}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap97}\raggedright\small
 \NWtarget{nuweb73a}{} $\langle\,${\itshape chol scores}\nobreak\ {\footnotesize {73a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4798,7 +4885,7 @@ parameters
 and the derivates with respect to the mean
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap95}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap98}\raggedright\small
 \NWtarget{nuweb73b}{} $\langle\,${\itshape mean scores}\nobreak\ {\footnotesize {73b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4818,7 +4905,7 @@ and the derivates with respect to the mean
 and the derivates with respect to lower (\code{a})
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap96}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap99}\raggedright\small
 \NWtarget{nuweb73c}{} $\langle\,${\itshape lower scores}\nobreak\ {\footnotesize {73c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4838,7 +4925,7 @@ and the derivates with respect to lower (\code{a})
 and the derivates with respect to upper (\code{b})
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap97}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap100}\raggedright\small
 \NWtarget{nuweb73d}{} $\langle\,${\itshape upper scores}\nobreak\ {\footnotesize {73d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4863,7 +4950,7 @@ finally with respect to the off-diagonal elements of the Cholesky factor
 (last $\J (\J - 1) / 2$ rows).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap98}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap101}\raggedright\small
 \NWtarget{nuweb74a}{} $\langle\,${\itshape score output object}\nobreak\ {\footnotesize {74a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4907,7 +4994,7 @@ We start initialised the score wrt to $c^{(i)}_{11}$ (the parameter is non-exist
 here due to standardisation)
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap99}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap102}\raggedright\small
 \NWtarget{nuweb74b}{} $\langle\,${\itshape score c11}\nobreak\ {\footnotesize {74b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4932,7 +5019,7 @@ here due to standardisation)
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap100}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap103}\raggedright\small
 \NWtarget{nuweb75a}{} $\langle\,${\itshape score a, b}\nobreak\ {\footnotesize {75a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4960,7 +5047,7 @@ here due to standardisation)
 \item Repeat
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap101}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap104}\raggedright\small
 \NWtarget{nuweb75b}{} $\langle\,${\itshape init score loop}\nobreak\ {\footnotesize {75b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -4993,7 +5080,7 @@ We again either generate $w_{j - 1}$ on the fly or use pre-computed weights
 parameters.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap102}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap105}\raggedright\small
 \NWtarget{nuweb75c}{} $\langle\,${\itshape update yp for chol}\nobreak\ {\footnotesize {75c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5018,7 +5105,7 @@ parameters.
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap103}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap106}\raggedright\small
 \NWtarget{nuweb76}{} $\langle\,${\itshape update yp for means, lower and upper}\nobreak\ {\footnotesize {76}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5071,7 +5158,7 @@ parameters.
 The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap104}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap107}\raggedright\small
 \NWtarget{nuweb77a}{} $\langle\,${\itshape score wrt new chol off-diagonals}\nobreak\ {\footnotesize {77a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5104,7 +5191,7 @@ The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap105}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap108}\raggedright\small
 \NWtarget{nuweb77b}{} $\langle\,${\itshape score wrt new chol diagonal}\nobreak\ {\footnotesize {77b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5130,7 +5217,7 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap106}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap109}\raggedright\small
 \NWtarget{nuweb77c}{} $\langle\,${\itshape new score means, lower and upper}\nobreak\ {\footnotesize {77c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5158,7 +5245,7 @@ and the score with respect to (the here non-existing) $c^{(i)}_{jj}$ is
 We next update scores for parameters introduced for smaller $j$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap107}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap110}\raggedright\small
 \NWtarget{nuweb78a}{} $\langle\,${\itshape update score for chol}\nobreak\ {\footnotesize {78a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5184,7 +5271,7 @@ We next update scores for parameters introduced for smaller $j$
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap108}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap111}\raggedright\small
 \NWtarget{nuweb78b}{} $\langle\,${\itshape update score means, lower and upper}\nobreak\ {\footnotesize {78b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5232,7 +5319,7 @@ We next update scores for parameters introduced for smaller $j$
 We put everything together in a loop starting with the second dimension
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap109}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap112}\raggedright\small
 \NWtarget{nuweb79a}{} $\langle\,${\itshape inner score loop}\nobreak\ {\footnotesize {79a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5277,7 +5364,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap110}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap113}\raggedright\small
 \NWtarget{nuweb79b}{} $\langle\,${\itshape score output}\nobreak\ {\footnotesize {79b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5305,7 +5392,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 \end{enumerate}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap111}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap114}\raggedright\small
 \NWtarget{nuweb79c}{} $\langle\,${\itshape init dans}\nobreak\ {\footnotesize {79c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5331,7 +5418,7 @@ We return $\log{\hat{p}_i}$ for each $i$, or we immediately sum-up over $i$.
 We put everything together in \proglang{C}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap112}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap115}\raggedright\small
 \NWtarget{nuweb81}{} $\langle\,${\itshape R slpmvnorm}\nobreak\ {\footnotesize {81}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5408,7 +5495,7 @@ however, we need to undo the effect of standardisation once the scores have
 been computed
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap113}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap116}\raggedright\small
 \NWtarget{nuweb82a}{} $\langle\,${\itshape post differentiate mean score}\nobreak\ {\footnotesize {82a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5429,7 +5516,7 @@ been computed
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap114}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap117}\raggedright\small
 \NWtarget{nuweb82b}{} $\langle\,${\itshape post differentiate lower score}\nobreak\ {\footnotesize {82b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5449,7 +5536,7 @@ been computed
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap115}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap118}\raggedright\small
 \NWtarget{nuweb82c}{} $\langle\,${\itshape post differentiate upper score}\nobreak\ {\footnotesize {82c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5469,7 +5556,7 @@ been computed
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap116}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap119}\raggedright\small
 \NWtarget{nuweb82d}{} $\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize {82d}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5508,7 +5595,7 @@ implemented by the ``vec trick''~(Section~\ref{sec:vectrick})
 where $\svec = \text{vec}(\mS)$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap117}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap120}\raggedright\small
 \NWtarget{nuweb83a}{} $\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize {83a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5535,7 +5622,7 @@ elements (use \code{Lower\_tri(, diag = FALSE)} to extract the lower
 triangular elements such that the scores match the input)
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap118}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap121}\raggedright\small
 \NWtarget{nuweb83b}{} $\langle\,${\itshape post process score}\nobreak\ {\footnotesize {83b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -5558,7 +5645,7 @@ triangular elements such that the scores match the input)
 We can now finally put everything together in a single score function.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap119}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap122}\raggedright\small
 \NWtarget{nuweb84}{} $\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize {84}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6030,13 +6117,13 @@ c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 1))$mean)
 Alternatively, we can compute these regressions from a permuted Cholesky
 factor (this goes into the ``simple'' conditional distribution in Section~\ref{sec:margcond})
 <<regressionsC>>=
-c(cond_mvnorm(chol = aperm(C, perm = c(2:J, 1), is_chol = TRUE), 
+c(cond_mvnorm(chol = aperm(as.chol(C), perm = c(2:J, 1)),
               which = 1:(J - 1), given = diag(J - 1))$mean)
 @
 or, as a third option, from the last row of the precision matrix of the 
 permuted Cholesky factor
 <<regressionsP>>=
-x <- as.array(chol2pre(aperm(C, perm = c(2:J, 1), is_chol = TRUE)))[J,,1]
+x <- as.array(chol2pre(aperm(as.chol(C), perm = c(2:J, 1))))[J,,1]
 c(-x[-J] / x[J])
 @
 In higher dimensions, the first option is to be preferred, because it
@@ -6118,7 +6205,7 @@ $\rX_i$ given $\rY_i = \yvec_i$.
 We first check the data
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap120}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap123}\raggedright\small
 \NWtarget{nuweb96}{} $\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize {96}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6156,7 +6243,7 @@ marginal and the conditional normal distributions and the joint log-likelihood
 is simply the sum of the two corresponding log-likelihoods.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap121}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap124}\raggedright\small
 \NWtarget{nuweb97}{} $\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize {97}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6217,7 +6304,7 @@ The score function requires a little extra work. We start with the case when
 \code{invchol} is given
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap122}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap125}\raggedright\small
 \NWtarget{nuweb98}{} $\langle\,${\itshape sldpmvnorm invchol}\nobreak\ {\footnotesize {98}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6288,7 +6375,7 @@ For \code{chol}, we compute the above code for its inverse and
 post-differentiate using the vec-trick
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap123}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
 \NWtarget{nuweb99}{} $\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize {99}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6312,7 +6399,7 @@ post-differentiate using the vec-trick
 \mbox{}\verb@    ret <- sldpmvnorm(obs = obs, lower = lower, upper = upper, @\\
 \mbox{}\verb@                      mean = mean, invchol = invchol, logLik = logLik, ...)@\\
 \mbox{}\verb@    ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)@\\
-\mbox{}\verb@    ret$chol <- - vectrick(invchol, ret$invchol)@\\
+\mbox{}\verb@    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))@\\
 \mbox{}\verb@    ret$invchol <- NULL@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
@@ -6398,7 +6485,7 @@ ll_ap <- function(parm, J) {
      parm <- parm[-(1:J)]       ### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     Ct <- aperm(C, perm = perm, is_chol = TRUE)
+     Ct <- aperm(as.chol(C), perm = perm)
      -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
                 upper = upr[-ic,], mean = m, chol = Ct, 
                 w = W[-ic,,drop = FALSE], M = M)
@@ -6473,17 +6560,20 @@ require lower triangular matrix objects as inputs, with diagonal elements,
 and check if the dimensions match
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap124}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
 \NWtarget{nuweb102a}{} $\langle\,${\itshape deperma input checks chol}\nobreak\ {\footnotesize {102a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@stopifnot(inherits(chol, "ltMatrices"))@\\
-\mbox{}\verb@stopifnot(inherits(permuted_chol, "ltMatrices"))@\\
+\mbox{}\verb@stopifnot(is.ltMatrices(chol))  ### is.chol@\\
+\mbox{}\verb@byrow_orig <- attr(chol, "byrow")@\\
+\mbox{}\verb@chol <- ltMatrices(chol, byrow = FALSE)@\\
+\mbox{}\verb@stopifnot(is.ltMatrices(permuted_chol)) ### is.chol@\\
+\mbox{}\verb@permuted_chol <- ltMatrices(permuted_chol, byrow = FALSE)@\\
 \mbox{}\verb@stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)@\\
 \mbox{}\verb@J <- dim(chol)[2L]@\\
 \mbox{}\verb@stopifnot(attr(chol, "diag"))@\\
-\mbox{}\verb@byrow_orig <- attr(chol, "byrow")@\\
+\mbox{}\verb@INVCHOL <- !missing(invchol)@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -6498,7 +6588,7 @@ and check if the dimensions match
 Regarding \code{perm}, we check if this is an actual permutation 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap125}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap128}\raggedright\small
 \NWtarget{nuweb102b}{} $\langle\,${\itshape deperma input checks perm}\nobreak\ {\footnotesize {102b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6518,18 +6608,25 @@ Regarding \code{perm}, we check if this is an actual permutation
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 The scores with respect to $\tilde{\mC}$ have been compute elsewhere, we
-just check the dimensions
+just check the dimensions. In case we were given the scores with respect to
+$\mL$, we first compute the scores with respect to $\mC$ (as we were lazy
+and only derived the results for $\mC$). As in \code{standardize}, the
+argument \code{score\_schol} gives the score with respect to $\mC$ and it is
+the user's responsibility to provide this quantity (even when \code{invchol}
+is given).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
-\NWtarget{nuweb102c}{} $\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize {102c}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap129}\raggedright\small
+\NWtarget{nuweb103a}{} $\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize {103a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@if (inherits(score_schol, "ltMatrices")) {@\\
+\mbox{}\verb@if (is.ltMatrices(score_schol)) { @\\
 \mbox{}\verb@    byrow_orig_s <- attr(score_schol, "byrow")@\\
-\mbox{}\verb@    score_schol <- ltMatrices(score_schol, byrow = byrow_orig)@\\
-\mbox{}\verb@    score_schol <- unclass(score_schol)@\\
+\mbox{}\verb@    score_schol <- ltMatrices(score_schol, byrow = FALSE)@\\
+\mbox{}\verb@    ### don't do this here!@\\
+\mbox{}\verb@    ### if (INVCHOL) score_schol <- -vectrick(permuted_invchol, score_schol)@\\
+\mbox{}\verb@    score_schol <- unclass(score_schol) ### this preserves byrow@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@stopifnot(is.matrix(score_schol))@\\
 \mbox{}\verb@N <- ncol(score_schol)@\\
@@ -6551,18 +6648,18 @@ about row or column storage order. We set-up indices matrices and the
 permutation matrix $\Pi$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
-\NWtarget{nuweb103}{} $\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize {103}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap130}\raggedright\small
+\NWtarget{nuweb103b}{} $\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize {103b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@idx <- matrix(1:J^2, nrow = J, ncol = J)@\\
+\mbox{}\verb@idx <- matrix(1:J^2, nrow = J, ncol = J)        ### assuming byrow = TRUE@\\
 \mbox{}\verb@tidx <- c(t(idx))@\\
 \mbox{}\verb@ltT <- idx[lower.tri(idx, diag = TRUE)]@\\
 \mbox{}\verb@P <- matrix(0, nrow = J, ncol = J)@\\
 \mbox{}\verb@P[cbind(1:J, perm)] <- 1@\\
 \mbox{}\verb@ID <- diag(J)@\\
-\mbox{}\verb@IDP <- (ID %x% P)[,ltT]   ### relevant columns of B1@\\
+\mbox{}\verb@IDP <- (ID %x% P)@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -6575,10 +6672,11 @@ permutation matrix $\Pi$
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 and are now ready for the main course. We are gentle and also allow
-\code{invchol}$ = \mL$ as input
+\code{invchol}$ = \mL$ as input, and we clean-up by post-differentiation at
+the very end in this case.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap128}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap131}\raggedright\small
 \NWtarget{nuweb104}{} $\langle\,${\itshape deperma}\nobreak\ {\footnotesize {104}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6589,9 +6687,9 @@ and are now ready for the main course. We are gentle and also allow
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks chol}\nobreak\ {\footnotesize \NWlink{nuweb102a}{102a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks perm}\nobreak\ {\footnotesize \NWlink{nuweb102b}{102b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize \NWlink{nuweb102c}{102c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize \NWlink{nuweb103a}{103a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize \NWlink{nuweb103}{103}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize \NWlink{nuweb103b}{103b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    Nc <- dim(chol)[1L]@\\
 \mbox{}\verb@    mC <- as.array(chol)[perm,,,drop = FALSE]@\\
@@ -6600,6 +6698,7 @@ and are now ready for the main course. We are gentle and also allow
 \mbox{}\verb@        B1 <- (mC[,,i] %x% ID) + (ID %x% mC[,,i])[,tidx]@\\
 \mbox{}\verb@        #                                        ^^^^^^^ <- d t(A) / d A@\\
 \mbox{}\verb@        B1 <- B1 %*% IDP@\\
+\mbox{}\verb@        B1 <- B1[,ltT] ### relevant columns of B1@\\
 \mbox{}\verb@        B2 <- (Ct[,,i] %x% ID) + (ID %x% Ct[,,i])[,tidx]@\\
 \mbox{}\verb@        B2 <- B2[,ltT] ### relevant columns of B2@\\
 \mbox{}\verb@        B3 <- try(solve(crossprod(B2), crossprod(B2, B1)))@\\
@@ -6610,14 +6709,10 @@ and are now ready for the main course. We are gentle and also allow
 \mbox{}\verb@        return(crossprod(score_schol[,i,drop], B3))@\\
 \mbox{}\verb@    })@\\
 \mbox{}\verb@    ret <- do.call("rbind", ret)@\\
-\mbox{}\verb@    ret <- ltMatrices(ltMatrices(t(ret), diag = TRUE, byrow = byrow_orig_s), @\\
-\mbox{}\verb@                      byrow = byrow_orig)@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@    ### if invchol was given, post-differentiate@\\
-\mbox{}\verb@    if (!missing(invchol))@\\
-\mbox{}\verb@        ### this means: ret <- - vectrick(chol, ret, chol)@\\
-\mbox{}\verb@        ret <- - vectrick(chol, ret)@\\
-\mbox{}\verb@@\\
+\mbox{}\verb@    ret <-ltMatrices(t(ret), diag = TRUE, byrow = FALSE)@\\
+\mbox{}\verb@    if (INVCHOL)@\\
+\mbox{}\verb@        ret <- -vectrick(chol, ret)@\\
+\mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig_s)@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -6643,7 +6738,7 @@ sc_ap <- function(parm, J) {
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
     ### permutation
-    Ct <- aperm(C, perm = perm, is_chol = TRUE)
+    Ct <- aperm(as.chol(C), perm = perm)
     ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
                       upper = upr[-ic,], mean = m, chol = Ct, 
                       w = W[-ic,,drop = FALSE], M = M)
@@ -6670,7 +6765,7 @@ op <- optim(start, fn = ll_ap, gr = sc_ap, J = J,
 ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
            diag = TRUE, byrow = BYROW)
 ## compare with true _permuted_ C for (X, Y)
-aperm(lt, perm = perm, is_chol = TRUE)
+aperm(as.chol(lt), perm = perm)
 @
 
 
@@ -6688,7 +6783,7 @@ $\diag(\mC \mC^\top)^{-\nicefrac{1}{2}}$ ensures that $\diag(\mSigma)
 \equiv 1$, that is, unconstained optimisation can be applied.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap129}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap132}\raggedright\small
 \NWtarget{nuweb106}{} $\langle\,${\itshape standardize}\nobreak\ {\footnotesize {106}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6775,24 +6870,27 @@ thus
 when $\bvec = \vecop(\mB)$. These scores are implemented in
 \code{destandardize} with \code{chol} $ = \mC$ and \code{score\_schol} $= \mT$.
 If the model was parameterised in $\mL = \mC^{-1}$, we have \code{invchol} $
-= \mL$, however, we would still need to compute $\mT$ (the score with
-respect to $\mC$).
+= \mL$, however, we would still need to compute $\mT$ (\code{score\_schol}, the score with
+respect to $\mC$, and it is the user's responsibility to provide this
+quantity).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap130}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap133}\raggedright\small
 \NWtarget{nuweb108}{} $\langle\,${\itshape destandardize}\nobreak\ {\footnotesize {108}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@destandardize <- function(chol = solve(invchol), invchol, score_schol)@\\
 \mbox{}\verb@{@\\
-\mbox{}\verb@    stopifnot(inherits(chol, "ltMatrices"))@\\
+\mbox{}\verb@    stopifnot(is.ltMatrices(chol))      ### is.chol; dispatch?@\\
 \mbox{}\verb@    J <- dim(chol)[2L]@\\
 \mbox{}\verb@    stopifnot(!attr(chol, "diag"))@\\
 \mbox{}\verb@    byrow_orig <- attr(chol, "byrow")@\\
 \mbox{}\verb@    chol <- ltMatrices(chol, byrow = FALSE)@\\
 \mbox{}\verb@    @\\
-\mbox{}\verb@    if (inherits(score_schol, "ltMatrices"))@\\
+\mbox{}\verb@    ### TODO: check byrow in score_schol?@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (is.ltMatrices(score_schol))@\\
 \mbox{}\verb@        score_schol <- matrix(as.array(score_schol), @\\
 \mbox{}\verb@                              nrow = dim(score_schol)[2L]^2)@\\
 \mbox{}\verb@    stopifnot(is.matrix(score_schol))@\\
@@ -6931,7 +7029,7 @@ if (!inherits(sd_NPML, "try-error")) {
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap131}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap134}\raggedright\small
 \NWtarget{nuweb112}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {112}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6968,7 +7066,7 @@ if (!inherits(sd_NPML, "try-error")) {
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap132}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap135}\raggedright\small
 \NWtarget{nuweb113}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {113}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7042,7 +7140,8 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 {\small\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
 \item $\langle\,$.subset ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb12}{12}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb13}{13}.}
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb48a}{48a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$aperm checks\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb48a}{48a}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb113}{113}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb62a}{, 62a}.
 }
@@ -7055,6 +7154,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$check obs\nobreak\ {\footnotesize \NWlink{nuweb54b}{54b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$check S argument\nobreak\ {\footnotesize \NWlink{nuweb41a}{41a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb42}{42}.}
 \item $\langle\,$chol\nobreak\ {\footnotesize \NWlink{nuweb38}{38}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}.}
+\item $\langle\,$chol classes\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
 \item $\langle\,$chol scores\nobreak\ {\footnotesize \NWlink{nuweb73a}{73a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb74a}{74a}.}
 \item $\langle\,$chol syMatrices\nobreak\ {\footnotesize \NWlink{nuweb37}{37}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$Cholesky of precision\nobreak\ {\footnotesize \NWlink{nuweb70c}{70c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb71}{71}\NWlink{nuweb84}{, 84}.
@@ -7070,12 +7170,12 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$conditional\nobreak\ {\footnotesize \NWlink{nuweb52}{52}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$convenience functions\nobreak\ {\footnotesize \NWlink{nuweb45}{45}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$crossprod ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb36}{36}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb43}{43}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
+\item $\langle\,$D times C\nobreak\ {\footnotesize \NWlink{nuweb44a}{44a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
 \item $\langle\,$deperma\nobreak\ {\footnotesize \NWlink{nuweb104}{104}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}.}
-\item $\langle\,$deperma indices\nobreak\ {\footnotesize \NWlink{nuweb103}{103}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
+\item $\langle\,$deperma indices\nobreak\ {\footnotesize \NWlink{nuweb103b}{103b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
 \item $\langle\,$deperma input checks chol\nobreak\ {\footnotesize \NWlink{nuweb102a}{102a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
 \item $\langle\,$deperma input checks perm\nobreak\ {\footnotesize \NWlink{nuweb102b}{102b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
-\item $\langle\,$deperma input checks schol\nobreak\ {\footnotesize \NWlink{nuweb102c}{102c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
+\item $\langle\,$deperma input checks schol\nobreak\ {\footnotesize \NWlink{nuweb103a}{103a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb104}{104}.}
 \item $\langle\,$destandardize\nobreak\ {\footnotesize \NWlink{nuweb108}{108}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}.}
 \item $\langle\,$diagonal matrix\nobreak\ {\footnotesize \NWlink{nuweb20}{20}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$diagonals ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
@@ -7085,7 +7185,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$dimnames ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb7a}{7a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$dp input checks\nobreak\ {\footnotesize \NWlink{nuweb96}{96}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb97}{97}\NWlink{nuweb99}{, 99}.
 }
-\item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb9}{9}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb10}{10}\NWlink{nuweb11}{, 11}\NWlink{nuweb12}{, 12}\NWlink{nuweb15}{, 15}\NWlink{nuweb17}{, 17}\NWlink{nuweb19}{, 19}\NWlink{nuweb21a}{, 21a}\NWlink{nuweb25}{, 25}.
+\item $\langle\,$extract slots\nobreak\ {\footnotesize \NWlink{nuweb10a}{10a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb10b}{10b}\NWlink{nuweb11}{, 11}\NWlink{nuweb12}{, 12}\NWlink{nuweb15}{, 15}\NWlink{nuweb17}{, 17}\NWlink{nuweb19}{, 19}\NWlink{nuweb21a}{, 21a}\NWlink{nuweb25}{, 25}.
 }
 \item $\langle\,$first element\nobreak\ {\footnotesize \NWlink{nuweb32a}{32a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb32b}{32b}\NWlink{nuweb33a}{, 33a}.
 }
@@ -7106,8 +7206,9 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$inner score loop\nobreak\ {\footnotesize \NWlink{nuweb79a}{79a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb81}{81}.}
 \item $\langle\,$input checks\nobreak\ {\footnotesize \NWlink{nuweb62b}{62b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb60}{60}\NWlink{nuweb71}{, 71}\NWlink{nuweb84}{, 84}.
 }
+\item $\langle\,$is.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb7c}{7c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$kronecker vec trick\nobreak\ {\footnotesize \NWlink{nuweb42}{42}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb44}{44}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
+\item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb44b}{44b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb45}{45}.}
 \item $\langle\,$lapack options\nobreak\ {\footnotesize \NWlink{nuweb26}{26}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb27}{27}\NWlink{nuweb28}{, 28}.
 }
 \item $\langle\,$ldmvnorm\nobreak\ {\footnotesize \NWlink{nuweb54a}{54a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}.}
@@ -7125,7 +7226,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$ltMatrices input\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb6a}{6a}.}
 \item $\langle\,$ltMatrices names\nobreak\ {\footnotesize \NWlink{nuweb5a}{5a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb6a}{6a}.}
 \item $\langle\,$marginal\nobreak\ {\footnotesize \NWlink{nuweb49}{49}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$mc input checks\nobreak\ {\footnotesize \NWlink{nuweb48}{48}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49}{49}\NWlink{nuweb52}{, 52}.
+\item $\langle\,$mc input checks\nobreak\ {\footnotesize \NWlink{nuweb48b}{48b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb49}{49}\NWlink{nuweb52}{, 52}.
 }
 \item $\langle\,$mean scores\nobreak\ {\footnotesize \NWlink{nuweb73b}{73b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb74a}{74a}.}
 \item $\langle\,$move on\nobreak\ {\footnotesize \NWlink{nuweb66a}{66a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}\NWlink{nuweb81}{, 81}.
@@ -7148,7 +7249,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate mean score\nobreak\ {\footnotesize \NWlink{nuweb82a}{82a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb82c}{82c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb83b}{83b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
-\item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb10}{10}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb10b}{10b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb61}{, 61}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62a}{62a}.}

@@ -199,6 +199,7 @@ Chapter~\ref{copula}.
 @<dim ltMatrices@>
 @<dimnames ltMatrices@>
 @<names ltMatrices@>
+@<is.ltMatrices@>
 @<print ltMatrices@>
 @<reorder ltMatrices@>
 @<subset ltMatrices@>
@@ -333,7 +334,7 @@ change the storage form from row- to column-major or the other way round.
 
 @d ltMatrices input
 @{
-if (inherits(object, "ltMatrices")) {
+if (is.ltMatrices(object)) {
     ret <- .reorder(object, byrow = byrow)
     return(ret)
 }
@@ -369,7 +370,7 @@ multiple symmetric matrices
 @d syMatrices
 @{
 as.syMatrices <- function(object) {
-    stopifnot(inherits(object, "ltMatrices"))
+    stopifnot(is.ltMatrices(object))
     class(object)[1L] <- "syMatrices"
     return(object)
 }
@@ -405,6 +406,14 @@ names.ltMatrices <- function(x) {
     return(attr(x, "dimnames")[[1L]])
 }
 names.syMatrices <- names.ltMatrices
+@}
+
+Finally, let's add two functions for checking the class
+
+@d is.ltMatrices
+@{
+is.ltMatrices <- function(x) inherits(x, "ltMatrices")
+is.syMatrices <- function(x) inherits(x, "syMatrices")
 @}
 
 Let's set-up an example for illustration. Throughout this document, we will
@@ -510,7 +519,7 @@ between the two forms
 @{
 .reorder <- function(x, byrow = FALSE) {
 
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
     if (attr(x, "byrow") == byrow) return(x)
 
     @<extract slots@>
@@ -717,9 +726,9 @@ columns, undoing the effect of \code{ltMatrices}
 @{
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
-    if (inherits(x, "syMatrices"))
+    if (is.syMatrices(x))
         class(x)[1L] <- "ltMatrices"
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)
 
@@ -807,7 +816,7 @@ defined without diagonal elements.
 @{
 .adddiag <- function(x) {
 
-    stopifnot(inherits(x, "ltMatrices")) 
+    stopifnot(is.ltMatrices(x))
 
     if (attr(x, "diag")) return(x)
 
@@ -1449,7 +1458,7 @@ The \proglang{R} interface now simply calls this low-level function
 @{
 logdet <- function(x) {
 
-    if (!inherits(x, "ltMatrices"))
+    if (!is.ltMatrices(x))
         stop("x is not an ltMatrices object")
 
     byrow <- attr(x, "byrow")
@@ -1616,7 +1625,7 @@ with \proglang{R} interface
 ### diag(C %*% t(C)) => returns matrix of diagonal elements
 .Tcrossprod <- function(x, diag_only = FALSE, transpose = FALSE) {
 
-    if (!inherits(x, "ltMatrices")) {
+    if (!is.ltMatrices(x)) {
         ret <- tcrossprod(x)
         if (diag_only) ret <- diag(ret)
         return(ret)
@@ -1891,7 +1900,7 @@ object
 
 @d check C argument
 @{
-stopifnot(inherits(C, "ltMatrices"))
+stopifnot(is.ltMatrices(C))
 if (!attr(C, "diag")) diagonals(C) <- 1
 C_byrow_orig <- attr(C, "byrow")
 C <- ltMatrices(C, byrow = FALSE)
@@ -1908,7 +1917,7 @@ featuring columns of vectorised $\J \times \J$ matrices
 
 @d check S argument
 @{
-SltM <- inherits(S, "ltMatrices")
+SltM <- is.ltMatrices(S)
 if (SltM) {
     if (!attr(S, "diag")) diagonals(S) <- 1
     S_byrow_orig <- attr(S, "byrow")
@@ -1943,7 +1952,7 @@ if (!is.double(S)) storage.mode(S) <- "double"
 if (missing(A)) {
     A <- C
 } else {
-    stopifnot(inherits(A, "ltMatrices"))
+    stopifnot(is.ltMatrices(A))
     if (!attr(A, "diag")) diagonals(A) <- 1
     A_byrow_orig <- attr(A, "byrow")
     stopifnot(C_byrow_orig == A_byrow_orig)
@@ -2057,10 +2066,37 @@ $\tilde{\mL}_i = \mL_i \text{diag}(\mL_i^\top \mL_i)^{-\frac{1}{2}}$
 from $\mL_i$ (\code{invchol}) or $\mC_i =
 \mL_i^{-1}$ (\code{chol}) for $i = 1, \dots, N$. 
 
+Before we start, let us put a label on lower triangular matrices, such that
+we can differentiate between $\mC$ and $\mL$.
+
+@d chol classes
+@{
+is.chol <- function(x) inherits(x, "chol")
+as.chol <- function(x) {
+    stopifnot(is.ltMatrices(x))
+    if (is.chol(x)) return(x)
+    if (is.invchol(x))
+        return(invchol2chol(x))
+    class(x) <- c("chol", class(x))
+    return(x)
+}
+is.invchol <- function(x) inherits(x, "invchol")
+as.invchol <- function(x) {
+    stopifnot(is.ltMatrices(x))
+    if (is.invchol(x)) return(x)
+    if (is.chol(x))
+        return(chol2invchol(x))
+    class(x) <- c("invchol", class(x))
+    return(x)
+}
+@}
+
 First, we set-up functions for computing $\tilde{\mC}_i$
 @d D times C
 @{
 Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
+
+    if (is.invchol(x)) stop("Dchol cannot work with invchol objects")
 
     x <- .adddiag(x)
 
@@ -2075,7 +2111,7 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
     x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]
 
     ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig)
+    ret <- as.chol(ltMatrices(ret, byrow = byrow_orig))
     return(ret)
 }
 @}
@@ -2086,6 +2122,8 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 @{
 ### invcholD = solve(Dchol)
 invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
+
+    if (is.chol(x)) stop("invcholD cannot work with chol objects")
 
     x <- .adddiag(x)
 
@@ -2100,7 +2138,7 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
     x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
 
     ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig)
+    ret <- as.invchol(ltMatrices(ret, byrow = byrow_orig))
     return(ret)
 }
 @}
@@ -2109,6 +2147,7 @@ and now the convenience functions are one-liners:
 
 @d convenience functions
 @{
+@<chol classes@>
 @<D times C@>
 @<L times D@>
 
@@ -2118,11 +2157,11 @@ chol2cov <- function(x)
 
 ### L -> C
 invchol2chol <- function(x)
-    solve(x)
+    as.chol(solve(x))
 
 ### C -> L
 chol2invchol <- function(x)
-    solve(x)
+    as.invchol(solve(x))
 
 ### L -> Sigma
 invchol2cov <- function(x)
@@ -2262,38 +2301,48 @@ the Cholesky decompositon $\tilde{\mC}_i \tilde{\mC}_i^\top$ of $\Pi \mC_i \mC_i
 The function \code{aperm}, with argument \code{perm} $=\pi$, 
 now computes the Cholesky factor $\tilde{\mC}_i$
 of the permuted covariance matrix, or the inverse thereof (in case
-\code{is\_chol = FALSE} was specified)
+\code{x} is of class \code{invchol}). We start with some tests
+
+@d aperm checks
+@{
+J <- dim(a)[2L]
+if (missing(perm)) return(a)
+if (is.character(perm)) 
+    perm <- match(perm, dimnames(a)[[2L]])
+stopifnot(all(perm %in% 1:J))
+
+args <- list(...)
+if (length(args) > 0L)
+    warning("Additional arguments", names(args), "ignored")
+@}
+
+and then implement the two methods
 
 @d aperm
 @{
-aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
+aperm.chol <- function(a, perm, ...) {
 
-    stopifnot(inherits(a, "ltMatrices"))
-    J <- dim(a)[2L]
-    if (missing(perm)) return(a)
-    if (is.character(perm)) 
-        perm <- match(perm, dimnames(a)[[2L]])
-    stopifnot(all(perm %in% 1:J))
+    @<aperm checks@>
 
-    args <- list(...)
-    if (length(args) > 0L)
-        warning("Additional arguments", names(args), "ignored")
+    return(as.chol(chol(chol2cov(a)[,perm])))
+}
+aperm.invchol <- function(a, perm, ...) {
 
-    if (is_chol) ### a is Cholesky of covariance
-        return(chol(chol2cov(a)[,perm]))
+    @<aperm checks@>
+
     return(chol2invchol(chol(invchol2cov(a)[,perm])))
 }
 @}
 
 <<aperm-tests, eval= TRUE>>=
-L <- lxn
+L <- as.invchol(lxn)
 J <- dim(L)[2L]
-Lp <- aperm(a = L, perm = p <- sample(1:J), is_chol = FALSE)
+Lp <- aperm(a = L, perm = p <- sample(1:J))
 chk(invchol2cov(L)[,p], invchol2cov(Lp))
 
-C <- lxn
+C <- as.chol(lxn)
 J <- dim(C)[2L]
-Cp <- aperm(a = C, perm = p <- sample(1:J), is_chol = TRUE)
+Cp <- aperm(a = C, perm = p <- sample(1:J))
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @@
 
@@ -2310,7 +2359,7 @@ computed.
 stopifnot(xor(missing(chol), missing(invchol)))
 x <- if (missing(chol)) invchol else chol
 
-stopifnot(inherits(x, "ltMatrices"))
+stopifnot(is.ltMatrices(x))
 
 N <- dim(x)[1L]
 J <- dim(x)[2L]
@@ -2480,11 +2529,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     if (center) {
         perm <- c(which, (1:J)[!(1:J) %in% which])
         if (!missing(chol))
-        return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+        return(cond_mvnorm(chol = aperm(as.chol(chol), perm = perm),
                            which_given = 1:length(which), given = given,
                            center = center))
-        return(cond_mvnorm(invchol = aperm(invchol, perm = perm, 
-                                           is_chol = FALSE),
+        return(cond_mvnorm(invchol = aperm(as.invchol(invchol), perm = perm),
                            which_given = 1:length(which), given = given,
                            center = center))
     }
@@ -2694,7 +2742,7 @@ The main part is now
 if (missing(chol))
     stop("either chol or invchol must be given")
 ## chol is given
-if (!inherits(chol, "ltMatrices"))
+if (!is.ltMatrices(chol))	### NOTE: replace with is.chol
     stop("chol is not an object of class ltMatrices")
 N <- dim(chol)[1L]
 N <- ifelse(N == 1, p, N)
@@ -2718,7 +2766,7 @@ If $\mL_i = \mC_i^{-1}$ is given, we obtain
 @d ldmvnorm invchol
 @{
 ## invchol is given
-if (!inherits(invchol, "ltMatrices"))
+if (!is.ltMatrices(invchol)) 	### NOTE: replace with is.invchol
     stop("invchol is not an object of class ltMatrices")
 N <- dim(invchol)[1L]
 N <- ifelse(N == 1, p, N)
@@ -2802,7 +2850,7 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
     invchol <- solve(chol)
     ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
-    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))
     ret$invchol <- NULL
     return(ret)
 }
@@ -2990,7 +3038,7 @@ if (!is.matrix(lower)) lower <- matrix(lower, ncol = 1)
 if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
 stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-stopifnot(inherits(chol, "ltMatrices"))
+stopifnot(is.ltMatrices(chol))		### is.chol
 byrow_orig <- attr(chol, "byrow")
 chol <- ltMatrices(chol, byrow = TRUE)
 d <- dim(chol)
@@ -4432,13 +4480,13 @@ c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 1))$mean)
 Alternatively, we can compute these regressions from a permuted Cholesky
 factor (this goes into the ``simple'' conditional distribution in Section~\ref{sec:margcond})
 <<regressionsC>>=
-c(cond_mvnorm(chol = aperm(C, perm = c(2:J, 1), is_chol = TRUE), 
+c(cond_mvnorm(chol = aperm(as.chol(C), perm = c(2:J, 1)),
               which = 1:(J - 1), given = diag(J - 1))$mean)
 @@
 or, as a third option, from the last row of the precision matrix of the 
 permuted Cholesky factor
 <<regressionsP>>=
-x <- as.array(chol2pre(aperm(C, perm = c(2:J, 1), is_chol = TRUE)))[J,,1]
+x <- as.array(chol2pre(aperm(as.chol(C), perm = c(2:J, 1))))[J,,1]
 c(-x[-J] / x[J])
 @@
 In higher dimensions, the first option is to be preferred, because it
@@ -4671,7 +4719,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
     ret <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
                       mean = mean, invchol = invchol, logLik = logLik, ...)
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
-    ret$chol <- - vectrick(invchol, ret$invchol)
+    ret$chol <- as.chol(- vectrick(invchol, ret$invchol))
     ret$invchol <- NULL
     return(ret)
 }
@@ -4748,7 +4796,7 @@ ll_ap <- function(parm, J) {
      parm <- parm[-(1:J)]       ### chol parameters
      C <- matrix(c(parm), ncol = 1L)
      C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
-     Ct <- aperm(C, perm = perm, is_chol = TRUE)
+     Ct <- aperm(as.chol(C), perm = perm)
      -ldpmvnorm(obs = Y[ic,], lower = lwr[-ic,], 
                 upper = upr[-ic,], mean = m, chol = Ct, 
                 w = W[-ic,,drop = FALSE], M = M)
@@ -4824,10 +4872,10 @@ and check if the dimensions match
 
 @d deperma input checks chol
 @{
-stopifnot(inherits(chol, "ltMatrices"))
+stopifnot(is.ltMatrices(chol))	### is.chol
 byrow_orig <- attr(chol, "byrow")
 chol <- ltMatrices(chol, byrow = FALSE)
-stopifnot(inherits(permuted_chol, "ltMatrices"))
+stopifnot(is.ltMatrices(permuted_chol))	### is.chol
 permuted_chol <- ltMatrices(permuted_chol, byrow = FALSE)
 stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
 J <- dim(chol)[2L]
@@ -4854,7 +4902,7 @@ is given).
 
 @d deperma input checks schol
 @{
-if (inherits(score_schol, "ltMatrices")) {
+if (is.ltMatrices(score_schol)) { 
     byrow_orig_s <- attr(score_schol, "byrow")
     score_schol <- ltMatrices(score_schol, byrow = FALSE)
     ### don't do this here!
@@ -4936,7 +4984,7 @@ sc_ap <- function(parm, J) {
     C <- matrix(c(parm), ncol = 1L)
     C <- ltMatrices(C, diag = TRUE, byrow = BYROW)
     ### permutation
-    Ct <- aperm(C, perm = perm, is_chol = TRUE)
+    Ct <- aperm(as.chol(C), perm = perm)
     ret <- sldpmvnorm(obs = Y[ic,], lower = lwr[-ic,],
                       upper = upr[-ic,], mean = m, chol = Ct, 
                       w = W[-ic,,drop = FALSE], M = M)
@@ -4963,7 +5011,7 @@ op <- optim(start, fn = ll_ap, gr = sc_ap, J = J,
 ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
            diag = TRUE, byrow = BYROW)
 ## compare with true _permuted_ C for (X, Y)
-aperm(lt, perm = perm, is_chol = TRUE)
+aperm(as.chol(lt), perm = perm)
 @@
 
 
@@ -5063,7 +5111,7 @@ quantity).
 @{
 destandardize <- function(chol = solve(invchol), invchol, score_schol)
 {
-    stopifnot(inherits(chol, "ltMatrices"))
+    stopifnot(is.ltMatrices(chol))	### is.chol; dispatch?
     J <- dim(chol)[2L]
     stopifnot(!attr(chol, "diag"))
     byrow_orig <- attr(chol, "byrow")
@@ -5071,7 +5119,7 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
     
     ### TODO: check byrow in score_schol?
 
-    if (inherits(score_schol, "ltMatrices"))
+    if (is.ltMatrices(score_schol))
         score_schol <- matrix(as.array(score_schol), 
                               nrow = dim(score_schol)[2L]^2)
     stopifnot(is.matrix(score_schol))

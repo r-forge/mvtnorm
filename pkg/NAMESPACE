@@ -9,6 +9,7 @@ importFrom("stats",
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, syMatrices, as.syMatrices, Tcrossprod, Crossprod, diagonals, 
+       is.ltMatrices, is.syMatrices, is.chol, is.invchol, as.chol, as.invchol,
        chol2cov, invchol2chol, chol2invchol, invchol2cov, 
        invchol2pre, chol2pre, Dchol, invcholD, chol2cor, invchol2cor,
        invchol2pc, chol2pc, "diagonals<-", vectrick, Lower_tri, logdet,
@@ -35,7 +36,8 @@ S3method("diagonals", "integer")
 S3method("diagonals<-", "ltMatrices")
 S3method("diagonals<-", "syMatrices")
 S3method("chol", "syMatrices")
-S3method("aperm", "ltMatrices")
+S3method("aperm", "chol")
+S3method("aperm", "invchol")
 S3method("Mult", "ltMatrices")
 S3method("Mult", "syMatrices")
 S3method("Mult", "default")

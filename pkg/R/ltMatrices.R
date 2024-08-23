@@ -31,7 +31,7 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 
     # ltMatrices input
     
-    if (inherits(object, "ltMatrices")) {
+    if (is.ltMatrices(object)) {
         ret <- .reorder(object, byrow = byrow)
         return(ret)
     }
@@ -79,7 +79,7 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 # syMatrices
 
 as.syMatrices <- function(object) {
-    stopifnot(inherits(object, "ltMatrices"))
+    stopifnot(is.ltMatrices(object))
     class(object)[1L] <- "syMatrices"
     return(object)
 }
@@ -106,6 +106,11 @@ names.ltMatrices <- function(x) {
     return(attr(x, "dimnames")[[1L]])
 }
 names.syMatrices <- names.ltMatrices
+
+# is.ltMatrices
+
+is.ltMatrices <- function(x) inherits(x, "ltMatrices")
+is.syMatrices <- function(x) inherits(x, "syMatrices")
 
 # print ltMatrices
 
@@ -156,7 +161,7 @@ print.syMatrices <- function(x, ...)
 
 .reorder <- function(x, byrow = FALSE) {
 
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
     if (attr(x, "byrow") == byrow) return(x)
 
     # extract slots
@@ -257,9 +262,9 @@ print.syMatrices <- function(x, ...)
 
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
-    if (inherits(x, "syMatrices"))
+    if (is.syMatrices(x))
         class(x)[1L] <- "ltMatrices"
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)
 
@@ -469,7 +474,7 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
 
 logdet <- function(x) {
 
-    if (!inherits(x, "ltMatrices"))
+    if (!is.ltMatrices(x))
         stop("x is not an ltMatrices object")
 
     byrow <- attr(x, "byrow")
@@ -492,7 +497,7 @@ logdet <- function(x) {
 ### diag(C %*% t(C)) => returns matrix of diagonal elements
 .Tcrossprod <- function(x, diag_only = FALSE, transpose = FALSE) {
 
-    if (!inherits(x, "ltMatrices")) {
+    if (!is.ltMatrices(x)) {
         ret <- tcrossprod(x)
         if (diag_only) ret <- diag(ret)
         return(ret)
@@ -559,7 +564,7 @@ chol.syMatrices <- function(x, ...) {
 
 .adddiag <- function(x) {
 
-    stopifnot(inherits(x, "ltMatrices")) 
+    stopifnot(is.ltMatrices(x))
 
     if (attr(x, "diag")) return(x)
 
@@ -654,7 +659,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
 
     # check C argument
     
-    stopifnot(inherits(C, "ltMatrices"))
+    stopifnot(is.ltMatrices(C))
     if (!attr(C, "diag")) diagonals(C) <- 1
     C_byrow_orig <- attr(C, "byrow")
     C <- ltMatrices(C, byrow = FALSE)
@@ -667,7 +672,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     
     # check S argument
     
-    SltM <- inherits(S, "ltMatrices")
+    SltM <- is.ltMatrices(S)
     if (SltM) {
         if (!attr(S, "diag")) diagonals(S) <- 1
         S_byrow_orig <- attr(S, "byrow")
@@ -699,7 +704,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     if (missing(A)) {
         A <- C
     } else {
-        stopifnot(inherits(A, "ltMatrices"))
+        stopifnot(is.ltMatrices(A))
         if (!attr(A, "diag")) diagonals(A) <- 1
         A_byrow_orig <- attr(A, "byrow")
         stopifnot(C_byrow_orig == A_byrow_orig)
@@ -732,9 +737,32 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
 
 # convenience functions
 
+# chol classes
+
+is.chol <- function(x) inherits(x, "chol")
+as.chol <- function(x) {
+    stopifnot(is.ltMatrices(x))
+    if (is.chol(x)) return(x)
+    if (is.invchol(x))
+        return(invchol2chol(x))
+    class(x) <- c("chol", class(x))
+    return(x)
+}
+is.invchol <- function(x) inherits(x, "invchol")
+as.invchol <- function(x) {
+    stopifnot(is.ltMatrices(x))
+    if (is.invchol(x)) return(x)
+    if (is.chol(x))
+        return(chol2invchol(x))
+    class(x) <- c("invchol", class(x))
+    return(x)
+}
+
 # D times C
 
 Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
+
+    if (is.invchol(x)) stop("Dchol cannot work with invchol objects")
 
     x <- .adddiag(x)
 
@@ -749,7 +777,7 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
     x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]
 
     ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig)
+    ret <- as.chol(ltMatrices(ret, byrow = byrow_orig))
     return(ret)
 }
 
@@ -757,6 +785,8 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
 
 ### invcholD = solve(Dchol)
 invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
+
+    if (is.chol(x)) stop("invcholD cannot work with chol objects")
 
     x <- .adddiag(x)
 
@@ -771,7 +801,7 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
     x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
 
     ret <- ltMatrices(x, diag = TRUE, byrow = FALSE, names = nm)
-    ret <- ltMatrices(ret, byrow = byrow_orig)
+    ret <- as.invchol(ltMatrices(ret, byrow = byrow_orig))
     return(ret)
 }
 
@@ -782,11 +812,11 @@ chol2cov <- function(x)
 
 ### L -> C
 invchol2chol <- function(x)
-    solve(x)
+    as.chol(solve(x))
 
 ### C -> L
 chol2invchol <- function(x)
-    solve(x)
+    as.invchol(solve(x))
 
 ### L -> Sigma
 invchol2cov <- function(x)
@@ -827,9 +857,10 @@ chol2pc <- function(x)
 
 # aperm
 
-aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
+aperm.chol <- function(a, perm, ...) {
 
-    stopifnot(inherits(a, "ltMatrices"))
+    # aperm checks
+    
     J <- dim(a)[2L]
     if (missing(perm)) return(a)
     if (is.character(perm)) 
@@ -839,9 +870,25 @@ aperm.ltMatrices <- function(a, perm, is_chol = FALSE, ...) {
     args <- list(...)
     if (length(args) > 0L)
         warning("Additional arguments", names(args), "ignored")
+    
 
-    if (is_chol) ### a is Cholesky of covariance
-        return(chol(chol2cov(a)[,perm]))
+    return(as.chol(chol(chol2cov(a)[,perm])))
+}
+aperm.invchol <- function(a, perm, ...) {
+
+    # aperm checks
+    
+    J <- dim(a)[2L]
+    if (missing(perm)) return(a)
+    if (is.character(perm)) 
+        perm <- match(perm, dimnames(a)[[2L]])
+    stopifnot(all(perm %in% 1:J))
+
+    args <- list(...)
+    if (length(args) > 0L)
+        warning("Additional arguments", names(args), "ignored")
+    
+
     return(chol2invchol(chol(invchol2cov(a)[,perm])))
 }
 
@@ -854,7 +901,7 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
     stopifnot(xor(missing(chol), missing(invchol)))
     x <- if (missing(chol)) invchol else chol
 
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
@@ -896,7 +943,7 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     stopifnot(xor(missing(chol), missing(invchol)))
     x <- if (missing(chol)) invchol else chol
 
-    stopifnot(inherits(x, "ltMatrices"))
+    stopifnot(is.ltMatrices(x))
 
     N <- dim(x)[1L]
     J <- dim(x)[2L]
@@ -951,11 +998,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     if (center) {
         perm <- c(which, (1:J)[!(1:J) %in% which])
         if (!missing(chol))
-        return(cond_mvnorm(chol = aperm(chol, perm = perm, is_chol = TRUE),
+        return(cond_mvnorm(chol = aperm(as.chol(chol), perm = perm),
                            which_given = 1:length(which), given = given,
                            center = center))
-        return(cond_mvnorm(invchol = aperm(invchol, perm = perm, 
-                                           is_chol = FALSE),
+        return(cond_mvnorm(invchol = aperm(as.invchol(invchol), perm = perm),
                            which_given = 1:length(which), given = given,
                            center = center))
     }
