@@ -2346,6 +2346,20 @@ Cp <- aperm(a = C, perm = p <- sample(1:J))
 chk(chol2cov(C)[,p], chol2cov(Cp))
 @@
 
+We finally add a method for class \code{ltMatrices}, for which we actually cannot
+provide a reasonable result, and for symmetric matrices, where we simply
+fall-back on subsetting
+
+@d aperm
+@{
+aperm.ltMatrices <- function(a, perm, ...)
+    stop("Cannot permute objects of class ltMatrices, 
+          consider calling as.chol() or as.invchol() first")
+
+aperm.syMatrices <- function(a, perm, ...)
+    return(a[,perm])
+@}
+
 \section{Marginal and Conditional Normal Distributions} \label{sec:margcond}
 
 Marginal and conditional distributions from distributions $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$

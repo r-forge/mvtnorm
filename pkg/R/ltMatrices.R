@@ -892,6 +892,13 @@ aperm.invchol <- function(a, perm, ...) {
     return(chol2invchol(chol(invchol2cov(a)[,perm])))
 }
 
+aperm.ltMatrices <- function(a, perm, ...)
+    stop("Cannot permute objects of class ltMatrices, 
+          consider calling as.chol() or as.invchol() first")
+
+aperm.syMatrices <- function(a, perm, ...)
+    return(a[,perm])
+
 # marginal
 
 marg_mvnorm <- function(chol, invchol, which = 1L) {

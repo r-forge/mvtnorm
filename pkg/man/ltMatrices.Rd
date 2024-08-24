@@ -29,6 +29,8 @@
 \alias{chol.syMatrices}
 \alias{aperm.chol}
 \alias{aperm.invchol}
+\alias{aperm.ltMatrices}
+\alias{aperm.syMatrices}
 \alias{deperma}
 \alias{adddiag}
 \alias{chol2cov}
@@ -69,6 +71,8 @@ diagonals(x) <- value
 \S3method{chol}{syMatrices}(x, \dots)
 \S3method{aperm}{chol}(a, perm, \dots)
 \S3method{aperm}{invchol}(a, perm, \dots)
+\S3method{aperm}{ltMatrices}(a, perm, \dots)
+\S3method{aperm}{syMatrices}(a, perm, \dots)
 deperma(chol = solve(invchol), permuted_chol = solve(permuted_invchol), 
         invchol, permuted_invchol, perm, score_schol)
 \S3method{Mult}{ltMatrices}(x, y, transpose = FALSE, \dots)
