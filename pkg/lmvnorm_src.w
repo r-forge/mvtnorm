@@ -720,7 +720,9 @@ chk(a, b)
 
 Extracting the lower triangular elements from an \code{ltMatrices} object
 (or from an object of class \code{syMatrices}) returns a matrix with $N$
-columns, undoing the effect of \code{ltMatrices}
+columns, undoing the effect of \code{ltMatrices}. Note that ordering of the
+rows of this matrix depend on the \code{byrow} attribute of \code{x}, unless
+the \code{byrow} to this function is used to overwrite it explicitly
 
 @d lower triangular elements
 @{
