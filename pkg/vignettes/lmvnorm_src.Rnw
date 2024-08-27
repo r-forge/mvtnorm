@@ -7076,11 +7076,11 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @
 
-\chapter{A User Interface}
+\chapter{(Experimental) User Interface}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap135}\raggedright\small
-\NWtarget{nuweb113a}{} \verb@"user.R"@\nobreak\ {\footnotesize {113a}}$\equiv$
+\NWtarget{nuweb113a}{} \verb@"interface.R"@\nobreak\ {\footnotesize {113a}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8024,6 +8024,11 @@ MLi$mean[,,drop = TRUE]
 ML$mean[,,drop = TRUE]
 @
 
+We close this chapter with a word of warning: If more than one variable is
+censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
+\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
+additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
+
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
@@ -8126,11 +8131,11 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 
 
 {\small\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \verb@"interface.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb113a}{113a}.}
 \item \verb@"lpmvnorm.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb62}{62}.}
 \item \verb@"lpmvnorm.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb61}{61}.}
 \item \verb@"ltMatrices.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb3}{3}.}
 \item \verb@"ltMatrices.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb2}{2}.}
-\item \verb@"user.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb113a}{113a}.}
 \end{list}}
 
 \section*{Fragments}

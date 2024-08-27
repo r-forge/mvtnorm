@@ -2,9 +2,11 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.2-7 (2024-08-xx)}{
+\section{Changes in Version 1.3-0 (2024-08-27)}{
   \subsection{Features}{
     \itemize{
+      \item New (but still experimental) user interface for computing
+            on multivariate normal distributions.
       \item Explain \code{cond\_mvnorm} a bit better in the vignette.
       \item Add the possibility to compute log-likelihood and score
             functions for permutations of variables (function \code{deperma})

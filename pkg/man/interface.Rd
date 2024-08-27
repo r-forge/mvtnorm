@@ -1,4 +1,4 @@
-\name{mvnormuser}
+\name{interface}
 \alias{mvnorm}
 \alias{aperm.mvnorm}
 \alias{simulate.mvnorm}
@@ -10,10 +10,10 @@
 \alias{condDist}
 \alias{condDist.mvnorm}
 \title{
-    User Interface to Multivariate Normal Distributions
+    (Experimental) User Interface to Multiple Multivariate Normal Distributions
 }
 \description{
-    A simple user interface for computing on multiple multivariate
+    An (still experimental) simple user interface for computing on multiple multivariate
     normal distributions.
 }
 \usage{
@@ -37,7 +37,7 @@ condDist(object, which_given, given, ...)
               inverse Cholesky factors of the covariance matrix or
               one single numeric lower triangular square matrix.
 }
-  \item{a,object}{objects of class \code{mvnorm}
+  \item{a,object}{objects of class \code{mvnorm}.
 }
   \item{perm}{a permutation of the covariance matrix corresponding to \code{a}.
 }
@@ -61,7 +61,7 @@ condDist(object, which_given, given, ...)
              recycled to length of \code{obs}, \code{lower} and \code{upper}).
 }
 \item{seed}{an object specifying if and how the random number generator
-          should be initialized, see \code{\link[stats]{simulate}}. 
+            should be initialized, see \code{\link[stats]{simulate}}. 
 }
 \item{standardize}{logical, should the Cholesky factor (or its inverse) undergo
                    standardization (ensuring the covariance matrix is a correlation
@@ -77,10 +77,25 @@ condDist(object, which_given, given, ...)
 }
 }
 \details{
-    Computations on normal distributions.
+    The constructor \code{mvnorm} can be used to specify (multiple)
+    multivariate normal distributions. \code{margDist} derives marginal and
+    \code{condDist} conditional distributions from such objects. A
+    \code{simulate} method exists for drawn samples from multivariate
+    normals.
+
+    The continuous (data in \code{obs}), discrete (intervals in \code{lower}
+    and \code{upper}), and mixed continuous-discrete log-likelihood is
+    implemented in \code{logLik}. The corresponding gradients with respect
+    to all model parameters and with respect to the data arguments
+    is available from \code{lLgrad}.
+
+    Rationals and examples are given in Chapter 7 of the package vignette
+    linked to below.
 }
 \value{
-A named list.
+    \code{mvnorm}, \code{margDist}, and \code{condDist} return objects
+    of class \code{mvnorm}. \code{logLik} returns the log-likelihood 
+    and \code{lLgrad} a list with gradients.
 }
 \seealso{\code{vignette("lmvnorm_src", package = "mvtnorm")}}
 \keyword{distribution}

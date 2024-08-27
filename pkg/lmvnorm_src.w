@@ -5278,9 +5278,9 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @@
 
-\chapter{A User Interface}
+\chapter{(Experimental) User Interface}
 
-@o user.R -cp
+@o interface.R -cp
 @{
 @<as.ltMatrices@>
 @<mvnorm@>
@@ -5940,6 +5940,11 @@ round(chol2cov(ML$scale), 2)
 MLi$mean[,,drop = TRUE]
 ML$mean[,,drop = TRUE]
 @@
+
+We close this chapter with a word of warning: If more than one variable is
+censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
+\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
+additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
 
 \chapter{Package Infrastructure}
 
