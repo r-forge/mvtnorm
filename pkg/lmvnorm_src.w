@@ -107,7 +107,7 @@ version <- packageDescription("mvtnorm")$Version
 \footnote{Please cite this document as: Torsten Hothorn (\Sexpr{year})
 Multivariate Normal Log-likelihoods in the \pkg{mvtnorm} Package.
 \textsf{R} package vignette version \Sexpr{version}, 
-URL \url{https://CRAN.R-project.org/package=mvtnorm}.}
+URL \href{https://doi.org/10.32614/CRAN.package.mvtnorm}{DOI:10.32614/CRAN.package.mvtnorm}.}
 }
 
 \begin{document}
@@ -187,7 +187,8 @@ developed here to implement the log-likelihood and score function for
 situations where some variables have been observed exactly and others only
 in form of interval-censoring in Chapter~\ref{cdl} and for nonparametric
 maximum-likelihood estimation in unstructured Gaussian copulae in
-Chapter~\ref{copula}.
+Chapter~\ref{copula}. An attempt to provide useRs with a simple and
+(hopefully) bullet proof interface is documented in Chapter~\ref{inter}.
 
 \chapter{Lower Triangular Matrices} \label{ltMatrices}
 
@@ -5278,7 +5279,7 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @@
 
-\chapter{(Experimental) User Interface}
+\chapter{(Experimental) User Interface} \label{inter}
 
 @o interface.R -cp
 @{
