@@ -13,6 +13,11 @@
             confusion.
     }
   }
+  \subsection{Bugfixes}{
+    \itemize{
+      \item Names didn't propagate properly.
+    }
+  }
 }
 
 \section{Changes in Version 1.2-6 (2024-08-17)}{
