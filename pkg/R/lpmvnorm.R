@@ -257,7 +257,8 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     # post differentiate invchol score
     
     if (!missing(invchol)) {
-        ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
+        ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE,
+                          names = dimnames(chol)[[2L]])
         ### this means vectrick(chol, ret, chol)
         ret <- - unclass(vectrick(chol, ret))
     }
@@ -267,7 +268,8 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     if (!attr(chol, "diag"))
         ### remove scores for constant diagonal elements
         ret[idx,] <- 0
-    ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)
+    ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE, 
+                      names = dimnames(chol)[[2L]])
     
 
     ret <- ltMatrices(ret, byrow = byrow_orig)
@@ -357,10 +359,13 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
 
         M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
-        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], 
-                          diag = attr(invchol, "diag"), byrow = FALSE)
-        ret <- ltMatrices(ret, 
-                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
+        ret <- ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE]
+        if (!is.null(dimnames(invchol)[[1L]]))
+            colnames(ret) <- dimnames(invchol)[[1]]
+        ret <- ltMatrices(ret,
+                          diag = attr(invchol, "diag"), byrow = FALSE,
+                          names = dimnames(invchol)[[2L]])
+        ret <- ltMatrices(ret, diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
         if (attr(invchol, "diag")) {
             ### recycle properly
             diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))
@@ -606,7 +611,7 @@ deperma <- function(chol = solve(invchol),
             stop("failure computing permutation score")
         if (Nc == 1L)
             return(crossprod(score_schol, B3))
-        return(crossprod(score_schol[,i,drop], B3))
+        return(crossprod(score_schol[,i,drop = FALSE], B3))
     })
     ret <- do.call("rbind", ret)
     ret <-ltMatrices(t(ret), diag = TRUE, byrow = FALSE)
@@ -671,8 +676,12 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
         ### this means: ret <- - vectrick(chol, ret, chol)
         ret <- - vectrick(chol, ret)
     }
-    ret <- ltMatrices(ret[M[lower.tri(M)],,drop = FALSE],
-                      diag = FALSE, byrow = FALSE)
+    ret <- ret[M[lower.tri(M)],,drop = FALSE]
+    if (!is.null(dimnames(chol)[[1L]]))
+        colnames(ret) <- dimnames(chol)[[1L]]
+    ret <- ltMatrices(ret,
+                      diag = FALSE, byrow = FALSE, 
+                      names = dimnames(chol)[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
     diagonals(ret) <- 0
     return(ret)

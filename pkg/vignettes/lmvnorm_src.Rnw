@@ -940,7 +940,9 @@ chk(a, b)
 
 Extracting the lower triangular elements from an \code{ltMatrices} object
 (or from an object of class \code{syMatrices}) returns a matrix with $N$
-columns, undoing the effect of \code{ltMatrices}
+columns, undoing the effect of \code{ltMatrices}. Note that ordering of the
+rows of this matrix depend on the \code{byrow} attribute of \code{x}, unless
+the \code{byrow} to this function is used to overwrite it explicitly
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap17}\raggedright\small
@@ -3734,9 +3736,9 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@@\\
 \mbox{}\verb@        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)@\\
 \mbox{}\verb@        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], @\\
-\mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = FALSE)@\\
-\mbox{}\verb@        ret <- ltMatrices(ret, @\\
-\mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))@\\
+\mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = FALSE,@\\
+\mbox{}\verb@                          names = dimnames(invchol)[[2L]])@\\
+\mbox{}\verb@        ret <- ltMatrices(ret, diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))@\\
 \mbox{}\verb@        if (attr(invchol, "diag")) {@\\
 \mbox{}\verb@            ### recycle properly@\\
 \mbox{}\verb@            diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))@\\
@@ -5630,7 +5632,8 @@ where $\svec = \text{vec}(\mS)$.
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@if (!missing(invchol)) {@\\
-\mbox{}\verb@    ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)@\\
+\mbox{}\verb@    ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE,@\\
+\mbox{}\verb@                      names = dimnames(chol)[[2L]])@\\
 \mbox{}\verb@    ### this means vectrick(chol, ret, chol)@\\
 \mbox{}\verb@    ret <- - unclass(vectrick(chol, ret))@\\
 \mbox{}\verb@}@\\
@@ -5659,7 +5662,8 @@ triangular elements such that the scores match the input)
 \mbox{}\verb@if (!attr(chol, "diag"))@\\
 \mbox{}\verb@    ### remove scores for constant diagonal elements@\\
 \mbox{}\verb@    ret[idx,] <- 0@\\
-\mbox{}\verb@ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE)@\\
+\mbox{}\verb@ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE, @\\
+\mbox{}\verb@                  names = dimnames(chol)[[2L]])@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
