@@ -3067,8 +3067,11 @@ J <- d[2L]
 
 stopifnot(nrow(lower) == J && ncol(lower) == N)
 stopifnot(nrow(upper) == J && ncol(upper) == N)
-if (is.matrix(mean))
+if (is.matrix(mean)) {
+    if (ncol(mean) == 1L) 
+        mean <- mean[,rep(1, N),drop = FALSE]
     stopifnot(nrow(mean) == J && ncol(mean) == N)
+}
 
 lower <- lower - mean
 upper <- upper - mean
@@ -4073,6 +4076,9 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
 
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
+    rownames(smean) <- rownames(slower) <- 
+        rownames(supper) <- dimnames(chol)[[2L]]
+
     if (logLik) {
         ret <- list(logLik = ll, 
                     mean = smean, 
@@ -4600,7 +4606,7 @@ if (all(mean == 0)) {
     cmean <- 0
     dmean <- 0
 } else {
-    if (!is.matrix(mean)) 
+    if (!is.matrix(mean) || NCOL(mean) == 1L) 
         mean <- matrix(mean, nrow = cJ + dJ, ncol = N)
     stopifnot(nrow(mean) == cJ + dJ)
     stopifnot(ncol(mean) == N)
@@ -5184,12 +5190,14 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
 @}
 
 We can now set-up the log-likelihood and score functions for a Gaussian
-copula model. We start with the classical approach of generating the
+copula model.  We start with the classical approach of generating the
 marginal observations $\rY$ from the ECDF with denominator $N + 1$ and
-subsequent use of the Lebesque density as likelihood.
+subsequent use of the Lebesque density as likelihood.  Because no stats text
+on multivariate problems is complete without a reference to Edgar Anderson's
+iris data, let's set up a model for these four classical variables
 
 <<gc-classical>>=
-data("iris")
+data("iris", package = "datasets")
 J <- 4
 Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank)) / (nrow(iris) + 1)))
 (CR <- cor(t(Z)))
@@ -5313,6 +5321,14 @@ as.ltMatrices <- function(x) {
 }
 @}
 
+and proceed defining a constructor for object respresenting, potentially
+multiple, multivariate normal distributions. If the Cholesky factor $\mC$
+(or multiple Cholesky factors $\mC_1, \dots, \mC_N$) are given as
+\code{chol} argument, we label them as being such objects using \code{as.chol}. If 
+only a matrix is given, we convert it (if possible) to a single Cholesky
+factor $\mC$. The same is done when $\mL$ is given as \code{invchol}
+argument. Of course, only one of these arguments must be specified.
+
 @d mvnorm chol invchol
 @{
 if (missing(chol) && missing(invchol))
@@ -5332,6 +5348,10 @@ if (!missing(invchol)) {
 }
 ret <- list(scale = scale)
 @}
+
+The mean, or multiple means, is stored as a $\J \times 1$ or $\J \times N$
+matrix, and we check if dimensions and, possibly, names are in line with
+what was specified as \code{chol} or \code{invchol}
 
 @d mvnorm mean
 @{
@@ -5358,6 +5378,10 @@ if (!missing(mean)) {
 }
 @}
 
+Finally, we put everything together and return an object of class
+\code{mvnorm}, featuring \code{mean} and \code{scale}. The class of the
+latter slot carries the information how this object is to be interpreted (as
+Cholesky factor or inverse thereof)
 
 @d mvnorm
 @{
@@ -5370,6 +5394,13 @@ mvnorm <- function(mean, chol, invchol) {
   return(ret)
 }
 @}
+
+It might have been smarter to specify the scaled mean $\etavec = \mL \muvec$
+because the log-density is then jointly convex in $\etavec$ and $\mL$ and
+thus a convex problem would emerge \citep{Barrathh_Boyd_2023}.
+
+We add a \code{names} and \code{aperm} method. The latter returns a
+multivariate normal distribution with permuted order of the variables
 
 @d mvnorm methods
 @{
@@ -5385,6 +5416,13 @@ aperm.mvnorm <- function(a, perm, ...) {
     ret
 }
 @}
+
+We are now ready to draw samples from such an object. If multiple normal
+distributions are contained in \code{object}, we return one sample each,
+otherwise, \code{nsim} samples are returned. Because most tools in this
+package expect data as $\J \times N$ matrices, we return the data in this
+format. If a classical \code{data.frame} is preferred, \code{as.data.frame =
+TRUE} we provide one
 
 @d mvnorm simulate
 @{
@@ -5415,6 +5453,22 @@ simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL,
     return(as.data.frame(t(ret)))
 }
 @}
+
+It is maybe time for a first example, and we return to the iris dataset,
+ignoring the iris' species for the time being. We set-up a model 
+in terms of the sample estimates
+<<iris-model>>=
+data("iris", package = "datasets")
+vars <- names(iris)[-5L]
+m <- colMeans(iris[,vars])
+V <- var(iris[,vars])
+iris_mvn <- mvnorm(mean = m, chol = t(chol(V)))
+iris_var <- simulate(iris_mvn, nsim = nrow(iris))
+@@
+
+Marginal and conditional distributions might be of interest, the
+\code{margDist} and \code{condDist} methods are simple wrappers to
+\code{marg\_mvnorm} and \code{cond\_mvnorm}
 
 @d mvnorm margDist
 @{
@@ -5458,12 +5512,47 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
-        ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
+        if (ncol(object$mean) > 1L && ncol(ret$mean) > 1)
+            stop("dimensions do not match")
+        if (ncol(object$mean) == 1L && ncol(ret$mean) > 1L) {
+            ret$mean <- object$mean[-which_given,,drop = TRUE] + ret$mean
+        } else {
+            ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
+        }
+        
     }
     class(ret) <- "mvnorm"
     return(ret)
 }
 @}
+
+We could now compute the marginal distribution of two Petal variables
+or the bivariate regressions of the two Petal variables given the observed
+Sepal variables. Note that the last object contains $N = \Sexpr{nrow(iris)}$
+different distributions
+
+<<iris-mc>>=
+j <- 3:4
+margDist(iris_mvn, which = vars[j])
+gm <- t(iris[,vars[-(j)]])
+iris_cmvn <- condDist(iris_mvn, which = vars[j], given = gm)
+@@
+
+We now work towards implementating the corresponding log-likelihood
+function. This is a trivial task as long as all variables for all
+observations have been observed exactly (that is, we can interpret 
+the data as being continuous). Here, we also want to allow imprecise, that
+is, interval-censored, measurements. The one constraint in \code{ldpmvnorm}
+is that the continuous variables come first, followed by the censored ones.
+This of course might not be in line with the variable ordering we have in
+mind for our model. Our log-likelihood function shall be able to evaluate
+the log-likelihood for arbitrary permutations of the variables and,
+optionally, also based on marginal distributions in case observations are
+missing.
+
+The following \code{logLik} method for objects of class \code{mvnorm} is
+essentially a wrapper for \code{ldpmvnorm}, handling permutations,
+marginalisation, and standardisation. We begin with some sanity checks
 
 @d argchecks
 @{
@@ -5473,21 +5562,27 @@ stopifnot(nargs < 3L)
 
 nmobs <- NULL
 if (!missing(obs)) {
-    stopifnot(is.matrix(obs))
-    nmobs <- rownames(obs)
+    if (!is.null(obs)) {
+        stopifnot(is.matrix(obs))
+        nmobs <- rownames(obs)
+    }
 }
 nmlower <- nmupper <- nmlu <- NULL
 if (!missing(lower)) {
-    stopifnot(is.matrix(lower))
-    nmlu <- nmlower <- rownames(lower)
+    if (!is.null(lower)) {
+        stopifnot(is.matrix(lower))
+        nmlu <- nmlower <- rownames(lower)
+    }
 }
 if (!missing(upper)) {
-    stopifnot(is.matrix(upper))
-    nmupper <- rownames(upper)
-    if (!missing(lower)) {
-        stopifnot(isTRUE(all.equal(nmlower, nmupper)))
-    } else {
-        nmlu <- nmupper
+    if (!is.null(lower)) {
+        stopifnot(is.matrix(upper))
+        nmupper <- rownames(upper)
+        if (!missing(lower)) {
+            stopifnot(isTRUE(all.equal(nmlower, nmupper)))
+        } else {
+            nmlu <- nmupper
+        }
     }
 }
 
@@ -5503,6 +5598,8 @@ if (!missing(lower)) args$lower <- lower
 if (!missing(upper)) args$upper <- upper
 @}
 
+and proceed with the workhorse when $\mC$ was given
+
 @d logLik chol
 @{
 names(args)[names(args) == "scale"] <- "chol"
@@ -5516,6 +5613,8 @@ if (!is.null(perm)) {
 }
 return(do.call("ldpmvnorm", args))
 @}
+
+For inverse Cholesky factors $\mL$, the code is very similar, just the argument names change
 
 @d logLik invchol
 @{
@@ -5532,6 +5631,8 @@ if (!is.null(perm)) {
 return(do.call("ldpmvnorm", args))
 @}
 
+Putting everything together in a corresponding \code{logLik} method
+
 @d mvnorm logLik
 @{
 logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE, 
@@ -5543,6 +5644,32 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     @<logLik invchol@>
 }
 @}
+
+allows us to evaluate the log-likelihood of the conditional models for iris
+
+<<iris-ll>>=
+logLik(object = iris_cmvn, obs = t(iris[,vars[-j]]))
+@@
+
+This implementation of the log-likelihood silently handles the case when
+variables have been specified in a different order than hard-wired into the
+model
+
+<<iris-ll-perm>>=
+logLik(object = iris_cmvn, obs = t(iris[,rev(vars[-j])]))
+@@
+
+The hardest task is the implementation of a score function which features
+the same options as the log-likelihood function and provides the gradients
+with respect not only to the parameters ($\mu$ and $\mC$ or $\mL$), but also
+with respect to the data objects \code{obs}, \code{lower}, and \code{upper}.
+
+In essence, we have to repair the damage imposed by a series of
+transformations in \code{logLik.mvnorm}, that is, by standardisation,
+permutation, and marginalisation. We start with the case when $\mC$ was
+given. First, we repeat all the steps performed in \code{logLik}, but call 
+the score function \code{sldpmvnorm} instead of the log-likelihood function
+\code{ldpmvnorm}
 
 @d lLgrad chol
 @{
@@ -5561,8 +5688,29 @@ if (!is.null(perm)) {
     args$mean <- args$mean[nm,,drop = FALSE]
 }
 ret <- do.call("sldpmvnorm", args)
+@<lLgrad mean@>
+@<lLgrad marginalisation@>
+@<lLgrad deperma@>
+@<lLgrad destandarized@>
+@<lLgrad diagonals@>
+@<lLgrad return@>
+@}
+
+The next task is to post-differentiate all scores such that the gradients
+with respect to the original arguments of \code{logLik} are obtained. We
+start with the gradient with respect to code $\mu$, in case it was not given
+
+@d lLgrad mean
+@{
 ### sldmvnorm returns mean score as -obs
 if (is.null(ret$mean)) ret$mean <- - ret$obs
+@}
+
+In case we marginalised over some variables, we have to set the omitted
+parameters to zero
+
+@d lLgrad marginalisation
+@{
 om <- length(no) - length(nm)
 if (om > 0) {
     am <- matrix(0, nrow = om, ncol = ncol(ret$mean))
@@ -5581,23 +5729,52 @@ if (om > 0) {
                            names = perm)
     ret$chol <- ltMatrices(ret$chol, byrow = byrow_orig)
 }
+@}
+
+If the order of the variables was permuted, we compute the scores for the
+original ordering of the variables, as explained in Chapter~\ref{cdl}
+
+@d lLgrad deperma
+@{
 if (!is.null(perm))
     ret$chol <- deperma(chol = sc, permuted_chol = pc, 
                         perm = match(perm, no), 
                         score_schol = ret$chol)
+@}
+
+The effect of standardization can be removed as discussed in
+Chapter~\ref{copula}
+
+@d lLgrad destandarized
+@{
 if (standardize)
     ret$chol <- destandardize(chol = object$scale, 
                               score_schol = ret$chol)
+@}
+
+and it remains to remove fix diagonal elements
+
+@d lLgrad diagonals
+@{
 if (!attr(sc, "diag"))
     ret$chol <- ltMatrices(Lower_tri(ret$chol, diag = FALSE),
                            diag = FALSE, 
                            byrow = attr(ret$chol, "byrow"), 
                            names = dimnames(ret$chol)[[2L]])
+@}
+
+and to return the results, with mean scores in the correct ordering
+
+@d lLgrad return
+@{
 ret$scale <- ret$chol
 ret$chol <- NULL
 ret$mean <- ret$mean[no,,drop = FALSE]
 return(ret)
 @}
+
+The steps are essentially the same when $\mL$ was given, but we have to
+post-differentiate $\mC = \mL^{-1}$ with respect to $\mL$
 
 @d lLgrad invchol
 @{
@@ -5655,6 +5832,8 @@ ret$mean <- ret$mean[no,,drop = FALSE]
 return(ret)
 @}
 
+We can now provide the log-likelihood gradients
+
 @d mvnorm lLgrad
 @{
 lLgrad <- function(object, ...)
@@ -5669,6 +5848,98 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     @<lLgrad invchol@>
 }
 @}
+
+We can now use the infrastructure to set-up maximum-likelihood estimation
+procedures. We start implementing the log-likelihood and score functions for
+the iris dataset
+
+<<iris-lLgrad>>=
+J <- length(vars)
+obs <- t(iris[, vars])
+lower <- upper <- NULL
+ll <- function(parm) {
+    C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(mean = parm[1:J], chol = C)
+    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(mean = parm[1:J], chol = C)
+    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    -c(rowSums(ret$mean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
+}
+@@
+
+and can now estimate the mean and Cholesky factor of the covariance matrix
+
+<<iris-ML>>=
+start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
+op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
+            lower = llim, control = list(trace = TRUE))
+Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
+ML <- mvnorm(mean = op$par[1:J], chol = Chat)
+@@
+
+Quit unsurprisingly, the results are practically equivalent to the
+analytically available maximum-likelihood estimators in this case
+
+<<iris-ML-hat>>=
+### covariance
+round(chol2cov(ML$scale), 2)
+N <- nrow(iris)
+round(V * (N - 1) / N, 2)
+### mean
+ML$mean[,,drop = TRUE]
+m
+@@
+
+Now, this was a lot of work to replace \code{mean} and \code{var} with
+something more fancy, and we would of course not go down this way in real
+life. But how about a more complex situation where one (or more) variables
+are only known up to intervals? Let's present the first variable is such a
+case
+
+<<iris-interval>>=
+v1 <- vars[1]
+q1 <- quantile(iris[[v1]], prob = 1:4 / 5)
+head(f1 <- cut(iris[[v1]], breaks = c(-Inf, q1, Inf)))
+@@
+
+The only necessary modification to our code is the specification of
+\code{lower} and \code{upper} bounds for these intervals, and the removal of
+the first variable from the ``exact continuous'' observations \code{obs}.
+The rest of the machinery \emph{doesn't need any update at all}. Note that
+the mean and covariance parameters are no longer orthogonal (as in the toy
+example above), so we do have to optimise over both sets of parameters
+simultaneously.
+
+<<iris-MLi>>=
+lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
+upper <- matrix(c(q1, Inf)[f1], nrow = 1)
+rownames(lower) <- rownames(upper) <- v1
+obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
+opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
+             lower = llim, control = list(trace = TRUE))
+Chati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
+MLi <- mvnorm(mean = opi$par[1:J], chol = Chati)
+@@
+
+Because the likelihood is a product of a continuous density and a
+conditional probability as introduced in Chapter~\ref{cdl}, the two
+in-sample log-likelihoods are not comparable. However, the parameters of the
+two estimated normal distributions can be compared directly (and are rather
+close in our case)
+
+<<iris-MLi-hat>>=
+op$value
+opi$value
+### covariance
+round(chol2cov(MLi$scale), 2)
+round(chol2cov(ML$scale), 2)
+### mean
+MLi$mean[,,drop = TRUE]
+ML$mean[,,drop = TRUE]
+@@
 
 \chapter{Package Infrastructure}
 

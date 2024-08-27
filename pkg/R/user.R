@@ -151,7 +151,14 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
-        ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
+        if (ncol(object$mean) > 1L && ncol(ret$mean) > 1)
+            stop("dimensions do not match")
+        if (ncol(object$mean) == 1L && ncol(ret$mean) > 1L) {
+            ret$mean <- object$mean[-which_given,,drop = TRUE] + ret$mean
+        } else {
+            ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
+        }
+        
     }
     class(ret) <- "mvnorm"
     return(ret)
@@ -169,21 +176,27 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
 
     nmobs <- NULL
     if (!missing(obs)) {
-        stopifnot(is.matrix(obs))
-        nmobs <- rownames(obs)
+        if (!is.null(obs)) {
+            stopifnot(is.matrix(obs))
+            nmobs <- rownames(obs)
+        }
     }
     nmlower <- nmupper <- nmlu <- NULL
     if (!missing(lower)) {
-        stopifnot(is.matrix(lower))
-        nmlu <- nmlower <- rownames(lower)
+        if (!is.null(lower)) {
+            stopifnot(is.matrix(lower))
+            nmlu <- nmlower <- rownames(lower)
+        }
     }
     if (!missing(upper)) {
-        stopifnot(is.matrix(upper))
-        nmupper <- rownames(upper)
-        if (!missing(lower)) {
-            stopifnot(isTRUE(all.equal(nmlower, nmupper)))
-        } else {
-            nmlu <- nmupper
+        if (!is.null(lower)) {
+            stopifnot(is.matrix(upper))
+            nmupper <- rownames(upper)
+            if (!missing(lower)) {
+                stopifnot(isTRUE(all.equal(nmlower, nmupper)))
+            } else {
+                nmlu <- nmupper
+            }
         }
     }
 
@@ -244,21 +257,27 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
 
     nmobs <- NULL
     if (!missing(obs)) {
-        stopifnot(is.matrix(obs))
-        nmobs <- rownames(obs)
+        if (!is.null(obs)) {
+            stopifnot(is.matrix(obs))
+            nmobs <- rownames(obs)
+        }
     }
     nmlower <- nmupper <- nmlu <- NULL
     if (!missing(lower)) {
-        stopifnot(is.matrix(lower))
-        nmlu <- nmlower <- rownames(lower)
+        if (!is.null(lower)) {
+            stopifnot(is.matrix(lower))
+            nmlu <- nmlower <- rownames(lower)
+        }
     }
     if (!missing(upper)) {
-        stopifnot(is.matrix(upper))
-        nmupper <- rownames(upper)
-        if (!missing(lower)) {
-            stopifnot(isTRUE(all.equal(nmlower, nmupper)))
-        } else {
-            nmlu <- nmupper
+        if (!is.null(lower)) {
+            stopifnot(is.matrix(upper))
+            nmupper <- rownames(upper)
+            if (!missing(lower)) {
+                stopifnot(isTRUE(all.equal(nmlower, nmupper)))
+            } else {
+                nmlu <- nmupper
+            }
         }
     }
 
@@ -291,8 +310,13 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
             args$mean <- args$mean[nm,,drop = FALSE]
         }
         ret <- do.call("sldpmvnorm", args)
+        # lLgrad mean
+
         ### sldmvnorm returns mean score as -obs
         if (is.null(ret$mean)) ret$mean <- - ret$obs
+        
+        # lLgrad marginalisation
+
         om <- length(no) - length(nm)
         if (om > 0) {
             am <- matrix(0, nrow = om, ncol = ncol(ret$mean))
@@ -311,22 +335,35 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
                                    names = perm)
             ret$chol <- ltMatrices(ret$chol, byrow = byrow_orig)
         }
+        
+        # lLgrad deperma
+
         if (!is.null(perm))
             ret$chol <- deperma(chol = sc, permuted_chol = pc, 
                                 perm = match(perm, no), 
                                 score_schol = ret$chol)
+        
+        # lLgrad destandarized
+
         if (standardize)
             ret$chol <- destandardize(chol = object$scale, 
                                       score_schol = ret$chol)
+        
+        # lLgrad diagonals
+
         if (!attr(sc, "diag"))
             ret$chol <- ltMatrices(Lower_tri(ret$chol, diag = FALSE),
                                    diag = FALSE, 
                                    byrow = attr(ret$chol, "byrow"), 
                                    names = dimnames(ret$chol)[[2L]])
+        
+        # lLgrad return
+
         ret$scale <- ret$chol
         ret$chol <- NULL
         ret$mean <- ret$mean[no,,drop = FALSE]
         return(ret)
+        
         
     }
     # lLgrad invchol

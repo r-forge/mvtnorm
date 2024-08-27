@@ -63,8 +63,11 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol,
 
     stopifnot(nrow(lower) == J && ncol(lower) == N)
     stopifnot(nrow(upper) == J && ncol(upper) == N)
-    if (is.matrix(mean))
+    if (is.matrix(mean)) {
+        if (ncol(mean) == 1L) 
+            mean <- mean[,rep(1, N),drop = FALSE]
         stopifnot(nrow(mean) == J && ncol(mean) == N)
+    }
 
     lower <- lower - mean
     upper <- upper - mean
@@ -160,8 +163,11 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
 
     stopifnot(nrow(lower) == J && ncol(lower) == N)
     stopifnot(nrow(upper) == J && ncol(upper) == N)
-    if (is.matrix(mean))
+    if (is.matrix(mean)) {
+        if (ncol(mean) == 1L) 
+            mean <- mean[,rep(1, N),drop = FALSE]
         stopifnot(nrow(mean) == J && ncol(mean) == N)
+    }
 
     lower <- lower - mean
     upper <- upper - mean
@@ -273,6 +279,9 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     
 
     ret <- ltMatrices(ret, byrow = byrow_orig)
+
+    rownames(smean) <- rownames(slower) <- 
+        rownames(supper) <- dimnames(chol)[[2L]]
 
     if (logLik) {
         ret <- list(logLik = ll, 
@@ -410,7 +419,7 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
         cmean <- 0
         dmean <- 0
     } else {
-        if (!is.matrix(mean)) 
+        if (!is.matrix(mean) || NCOL(mean) == 1L) 
             mean <- matrix(mean, nrow = cJ + dJ, ncol = N)
         stopifnot(nrow(mean) == cJ + dJ)
         stopifnot(ncol(mean) == N)
@@ -472,7 +481,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE
         cmean <- 0
         dmean <- 0
     } else {
-        if (!is.matrix(mean)) 
+        if (!is.matrix(mean) || NCOL(mean) == 1L) 
             mean <- matrix(mean, nrow = cJ + dJ, ncol = N)
         stopifnot(nrow(mean) == cJ + dJ)
         stopifnot(ncol(mean) == N)
