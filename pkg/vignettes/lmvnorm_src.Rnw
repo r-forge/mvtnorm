@@ -212,7 +212,7 @@ Chapter~\ref{copula}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb122}{122}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
@@ -257,7 +257,7 @@ Chapter~\ref{copula}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb113}{113}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb123}{123}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -3735,7 +3735,10 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)@\\
-\mbox{}\verb@        ret <- ltMatrices(ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE], @\\
+\mbox{}\verb@        ret <- ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE]@\\
+\mbox{}\verb@        if (!is.null(dimnames(invchol)[[1L]]))@\\
+\mbox{}\verb@            colnames(ret) <- dimnames(invchol)[[1]]@\\
+\mbox{}\verb@        ret <- ltMatrices(ret,@\\
 \mbox{}\verb@                          diag = attr(invchol, "diag"), byrow = FALSE,@\\
 \mbox{}\verb@                          names = dimnames(invchol)[[2L]])@\\
 \mbox{}\verb@        ret <- ltMatrices(ret, diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))@\\
@@ -3967,7 +3970,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb122}{122}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb71}{71}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb54a}{54a}}$\,\rangle$}\verb@@\\
@@ -3993,7 +3996,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb113}{113}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb123}{123}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -6739,7 +6742,7 @@ the very end in this case.
 \mbox{}\verb@            stop("failure computing permutation score")@\\
 \mbox{}\verb@        if (Nc == 1L)@\\
 \mbox{}\verb@            return(crossprod(score_schol, B3))@\\
-\mbox{}\verb@        return(crossprod(score_schol[,i,drop], B3))@\\
+\mbox{}\verb@        return(crossprod(score_schol[,i,drop = FALSE], B3))@\\
 \mbox{}\verb@    })@\\
 \mbox{}\verb@    ret <- do.call("rbind", ret)@\\
 \mbox{}\verb@    ret <-ltMatrices(t(ret), diag = TRUE, byrow = FALSE)@\\
@@ -6954,8 +6957,12 @@ quantity).
 \mbox{}\verb@        ### this means: ret <- - vectrick(chol, ret, chol)@\\
 \mbox{}\verb@        ret <- - vectrick(chol, ret)@\\
 \mbox{}\verb@    }@\\
-\mbox{}\verb@    ret <- ltMatrices(ret[M[lower.tri(M)],,drop = FALSE],@\\
-\mbox{}\verb@                      diag = FALSE, byrow = FALSE)@\\
+\mbox{}\verb@    ret <- ret[M[lower.tri(M)],,drop = FALSE]@\\
+\mbox{}\verb@    if (!is.null(dimnames(chol)[[1L]]))@\\
+\mbox{}\verb@        colnames(ret) <- dimnames(chol)[[1L]]@\\
+\mbox{}\verb@    ret <- ltMatrices(ret,@\\
+\mbox{}\verb@                      diag = FALSE, byrow = FALSE, @\\
+\mbox{}\verb@                      names = dimnames(chol)[[2L]])@\\
 \mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
 \mbox{}\verb@    diagonals(ret) <- 0@\\
 \mbox{}\verb@    return(ret)@\\
@@ -7058,12 +7065,617 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @
 
-
-\chapter{Package Infrastructure}
+\chapter{A User Interface}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap135}\raggedright\small
-\NWtarget{nuweb112}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {112}}$\,\rangle\equiv$
+\NWtarget{nuweb112a}{} \verb@"user.R"@\nobreak\ {\footnotesize {112a}}$\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape as.ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb112b}{112b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm}\nobreak\ {\footnotesize \NWlink{nuweb114a}{114a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm methods}\nobreak\ {\footnotesize \NWlink{nuweb114b}{114b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm simulate}\nobreak\ {\footnotesize \NWlink{nuweb115a}{115a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm margDist}\nobreak\ {\footnotesize \NWlink{nuweb115b}{115b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm condDist}\nobreak\ {\footnotesize \NWlink{nuweb116}{116}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm logLik}\nobreak\ {\footnotesize \NWlink{nuweb118b}{118b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape mvnorm lLgrad}\nobreak\ {\footnotesize \NWlink{nuweb121}{121}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+The tools provided in the previous chapters are rather low-level, so we will
+invest some time into setting-up a more high-level interface for
+representing normal models, either as $\ND_\J(\muvec, \mC \mC^\top)$ or
+$\ND_\J(\muvec, \mL^{-1} \mL^{-\top})$, for simulating from such models, and
+for evaluating the log-likelihood and corresponding score functions. The
+latter functionality shall also work when only incomplete (variables are
+missing) or censored (observations are only known as intervals) data is
+available.
+
+We start with the conversion of a lower triangular matrix \code{x} to an
+\code{ltMatrices} object
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap136}\raggedright\small
+\NWtarget{nuweb112b}{} $\langle\,${\itshape as.ltMatrices}\nobreak\ {\footnotesize {112b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@as.ltMatrices <- function(x) {@\\
+\mbox{}\verb@    stopifnot(is.numeric(x))@\\
+\mbox{}\verb@    if (!is.matrix(x)) x <- matrix(x)    @\\
+\mbox{}\verb@    DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps@\\
+\mbox{}\verb@    DIAG <- DIAG & (nrow(x) > 1)@\\
+\mbox{}\verb@    lt <- x[lower.tri(x, diag = DIAG)]@\\
+\mbox{}\verb@    up <- x[upper.tri(x, diag = FALSE)]@\\
+\mbox{}\verb@    stopifnot(max(abs(up)) < .Machine$double.eps)@\\
+\mbox{}\verb@    nm <- rownames(x)@\\
+\mbox{}\verb@    if (!is.null(nm))@\\
+\mbox{}\verb@        return(ltMatrices(lt, diag = DIAG, names = nm))@\\
+\mbox{}\verb@    return(ltMatrices(lt, diag = DIAG))@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap137}\raggedright\small
+\NWtarget{nuweb113a}{} $\langle\,${\itshape mvnorm chol invchol}\nobreak\ {\footnotesize {113a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (missing(chol) && missing(invchol))@\\
+\mbox{}\verb@    chol <- as.chol(ltMatrices(1, diag = TRUE))@\\
+\mbox{}\verb@stopifnot(xor(missing(chol), missing(invchol)))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(chol)) {@\\
+\mbox{}\verb@    if (!is.ltMatrices(chol))@\\
+\mbox{}\verb@        chol <- as.ltMatrices(chol)@\\
+\mbox{}\verb@    scale <- as.chol(chol)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(invchol)) {@\\
+\mbox{}\verb@    if (!is.ltMatrices(invchol))@\\
+\mbox{}\verb@        invchol <- as.ltMatrices(invchol)@\\
+\mbox{}\verb@    scale <- as.invchol(invchol)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@ret <- list(scale = scale)@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb114a}{114a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap138}\raggedright\small
+\NWtarget{nuweb113b}{} $\langle\,${\itshape mvnorm mean}\nobreak\ {\footnotesize {113b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(mean)) {@\\
+\mbox{}\verb@    stopifnot(is.numeric(mean))@\\
+\mbox{}\verb@    stopifnot(NROW(mean) == dim(scale)[2L])@\\
+\mbox{}\verb@    if (!is.matrix(mean)) {@\\
+\mbox{}\verb@        mean <- matrix(mean, nrow = NROW(mean))@\\
+\mbox{}\verb@        rownames(mean) <- names(mean)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    nm <- dimnames(scale)[[2L]]@\\
+\mbox{}\verb@    if (is.null(rownames(mean)))@\\
+\mbox{}\verb@        rownames(mean) <- nm@\\
+\mbox{}\verb@    if (!isTRUE(all.equal(rownames(mean), nm)))@\\
+\mbox{}\verb@        stop("rownames of mean do not match")        @\\
+\mbox{}\verb@    nm <- dimnames(scale)[[1L]]@\\
+\mbox{}\verb@    if (!is.null(nm) && dim(scale)[[2L]] == ncol(mean)) {@\\
+\mbox{}\verb@        if (is.null(colnames(mean)))@\\
+\mbox{}\verb@            colnames(mean) <- nm@\\
+\mbox{}\verb@        if (!isTRUE(all.equal(colnames(mean), nm)))@\\
+\mbox{}\verb@            stop("colnames of mean do not match")        @\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    ret$mean <- mean@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb114a}{114a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap139}\raggedright\small
+\NWtarget{nuweb114a}{} $\langle\,${\itshape mvnorm}\nobreak\ {\footnotesize {114a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@### allow more than one distribution@\\
+\mbox{}\verb@mvnorm <- function(mean, chol, invchol) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@  @\hbox{$\langle\,${\itshape mvnorm chol invchol}\nobreak\ {\footnotesize \NWlink{nuweb113a}{113a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@  @\hbox{$\langle\,${\itshape mvnorm mean}\nobreak\ {\footnotesize \NWlink{nuweb113b}{113b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@  class(ret) <- "mvnorm"@\\
+\mbox{}\verb@  return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap140}\raggedright\small
+\NWtarget{nuweb114b}{} $\langle\,${\itshape mvnorm methods}\nobreak\ {\footnotesize {114b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@names.mvnorm <- function(x)@\\
+\mbox{}\verb@    dimnames(x$scale)[[2L]]@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@aperm.mvnorm <- function(a, perm, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ret <- list(scale = aperm(a$scale, perm = perm, ...))@\\
+\mbox{}\verb@    if (!is.null(a$mean))@\\
+\mbox{}\verb@        ret$mean <- a$mean[perm,,drop = FALSE]@\\
+\mbox{}\verb@    class(ret) <- "mvnorm"@\\
+\mbox{}\verb@    ret@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap141}\raggedright\small
+\NWtarget{nuweb115a}{} $\langle\,${\itshape mvnorm simulate}\nobreak\ {\footnotesize {115a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL, @\\
+\mbox{}\verb@                            standardize = FALSE, as.data.frame = FALSE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    J <- dim(object$scale)[2L]@\\
+\mbox{}\verb@    N <- dim(object$scale)[1L]@\\
+\mbox{}\verb@    if (N > 1)@\\
+\mbox{}\verb@        stopifnot(nsim == N)@\\
+\mbox{}\verb@    if (standardize) {@\\
+\mbox{}\verb@        if (is.chol(object$scale)) {@\\
+\mbox{}\verb@            object$scale <- standardize(chol = object$scale)@\\
+\mbox{}\verb@        } else {@\\
+\mbox{}\verb@            object$scale <- standardize(invchol = object$scale)@\\
+\mbox{}\verb@        }@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    Z <- matrix(rnorm(nsim * J), nrow = J)@\\
+\mbox{}\verb@    if (is.chol(object$scale)) {@\\
+\mbox{}\verb@        Y <- Mult(object$scale, Z)@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@        Y <- solve(object$scale, Z)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    ret <- Y + c(object$mean)@\\
+\mbox{}\verb@    rownames(ret) <- dimnames(object$scale)[[2L]]@\\
+\mbox{}\verb@    if (!as.data.frame)@\\
+\mbox{}\verb@        return(ret)@\\
+\mbox{}\verb@    return(as.data.frame(t(ret)))@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap142}\raggedright\small
+\NWtarget{nuweb115b}{} $\langle\,${\itshape mvnorm margDist}\nobreak\ {\footnotesize {115b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@margDist <- function(object, which, ...)@\\
+\mbox{}\verb@    UseMethod("margDist")@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@margDist.mvnorm <- function(object, which, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (is.chol(object$scale)) {@\\
+\mbox{}\verb@        ret <- list(scale = as.chol(marg_mvnorm(chol = object$scale, @\\
+\mbox{}\verb@                                                which = which)$chol))@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@        ret <- list(scale = as.invchol(marg_mvnorm(invchol = object$scale, @\\
+\mbox{}\verb@                                                   which = which)$invchol))@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    if (!is.null(object$mean))@\\
+\mbox{}\verb@        ret$mean <- object$mean[which,,drop = FALSE]@\\
+\mbox{}\verb@    class(ret) <- "mvnorm"@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap143}\raggedright\small
+\NWtarget{nuweb116}{} $\langle\,${\itshape mvnorm condDist}\nobreak\ {\footnotesize {116}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@condDist <- function(object, which_given, given, ...)@\\
+\mbox{}\verb@    UseMethod("condDist")@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@condDist.mvnorm <- function(object, which_given = 1L, given, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    if (is.chol(object$scale)) {@\\
+\mbox{}\verb@        ret <- cond_mvnorm(chol = object$scale, which_given = which_given, @\\
+\mbox{}\verb@                           given = given, ...)@\\
+\mbox{}\verb@        ret$scale <- as.chol(ret$chol)@\\
+\mbox{}\verb@        ret$chol <- NULL@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@        ret <- cond_mvnorm(invchol = object$scale, which_given = which_given, @\\
+\mbox{}\verb@                           given = given, ...)@\\
+\mbox{}\verb@        ret$invchol <- as.chol(ret$invchol)@\\
+\mbox{}\verb@        ret$invchol <- NULL@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    if (!is.null(object$mean)) {@\\
+\mbox{}\verb@        if (is.character(which_given)) @\\
+\mbox{}\verb@            which_given <- match(which_given, dimnames(object$scale)[[2L]])@\\
+\mbox{}\verb@        ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    class(ret) <- "mvnorm"@\\
+\mbox{}\verb@    return(ret)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap144}\raggedright\small
+\NWtarget{nuweb117a}{} $\langle\,${\itshape argchecks}\nobreak\ {\footnotesize {117a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@args <- c(object, list())@\\
+\mbox{}\verb@nargs <- missing(obs) + missing(lower) + missing(upper)@\\
+\mbox{}\verb@stopifnot(nargs < 3L)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@nmobs <- NULL@\\
+\mbox{}\verb@if (!missing(obs)) {@\\
+\mbox{}\verb@    stopifnot(is.matrix(obs))@\\
+\mbox{}\verb@    nmobs <- rownames(obs)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@nmlower <- nmupper <- nmlu <- NULL@\\
+\mbox{}\verb@if (!missing(lower)) {@\\
+\mbox{}\verb@    stopifnot(is.matrix(lower))@\\
+\mbox{}\verb@    nmlu <- nmlower <- rownames(lower)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@if (!missing(upper)) {@\\
+\mbox{}\verb@    stopifnot(is.matrix(upper))@\\
+\mbox{}\verb@    nmupper <- rownames(upper)@\\
+\mbox{}\verb@    if (!missing(lower)) {@\\
+\mbox{}\verb@        stopifnot(isTRUE(all.equal(nmlower, nmupper)))@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@        nmlu <- nmupper@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@nm <- c(nmobs, nmlu)@\\
+\mbox{}\verb@no <- names(object)@\\
+\mbox{}\verb@stopifnot(nm %in% no)@\\
+\mbox{}\verb@perm <- NULL@\\
+\mbox{}\verb@if (!isTRUE(all.equal(nm, no)))@\\
+\mbox{}\verb@    perm <- c(nm, no[!no %in% nm])@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(obs)) args$obs <- obs@\\
+\mbox{}\verb@if (!missing(lower)) args$lower <- lower@\\
+\mbox{}\verb@if (!missing(upper)) args$upper <- upper@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb118b}{118b}\NWlink{nuweb121}{, 121}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap145}\raggedright\small
+\NWtarget{nuweb117b}{} $\langle\,${\itshape logLik chol}\nobreak\ {\footnotesize {117b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@names(args)[names(args) == "scale"] <- "chol"@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    args$chol <- standardize(chol = args$chol)@\\
+\mbox{}\verb@if (!is.null(perm)) {@\\
+\mbox{}\verb@    args$chol <- aperm(as.chol(args$chol), perm = perm)@\\
+\mbox{}\verb@    if (length(nm) < length(no))@\\
+\mbox{}\verb@        args$chol <- marg_mvnorm(chol = args$chol, which = nm)$chol@\\
+\mbox{}\verb@    args$mean <- args$mean[nm,,drop = FALSE]@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@return(do.call("ldpmvnorm", args))@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb118b}{118b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap146}\raggedright\small
+\NWtarget{nuweb118a}{} $\langle\,${\itshape logLik invchol}\nobreak\ {\footnotesize {118a}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@names(args)[names(args) == "scale"] <- "invchol"@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    args$invchol <- standardize(invchol = args$invchol)@\\
+\mbox{}\verb@if (!is.null(perm)) {@\\
+\mbox{}\verb@    args$invchol <- aperm(as.invchol(args$invchol), perm = perm)@\\
+\mbox{}\verb@    if (length(nm) < length(no))@\\
+\mbox{}\verb@        args$invchol <- marg_mvnorm(invchol = args$invchol, @\\
+\mbox{}\verb@                                    which = nm)$invchol@\\
+\mbox{}\verb@    args$mean <- args$mean[nm,,drop = FALSE]@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@return(do.call("ldpmvnorm", args))@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb118b}{118b}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap147}\raggedright\small
+\NWtarget{nuweb118b}{} $\langle\,${\itshape mvnorm logLik}\nobreak\ {\footnotesize {118b}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE, @\\
+\mbox{}\verb@                          ...) {@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape argchecks}\nobreak\ {\footnotesize \NWlink{nuweb117a}{117a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    if (is.chol(object$scale)) {@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape logLik chol}\nobreak\ {\footnotesize \NWlink{nuweb117b}{117b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape logLik invchol}\nobreak\ {\footnotesize \NWlink{nuweb118a}{118a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap148}\raggedright\small
+\NWtarget{nuweb119}{} $\langle\,${\itshape lLgrad chol}\nobreak\ {\footnotesize {119}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@names(args)[names(args) == "scale"] <- "chol"@\\
+\mbox{}\verb@sc <- args$chol@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    args$chol <- sc <- standardize(chol = args$chol)@\\
+\mbox{}\verb@if (!is.null(perm)) {@\\
+\mbox{}\verb@    if (!attr(args$chol, "diag")) {@\\
+\mbox{}\verb@        diagonals(args$chol) <- 1@\\
+\mbox{}\verb@        sc <- args$chol@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    args$chol <- pc <- aperm(as.chol(args$chol), perm = perm)@\\
+\mbox{}\verb@    if (length(nm) < length(no))@\\
+\mbox{}\verb@        args$chol <- marg_mvnorm(chol = args$chol, which = nm)$chol@\\
+\mbox{}\verb@    args$mean <- args$mean[nm,,drop = FALSE]@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@ret <- do.call("sldpmvnorm", args)@\\
+\mbox{}\verb@### sldmvnorm returns mean score as -obs@\\
+\mbox{}\verb@if (is.null(ret$mean)) ret$mean <- - ret$obs@\\
+\mbox{}\verb@om <- length(no) - length(nm)@\\
+\mbox{}\verb@if (om > 0) {@\\
+\mbox{}\verb@    am <- matrix(0, nrow = om, ncol = ncol(ret$mean))@\\
+\mbox{}\verb@    rownames(am) <- no[!no %in% nm]@\\
+\mbox{}\verb@    ret$mean <- rbind(ret$mean, am)@\\
+\mbox{}\verb@    Jo <- dim(object$scale)[[2L]]@\\
+\mbox{}\verb@    pJ <- dim(args$invchol)[[2L]]@\\
+\mbox{}\verb@    am <- matrix(0, nrow = Jo * (Jo + 1) / 2 - pJ * (pJ + 1) / 2, @\\
+\mbox{}\verb@                 ncol = dim(ret$invchol)[1L])@\\
+\mbox{}\verb@    byrow_orig <- attr(ret$chol, "byrow")@\\
+\mbox{}\verb@    ret$chol <- ltMatrices(ret$chol, byrow = TRUE)@\\
+\mbox{}\verb@    ### rbind only works for byrow = TRUE@\\
+\mbox{}\verb@    ret$chol <- ltMatrices(rbind(unclass(ret$chol), am), @\\
+\mbox{}\verb@                           byrow = TRUE, @\\
+\mbox{}\verb@                           diag = TRUE,@\\
+\mbox{}\verb@                           names = perm)@\\
+\mbox{}\verb@    ret$chol <- ltMatrices(ret$chol, byrow = byrow_orig)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@if (!is.null(perm))@\\
+\mbox{}\verb@    ret$chol <- deperma(chol = sc, permuted_chol = pc, @\\
+\mbox{}\verb@                        perm = match(perm, no), @\\
+\mbox{}\verb@                        score_schol = ret$chol)@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    ret$chol <- destandardize(chol = object$scale, @\\
+\mbox{}\verb@                              score_schol = ret$chol)@\\
+\mbox{}\verb@if (!attr(sc, "diag"))@\\
+\mbox{}\verb@    ret$chol <- ltMatrices(Lower_tri(ret$chol, diag = FALSE),@\\
+\mbox{}\verb@                           diag = FALSE, @\\
+\mbox{}\verb@                           byrow = attr(ret$chol, "byrow"), @\\
+\mbox{}\verb@                           names = dimnames(ret$chol)[[2L]])@\\
+\mbox{}\verb@ret$scale <- ret$chol@\\
+\mbox{}\verb@ret$chol <- NULL@\\
+\mbox{}\verb@ret$mean <- ret$mean[no,,drop = FALSE]@\\
+\mbox{}\verb@return(ret)@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb121}{121}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap149}\raggedright\small
+\NWtarget{nuweb120}{} $\langle\,${\itshape lLgrad invchol}\nobreak\ {\footnotesize {120}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@names(args)[names(args) == "scale"] <- "invchol"@\\
+\mbox{}\verb@si <- args$invchol@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    args$invchol <- si <- standardize(invchol = args$invchol)@\\
+\mbox{}\verb@if (!is.null(perm)) {@\\
+\mbox{}\verb@    if (!attr(args$invchol, "diag")) {@\\
+\mbox{}\verb@        diagonals(args$invchol) <- 1@\\
+\mbox{}\verb@        si <- args$invchol@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    args$invchol <- pi <- aperm(as.invchol(args$invchol), perm = perm)@\\
+\mbox{}\verb@    if (length(nm) < length(no))@\\
+\mbox{}\verb@        args$invchol <- marg_mvnorm(invchol = args$invchol,@\\
+\mbox{}\verb@                                    which = nm)$invchol@\\
+\mbox{}\verb@    args$mean <- args$mean[nm,,drop = FALSE]@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@ret <- do.call("sldpmvnorm", args)@\\
+\mbox{}\verb@### sldmvnorm returns mean score as -obs@\\
+\mbox{}\verb@if (is.null(ret$mean)) ret$mean <- - ret$obs@\\
+\mbox{}\verb@om <- length(no) - length(nm)@\\
+\mbox{}\verb@if (om > 0) {@\\
+\mbox{}\verb@    am <- matrix(0, nrow = om, ncol = ncol(ret$mean))@\\
+\mbox{}\verb@    rownames(am) <- no[!no %in% nm]@\\
+\mbox{}\verb@    ret$mean <- rbind(ret$mean, am)@\\
+\mbox{}\verb@    Jo <- dim(object$scale)[[2L]]@\\
+\mbox{}\verb@    pJ <- dim(args$invchol)[[2L]]@\\
+\mbox{}\verb@    am <- matrix(0, nrow = Jo * (Jo + 1) / 2 - pJ * (pJ + 1) / 2, @\\
+\mbox{}\verb@                 ncol = dim(ret$invchol)[1L])@\\
+\mbox{}\verb@    byrow_orig <- attr(ret$invchol, "byrow")@\\
+\mbox{}\verb@    ret$invchol <- ltMatrices(ret$invchol, byrow = TRUE)@\\
+\mbox{}\verb@    ### rbind only works for byrow = TRUE@\\
+\mbox{}\verb@    ret$invchol <- ltMatrices(rbind(unclass(ret$invchol), am), @\\
+\mbox{}\verb@                              byrow = TRUE,@\\
+\mbox{}\verb@                              diag = TRUE,@\\
+\mbox{}\verb@                              names = perm)@\\
+\mbox{}\verb@    ret$invchol <- ltMatrices(ret$invchol, byrow = byrow_orig)@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@if (!is.null(perm))@\\
+\mbox{}\verb@    ret$invchol <- deperma(invchol = si, permuted_invchol = pi, @\\
+\mbox{}\verb@                           perm = match(perm, no), @\\
+\mbox{}\verb@                           score_schol = -vectrick(pi, ret$invchol))@\\
+\mbox{}\verb@if (standardize)@\\
+\mbox{}\verb@    ret$invchol <- destandardize(invchol = object$scale, @\\
+\mbox{}\verb@                                 score_schol = -vectrick(si, ret$invchol))@\\
+\mbox{}\verb@if (!attr(si, "diag"))@\\
+\mbox{}\verb@    ret$invchol <- ltMatrices(Lower_tri(ret$invchol, diag = FALSE),@\\
+\mbox{}\verb@                              diag = FALSE, @\\
+\mbox{}\verb@                              byrow = attr(ret$invchol, "byrow"), @\\
+\mbox{}\verb@                              names = dimnames(ret$invchol)[[2L]])@\\
+\mbox{}\verb@ret$scale <- ret$invchol@\\
+\mbox{}\verb@ret$invchol <- NULL@\\
+\mbox{}\verb@ret$mean <- ret$mean[no,,drop = FALSE]@\\
+\mbox{}\verb@return(ret)@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb121}{121}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap150}\raggedright\small
+\NWtarget{nuweb121}{} $\langle\,${\itshape mvnorm lLgrad}\nobreak\ {\footnotesize {121}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@lLgrad <- function(object, ...)@\\
+\mbox{}\verb@    UseMethod("lLgrad")@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE, @\\
+\mbox{}\verb@                          ...) {@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape argchecks}\nobreak\ {\footnotesize \NWlink{nuweb117a}{117a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    if (is.chol(object$scale)) {@\\
+\mbox{}\verb@        @\hbox{$\langle\,${\itshape lLgrad chol}\nobreak\ {\footnotesize \NWlink{nuweb119}{119}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    }@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape lLgrad invchol}\nobreak\ {\footnotesize \NWlink{nuweb120}{120}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@}@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb112a}{112a}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+\chapter{Package Infrastructure}
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap151}\raggedright\small
+\NWtarget{nuweb122}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {122}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -7099,8 +7711,8 @@ if (!inherits(sd_NPML, "try-error")) {
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap136}\raggedright\small
-\NWtarget{nuweb113}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {113}}$\,\rangle\equiv$
+\begin{minipage}{\linewidth}\label{scrap152}\raggedright\small
+\NWtarget{nuweb123}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {123}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -7165,6 +7777,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item \verb@"lpmvnorm.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb61}{61}.}
 \item \verb@"ltMatrices.c"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb3}{3}.}
 \item \verb@"ltMatrices.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb2}{2}.}
+\item \verb@"user.R"@ {\footnotesize {\NWtxtDefBy} \NWlink{nuweb112a}{112a}.}
 \end{list}}
 
 \section*{Fragments}
@@ -7175,8 +7788,11 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$add diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb18}{18}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm\nobreak\ {\footnotesize \NWlink{nuweb48a}{48a}\NWlink{nuweb48b}{b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$aperm checks\nobreak\ {\footnotesize \NWlink{nuweb47}{47}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb48a}{48a}.}
+\item $\langle\,$argchecks\nobreak\ {\footnotesize \NWlink{nuweb117a}{117a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb118b}{118b}\NWlink{nuweb121}{, 121}.
+}
+\item $\langle\,$as.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb112b}{112b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb19}{19}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb113}{113}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb62a}{, 62a}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb123}{123}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb62a}{, 62a}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb22a}{22a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb22b}{22b}\NWlink{nuweb24}{, 24}\NWlink{nuweb27}{, 27}\NWlink{nuweb28}{, 28}\NWlink{nuweb31a}{, 31a}\NWlink{nuweb40a}{, 40a}.
 }
@@ -7248,8 +7864,12 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$ldmvnorm chol\nobreak\ {\footnotesize \NWlink{nuweb56a}{56a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
 \item $\langle\,$ldmvnorm invchol\nobreak\ {\footnotesize \NWlink{nuweb56b}{56b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb54a}{54a}.}
 \item $\langle\,$ldpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb97}{97}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}.}
+\item $\langle\,$lLgrad chol\nobreak\ {\footnotesize \NWlink{nuweb119}{119}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb121}{121}.}
+\item $\langle\,$lLgrad invchol\nobreak\ {\footnotesize \NWlink{nuweb120}{120}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb121}{121}.}
 \item $\langle\,$logdet\nobreak\ {\footnotesize \NWlink{nuweb31a}{31a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}.}
 \item $\langle\,$logdet ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb31b}{31b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
+\item $\langle\,$logLik chol\nobreak\ {\footnotesize \NWlink{nuweb117b}{117b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb118b}{118b}.}
+\item $\langle\,$logLik invchol\nobreak\ {\footnotesize \NWlink{nuweb118a}{118a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb118b}{118b}.}
 \item $\langle\,$lower scores\nobreak\ {\footnotesize \NWlink{nuweb73c}{73c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb74a}{74a}.}
 \item $\langle\,$lower triangular elements\nobreak\ {\footnotesize \NWlink{nuweb15}{15}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb71}{71}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb61}{61}.}
@@ -7269,6 +7889,15 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$mult ltMatrices transpose\nobreak\ {\footnotesize \NWlink{nuweb23}{23}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb21a}{21a}.}
 \item $\langle\,$mult syMatrices\nobreak\ {\footnotesize \NWlink{nuweb25}{25}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$mult transpose\nobreak\ {\footnotesize \NWlink{nuweb24}{24}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}.}
+\item $\langle\,$mvnorm\nobreak\ {\footnotesize \NWlink{nuweb114a}{114a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm chol invchol\nobreak\ {\footnotesize \NWlink{nuweb113a}{113a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb114a}{114a}.}
+\item $\langle\,$mvnorm condDist\nobreak\ {\footnotesize \NWlink{nuweb116}{116}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm lLgrad\nobreak\ {\footnotesize \NWlink{nuweb121}{121}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm logLik\nobreak\ {\footnotesize \NWlink{nuweb118b}{118b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm margDist\nobreak\ {\footnotesize \NWlink{nuweb115b}{115b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm mean\nobreak\ {\footnotesize \NWlink{nuweb113b}{113b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb114a}{114a}.}
+\item $\langle\,$mvnorm methods\nobreak\ {\footnotesize \NWlink{nuweb114b}{114b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
+\item $\langle\,$mvnorm simulate\nobreak\ {\footnotesize \NWlink{nuweb115a}{115a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb112a}{112a}.}
 \item $\langle\,$names ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb7b}{7b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$new score means, lower and upper\nobreak\ {\footnotesize \NWlink{nuweb77c}{77c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb79a}{79a}.}
 \item $\langle\,$output\nobreak\ {\footnotesize \NWlink{nuweb65d}{65d}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb69}{69}.}
@@ -7283,7 +7912,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb82c}{82c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb83b}{83b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb84}{84}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb10b}{10b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb61}{, 61}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb122}{122}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb61}{, 61}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62a}{62a}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb81}{81}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb62a}{62a}.}

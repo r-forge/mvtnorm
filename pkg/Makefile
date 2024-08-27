@@ -3,6 +3,7 @@ lmvnorm_src.Rnw:	lmvnorm_src.w
 	nuweb -r lmvnorm_src.w
 	mv lmvnorm_src.tex lmvnorm_src.Rnw
 	cp ltMatrices.R R
+	cp user.R R
 	cp ltMatrices.c src
 	cp lpmvnorm.c src
 	cp lpmvnorm.R R

@@ -48,6 +48,7 @@
 \alias{vectrick}
 \alias{standardize}
 \alias{destandardize}
+\alias{as.ltMatrices}
 \title{
   Multiple Lower Triangular or Symmetric Matrices
 }
@@ -102,6 +103,7 @@ invchol2pc(x)
 vectrick(C, S, A, transpose = c(TRUE, TRUE))
 standardize(chol, invchol)
 destandardize(chol = solve(invchol), invchol, score_schol)
+as.ltMatrices(x)
 }
 \arguments{
   \item{object}{a \code{matrix} representing the lower triagular elements of
