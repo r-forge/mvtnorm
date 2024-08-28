@@ -1258,7 +1258,7 @@ We start with some options for the \proglang{LAPACK} workhorses
 
 @d lapack options
 @{
-char di, lo = 'L', tr = 'N';
+char di, lo = 'L';
 if (Rdiag) {
     /* non-unit diagonal elements */
     di = 'N';
@@ -1266,16 +1266,6 @@ if (Rdiag) {
     /* unit diagonal elements; NOTE: these diagonals 1s ARE always present but
        ignored in the computations */
     di = 'U';
-}
-
-/* t(C) instead of C */
-Rboolean Rtranspose = asLogical(transpose);
-if (Rtranspose) {
-    /* t(C) */
-    tr = 'T';
-} else {
-    /* C */
-    tr = 'N';
 }
 @}
 
@@ -1288,13 +1278,24 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
 
     SEXP ans;
     double *dans, *dy;
-    int i, j, info, ONE = 1;
+    int i, ONE = 1;
 
     @<RC input@>
     /* diagonal elements are always present */
     if (!Rdiag) len += iJ;
     @<C length@>
     @<lapack options@>
+
+    char tr = 'N';
+    /* t(C) instead of C */
+    Rboolean Rtranspose = asLogical(transpose);
+    if (Rtranspose) {
+        /* t(C) */
+        tr = 'T';
+    } else {
+        /* C */
+        tr = 'N';
+    }
 
     dy = REAL(y);
     PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
@@ -1324,12 +1325,11 @@ SEXP R_ltMatrices_solve_C (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP transpose)
 
     SEXP ans;
     double *dans;
-    int i, j, info, jj, idx, ONE = 1;
+    int i, info;
 
     @<RC input@>
     /* diagonal elements are always present */
     if (!Rdiag) len += iJ;
-    @<C length@>
     @<lapack options@>
 
     PROTECT(ans = allocMatrix(REALSXP, len, iN));

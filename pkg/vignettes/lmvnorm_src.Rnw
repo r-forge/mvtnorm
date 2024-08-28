@@ -1345,7 +1345,7 @@ $\mC_i$ if \code{dim(x)[1L] > 1}
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb23b}{23b}\NWlink{nuweb25}{, 25}\NWlink{nuweb28}{, 28}\NWlink{nuweb29}{, 29}\NWlink{nuweb32a}{, 32a}\NWlink{nuweb41a}{, 41a}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb23b}{23b}\NWlink{nuweb25}{, 25}\NWlink{nuweb28}{, 28}\NWlink{nuweb32a}{, 32a}\NWlink{nuweb41a}{, 41a}.
 
 \item{}
 \end{list}
@@ -1637,7 +1637,7 @@ We start with some options for the \proglang{LAPACK} workhorses
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@char di, lo = 'L', tr = 'N';@\\
+\mbox{}\verb@char di, lo = 'L';@\\
 \mbox{}\verb@if (Rdiag) {@\\
 \mbox{}\verb@    /* non-unit diagonal elements */@\\
 \mbox{}\verb@    di = 'N';@\\
@@ -1645,16 +1645,6 @@ We start with some options for the \proglang{LAPACK} workhorses
 \mbox{}\verb@    /* unit diagonal elements; NOTE: these diagonals 1s ARE always present but@\\
 \mbox{}\verb@       ignored in the computations */@\\
 \mbox{}\verb@    di = 'U';@\\
-\mbox{}\verb@}@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@/* t(C) instead of C */@\\
-\mbox{}\verb@Rboolean Rtranspose = asLogical(transpose);@\\
-\mbox{}\verb@if (Rtranspose) {@\\
-\mbox{}\verb@    /* t(C) */@\\
-\mbox{}\verb@    tr = 'T';@\\
-\mbox{}\verb@} else {@\\
-\mbox{}\verb@    /* C */@\\
-\mbox{}\verb@    tr = 'N';@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
@@ -1680,13 +1670,24 @@ and set-up a dedicated \proglang{C} function for computing $\mC_i \xvec_i = \yve
 \mbox{}\verb@@\\
 \mbox{}\verb@    SEXP ans;@\\
 \mbox{}\verb@    double *dans, *dy;@\\
-\mbox{}\verb@    int i, j, info, ONE = 1;@\\
+\mbox{}\verb@    int i, ONE = 1;@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape RC input}\nobreak\ {\footnotesize \NWlink{nuweb22b}{22b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    /* diagonal elements are always present */@\\
 \mbox{}\verb@    if (!Rdiag) len += iJ;@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape C length}\nobreak\ {\footnotesize \NWlink{nuweb23a}{23a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape lapack options}\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    char tr = 'N';@\\
+\mbox{}\verb@    /* t(C) instead of C */@\\
+\mbox{}\verb@    Rboolean Rtranspose = asLogical(transpose);@\\
+\mbox{}\verb@    if (Rtranspose) {@\\
+\mbox{}\verb@        /* t(C) */@\\
+\mbox{}\verb@        tr = 'T';@\\
+\mbox{}\verb@    } else {@\\
+\mbox{}\verb@        /* C */@\\
+\mbox{}\verb@        tr = 'N';@\\
+\mbox{}\verb@    }@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    dy = REAL(y);@\\
 \mbox{}\verb@    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));@\\
@@ -1729,12 +1730,11 @@ and then for computing $\mC_i^{-1}$ explicitly
 \mbox{}\verb@@\\
 \mbox{}\verb@    SEXP ans;@\\
 \mbox{}\verb@    double *dans;@\\
-\mbox{}\verb@    int i, j, info, jj, idx, ONE = 1;@\\
+\mbox{}\verb@    int i, info;@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape RC input}\nobreak\ {\footnotesize \NWlink{nuweb22b}{22b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    /* diagonal elements are always present */@\\
 \mbox{}\verb@    if (!Rdiag) len += iJ;@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape C length}\nobreak\ {\footnotesize \NWlink{nuweb23a}{23a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape lapack options}\nobreak\ {\footnotesize \NWlink{nuweb27}{27}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    PROTECT(ans = allocMatrix(REALSXP, len, iN));@\\
@@ -8194,7 +8194,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb20}{20}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb131}{131}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb64}{, 64}.
 }
-\item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb23a}{23a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb23b}{23b}\NWlink{nuweb25}{, 25}\NWlink{nuweb28}{, 28}\NWlink{nuweb29}{, 29}\NWlink{nuweb32a}{, 32a}\NWlink{nuweb41a}{, 41a}.
+\item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb23a}{23a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb23b}{23b}\NWlink{nuweb25}{, 25}\NWlink{nuweb28}{, 28}\NWlink{nuweb32a}{, 32a}\NWlink{nuweb41a}{, 41a}.
 }
 \item $\langle\,$check A argument\nobreak\ {\footnotesize \NWlink{nuweb42b}{42b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb43}{43}.}
 \item $\langle\,$check and / or set integration weights\nobreak\ {\footnotesize \NWlink{nuweb73b}{73b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb74}{74}\NWlink{nuweb86}{, 86}.
