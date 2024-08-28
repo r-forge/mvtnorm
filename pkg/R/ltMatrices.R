@@ -80,10 +80,13 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 
 # syMatrices
 
-as.syMatrices <- function(object) {
-    stopifnot(is.ltMatrices(object))
-    class(object)[1L] <- "syMatrices"
-    return(object)
+as.syMatrices <- function(x) {
+    if (is.syMatrices(x))
+        return(x)
+    x <- as.ltMatrices(x)       ### make sure "ltMatrices"
+                                        ### is first class
+    class(x)[1L] <- "syMatrices"
+    return(x)
 }
 syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
@@ -114,6 +117,34 @@ names.syMatrices <- names.ltMatrices
 
 is.ltMatrices <- function(x) inherits(x, "ltMatrices")
 is.syMatrices <- function(x) inherits(x, "syMatrices")
+as.ltMatrices <- function(x) UseMethod("as.ltMatrices")
+as.ltMatrices.syMatrices <- function(x) {
+    cls <- class(x)
+    class(x) <- cls[which(cls == "syMatrices"):length(cls)]
+    class(x)[1L] <- "ltMatrices"
+    return(x)
+}
+as.ltMatrices.ltMatrices <- function(x) {
+    cls <- class(x)
+    class(x) <- cls[which(cls == "ltMatrices"):length(cls)]
+    return(x)
+}
+
+# as.ltMatrices
+
+as.ltMatrices.default <- function(x) {
+    stopifnot(is.numeric(x))
+    if (!is.matrix(x)) x <- matrix(x)    
+    DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps
+    DIAG <- DIAG & (nrow(x) > 1)
+    lt <- x[lower.tri(x, diag = DIAG)]
+    up <- x[upper.tri(x, diag = FALSE)]
+    stopifnot(max(abs(up)) < .Machine$double.eps)
+    nm <- rownames(x)
+    if (!is.null(nm))
+        return(ltMatrices(lt, diag = DIAG, names = nm))
+    return(ltMatrices(lt, diag = DIAG))
+}
 
 # print ltMatrices
 
@@ -255,7 +286,7 @@ print.syMatrices <- function(x, ...)
 }
 
 "[.syMatrices" <- function(x, i, j, ..., drop = FALSE) {
-    class(x)[1L] <- "ltMatrices"
+    x <- as.syMatrices(x)
     ret <- .subset_ltMatrices(x = x, i = i, j = j, ..., drop = drop)
     class(ret)[1L] <- "syMatrices"
     ret
@@ -266,8 +297,7 @@ print.syMatrices <- function(x, ...)
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
     if (is.syMatrices(x))
-        class(x)[1L] <- "ltMatrices"
-    stopifnot(is.ltMatrices(x))
+        x <- as.ltMatrices(x)
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)
 
@@ -414,7 +444,7 @@ Mult.syMatrices <- function(x, y, ...) {
     dn <- dimnames(x)
     
 
-    class(x)[1L] <- "ltMatrices"
+    x <- as.ltMatrices(x)
     stopifnot(is.numeric(y))
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
@@ -646,7 +676,7 @@ chol.syMatrices <- function(x, ...) {
 
 "diagonals<-.syMatrices" <- function(x, value) {
 
-    class(x)[1L] <- "ltMatrices"
+    x <- as.ltMatrices(x)
     diagonals(x) <- value
     class(x)[1L] <- "syMatrices"
 
@@ -662,7 +692,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
 
     # check C argument
     
-    stopifnot(is.ltMatrices(C))
+    C <- as.ltMatrices(C)
     if (!attr(C, "diag")) diagonals(C) <- 1
     C_byrow_orig <- attr(C, "byrow")
     C <- ltMatrices(C, byrow = FALSE)
@@ -670,7 +700,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     nm <- attr(C, "rcnames")
     N <- dC[1L]
     J <- dC[2L]
-    class(C) <- class(C)[-1L]
+    class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(c)
     if (!is.double(C)) storage.mode(C) <- "double"
     
     # check S argument
@@ -707,7 +737,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     if (missing(A)) {
         A <- C
     } else {
-        stopifnot(is.ltMatrices(A))
+        A <- as.ltMatrices(A)
         if (!attr(A, "diag")) diagonals(A) <- 1
         A_byrow_orig <- attr(A, "byrow")
         stopifnot(C_byrow_orig == A_byrow_orig)

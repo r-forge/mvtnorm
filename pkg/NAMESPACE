@@ -9,13 +9,13 @@ importFrom("stats",
 
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, syMatrices, as.syMatrices, Tcrossprod, Crossprod, diagonals, 
-       is.ltMatrices, is.syMatrices, is.chol, is.invchol, as.chol, as.invchol,
+       is.ltMatrices, is.syMatrices, as.ltMatrices, is.chol, is.invchol, as.chol, as.invchol,
        chol2cov, invchol2chol, chol2invchol, invchol2cov, 
        invchol2pre, chol2pre, Dchol, invcholD, chol2cor, invchol2cor,
        invchol2pc, chol2pc, "diagonals<-", vectrick, Lower_tri, logdet,
        marg_mvnorm, cond_mvnorm, Mult, lpmvnorm, slpmvnorm,
        ldmvnorm, sldmvnorm, ldpmvnorm, sldpmvnorm, standardize, destandardize, deperma,
-       mvnorm, as.ltMatrices, margDist, condDist, lLgrad)
+       mvnorm, margDist, condDist, lLgrad)
 
 S3method("as.array", "ltMatrices")
 S3method("as.array", "syMatrices")
@@ -51,6 +51,9 @@ S3method("simulate", "mvnorm")
 S3method("Mult", "ltMatrices")
 S3method("Mult", "syMatrices")
 S3method("Mult", "default")
+S3method("as.ltMatrices", "default")
+S3method("as.ltMatrices", "ltMatrices")
+S3method("as.ltMatrices", "syMatrices")
 ### internal methods
 S3method("probval", "GenzBretz")
 S3method("probval", "Miwa")

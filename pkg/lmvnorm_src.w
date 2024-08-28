@@ -202,6 +202,7 @@ Chapter~\ref{copula}. An attempt to provide useRs with a simple and
 @<dimnames ltMatrices@>
 @<names ltMatrices@>
 @<is.ltMatrices@>
+@<as.ltMatrices@>
 @<print ltMatrices@>
 @<reorder ltMatrices@>
 @<subset ltMatrices@>
@@ -373,10 +374,13 @@ multiple symmetric matrices
 
 @d syMatrices
 @{
-as.syMatrices <- function(object) {
-    stopifnot(is.ltMatrices(object))
-    class(object)[1L] <- "syMatrices"
-    return(object)
+as.syMatrices <- function(x) {
+    if (is.syMatrices(x))
+        return(x)
+    x <- as.ltMatrices(x)	### make sure "ltMatrices"
+                                        ### is first class
+    class(x)[1L] <- "syMatrices"
+    return(x)
 }
 syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
@@ -413,12 +417,26 @@ names.ltMatrices <- function(x) {
 names.syMatrices <- names.ltMatrices
 @}
 
-Finally, let's add two functions for checking the class
+Finally, let's add two functions for checking the class and a function for
+coersing classes inheriting from \code{ltMatrices} to the latter, the same
+for \code{syMatrices}
 
 @d is.ltMatrices
 @{
 is.ltMatrices <- function(x) inherits(x, "ltMatrices")
 is.syMatrices <- function(x) inherits(x, "syMatrices")
+as.ltMatrices <- function(x) UseMethod("as.ltMatrices")
+as.ltMatrices.syMatrices <- function(x) {
+    cls <- class(x)
+    class(x) <- cls[which(cls == "syMatrices"):length(cls)]
+    class(x)[1L] <- "ltMatrices"
+    return(x)
+}
+as.ltMatrices.ltMatrices <- function(x) {
+    cls <- class(x)
+    class(x) <- cls[which(cls == "ltMatrices"):length(cls)]
+    return(x)
+}
 @}
 
 Let's set-up an example for illustration. Throughout this document, we will
@@ -635,7 +653,7 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 }
 
 "[.syMatrices" <- function(x, i, j, ..., drop = FALSE) {
-    class(x)[1L] <- "ltMatrices"
+    x <- as.syMatrices(x)
     ret <- .subset_ltMatrices(x = x, i = i, j = j, ..., drop = drop)
     class(ret)[1L] <- "syMatrices"
     ret
@@ -734,8 +752,7 @@ the \code{byrow} to this function is used to overwrite it explicitly
 Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
 
     if (is.syMatrices(x))
-        class(x)[1L] <- "ltMatrices"
-    stopifnot(is.ltMatrices(x))
+        x <- as.ltMatrices(x)
     adiag <- diag
     x <- ltMatrices(x, byrow = byrow)
 
@@ -897,7 +914,7 @@ which was set-up with constant $c_{jj} = 1$ diagonal elements.
 
 "diagonals<-.syMatrices" <- function(x, value) {
 
-    class(x)[1L] <- "ltMatrices"
+    x <- as.ltMatrices(x)
     diagonals(x) <- value
     class(x)[1L] <- "syMatrices"
 
@@ -1179,7 +1196,7 @@ Mult.syMatrices <- function(x, y, ...) {
 
     @<extract slots@>
 
-    class(x)[1L] <- "ltMatrices"
+    x <- as.ltMatrices(x)
     stopifnot(is.numeric(y))
     if (!is.matrix(y)) y <- matrix(y, nrow = d[2L], ncol = d[1L])
     N <- ifelse(d[1L] == 1, ncol(y), d[1L])
@@ -1908,7 +1925,7 @@ object
 
 @d check C argument
 @{
-stopifnot(is.ltMatrices(C))
+C <- as.ltMatrices(C)
 if (!attr(C, "diag")) diagonals(C) <- 1
 C_byrow_orig <- attr(C, "byrow")
 C <- ltMatrices(C, byrow = FALSE)
@@ -1916,7 +1933,7 @@ dC <- dim(C)
 nm <- attr(C, "rcnames")
 N <- dC[1L]
 J <- dC[2L]
-class(C) <- class(C)[-1L]
+class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(c)
 if (!is.double(C)) storage.mode(C) <- "double"
 @}
 
@@ -1960,7 +1977,7 @@ if (!is.double(S)) storage.mode(S) <- "double"
 if (missing(A)) {
     A <- C
 } else {
-    stopifnot(is.ltMatrices(A))
+    A <- as.ltMatrices(A)
     if (!attr(A, "diag")) diagonals(A) <- 1
     A_byrow_orig <- attr(A, "byrow")
     stopifnot(C_byrow_orig == A_byrow_orig)
@@ -5298,7 +5315,6 @@ if (!inherits(sd_NPML, "try-error")) {
 
 @o interface.R -cp
 @{
-@<as.ltMatrices@>
 @<mvnorm@>
 @<mvnorm methods@>
 @<mvnorm simulate@>
@@ -5322,7 +5338,7 @@ We start with the conversion of a lower triangular matrix \code{x} to an
 
 @d as.ltMatrices
 @{
-as.ltMatrices <- function(x) {
+as.ltMatrices.default <- function(x) {
     stopifnot(is.numeric(x))
     if (!is.matrix(x)) x <- matrix(x)    
     DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps

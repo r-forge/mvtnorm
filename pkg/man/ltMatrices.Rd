@@ -1,7 +1,6 @@
 \name{ltMatrices}
 \alias{ltMatrices}
 \alias{syMatrices}
-\alias{as.syMatrices}
 \alias{Tcrossprod}
 \alias{Crossprod}
 \alias{diagonals}
@@ -21,6 +20,10 @@
 \alias{diagonals.integer}
 \alias{is.ltMatrices}
 \alias{is.syMatrices}
+\alias{as.ltMatrices}
+\alias{as.ltMatrices.ltMatrices}
+\alias{as.ltMatrices.syMatrices}
+\alias{as.syMatrices}
 \alias{is.chol}
 \alias{is.invchol}
 \alias{as.chol}
@@ -48,7 +51,6 @@
 \alias{vectrick}
 \alias{standardize}
 \alias{destandardize}
-\alias{as.ltMatrices}
 \title{
   Multiple Lower Triangular or Symmetric Matrices
 }
@@ -58,7 +60,6 @@
 \usage{
 ltMatrices(object, diag = FALSE, byrow = FALSE, names = TRUE)
 syMatrices(object, diag = FALSE, byrow = FALSE, names = TRUE)
-as.syMatrices(object)
 \S3method{as.array}{ltMatrices}(x, symmetric = FALSE, \dots)
 \S3method{as.array}{syMatrices}(x, \dots)
 \S3method{diagonals}{ltMatrices}(x, \dots)
@@ -84,6 +85,10 @@ logdet(x)
 Lower_tri(x, diag = FALSE, byrow = attr(x, "byrow"))
 is.ltMatrices(x)
 is.syMatrices(x)
+as.ltMatrices(x)
+\S3method{as.ltMatrices}{ltMatrices}(x)
+\S3method{as.ltMatrices}{syMatrices}(x)
+as.syMatrices(x)
 is.chol(x)
 is.invchol(x)
 as.chol(x)

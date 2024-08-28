@@ -13,7 +13,7 @@
     (Experimental) User Interface to Multiple Multivariate Normal Distributions
 }
 \description{
-    An (still experimental) simple user interface for computing on multiple multivariate
+    A (still experimental) simple user interface for computing on multiple multivariate
     normal distributions.
 }
 \usage{

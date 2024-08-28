@@ -297,14 +297,6 @@ Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
 3.3    8    8
 4.3    9    9
 4.4   10   10
-attr(,"J")
-[1] 4
-attr(,"diag")
-[1] TRUE
-attr(,"byrow")
-[1] FALSE
-attr(,"rcnames")
-[1] "1" "2" "3" "4"
 
 > M <- ltMatrices(matrix(1:6, nrow = 6, ncol = 2), diag = FALSE)
 
@@ -316,14 +308,6 @@ attr(,"rcnames")
 3.2    4    4
 4.2    5    5
 4.3    6    6
-attr(,"J")
-[1] 4
-attr(,"diag")
-[1] FALSE
-attr(,"byrow")
-[1] FALSE
-attr(,"rcnames")
-[1] "1" "2" "3" "4"
 
 > Lower_tri(M, diag = TRUE)
     [,1] [,2]
@@ -337,14 +321,6 @@ attr(,"rcnames")
 3.3    1    1
 4.3    6    6
 4.4    1    1
-attr(,"J")
-[1] 4
-attr(,"diag")
-[1] TRUE
-attr(,"byrow")
-[1] FALSE
-attr(,"rcnames")
-[1] "1" "2" "3" "4"
 
 > Lower_tri(invchol2cor(M))
           [,1]       [,2]
@@ -354,14 +330,6 @@ attr(,"rcnames")
 3.2 -0.9258201 -0.9258201
 4.2  0.9189002  0.9189002
 4.3 -0.9974149 -0.9974149
-attr(,"J")
-[1] 4
-attr(,"diag")
-[1] FALSE
-attr(,"byrow")
-[1] FALSE
-attr(,"rcnames")
-[1] "1" "2" "3" "4"
 
 > all(diagonals(ltMatrices(xn, byrow = TRUE)) == 1)
 [1] TRUE
@@ -1895,4 +1863,4 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 11.222   0.071  11.294 
+ 11.093   0.064  11.155 

@@ -1,20 +1,4 @@
 
-# as.ltMatrices
-
-as.ltMatrices <- function(x) {
-    stopifnot(is.numeric(x))
-    if (!is.matrix(x)) x <- matrix(x)    
-    DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps
-    DIAG <- DIAG & (nrow(x) > 1)
-    lt <- x[lower.tri(x, diag = DIAG)]
-    up <- x[upper.tri(x, diag = FALSE)]
-    stopifnot(max(abs(up)) < .Machine$double.eps)
-    nm <- rownames(x)
-    if (!is.null(nm))
-        return(ltMatrices(lt, diag = DIAG, names = nm))
-    return(ltMatrices(lt, diag = DIAG))
-}
-
 # mvnorm
 
 ### allow more than one distribution
