@@ -5925,6 +5925,8 @@ and can now estimate the mean and Cholesky factor of the covariance matrix
 
 <<iris-ML>>=
 start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = TRUE))
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
@@ -5969,6 +5971,8 @@ lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
 upper <- matrix(c(q1, Inf)[f1], nrow = 1)
 rownames(lower) <- rownames(upper) <- v1
 obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
              lower = llim, control = list(trace = TRUE))
 Chati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)

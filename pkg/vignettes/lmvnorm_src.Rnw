@@ -803,6 +803,11 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(j)) {@\\
 \mbox{}\verb@@\\
+\mbox{}\verb@        if (is.character(j)) {@\\
+\mbox{}\verb@            stopifnot(all(j %in% dn[[2L]]))@\\
+\mbox{}\verb@            j <- match(j, dn[[2L]])@\\
+\mbox{}\verb@        }@\\
+\mbox{}\verb@@\\
 \mbox{}\verb@        j <- (1:J)[j] ### get rid of negative indices@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        if (length(j) == 1L && !diag) {@\\
@@ -855,6 +860,10 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
 \mbox{}\verb@### if j is not ordered, result is not a lower triangular matrix@\\
 \mbox{}\verb@"[.ltMatrices" <- function(x, i, j, ..., drop = FALSE) {@\\
 \mbox{}\verb@    if (!missing(j)) {@\\
+\mbox{}\verb@        if (is.character(j)) {@\\
+\mbox{}\verb@            stopifnot(all(j %in% dimnames(x)[[2L]]))@\\
+\mbox{}\verb@            j <- match(j, dimnames(x)[[2L]])@\\
+\mbox{}\verb@        }@\\
 \mbox{}\verb@        if (all(j > 0)) {@\\
 \mbox{}\verb@            if (any(diff(j) < 0)) stop("invalid subset argument j")@\\
 \mbox{}\verb@        }@\\
@@ -7999,6 +8008,8 @@ and can now estimate the mean and Cholesky factor of the covariance matrix
 
 <<iris-ML>>=
 start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = TRUE))
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
@@ -8043,6 +8054,8 @@ lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
 upper <- matrix(c(q1, Inf)[f1], nrow = 1)
 rownames(lower) <- rownames(upper) <- v1
 obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
+if (require("numDeriv", quietly = TRUE))
+    chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
              lower = llim, control = list(trace = TRUE))
 Chati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
