@@ -5598,7 +5598,7 @@ marginalisation, and standardisation. We begin with some sanity checks
 
 @d argchecks
 @{
-args <- c(object, list())
+args <- c(object, list(...))
 nargs <- missing(obs) + missing(lower) + missing(upper)
 stopifnot(nargs < 3L)
 

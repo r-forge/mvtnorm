@@ -154,7 +154,7 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
                           ...) {
     # argchecks
     
-    args <- c(object, list())
+    args <- c(object, list(...))
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 
@@ -235,7 +235,7 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
                           ...) {
     # argchecks
     
-    args <- c(object, list())
+    args <- c(object, list(...))
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 

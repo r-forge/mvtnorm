@@ -383,9 +383,9 @@ order on request (for later printing)
 \mbox{}\verb@        rownames(object) <- t(L)[upper.tri(L, diag = diag)]@\\
 \mbox{}\verb@    else@\\
 \mbox{}\verb@        rownames(object) <- L[lower.tri(L, diag = diag)]@\\
-\mbox{}\verb@} else {@\\
-\mbox{}\verb@    warning("ltMatrices objects should be properly named")@\\
-\mbox{}\verb@}@\\
+\mbox{}\verb@} # else {      ### add later@\\
+\mbox{}\verb@    # warning("ltMatrices objects should be properly named")@\\
+\mbox{}\verb@# }@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -7516,7 +7516,7 @@ marginalisation, and standardisation. We begin with some sanity checks
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@args <- c(object, list())@\\
+\mbox{}\verb@args <- c(object, list(...))@\\
 \mbox{}\verb@nargs <- missing(obs) + missing(lower) + missing(upper)@\\
 \mbox{}\verb@stopifnot(nargs < 3L)@\\
 \mbox{}\verb@@\\
