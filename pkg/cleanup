@@ -13,7 +13,7 @@ rm -rf *toc
 rm -rf lpmvnorm*
 rm -rf ltMatrices*
 rm -rf interface*
-rm -rf lmvnorm_src*
+rm -rf lmvnorm_src.R*
 
 
 for f in ./R/*~; do
