@@ -53,7 +53,7 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol,
     if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-    stopifnot(is.ltMatrices(chol))          ### is.chol
+    stopifnot(is.ltMatrices(chol))          ### NOTE: replace with is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = TRUE)
     d <- dim(chol)
@@ -125,8 +125,10 @@ lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol,
 
 # slpmvnorm
 
-slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, M = NULL, 
-                    w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE) {
+slpmvnorm <- function(lower, upper, mean = 0, center = NULL, 
+                      chol, invchol, logLik = TRUE, M = NULL, 
+                      w = NULL, seed = NULL, tol = .Machine$double.eps, 
+                      fast = FALSE) {
 
     # init random seed, reset on exit
     
@@ -153,7 +155,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, logL
     if (!is.matrix(upper)) upper <- matrix(upper, ncol = 1)
     stopifnot(isTRUE(all.equal(dim(lower), dim(upper))))
 
-    stopifnot(is.ltMatrices(chol))          ### is.chol
+    stopifnot(is.ltMatrices(chol))          ### NOTE: replace with is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = TRUE)
     d <- dim(chol)
@@ -374,7 +376,8 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         ret <- ltMatrices(ret,
                           diag = attr(invchol, "diag"), byrow = FALSE,
                           names = dimnames(invchol)[[2L]])
-        ret <- ltMatrices(ret, diag = attr(invchol, "diag"), byrow = attr(invchol, "byrow"))
+        ret <- ltMatrices(ret, diag = attr(invchol, "diag"), 
+                          byrow = attr(invchol, "byrow"))
         if (attr(invchol, "diag")) {
             ### recycle properly
             diagonals(ret) <- diagonals(ret) + c(1 / diagonals(invchol))
@@ -383,7 +386,8 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         }
         ret <- list(obs = sobs, invchol = ret)
         if (logLik) 
-            ret$logLik <- ldmvnorm(obs = obs, mean = mean, invchol = invchol, logLik = FALSE)
+            ret$logLik <- ldmvnorm(obs = obs, mean = mean, 
+                                   invchol = invchol, logLik = FALSE)
         return(ret)
     }
 
@@ -460,7 +464,8 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
 
 # sldpmvnorm
 
-sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) {
+sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean,
@@ -564,10 +569,10 @@ deperma <- function(chol = solve(invchol),
 
     # deperma input checks chol
     
-    stopifnot(is.ltMatrices(chol))  ### is.chol
+    stopifnot(is.ltMatrices(chol))  ### NOTE: replace with is.chol
     byrow_orig <- attr(chol, "byrow")
     chol <- ltMatrices(chol, byrow = FALSE)
-    stopifnot(is.ltMatrices(permuted_chol)) ### is.chol
+    stopifnot(is.ltMatrices(permuted_chol)) ### NOTE: replace with is.chol
     permuted_chol <- ltMatrices(permuted_chol, byrow = FALSE)
     stopifnot(max(abs(dim(chol) - dim(permuted_chol))) == 0)
     J <- dim(chol)[2L]
@@ -646,7 +651,7 @@ standardize <- function(chol, invchol) {
 
 destandardize <- function(chol = solve(invchol), invchol, score_schol)
 {
-    stopifnot(is.ltMatrices(chol))      ### is.chol; dispatch?
+    stopifnot(is.ltMatrices(chol))      ### NOTE: replace with is.chol
     J <- dim(chol)[2L]
     stopifnot(!attr(chol, "diag"))
     byrow_orig <- attr(chol, "byrow")

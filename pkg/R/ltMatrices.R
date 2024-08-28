@@ -64,6 +64,8 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
             rownames(object) <- t(L)[upper.tri(L, diag = diag)]
         else
             rownames(object) <- L[lower.tri(L, diag = diag)]
+    } else {
+        warning("ltMatrices objects should be properly named")
     }
     
 
@@ -84,7 +86,8 @@ as.syMatrices <- function(object) {
     return(object)
 }
 syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
-    as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, names = names))
+    as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
+                             names = names))
 
 # dim ltMatrices
 
@@ -278,11 +281,11 @@ Lower_tri <- function(x, diag = FALSE, byrow = attr(x, "byrow")) {
     
 
     if (diag == adiag)
-        return(unclass(x))
+        return(unclass(x)[,,drop = FALSE]) ### remove attributes
 
     if (!diag && adiag) {
         diagonals(x) <- 1
-        return(unclass(x))
+        return(unclass(x)[,,drop = FALSE]) ### remove attributes
     }
 
     x <- unclass(x)
