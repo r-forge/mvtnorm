@@ -12,6 +12,7 @@ rm -rf *out
 rm -rf *toc
 rm -rf lpmvnorm*
 rm -rf ltMatrices*
+rm -rf interface*
 
 for f in ./R/*~; do
     rm -f $f
