@@ -147,7 +147,7 @@ partially, of \cite{Genz_Bretz_2002}, for the  evaluation of
 $N$ multivariate $\J$-dimensional normal probabilities
 \begin{eqnarray} \label{pmvnorm}
 p_i(\mC_i \mid \avec_i, \bvec_i) = \Prob(\avec_i < \rY_i \le \bvec_i \mid \mC_i ) 
-  = (2 \pi)^{-\frac{\J}{2}} \text{det}(\mC_i)^{-\frac{1}{2}} 
+  = (2 \pi)^{-\frac{\J}{2}} \text{det}(\mC_i)^{-1} 
     \int_{\avec_i}^{\bvec_i} \exp\left(-\frac{1}{2} \yvec^\top \mC_i^{-\top} \mC_i^{-1} \yvec\right) \, d \yvec
 \end{eqnarray}
 where $\avec_i = (a^{(i)}_1, \dots, a^{(i)}_\J)^\top \in \R^\J$ and 
@@ -3524,7 +3524,7 @@ using quasi-Monte-Carlo integration. The \code{pmvnorm}
 function uses randomised Korobov rules.
 The experiment here applies generalised Halton sequences. Plain Monte-Carlo
 (\code{w = NULL}) will also work but produces more variable results. Results
-will depend a lot on appropriate choices and it is the users
+will depend a lot on appropriate choices and it is the user's
 responsibility to make sure things work as intended. If you are unsure, you
 should use \code{pmvnorm} which provides a well-tested configuration.
 
