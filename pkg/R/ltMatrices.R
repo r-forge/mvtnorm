@@ -242,6 +242,11 @@ print.syMatrices <- function(x, ...)
 
     if (!missing(j)) {
 
+        if (is.character(j)) {
+            stopifnot(all(j %in% dn[[2L]]))
+            j <- match(j, dn[[2L]])
+        }
+
         j <- (1:J)[j] ### get rid of negative indices
 
         if (length(j) == 1L && !diag) {
@@ -277,6 +282,10 @@ print.syMatrices <- function(x, ...)
 ### if j is not ordered, result is not a lower triangular matrix
 "[.ltMatrices" <- function(x, i, j, ..., drop = FALSE) {
     if (!missing(j)) {
+        if (is.character(j)) {
+            stopifnot(all(j %in% dimnames(x)[[2L]]))
+            j <- match(j, dimnames(x)[[2L]])
+        }
         if (all(j > 0)) {
             if (any(diff(j) < 0)) stop("invalid subset argument j")
         }

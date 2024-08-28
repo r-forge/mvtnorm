@@ -19,6 +19,7 @@
   \subsection{Bugfixes}{
     \itemize{
       \item Names didn't propagate properly in several places.
+      \item Allow character subsets.
     }
   }
 }
