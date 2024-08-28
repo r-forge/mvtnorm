@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-0 (2024-08-27)}{
+\section{Changes in Version 1.3-0 (2024-08-28)}{
   \subsection{Features}{
     \itemize{
       \item New (but still experimental) user interface for computing
@@ -13,11 +13,12 @@
             and explain the derivation of the gradient in the vignette.
       \item Add \code{chol} and \code{invchol} classes, mainly to avoid
             confusion.
+      \item Make sure \code{logdet(standardize())} is finite, always. 
     }
   }
   \subsection{Bugfixes}{
     \itemize{
-      \item Names didn't propagate properly.
+      \item Names didn't propagate properly in several places.
     }
   }
 }
