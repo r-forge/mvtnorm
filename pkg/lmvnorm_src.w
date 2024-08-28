@@ -328,9 +328,9 @@ if (!nonames) {
         rownames(object) <- t(L)[upper.tri(L, diag = diag)]
     else
         rownames(object) <- L[lower.tri(L, diag = diag)]
-} else {
-    warning("ltMatrices objects should be properly named")
-}
+} # else {	### add later
+    # warning("ltMatrices objects should be properly named")
+# }
 @}
 
 If \code{object} is already a classed object representing lower triangular
