@@ -2133,6 +2133,11 @@ Dchol <- function(x, D = 1 / sqrt(Tcrossprod(x, diag_only = TRUE))) {
     J <- dim(x)[2L]
     nm <- dimnames(x)[[2L]]
 
+    ### for some parameter configurations logdet(ret) would
+    ### be -Inf; make sure this does't happen
+    if (any(D < .Machine$double.eps))
+        D[D < .Machine$double.eps] <- 2 * .Machine$double.eps
+
     x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]
 
     ret <- ltMatrices(x, diag = TRUE, byrow = TRUE, names = nm)
@@ -2159,6 +2164,11 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
     N <- dim(x)[1L]
     J <- dim(x)[2L]
     nm <- dimnames(x)[[2L]]
+
+    ### for some parameter configurations logdet(ret) would
+    ### be -Inf; make sure this does't happen
+    if (any(D < .Machine$double.eps))
+        D[D < .Machine$double.eps] <- 2 * .Machine$double.eps
 
     x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
 
