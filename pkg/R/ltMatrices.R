@@ -32,7 +32,9 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
     # ltMatrices input
     
     if (is.ltMatrices(object)) {
+        cls <- class(object)                ### keep inheriting classes
         ret <- .reorder(object, byrow = byrow)
+        class(ret) <- class(object)
         return(ret)
     }
     
@@ -84,7 +86,7 @@ as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
     x <- as.ltMatrices(x)       ### make sure "ltMatrices"
-                                        ### is first class
+                                ### is first class
     class(x)[1L] <- "syMatrices"
     return(x)
 }

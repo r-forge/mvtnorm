@@ -340,7 +340,9 @@ change the storage form from row- to column-major or the other way round.
 @d ltMatrices input
 @{
 if (is.ltMatrices(object)) {
+    cls <- class(object)		### keep inheriting classes
     ret <- .reorder(object, byrow = byrow)
+    class(ret) <- class(object)
     return(ret)
 }
 @}
@@ -378,7 +380,7 @@ as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
     x <- as.ltMatrices(x)	### make sure "ltMatrices"
-                                        ### is first class
+                                ### is first class
     class(x)[1L] <- "syMatrices"
     return(x)
 }
@@ -419,7 +421,11 @@ names.syMatrices <- names.ltMatrices
 
 Finally, let's add two functions for checking the class and a function for
 coersing classes inheriting from \code{ltMatrices} to the latter, the same
-for \code{syMatrices}
+for \code{syMatrices}. Furthermode, \code{as.ltMatrices} coerces objects
+inheriting from \code{syMatrices} or \code{ltMatrices} to class
+\code{ltMatrices} (that is, \code{chol} or \code{invchol} is removed from
+the class list, unlike a call to the constructor \code{ltMatrices}). A
+\code{default} method is added in Chapter~\ref{inter}.
 
 @d is.ltMatrices
 @{
@@ -673,80 +679,77 @@ We check if this works by first subsetting the \code{ltMatrices} object.
 Second, we coerse the object to an array and do the subset for the latter
 object. Both results must agree.
 
-<<ex-subset>>=
+<<ex-subset, eval = FALSE>>=
 ## subset
-a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, 2:4])
-b <- as.array(ltMatrices(xn, byrow = FALSE))[2:4, 2:4, 1:2]
+a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, j])
+b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, j, i]
 chk(a, b)
 
-a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(xn, byrow = TRUE))[2:4, 2:4, 1:2]
+a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, j])
+b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, j, i]
 chk(a, b)
 
-a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[2:4, 2:4, 1:2]
+a <- as.array(ltMatrices(xd, byrow = FALSE, 
+                         diag = TRUE, names = nm)[i, j])
+b <- as.array(ltMatrices(xd, byrow = FALSE, 
+                         diag = TRUE, names = nm))[j, j, i]
 chk(a, b)
 
-a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 2:4])
-b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 2:4, 1:2]
+a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
+                         names = nm)[i, j])
+b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
+                         names = nm))[j, j, i]
 chk(a, b)
 @@
 
-With a different subset
+We start with both indices being positive integers
+
+<<ex-subset-1>>=
+i <- colnames(xn)[1:2]
+j <- 2:4
+<<ex-subset>>
+@@
+
+proceed with characters
 
 <<ex-subset-2>>=
-## subset
-j <- c(1, 3, 5)
-a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
-b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
-chk(a, b)
+i <- 1:2
+j <- nm[2:4]
+<<ex-subset>>
 @@
 
-with negative subsets
+a different subset
 
 <<ex-subset-3>>=
-## subset
+j <- c(1, 3, 5)
+<<ex-subset>>
+@@
+
+and characters again
+
+<<ex-subset-4>>=
+j <- nm[c(1, 3, 5)]
+<<ex-subset>>
+@@
+
+and finally with with negative subsets
+
+<<ex-subset-5>>=
 j <- -c(1, 3, 5)
-a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
-b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, j, 1:2]
-chk(a, b)
-
-a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, j])
-b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, j, 1:2]
-chk(a, b)
+<<ex-subset>>
 @@
 
 and with non-increasing argument \code{j} (this won't work for lower
 triangular matrices, only for symmetric matrices)
 
-<<ex-subset-4>>=
+<<ex-subset-6>>=
 ## subset
-j <- sample(1:J)
-ltM <- ltMatrices(xn, byrow = FALSE)
-try(ltM[1:2, j])
+j <- nm[sample(1:J)]
+ltM <- ltMatrices(xn, byrow = FALSE, names = nm)
+try(ltM[i, j])
 ltM <- as.syMatrices(ltM)
-a <- as.array(ltM[1:2, j])
-b <- as.array(ltM)[j, j, 1:2]
+a <- as.array(ltM[i, j])
+b <- as.array(ltM)[j, j, i]
 chk(a, b)
 @@
 

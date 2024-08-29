@@ -164,112 +164,192 @@ E 0.4913541358 0.2849431 0.005961103 0.8901457863 1.000000000
 
 > chk(a, b)
 
-> a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, 2:4])
+> i <- colnames(xn)[1:2]
 
-> b <- as.array(ltMatrices(xn, byrow = FALSE))[2:4, 
-+     2:4, 1:2]
+> j <- 2:4
 
-> chk(a, b)
+> a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, 
++     j])
 
-> a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, 2:4])
-
-> b <- as.array(ltMatrices(xn, byrow = TRUE))[2:4, 2:4, 
-+     1:2]
+> b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, 
++     j, i]
 
 > chk(a, b)
 
-> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 
-+     2:4])
+> a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, 
++     j])
 
-> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[2:4, 
-+     2:4, 1:2]
+> b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, 
++     j, i]
 
 > chk(a, b)
 
-> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 
-+     2:4])
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm)[i, j])
 
-> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[2:4, 
-+     2:4, 1:2]
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> i <- 1:2
+
+> j <- nm[2:4]
+
+> a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, 
++     j])
+
+> b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, 
++     j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, 
++     j])
+
+> b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, 
++     j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm))[j, j, i]
 
 > chk(a, b)
 
 > j <- c(1, 3, 5)
 
-> a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
-
-> b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 
-+     1:2]
-
-> chk(a, b)
-
-> a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
-
-> b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 
-+     1:2]
-
-> chk(a, b)
-
-> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 
+> a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, 
 +     j])
 
-> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, 
-+     j, 1:2]
+> b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, 
++     j, i]
 
 > chk(a, b)
 
-> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 
+> a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, 
 +     j])
 
-> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, 
-+     j, 1:2]
+> b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, 
++     j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> j <- nm[c(1, 3, 5)]
+
+> a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, 
++     j])
+
+> b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, 
++     j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, 
++     j])
+
+> b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, 
++     j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm))[j, j, i]
 
 > chk(a, b)
 
 > j <- -c(1, 3, 5)
 
-> a <- as.array(ltMatrices(xn, byrow = FALSE)[1:2, j])
-
-> b <- as.array(ltMatrices(xn, byrow = FALSE))[j, j, 
-+     1:2]
-
-> chk(a, b)
-
-> a <- as.array(ltMatrices(xn, byrow = TRUE)[1:2, j])
-
-> b <- as.array(ltMatrices(xn, byrow = TRUE))[j, j, 
-+     1:2]
-
-> chk(a, b)
-
-> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE)[1:2, 
+> a <- as.array(ltMatrices(xn, byrow = FALSE, names = nm)[i, 
 +     j])
 
-> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE))[j, 
-+     j, 1:2]
+> b <- as.array(ltMatrices(xn, byrow = FALSE, names = nm))[j, 
++     j, i]
 
 > chk(a, b)
 
-> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE)[1:2, 
+> a <- as.array(ltMatrices(xn, byrow = TRUE, names = nm)[i, 
 +     j])
 
-> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE))[j, 
-+     j, 1:2]
+> b <- as.array(ltMatrices(xn, byrow = TRUE, names = nm))[j, 
++     j, i]
 
 > chk(a, b)
 
-> j <- sample(1:J)
+> a <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm)[i, j])
 
-> ltM <- ltMatrices(xn, byrow = FALSE)
+> b <- as.array(ltMatrices(xd, byrow = FALSE, diag = TRUE, 
++     names = nm))[j, j, i]
 
-> try(ltM[1:2, j])
-Error in `[.ltMatrices`(ltM, 1:2, j) : invalid subset argument j
+> chk(a, b)
+
+> a <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm)[i, j])
+
+> b <- as.array(ltMatrices(xd, byrow = TRUE, diag = TRUE, 
++     names = nm))[j, j, i]
+
+> chk(a, b)
+
+> j <- nm[sample(1:J)]
+
+> ltM <- ltMatrices(xn, byrow = FALSE, names = nm)
+
+> try(ltM[i, j])
+Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > ltM <- as.syMatrices(ltM)
 
-> a <- as.array(ltM[1:2, j])
+> a <- as.array(ltM[i, j])
 
-> b <- as.array(ltM)[j, j, 1:2]
+> b <- as.array(ltM)[j, j, i]
 
 > chk(a, b)
 
@@ -1758,6 +1838,9 @@ attr(,"class")
 > start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, 
 +     diag = TRUE))
 
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     start), sc(start), check.attributes = FALSE)
+
 > op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = TRUE))
 iter   10 value 379.914996
@@ -1812,6 +1895,9 @@ Levels: (-Inf,5] (5,5.6] (5.6,6.1] (6.1,6.52] (6.52, Inf]
 
 > obs <- obs[!rownames(obs) %in% v1, , drop = FALSE]
 
+> if (require("numDeriv", quietly = TRUE)) chk(grad(ll, 
++     start), sc(start), check.attributes = FALSE)
+
 > opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = TRUE))
 iter   10 value 472.264901
@@ -1863,4 +1949,4 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 11.093   0.064  11.155 
+ 11.248   0.053  11.310 
