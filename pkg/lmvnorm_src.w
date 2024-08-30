@@ -5936,7 +5936,7 @@ Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
 ML <- mvnorm(mean = op$par[1:J], chol = Chat)
 @@
 
-Quit unsurprisingly, the results are practically equivalent to the
+Quite unsurprisingly, the results are practically equivalent to the
 analytically available maximum-likelihood estimators in this case
 
 <<iris-ML-hat>>=
