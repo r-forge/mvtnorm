@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Version 0.9-9997</title>
+    <title>Version 1.3-0</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="">
-    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2014/01/17/0.9-9997/">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2024/08/28/1.3-0/">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
@@ -62,13 +62,26 @@ hljs.initHighlightingOnLoad();
       <div class="post">
 
   <header class="post-header">
-    <h1>Version 0.9-9997</h1>
-    <p class="meta">Jan 17, 2014</p>
+    <h1>Version 1.3-0</h1>
+    <p class="meta">Aug 28, 2024</p>
   </header>
 
   <article class="post-content">
-  <ul>
-<li> T. Miwa fixed a runtime error in miwa.c reported by UB sanitizer </li>
+  <h2>Features</h2>
+<ul>
+<li> New (but still experimental) user interface for computing on
+multivariate normal distributions. </li>
+<li> Explain cond\_mvnorm a bit better in the vignette. </li>
+<li> Add the possibility to compute log-likelihood and score
+functions for permutations of variables (function deperma) and
+explain the derivation of the gradient in the vignette. </li>
+<li> Add chol and invchol classes, mainly to avoid confusion. </li>
+<li> Make sure logdet(standardize()) is finite, always. </li>
+</ul>
+<h2>Bugfixes</h2>
+<ul>
+<li> Names didn't propagate properly in several places. </li>
+<li> Allow character subsets. </li>
 </ul>
 
   </article>

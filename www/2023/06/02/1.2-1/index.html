@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Version 0.9-9997</title>
+    <title>Version 1.2-1</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="">
-    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2014/01/17/0.9-9997/">
+    <link rel="canonical" href="http://mvtnorm.r-forge.r-project.org/2023/06/02/1.2-1/">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="http://mvtnorm.r-forge.r-project.org/css/main.css">
@@ -62,13 +62,19 @@ hljs.initHighlightingOnLoad();
       <div class="post">
 
   <header class="post-header">
-    <h1>Version 0.9-9997</h1>
-    <p class="meta">Jan 17, 2014</p>
+    <h1>Version 1.2-1</h1>
+    <p class="meta">Jun 2, 2023</p>
   </header>
 
   <article class="post-content">
-  <ul>
-<li> T. Miwa fixed a runtime error in miwa.c reported by UB sanitizer </li>
+  <h2>Bugfixes</h2>
+<ul>
+<li> Avoid attempts to allocate zero length arrays for
+one-dimensional problems. </li>
+</ul>
+<h2>Documentation</h2>
+<ul>
+<li> Catch M1mac problems with inverting hessians. </li>
 </ul>
 
   </article>
