@@ -99,6 +99,10 @@ year <- substr(packageDescription("mvtnorm")$Date, 1, 4)
 version <- packageDescription("mvtnorm")$Version
 @@
 
+<<digits, echo = FALSE>>=
+options(digits = 4)
+@@
+
 \author{Torsten Hothorn}
 
 \date{Version \Sexpr{version}}
@@ -190,6 +194,12 @@ in form of interval-censoring in Chapter~\ref{cdl} and for nonparametric
 maximum-likelihood estimation in unstructured Gaussian copulae in
 Chapter~\ref{copula}. An attempt to provide useRs with a simple and
 (hopefully) bullet proof interface is documented in Chapter~\ref{inter}.
+
+The development of this infrastructure was motivated by the necessity to
+evaluate probabilities~(\ref{pmvnorm}) arising in the likelihood of
+multivariate conditional transformation models \citep{Klein_Hothorn_Barbanti_2020} for
+discrete or censored observations. Some forms of the likelihood for such
+nonparanormal models are discussed in \cite{Hothorn_2024}.
 
 \chapter{Lower Triangular Matrices} \label{ltMatrices}
 
@@ -4228,8 +4238,7 @@ R <- diag(J)
 R[1,2] <- R[2,1] <- .25
 R[1,3] <- R[3,1] <- .5
 R[2,4] <- R[4,2] <- .75
-### ATLAS and M1mac print 0 as something < .Machine$double.eps
-round(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)), 7)
+(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)))
 (C <- t(chol(Sigma)))
 @@
 
@@ -4309,7 +4318,7 @@ analytically and numerically obtained ML estimates
 
 <<ex-ML-coptim>>=
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = TRUE))
+            lower = llim, control = list(trace = FALSE))
 ## ML numerically
 ltMatrices(op$par, diag = TRUE, byrow = BYROW)
 ll(op$par)
@@ -4505,7 +4514,7 @@ if (BYROW) {
 ll(start, J = J)
 
 op <- optim(start, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = TRUE))
+            lower = llim, control = list(trace = FALSE))
 
 op$value ## compare with 
 ll(prm, J = J)
@@ -4528,9 +4537,9 @@ We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
 ### ATLAS print issues
-round(Tcrossprod(lt), 7)  ### true Sigma
-round(Tcrossprod(C), 7)   ### interval-censored obs
-round(Shat, 7)            ### "exact" obs
+Tcrossprod(lt)  ### true Sigma
+Tcrossprod(C)   ### interval-censored obs
+Shat            ### "exact" obs
 @@
 
 This looks reasonably close.
@@ -4584,7 +4593,8 @@ standard errors for the interval-censored data.
 Let's obtain the Hessian for all parameters first
 <<hessian>>=
 H <- optim(op$par, fn = ll, gr = sc, J = J, method = "L-BFGS-B", 
-           lower = llim, hessian = TRUE)$hessian
+           lower = llim, hessian = TRUE, 
+           control = list(trace = FALSE))$hessian
 @@
 and next we sample from the distribution of the maximum-likelihood
 estimators
@@ -4844,7 +4854,7 @@ We can now jointly estimate all model parameters via
 <<ex-ML-cd-optim>>=
 op <- optim(start, fn = ll_cd, gr = sc_cd, J = J, 
             method = "L-BFGS-B", lower = llim, 
-            control = list(trace = TRUE))
+            control = list(trace = FALSE))
 ## estimated C
 ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
            diag = TRUE, byrow = BYROW)
@@ -5087,7 +5097,7 @@ We can now jointly estimate all model parameters via
 <<ex-ML-ap-optim->>=
 op <- optim(start, fn = ll_ap, gr = sc_ap, J = J, 
             method = "L-BFGS-B", lower = llim, 
-            control = list(trace = TRUE))
+            control = list(trace = FALSE))
 ## estimated C for (X, Y)
 ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
            diag = TRUE, byrow = BYROW)
@@ -5271,7 +5281,8 @@ start <- t(chol(CR))
 start <- start[lower.tri(start)]
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
-op <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
+            control = list(trace = FALSE), hessian = TRUE)
 op$value
 S_ML <- chol2cov(standardize(ltMatrices(op$par)))
 @@
@@ -5312,7 +5323,8 @@ sc <- function(parm) {
 }
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
-op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", 
+             control = list(trace = FALSE), hessian = TRUE)
 S_NPML <- chol2cov(standardize(ltMatrices(op2$par)))
 @@
 
@@ -5510,12 +5522,13 @@ simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL,
 
 It is maybe time for a first example, and we return to the iris dataset,
 ignoring the iris' species for the time being. We set-up a model 
-in terms of the sample estimates
+in terms of the sample maximum-likelihood estimates
 <<iris-model>>=
 data("iris", package = "datasets")
 vars <- names(iris)[-5L]
+N <- nrow(iris)
 m <- colMeans(iris[,vars])
-V <- var(iris[,vars])
+V <- var(iris[,vars]) * (N - 1) / N
 iris_mvn <- mvnorm(mean = m, chol = t(chol(V)))
 iris_var <- simulate(iris_mvn, nsim = nrow(iris))
 @@
@@ -5924,12 +5937,15 @@ sc <- function(parm) {
 }
 @@
 
-and can now estimate the mean and Cholesky factor of the covariance matrix
+and can now estimate the mean and Cholesky factor of the covariance matrix.
+Before we start, we check if the gradient, evaluated at the sample
+maximum-likelihood estimates, is actually zero.
 
 <<iris-ML>>=
 start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
+max(abs(sc(start))) < sqrt(.Machine$double.eps)
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = TRUE))
+            lower = llim, control = list(trace = FALSE))
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
 ML <- mvnorm(mean = op$par[1:J], chol = Chat)
 @@
@@ -5939,9 +5955,8 @@ analytically available maximum-likelihood estimators in this case
 
 <<iris-ML-hat>>=
 ### covariance
-round(chol2cov(ML$scale), 2)
-N <- nrow(iris)
-round(V * (N - 1) / N, 2)
+chol2cov(ML$scale)
+V
 ### mean
 ML$mean[,,drop = TRUE]
 m
@@ -5975,7 +5990,7 @@ obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-             lower = llim, control = list(trace = TRUE))
+             lower = llim, control = list(trace = FALSE))
 Chati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
 MLi <- mvnorm(mean = opi$par[1:J], chol = Chati)
 @@
@@ -5990,8 +6005,8 @@ close in our case)
 op$value
 opi$value
 ### covariance
-round(chol2cov(MLi$scale), 2)
-round(chol2cov(ML$scale), 2)
+chol2cov(MLi$scale)
+chol2cov(ML$scale)
 ### mean
 MLi$mean[,,drop = TRUE]
 ML$mean[,,drop = TRUE]
