@@ -4238,7 +4238,8 @@ R <- diag(J)
 R[1,2] <- R[2,1] <- .25
 R[1,3] <- R[3,1] <- .5
 R[2,4] <- R[4,2] <- .75
-(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)))
+### M1 prints in scientific format
+round(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)), 4)
 (C <- t(chol(Sigma)))
 @@
 
@@ -5102,7 +5103,7 @@ op <- optim(start, fn = ll_ap, gr = sc_ap, J = J,
 ltMatrices(matrix(op$par[-(1:J)], ncol = 1), 
            diag = TRUE, byrow = BYROW)
 ## compare with true _permuted_ C for (X, Y)
-aperm(as.chol(lt), perm = perm)
+round(as.array(aperm(as.chol(lt), perm = perm)), 4)
 @@
 
 
@@ -5512,7 +5513,9 @@ simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL,
     } else {
         Y <- solve(object$scale, Z)
     }
-    ret <- Y + c(object$mean)
+    ret <- Y
+    if (!is.null(object$mean))
+        ret <- ret + c(object$mean)
     rownames(ret) <- dimnames(object$scale)[[2L]]
     if (!as.data.frame)
         return(ret)
