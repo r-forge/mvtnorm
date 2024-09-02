@@ -4238,9 +4238,8 @@ R <- diag(J)
 R[1,2] <- R[2,1] <- .25
 R[1,3] <- R[3,1] <- .5
 R[2,4] <- R[4,2] <- .75
-### M1 prints in scientific format
-round(Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2)), 4)
-(C <- t(chol(Sigma)))
+Sigma <- diag(sqrt(1:J / 2)) %*% R %*% diag(sqrt(1:J / 2))
+C <- t(chol(Sigma))
 @@
 
 We now represent this matrix as \code{ltMatrices} object
@@ -4538,9 +4537,9 @@ We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
 ### ATLAS print issues
-Tcrossprod(lt)  ### true Sigma
-Tcrossprod(C)   ### interval-censored obs
-Shat            ### "exact" obs
+round(Tcrossprod(lt), 4)  ### true Sigma
+Tcrossprod(C)             ### interval-censored obs
+Shat                      ### "exact" obs
 @@
 
 This looks reasonably close.

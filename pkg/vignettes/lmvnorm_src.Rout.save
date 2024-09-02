@@ -1192,20 +1192,9 @@ attr(,"rcnames")
 
 > R[2, 4] <- R[4, 2] <- 0.75
 
-> round(Sigma <- diag(sqrt(1:J/2)) %*% R %*% diag(sqrt(1:J/2)), 
-+     4)
-       [,1]   [,2]  [,3]  [,4]
-[1,] 0.5000 0.1768 0.433 0.000
-[2,] 0.1768 1.0000 0.000 1.061
-[3,] 0.4330 0.0000 1.500 0.000
-[4,] 0.0000 1.0607 0.000 2.000
+> Sigma <- diag(sqrt(1:J/2)) %*% R %*% diag(sqrt(1:J/2))
 
-> (C <- t(chol(Sigma)))
-       [,1]    [,2]   [,3]  [,4]
-[1,] 0.7071  0.0000 0.0000 0.000
-[2,] 0.2500  0.9682 0.0000 0.000
-[3,] 0.6124 -0.1581 1.0488 0.000
-[4,] 0.0000  1.0954 0.1651 0.879
+> C <- t(chol(Sigma))
 
 > prm <- C[lower.tri(C, diag = TRUE)]
 
@@ -1449,7 +1438,7 @@ attr(,"rcnames")
 > mn
 [1] 1 2 3 4
 
-> Tcrossprod(lt)
+> round(Tcrossprod(lt), 4)
 , , 1
 
        1      2     3     4
@@ -1923,4 +1912,4 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 11.178   0.048  11.224 
+ 11.414   0.061  11.476 
