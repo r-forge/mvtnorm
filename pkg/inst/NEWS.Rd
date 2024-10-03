@@ -2,6 +2,16 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.3-2 (2024-10-03)}{
+  \subsection{Bugfixes}{
+    \itemize{
+      \item \code{invcholD} and \code{Dchol} avoided very small diagonals;
+            now they also avoid very large diagonals (such that inverting the result
+            doesn't give too small diagonals).
+    }
+  }
+}
+
 \section{Changes in Version 1.3-1 (2024-09-02)}{
   \subsection{Bugfixes}{
     \itemize{
@@ -10,6 +20,7 @@
     }
   }
 }
+
 
 \section{Changes in Version 1.2-6 (2024-08-17)}{
   \subsection{Features}{

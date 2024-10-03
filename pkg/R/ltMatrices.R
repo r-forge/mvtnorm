@@ -851,6 +851,8 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
     ### be -Inf; make sure this does't happen
     if (any(D < .Machine$double.eps))
         D[D < .Machine$double.eps] <- 2 * .Machine$double.eps
+    if (any(D > 1 / .Machine$double.eps))
+        D[D > 1 / .Machine$double.eps] <-  (1 / .Machine$double.eps) / 2
 
     x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]
 
