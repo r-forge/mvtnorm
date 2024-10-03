@@ -2824,6 +2824,8 @@ First, we set-up functions for computing $\tilde{\mC}_i$
 \mbox{}\verb@    ### be -Inf; make sure this does't happen@\\
 \mbox{}\verb@    if (any(D < .Machine$double.eps))@\\
 \mbox{}\verb@        D[D < .Machine$double.eps] <- 2 * .Machine$double.eps@\\
+\mbox{}\verb@    if (any(D > 1 / .Machine$double.eps))@\\
+\mbox{}\verb@        D[D > 1 / .Machine$double.eps] <-  (1 / .Machine$double.eps) / 2@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x) * D[rep(1:J, 1:J),,drop = FALSE]@\\
 \mbox{}\verb@@\\
@@ -2869,6 +2871,8 @@ and $\tilde{\mC}_i^{-1} = \mL_i \text{diag}(\mL_i^{-1} \mL_i^{-\top})^{\frac{1}{
 \mbox{}\verb@    ### be -Inf; make sure this does't happen@\\
 \mbox{}\verb@    if (any(D < .Machine$double.eps))@\\
 \mbox{}\verb@        D[D < .Machine$double.eps] <- 2 * .Machine$double.eps@\\
+\mbox{}\verb@    if (any(D > 1 / .Machine$double.eps))@\\
+\mbox{}\verb@        D[D > 1 / .Machine$double.eps] <-  (1 / .Machine$double.eps) / 2@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    x <- unclass(x) * D[rep(1:J, J:1),,drop = FALSE]@\\
 \mbox{}\verb@@\\
