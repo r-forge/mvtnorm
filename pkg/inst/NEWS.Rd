@@ -3,11 +3,18 @@
 \title{NEWS file for the \pkg{mvtnorm} package}
 
 \section{Changes in Version 1.3-2 (2024-10-03)}{
+  \subsection{Features}{
+    \itemize{
+      \item Explain and illustrate that omitting data dimensions produces marginal
+            log-likelihoods in Chapter 7.
+    }
+  }
   \subsection{Bugfixes}{
     \itemize{
       \item \code{invcholD} and \code{Dchol} avoided very small diagonals;
             now they also avoid very large diagonals (such that inverting the result
             doesn't give too small diagonals).
+      \item Fix partial argument matches.
     }
   }
 }
