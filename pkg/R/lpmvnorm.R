@@ -505,7 +505,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
         stopifnot(cJ + dJ == J)
 
         md <- marg_mvnorm(invchol = invchol, which = 1:cJ)
-        cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol)
+        cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, logLik = logLik)
 
         obs_cmean <- obs - cmean
         cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, 
@@ -547,6 +547,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
 
         ret <- c(list(invchol = ret, obs = cs$obs + dobs), 
                  ds[c("lower", "upper")])
+        if (logLik) ret$logLik <- cs$logLik + ds$logLik
         ret$mean <- rbind(-ret$obs, ds$mean)
         return(ret)
         

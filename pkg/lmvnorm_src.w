@@ -2650,7 +2650,7 @@ cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
-cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
+cmv <- cond_mvnorm(chol = lxd[1,], which_given = j, given = y)
 
 chk(cm, cmv$mean)
 chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
@@ -2663,7 +2663,7 @@ cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
-cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
+cmv <- cond_mvnorm(invchol = lxd[1,], which_given = j, given = y)
 
 chk(cm, cmv$mean)
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
@@ -2680,7 +2680,7 @@ cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
-cmv <- cond_mvnorm(chol = lxd[1,], which = j, given = y)
+cmv <- cond_mvnorm(chol = lxd[1,], which_given = j, given = y)
 
 chk(c(cm), c(cmv$mean))
 chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
@@ -2693,7 +2693,7 @@ cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
-cmv <- cond_mvnorm(invchol = lxd[1,], which = j, given = y)
+cmv <- cond_mvnorm(invchol = lxd[1,], which_given = j, given = y)
 
 chk(c(cm), c(cmv$mean))
 chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
@@ -2982,7 +2982,7 @@ conditional densities and we can check if this works for our example by
 ## marginal of and conditional on these
 (j <- 1:5 * 10)
 md <- marg_mvnorm(invchol = lt, which = j)
-cd <- cond_mvnorm(invchol = lt, which = j, given = Y[j,])
+cd <- cond_mvnorm(invchol = lt, which_given = j, given = Y[j,])
 
 ll3 <- sum(dnorm(Mult(md$invchol, Y[j,]), log = TRUE)) + 
        sum(log(diagonals(md$invchol))) +
@@ -4564,13 +4564,13 @@ what about interval-censoring in the explanatory variables? Based on the
 multivariate distribution just estimated, we can obtain the regression
 coefficients $\beta_j$ as
 <<regressions>>=
-c(cond_mvnorm(chol = C, which = 2:J, given = diag(J - 1))$mean)
+c(cond_mvnorm(chol = C, which_given = 2:J, given = diag(J - 1))$mean)
 @@
 Alternatively, we can compute these regressions from a permuted Cholesky
 factor (this goes into the ``simple'' conditional distribution in Section~\ref{sec:margcond})
 <<regressionsC>>=
 c(cond_mvnorm(chol = aperm(as.chol(C), perm = c(2:J, 1)),
-              which = 1:(J - 1), given = diag(J - 1))$mean)
+              which_given = 1:(J - 1), given = diag(J - 1))$mean)
 @@
 or, as a third option, from the last row of the precision matrix of the 
 permuted Cholesky factor
@@ -4626,7 +4626,7 @@ The object \code{rC} contains all sampled Cholesky factors of the covariance
 matrix. From each of these matrices, we compute the regression coefficient,
 giving us a sample we can use to compute standard errors from
 <<ML-beta>>=
-rbeta <- cond_mvnorm(chol = rC, which = 2:J, given = diag(J - 1))$mean
+rbeta <- cond_mvnorm(chol = rC, which_given = 2:J, given = diag(J - 1))$mean
 sqrt(rowMeans((rbeta - rowMeans(rbeta))^2))
 @@
 which are, as expected, slightly different from the ones obtained from the more
@@ -4743,7 +4743,7 @@ J <- dim(invchol)[2L]
 stopifnot(cJ + dJ == J)
 
 md <- marg_mvnorm(invchol = invchol, which = 1:cJ)
-cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol)
+cs <- sldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, logLik = logLik)
 
 obs_cmean <- obs - cmean
 cd <- cond_mvnorm(invchol = invchol, which_given = 1:cJ, 
@@ -4785,6 +4785,7 @@ dobs <- -margin.table(aL * array(lst, dim = dim), 2:3)
 
 ret <- c(list(invchol = ret, obs = cs$obs + dobs), 
          ds[c("lower", "upper")])
+if (logLik) ret$logLik <- cs$logLik + ds$logLik
 ret$mean <- rbind(-ret$obs, ds$mean)
 return(ret)
 @}
@@ -4851,7 +4852,7 @@ and the score function seems to be correct
 <<ex-ML-cd-score>>=
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll_cd, start, J = J), sc_cd(start, J = J), 
-        check.attributes = FALSE, tol = 1e-6)
+        check.attributes = FALSE, tolerance = 1e-6)
 @@
 
 We can now jointly estimate all model parameters via
@@ -5094,7 +5095,7 @@ and the score function seems to be correct
 <<ex-ML-ap-grad>>=
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll_ap, start, J = J), sc_ap(start, J = J), 
-        check.attributes = FALSE, tol = 1e-6)
+        check.attributes = FALSE, tolerance = 1e-6)
 @@
 
 We can now jointly estimate all model parameters via
@@ -5608,7 +5609,7 @@ different distributions
 j <- 3:4
 margDist(iris_mvn, which = vars[j])
 gm <- t(iris[,vars[-(j)]])
-iris_cmvn <- condDist(iris_mvn, which = vars[j], given = gm)
+iris_cmvn <- condDist(iris_mvn, which_given = vars[j], given = gm)
 @@
 
 We now work towards implementating the corresponding log-likelihood
@@ -5976,7 +5977,7 @@ case
 
 <<iris-interval>>=
 v1 <- vars[1]
-q1 <- quantile(iris[[v1]], prob = 1:4 / 5)
+q1 <- quantile(iris[[v1]], probs = 1:4 / 5)
 head(f1 <- cut(iris[[v1]], breaks = c(-Inf, q1, Inf)))
 @@
 
@@ -6022,6 +6023,66 @@ We close this chapter with a word of warning: If more than one variable is
 censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
 \code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
 additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
+
+The log-likelihood and score function automagically marginalise over
+dimensions where all observations are $(-\infty, \infty)$. We can simply
+omit these dimensions from the matrices specified as \code{obs}, \code{lower}, and \code{upper}
+arguments. Let's say we have four dimensions called $A$ to $D$ and three
+observations. All observations have $A = (-1, 1)$ and $B = (-\infty,
+\infty)$, so in fact, the likelihood is given by the marginal distribution
+of $A, C, D$.
+<<marginB>>=
+N <- 3
+J <- 4
+L <- ltMatrices(runif(J * (J + 1) / 2), diag = TRUE, names = LETTERS[1:J])
+Z <- matrix(rnorm(J * N), nrow = J)
+Y <- solve(L, Z)
+
+lwrA <- matrix(-1, nrow = 1, ncol = N)
+uprA <- matrix(1, nrow = 1, ncol = N)
+rownames(lwrA) <- rownames(uprA) <- "A"
+
+lwrB <- matrix(-Inf, nrow = 1, ncol = N)
+uprB <- matrix(Inf, nrow = 1, ncol = N)
+rownames(lwrB) <- rownames(uprB) <- "B"
+
+lwr <- rbind(lwrA, lwrB)
+upr <- rbind(uprA, uprB)
+obs <- Y[rev(LETTERS[3:J]),]    ### change order of dimensions
+@@
+With this data, we first compute the log-likelihood and score functions for
+the complete data, that is, including the infinite intervals for $B$.
+<<marginBllsc>>=
+w <- matrix(runif(1000), nrow = 1)
+lABCD <- logLik(mvnorm(invchol = L), obs = obs, lower = lwr, upper = upr, w = w)
+sABCD <- lLgrad(mvnorm(invchol = L), obs = obs, lower = lwr, upper = upr, w = w)
+@@
+This is (almost) the same as omitting dimension $B$ from the data, but of
+course not from the model
+<<marginllsc>>=
+lACD <- logLik(mvnorm(invchol = L), obs = obs, lower = lwrA, upper = uprA)
+sACD <- lLgrad(mvnorm(invchol = L), obs = obs, lower = lwrA, upper = uprA)
+@@
+We can compare the results
+<<marginchk>>=
+chk(lABCD, lACD)
+nm <- names(sABCD)
+nm <- nm[!nm %in% c("lower", "upper")]
+chk(sABCD[nm], sACD[nm])
+@@
+noting that the scores with respect to the $B$ data in \code{lower} and
+\code{upper} are missing from \code{sACD}
+<<marginsc>>=
+chk(sABCD$lower["A",,drop = FALSE], sACD$lower)
+chk(sABCD$upper["A",,drop = FALSE], sACD$upper)
+sABCD$lower["B",]	### zero
+sABCD$upper["B",]	### zero
+@@
+Omitting dimensions might be important because \code{lpmvnorm}
+introduced in Chapter~\ref{lpmvnorm} does not check if both \code{lower} and
+\code{upper} are infinite and omission thus reduces the dimensionality of
+the integral we evaluate numerically. 
+
 
 \chapter{Package Infrastructure}
 
