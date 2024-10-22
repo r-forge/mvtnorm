@@ -7,6 +7,8 @@
     \itemize{
       \item Explain and illustrate that omitting data dimensions produces marginal
             log-likelihoods in Chapter 7.
+      \item Add low-level functionality for reduced rank covariances in new
+            Chapter 8.
     }
   }
   \subsection{Bugfixes}{
@@ -14,7 +16,7 @@
       \item \code{invcholD} and \code{Dchol} avoided very small diagonals;
             now they also avoid very large diagonals (such that inverting the result
             doesn't give too small diagonals).
-      \item Fix partial argument matches.
+      \item Fix partial argument matches, reported by KH.
     }
   }
 }

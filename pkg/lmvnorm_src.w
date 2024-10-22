@@ -65,9 +65,11 @@ urlcolor={linkcolor}%
 \newcommand{\Prob}{\mathbb{P} }
 \newcommand{\ND}{\mathbb{N} }
 \newcommand{\J}{J}
+\newcommand{\K}{K}
 \newcommand{\V}{\mathbb{V}} %% cal{\mbox{\textnormal{Var}}} }
 \newcommand{\E}{\mathbb{E}} %%mathcal{\mbox{\textnormal{E}}} }
 \newcommand{\yvec}{\mathbf{y}}
+\newcommand{\wvec}{\mathbf{w}}
 \newcommand{\avec}{\mathbf{a}}
 \newcommand{\bvec}{\mathbf{b}}
 \newcommand{\xvec}{\mathbf{x}}
@@ -87,6 +89,7 @@ urlcolor={linkcolor}%
 \newcommand{\mI}{\mathbf{I}}
 \newcommand{\mS}{\mathbf{S}}
 \newcommand{\mA}{\mathbf{A}}
+\newcommand{\mD}{\mathbf{D}}
 \newcommand{\diag}{\text{diag}}
 \newcommand{\mSigma}{\mathbf{\Sigma}}
 \newcommand{\argmin}{\operatorname{argmin}\displaylimits}
@@ -3080,6 +3083,8 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 @<deperma@>
 @<standardize@>
 @<destandardize@>
+@<lpRR@>
+@<slpRR@>
 @}
 
 @o lpmvnorm.c -cc
@@ -6083,6 +6088,185 @@ introduced in Chapter~\ref{lpmvnorm} does not check if both \code{lower} and
 \code{upper} are infinite and omission thus reduces the dimensionality of
 the integral we evaluate numerically. 
 
+\chapter{Reduced Rank Covariance Matrices}
+
+We sometimes can write the $\J \times \J$ covariance matrix as $\mSigma = \mB \mB^\top +
+\mD$ where $\mB$ is $\J \times \K$ with $\K < \J$ and $\mD$ is a
+$\J$-dimensional diagonal matrix. \cite{Marsaglia_1963} and
+\cite{Genz_Bretz_2009}, in their Chapter 2.3.1, demonstrated that the
+probability $\Prob(\avec < \rY \le \bvec \mid \mSigma)$ 
+can be written as
+\begin{eqnarray*}
+\Prob(\avec < \rY \le \bvec \mid \mSigma ) 
+  = \int_{[0,1]^\K} \prod_{j = 1}^J 
+      \left(\Phi\left(\frac{b_j - \mB_{jk} \Phi^{-1}(w_k)}{\sqrt{\mD_{jj}}}\right) - 
+            \Phi\left(\frac{a_j - \mB_{jk} \Phi^{-1}(w_k)}{\sqrt{\mD_{jj}}}\right)\right) 
+    \, d \wvec
+\end{eqnarray*}
+where the integration takes place with respect to $\wvec = (w_1, \dots,
+w_K)^\top$ from the $\K$- (and not $\J$-) dimensional unit hypercube.
+
+We start implementing low-level functionality for computing log-probabilities for such structures with some book
+keeping
+
+@d RR input B D
+@{
+stopifnot(!missing(B))
+if (!is.matrix(B)) B <- matrix(B, ncol = 1)
+J <- nrow(B)
+K <- ncol(B)
+Dsqrt <- sqrt(D)
+@}
+
+We use $Z = \Phi^{-1}(w)$ and optional weights and compute the products $\mB_{jk}
+\Phi^{-1}(w_k)$ for all $j$ and $k$ with standardisation by the diagonal
+elements of $\mD$.
+
+@d RR input Z, weights
+@{
+stopifnot(nrow(Z) == K)
+stopifnot(length(weights) == 1 || length(weights) == ncol(Z))
+BZ <- (B / Dsqrt) %*% Z
+@}
+
+The limits $\avec$
+
+@d RR input lower
+@{
+if (missing(lower)) {
+    pl <- 0
+} else {
+    stopifnot(length(lower) == J)
+    lower <- c(lower)
+    lower <- (lower - mean) / Dsqrt
+    pl <- pnorm(lBZ <- lower - BZ)
+}
+@}
+
+and $\bvec$
+
+@d RR input upper
+@{
+if (missing(upper)) {
+    pl <- 0
+} else {
+    stopifnot(length(upper) == J)
+    upper <- c(upper)
+    upper <- (upper - mean) / Dsqrt
+    pu <- pnorm(uBZ <- upper - BZ)
+}
+@}
+
+are processed and we finally compute the integrant, making sure to avoid exact zeros. We
+first compute log-probabilities, compute the sums and exponentiate before
+summing up. In contrast to \code{lpmvnorm}, we also allow weights for the
+summation, such that sparse grids (for example from add-on package \pkg{SparseGrid})
+can be utilised.
+
+@d RR inner
+@{
+inner <- pu - pl
+inner <- pmax(.Machine$double.eps, inner)
+retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
+                                x = log(inner)))
+@}
+
+Finally, we wrap everything up in a function called \code{lpRR}
+
+@d lpRR
+@{
+lpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)), 
+                 Z, weights = 1 / ncol(Z), log.p = TRUE) {
+
+    @<RR input B D@>
+    @<RR input Z, weights@>
+    @<RR input lower@>
+    @<RR input upper@>
+
+    @<RR inner@>
+    ret <- sum(retw)
+    if (log.p) return(log(ret))
+    return(ret)
+}
+@}
+
+We test this functionality for dimensions $\J = 6$ and $\K = 3$. That is,
+the integration problem reduces from a $\J - 1 = 5$ dimensional one in
+\code{lpmvnorm} to a three dimensional one in \code{lpRR}. We first compare the
+two log-probabilities, computed with high accuracy
+<<RR-ll>>=
+J <- 6
+K <- 3
+B <- matrix(rnorm(J * K), nrow = J)
+D <- runif(J)
+S <- tcrossprod(B) + diag(D)
+Linv <- t(chol(S))
+Linv <- ltMatrices(Linv[lower.tri(Linv, diag = TRUE)], diag = TRUE)
+a <- -(2 + runif(J))
+b <- 2 + runif(J)
+M <- 1e6
+dim(w <- matrix(runif((J - 1) * M), nrow = J - 1))
+lpmvnorm(lower = a, upper = b, chol = Linv, w = w)
+dim(Z <- matrix(rnorm(K * M), nrow = K))
+lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+@@
+
+The score function with respect to $\avec$, $\bvec$, $\mB$, and $\mD$ is 
+
+@d slpRR
+@{
+slpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)), 
+                  Z, weights = 1 / ncol(Z), log.p = TRUE) {
+    @<RR input B D@>
+    @<RR input Z, weights@>
+    @<RR input lower@>
+    @<RR input upper@>
+
+    @<RR inner@>
+ 
+    dlBZ <- dnorm(lBZ)
+    duBZ <- dnorm(uBZ)
+
+    d <- matrix(retw, nrow = nrow(B), ncol = ncol(Z), byrow = TRUE) / inner
+    db <- d * (duBZ - dlBZ)
+    tdb <- t(db)
+    dB <- -1 * do.call("cbind", lapply(1:nrow(Z), 
+                       function(r) colSums(tdb * Z[r,]))) / Dsqrt
+    Du <- -.5 / D * uBZ
+    Dl <- -.5 / D * lBZ
+    dD <-  rowSums(d * duBZ * Du) - rowSums(d * dlBZ * Dl)
+    dl <- -rowSums(d * dlBZ) / Dsqrt
+    du <-  rowSums(d * duBZ) / Dsqrt
+    dm <- -du - dl # Dinb %*% -rowSums(d * (duBZ - dlBZ))
+    fct <- 1
+    if (log.p) fct <- 1 / sum(retw)
+    list(lower = fct * dl, upper = fct * du, mean = fct * dm, 
+         B = fct * dB, D = fct * dD)
+}
+@}
+
+We can now compare the gradients for $\avec$, $\bvec$ and the mean in our
+small example. We cannot expect them to be equal but close
+<<RR-sc>>=
+smv <- slpmvnorm(lower = a, upper = b, chol = Linv, w = w)
+sRR <- slpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+chk(c(smv$lower), sRR$lower, tolerance = 1e-2)
+chk(c(smv$upper), sRR$upper, tolerance = 1e-2)
+chk(c(smv$mean), sRR$mean, tolerance = 1e-2)
+@@
+
+The gradient with respect to $\mB$ and $\mD$ are finally checked against their
+numerical approximations
+<<RR-sc-BD>>=
+Z <- matrix(rnorm(K * 1000), nrow = K)
+lB <- function(B) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+gB <- grad(lB, B)
+sRR <- slpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+chk(gB, c(sRR$B), tolerance = 1e-3)
+lD <- function(D) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+gD <- grad(lD, D)
+chk(gD, c(sRR$D), tolerance = 1e-3)
+@@
 
 \chapter{Package Infrastructure}
 
