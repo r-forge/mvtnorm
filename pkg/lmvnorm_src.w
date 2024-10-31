@@ -6266,6 +6266,13 @@ chk(gB, c(sRR$B), tolerance = 1e-3)
 lD <- function(D) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 gD <- grad(lD, D)
 chk(gD, c(sRR$D), tolerance = 1e-3)
+### while we are at it, check lower and upper again
+llwr <- function(a) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+glwr <- grad(llwr, a)
+chk(glwr, c(sRR$lower))
+lupr <- function(b) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+gupr <- grad(lupr, b)
+chk(gupr, c(sRR$upper))
 @@
 
 \chapter{Package Infrastructure}

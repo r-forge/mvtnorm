@@ -227,7 +227,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb135}{135}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
@@ -273,7 +273,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb137}{137}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -4038,7 +4038,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb135}{135}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
@@ -4066,7 +4066,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb137}{137}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -8189,7 +8189,7 @@ can be written as
 where the integration takes place with respect to $\wvec = (w_1, \dots,
 w_K)^\top$ from the $\K$- (and not $\J$-) dimensional unit hypercube.
 
-We start implementing log-probabilities for such structures with some book
+We start implementing low-level functionality for computing log-probabilities for such structures with some book
 keeping
 
 \begin{flushleft} \small
@@ -8337,7 +8337,7 @@ Finally, we wrap everything up in a function called \code{lpRR}
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb132c}{132c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    ret <- sum(retw)@\\
-\mbox{}\verb@    if (log.p) return(log(ret))@\\
+\mbox{}\verb@    if (log.p) return(log(max(c(.Machine$double.eps, ret))))@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -8440,13 +8440,19 @@ chk(gB, c(sRR$B), tolerance = 1e-3)
 lD <- function(D) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 gD <- grad(lD, D)
 chk(gD, c(sRR$D), tolerance = 1e-3)
+llwr <- function(a) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+glwr <- grad(llwr, a)
+chk(glwr, c(sRR$lower))
+lupr <- function(b) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
+gupr <- grad(lupr, b)
+chk(gupr, c(sRR$upper))
 @
 
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap164}\raggedright\small
-\NWtarget{nuweb135}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {135}}$\,\rangle\equiv$
+\NWtarget{nuweb136}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {136}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8483,7 +8489,7 @@ chk(gD, c(sRR$D), tolerance = 1e-3)
 \end{flushleft}
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
-\NWtarget{nuweb136}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {136}}$\,\rangle\equiv$
+\NWtarget{nuweb137}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {137}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8563,7 +8569,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 }
 \item $\langle\,$as.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb114b}{114b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb21}{21}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb65}{, 65}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb137}{137}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb65}{, 65}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb24a}{24a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb24b}{24b}\NWlink{nuweb26}{, 26}\NWlink{nuweb29}{, 29}\NWlink{nuweb33a}{, 33a}\NWlink{nuweb42a}{, 42a}.
 }
@@ -8690,7 +8696,7 @@ and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb85c}{85c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb86b}{86b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb11}{11}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb135}{135}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb64}{, 64}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb136}{136}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb64}{, 64}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb73}{73}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb65}{65}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb65}{65}.}
