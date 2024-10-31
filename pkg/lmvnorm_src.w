@@ -6185,7 +6185,7 @@ lpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
 
     @<RR inner@>
     ret <- sum(retw)
-    if (log.p) return(log(ret))
+    if (log.p) return(log(max(c(.Machine$double.eps, ret))))
     return(ret)
 }
 @}
