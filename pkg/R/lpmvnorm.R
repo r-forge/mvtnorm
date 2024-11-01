@@ -747,12 +747,13 @@ lpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
     # RR inner
     
     inner <- pu - pl
-    inner <- pmax(.Machine$double.eps, inner)
+    #inner <- pmax(.Machine$double.eps, inner)
+    inner <- pmax(0, inner)
     retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
-                                    x = log(inner)))
+                                    x = log(inner), na.rm = TRUE))
     
     ret <- sum(retw)
-    if (log.p) return(log(max(c(.Machine$double.eps, ret))))
+    if (log.p) return(log(max(c(0, ret))))
     return(ret)
 }
 
@@ -800,9 +801,10 @@ slpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
     # RR inner
     
     inner <- pu - pl
-    inner <- pmax(.Machine$double.eps, inner)
+    #inner <- pmax(.Machine$double.eps, inner)
+    inner <- pmax(0, inner)
     retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
-                                    x = log(inner)))
+                                    x = log(inner), na.rm = TRUE))
     
  
     dlBZ <- dnorm(lBZ)
@@ -812,12 +814,13 @@ slpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
     db <- d * (duBZ - dlBZ)
     tdb <- t(db)
     dB <- -1 * do.call("cbind", lapply(1:nrow(Z), 
-                       function(r) colSums(tdb * Z[r,]))) / Dsqrt
+                       function(r) colSums(tdb * Z[r,], na.rm = TRUE))) / Dsqrt
     Du <- -.5 / D * uBZ
     Dl <- -.5 / D * lBZ
-    dD <-  rowSums(d * duBZ * Du) - rowSums(d * dlBZ * Dl)
-    dl <- -rowSums(d * dlBZ) / Dsqrt
-    du <-  rowSums(d * duBZ) / Dsqrt
+    dD <-  rowSums(d * duBZ * Du, na.rm = TRUE) - 
+           rowSums(d * dlBZ * Dl, na.rm = TRUE)
+    dl <- -rowSums(d * dlBZ, na.rm = TRUE) / Dsqrt
+    du <-  rowSums(d * duBZ, na.rm = TRUE) / Dsqrt
     dm <- -du - dl # Dinb %*% -rowSums(d * (duBZ - dlBZ))
     fct <- 1
     if (log.p) fct <- 1 / sum(retw)
