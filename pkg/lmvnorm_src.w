@@ -6157,7 +6157,8 @@ if (missing(upper)) {
 }
 @}
 
-are processed and we finally compute the integrant, making sure to avoid exact zeros. We
+are processed and we finally compute the integrant, making sure to avoid
+negative values. We
 first compute log-probabilities, compute the sums and exponentiate before
 summing up. In contrast to \code{lpmvnorm}, we also allow weights for the
 summation, such that sparse grids (for example from add-on package \pkg{SparseGrid})
@@ -6166,7 +6167,6 @@ can be utilised.
 @d RR inner
 @{
 inner <- pu - pl
-#inner <- pmax(.Machine$double.eps, inner)
 inner <- pmax(0, inner)
 retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
                                 x = log(inner), na.rm = TRUE))
