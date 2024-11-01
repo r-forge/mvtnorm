@@ -8305,9 +8305,10 @@ can be utilised.
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@inner <- pu - pl@\\
-\mbox{}\verb@inner <- pmax(.Machine$double.eps, inner)@\\
+\mbox{}\verb@#inner <- pmax(.Machine$double.eps, inner)@\\
+\mbox{}\verb@inner <- pmax(0, inner)@\\
 \mbox{}\verb@retw <-  weights * exp(.colSums(m = J, n = ncol(Z), @\\
-\mbox{}\verb@                                x = log(inner)))@\\
+\mbox{}\verb@                                x = log(inner), na.rm = TRUE))@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -8337,7 +8338,7 @@ Finally, we wrap everything up in a function called \code{lpRR}
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb132c}{132c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    ret <- sum(retw)@\\
-\mbox{}\verb@    if (log.p) return(log(max(c(.Machine$double.eps, ret))))@\\
+\mbox{}\verb@    if (log.p) return(log(max(c(0, ret))))@\\
 \mbox{}\verb@    return(ret)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
@@ -8396,12 +8397,13 @@ The score function with respect to $\avec$, $\bvec$, $\mB$, and $\mD$ is
 \mbox{}\verb@    db <- d * (duBZ - dlBZ)@\\
 \mbox{}\verb@    tdb <- t(db)@\\
 \mbox{}\verb@    dB <- -1 * do.call("cbind", lapply(1:nrow(Z), @\\
-\mbox{}\verb@                       function(r) colSums(tdb * Z[r,]))) / Dsqrt@\\
+\mbox{}\verb@                       function(r) colSums(tdb * Z[r,], na.rm = TRUE))) / Dsqrt@\\
 \mbox{}\verb@    Du <- -.5 / D * uBZ@\\
 \mbox{}\verb@    Dl <- -.5 / D * lBZ@\\
-\mbox{}\verb@    dD <-  rowSums(d * duBZ * Du) - rowSums(d * dlBZ * Dl)@\\
-\mbox{}\verb@    dl <- -rowSums(d * dlBZ) / Dsqrt@\\
-\mbox{}\verb@    du <-  rowSums(d * duBZ) / Dsqrt@\\
+\mbox{}\verb@    dD <-  rowSums(d * duBZ * Du, na.rm = TRUE) - @\\
+\mbox{}\verb@           rowSums(d * dlBZ * Dl, na.rm = TRUE)@\\
+\mbox{}\verb@    dl <- -rowSums(d * dlBZ, na.rm = TRUE) / Dsqrt@\\
+\mbox{}\verb@    du <-  rowSums(d * duBZ, na.rm = TRUE) / Dsqrt@\\
 \mbox{}\verb@    dm <- -du - dl # Dinb %*% -rowSums(d * (duBZ - dlBZ))@\\
 \mbox{}\verb@    fct <- 1@\\
 \mbox{}\verb@    if (log.p) fct <- 1 / sum(retw)@\\
@@ -8440,6 +8442,7 @@ chk(gB, c(sRR$B), tolerance = 1e-3)
 lD <- function(D) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 gD <- grad(lD, D)
 chk(gD, c(sRR$D), tolerance = 1e-3)
+### while we are at it, check lower and again
 llwr <- function(a) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 glwr <- grad(llwr, a)
 chk(glwr, c(sRR$lower))
