@@ -747,7 +747,6 @@ lpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
     # RR inner
     
     inner <- pu - pl
-    #inner <- pmax(.Machine$double.eps, inner)
     inner <- pmax(0, inner)
     retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
                                     x = log(inner), na.rm = TRUE))
@@ -801,7 +800,6 @@ slpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)),
     # RR inner
     
     inner <- pu - pl
-    #inner <- pmax(.Machine$double.eps, inner)
     inner <- pmax(0, inner)
     retw <-  weights * exp(.colSums(m = J, n = ncol(Z), 
                                     x = log(inner), na.rm = TRUE))

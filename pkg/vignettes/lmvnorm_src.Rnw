@@ -8292,7 +8292,8 @@ and $\bvec$
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
-are processed and we finally compute the integrant, making sure to avoid exact zeros. We
+are processed and we finally compute the integrant, making sure to avoid
+negative values. We
 first compute log-probabilities, compute the sums and exponentiate before
 summing up. In contrast to \code{lpmvnorm}, we also allow weights for the
 summation, such that sparse grids (for example from add-on package \pkg{SparseGrid})
@@ -8305,7 +8306,6 @@ can be utilised.
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@inner <- pu - pl@\\
-\mbox{}\verb@#inner <- pmax(.Machine$double.eps, inner)@\\
 \mbox{}\verb@inner <- pmax(0, inner)@\\
 \mbox{}\verb@retw <-  weights * exp(.colSums(m = J, n = ncol(Z), @\\
 \mbox{}\verb@                                x = log(inner), na.rm = TRUE))@\\
