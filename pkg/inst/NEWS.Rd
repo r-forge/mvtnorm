@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-2 (2024-10-03)}{
+\section{Changes in Version 1.3-2 (2024-11-04)}{
   \subsection{Features}{
     \itemize{
       \item Explain and illustrate that omitting data dimensions produces marginal
