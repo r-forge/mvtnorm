@@ -2,6 +2,15 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.3-4 (2025-02-28)}{
+  \subsection{Bugfixes}{
+    \itemize{
+      \item \code{condDist()} sometimes failed to return a 
+            \code{scale} slot.
+    }
+  }
+}
+
 \section{Changes in Version 1.3-3 (2025-01-09)}{
   \subsection{Bugfixes}{
     \itemize{

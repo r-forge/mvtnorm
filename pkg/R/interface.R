@@ -131,7 +131,7 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
     } else {
         ret <- cond_mvnorm(invchol = object$scale, which_given = which_given, 
                            given = given, ...)
-        ret$invchol <- as.chol(ret$invchol)
+        ret$scale <- as.chol(ret$invchol)
         ret$invchol <- NULL
     }
     if (!is.null(object$mean)) {
