@@ -2731,7 +2731,7 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 
 We first check if the observations $\yvec_1, \dots, \yvec_N$ are given in an
 $\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
-\muvec_N$ in \code{means}.
+\muvec_N$ in \code{means} and return the mean-centered observations.
 
 @d check obs
 @{
@@ -2825,6 +2825,7 @@ if (!is.ltMatrices(chol))	### NOTE: replace with is.chol
 N <- dim(chol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(chol)[2L]
+## NOTE: obs is now mean-centered
 obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
 z <- solve(chol, obs)
 logretval <- .colSumsdnorm(z)
@@ -2850,7 +2851,7 @@ N <- dim(invchol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(invchol)[2L]
 obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-## NOTE: obs is (J x N) 
+## NOTE: obs is (J x N) and mean-centered
 ## dnorm takes rather long
 z <- Mult(invchol, obs)
 logretval <- .colSumsdnorm(z)
@@ -2862,12 +2863,12 @@ if (attr(invchol, "diag"))
 
 The score function with respect to \code{obs} is
 \begin{eqnarray*}
-\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i \yvec_i
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i (\yvec_i - \muvec_i)
 \end{eqnarray*}
 and with respect to \code{invchol} we have
 \begin{eqnarray*}
 \frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \mL_i} = 
-- 2 \mL_i \yvec_i \yvec_i^\top + \diag(\mL_i)^{-1}.
+- 2 \mL_i (\yvec_i - \muvec_i) (\yvec_i - \muvec_i)^\top + \diag(\mL_i)^{-1}.
 \end{eqnarray*}
 The score function with respect to \code{chol} post-processes the above
 score using the vec trick~(Section~\ref{sec:vectrick}).
@@ -2901,6 +2902,7 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         N <- ifelse(N == 1, ncol(obs), N)
         J <- dim(invchol)[2L]
         obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
+        ## NOTE: obs is mean-centered now 
 
         Mix <- Mult(invchol, obs)
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
