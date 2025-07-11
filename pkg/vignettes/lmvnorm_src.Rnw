@@ -92,6 +92,7 @@ urlcolor={linkcolor}%
 \newcommand{\jvec}{\mathbf{j}}
 \newcommand{\muvec}{\boldsymbol{\mu}}
 \newcommand{\etavec}{\boldsymbol{\eta}}
+\newcommand{\nuvec}{\boldsymbol{\nu}}
 \newcommand{\rY}{\mathbf{Y}}
 \newcommand{\rX}{\mathbf{X}}
 \newcommand{\rZ}{\mathbf{Z}}
@@ -3167,8 +3168,10 @@ fall-back on subsetting
 \end{flushleft}
 \section{Marginal and Conditional Normal Distributions} \label{sec:margcond}
 
-Marginal and conditional distributions from distributions $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mC_i \mC_i^\top)$
-(\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim \ND_\J(\mathbf{0}_\J, \mL_i^{-1} \mL_i^{-\top})$
+Marginal and conditional distributions from distributions $\rY_i \sim
+\ND_\J(\muvec_i, \mC_i \mC_i^\top)$
+(\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim
+\ND_\J(\muvec_i, \mL_i^{-1} \mL_i^{-\top})$
 (\code{invchol} argument for $\mL_i$ for $i = 1, \dots, N$) shall be
 computed.
 
@@ -3256,8 +3259,8 @@ on). For an arbitrary subset $\jvec
 given $\rY_{\jvec} = \yvec_{\jvec}$ is
 \begin{eqnarray*}
 \rY_{-\jvec} \mid \rY_{\jvec} = \yvec_{\jvec} \sim 
-  \ND_{|\jvec|}\left(-\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec}, 
-                    \mP^{-1}_{-\jvec,-\jvec}\right)
+  \ND_{|\jvec|}\left(\muvec_{-\jvec} - \mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} 
+        (\yvec_{\jvec} - \muvec_{\jvec}), \mP^{-1}_{-\jvec,-\jvec}\right)
 \end{eqnarray*}
 and we return a Cholesky factor $\tilde{\mC}$ such that
 $\mP^{-1}_{-\jvec,-\jvec} = \tilde{\mC} \tilde{\mC}^\top$ (if \code{chol} was
@@ -3314,14 +3317,16 @@ and thus we return $\tilde{\mL} = \mL_{-\jvec, -\jvec}$ (if \code{invchol}
 was given) or $\tilde{\mC} = \mL^{-1}_{-\jvec, -\jvec}$ (if \code{chol} was
 given). The conditional mean is
 \begin{eqnarray*}
--\mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} \yvec_{\jvec} 
+\muvec_{-\jvec} - \mP^{-1}_{-\jvec,-\jvec} \mP_{-\jvec, \jvec} (\yvec_{\jvec} - \muvec_{\jvec})
 & = & 
-  -\mL^{-1}_{-\jvec, -\jvec} \mL^{-\top}_{-\jvec, -\jvec} \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec} \\
-& = & - \mL^{-1}_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} \yvec_{\jvec}.
+\muvec_{-\jvec}  -\mL^{-1}_{-\jvec, -\jvec} \mL^{-\top}_{-\jvec, -\jvec} \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} (\yvec_{\jvec} - \muvec_{\jvec}) \\
+& = & \muvec_{-\jvec} - \mL^{-1}_{-\jvec, -\jvec} \mL_{-\jvec, \jvec} (\yvec_{\jvec} - \muvec_{\jvec}).
 \end{eqnarray*}
 We sometimes, for example when scores with respect to $\mL^{-1}_{-\jvec,
--\jvec}$ shall be computed in \code{slpmvnorm}, need the negative rescaled mean $\mL_{-\jvec, \jvec}
-\yvec_{\jvec}$ and the \code{center = TRUE} argument triggers this values to
+-\jvec}$ shall be computed in \code{slpmvnorm}, need the negative rescaled mean 
+\begin{eqnarray} \label{fm:center}
+\mL_{-\jvec, \jvec} (\yvec_{\jvec} - \muvec_{\jvec})
+\end{eqnarray} and the \code{center = TRUE} argument triggers this values to
 be returned.
 
 The implementation reads
@@ -4191,6 +4196,10 @@ For each $i = 1, \dots, N$, do
 \item Initialise $\text{intsum} = \text{varsum} = 0$, $M = 0$, $d_1 =
 \Phi\left(a^{(i)}_1\right)$, $e_1 = \Phi\left(b^{(i)}_1\right)$ and $f_1 = e_1 - d_1$.
 
+Here, \code{center} is the negative rescaled mean~(\ref{fm:center}) allowing
+to evaluate probabilities for conditional multivariate normal distributions
+in \code{lpmvnorm} and corresponding scores in \code{slpmvnorm}. This
+feature is not present in the orginal formulation of the algorithm.
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap74}\raggedright\small
@@ -6305,7 +6314,7 @@ therefore we might want to use the log-Lebesque density for defining the
 log-likelihood. Other variables might be available as relatively wide intervals
 only, and thus the log-likelihood is a log-probability. We can use the
 infrastructure developed so far to compute a joint likelihood. Let's assume 
-we have are interested in the joint distribution of $(\rY_i, \rX_i)$ and we
+we are interested in the joint distribution of $(\rY_i, \rX_i)$ and we
 observed $\rY_i = \yvec_i$ (that is, exact observations of $\rY$) and 
 $\avec_i < \rX_i \le \bvec_i$ (that is, interval-censored observations for
 $\rX_i$). We define the log-likelihood based on the joint normal distribution $(\rY_i,
@@ -8454,9 +8463,9 @@ chk(gupr, c(sRR$upper))
 
 From a computational points of view, the parameterisation of the
 multivariate normal distribution in terms of the inverse Cholesky factor
-$\mL$ and the scaled mean $\etavec = \mL \muvec$ instead of the mean
+$\mL$ and the scaled mean $\nuvec = \mL \muvec$ instead of the mean
 $\muvec$ is attractive, 
-because the log-density is then jointly concave in $\etavec$ and $\mL$ and
+because the log-density is then jointly concave in $\nuvec$ and $\mL$ and
 thus a convex optimisation problem would emerge \citep{Barrathh_Boyd_2023}.
 This also carries over to the interval-censored likelihood because
 probabilities of log-concave densities are again log-concave
@@ -8464,10 +8473,10 @@ probabilities of log-concave densities are again log-concave
 
 The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
 \mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
-$\muvec_i = \mL_i^{-1} \etavec$ it is simple to rewrite the log-likelihood
+$\muvec_i = \mL_i^{-1} \nuvec$ it is simple to rewrite the log-likelihood
 contribution as a concave function of both parameters as
 \begin{eqnarray*}
-\ell^\text{concave}_i(\etavec_i, \mL_i) = \ell_i(\mL_i^{-1} \etavec, \mL_i).
+\ell^\text{concave}_i(\nuvec_i, \mL_i) = \ell_i(\mL_i^{-1} \nuvec, \mL_i).
 \end{eqnarray*}
 The implementation of the corresponding convex negative log-likelihood is
 also easy:
@@ -8497,40 +8506,40 @@ nll(start)
 @
 
 However, computing the scores is a bit more work. Let's first consider the
-scores with respect to $\etavec_i$. We have
+scores with respect to $\nuvec_i$. We have
 \begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\etavec_i, \mL_i)}{\partial \etavec_i} & = & 
-  \frac{\partial \ell_i(\mL_i^{-1} \etavec_i, \mL_i)}{\partial \etavec_i} \\
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \nuvec_i} & = & 
+  \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \nuvec_i} \\
 & = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
-\etavec_i}{\partial \etavec_i} \\
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \nuvec_i} \\
 & = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \mL^{-1}_i.
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \mL^{-1}_i.
 \end{eqnarray*}
 The first term is the score with respect to $\muvec_i$ and thus the score with
-respect to $\etavec_i$ is straightforward to compute.
+respect to $\nuvec_i$ is straightforward to compute.
 The score with respect to $\mL_i$ is more complex. With the multivariate
 chain rule we have
 \begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\etavec_i, \mL_i)}{\partial \mL_i} & = & 
-   \frac{\partial \ell_i(\mL_i^{-1} \etavec_i, \mL_i)}{\partial \mL_i} \\
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \mL_i} & = & 
+   \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \mL_i} \\
 & = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
-\etavec_i}{\partial \mL_i} + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \mL_i} + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
 & = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
-\etavec_i}{\partial \mL_i^{-1}} \frac{\partial \mL_i^{-1}}{\partial \mL_i} + 
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \mL_i^{-1}} \frac{\partial \mL_i^{-1}}{\partial \mL_i} + 
 \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
 & = & \underbrace{\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i}}_{=: \muvec_i^\prime} (\etavec_i^\top \otimes
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i}}_{=: \muvec_i^\prime} (\nuvec_i^\top \otimes
 \mI_J)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1}) + 
 \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
-& = & \vecop(\muvec_i^\prime \etavec_i^\top)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1})
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
+& = & \vecop(\muvec_i^\prime \nuvec_i^\top)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1})
 + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} 
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} 
 \end{eqnarray*}
 where we apply the vec-trick twice in the last line.
 
