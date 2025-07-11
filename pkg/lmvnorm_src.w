@@ -2871,7 +2871,7 @@ and with respect to \code{invchol} we have
 - 2 \mL_i (\yvec_i - \muvec_i) (\yvec_i - \muvec_i)^\top + \diag(\mL_i)^{-1}.
 \end{eqnarray*}
 The score function with respect to \code{chol} post-processes the above
-score using the vec trick~(Section~\ref{sec:vectrick}).
+score using the vec-trick~(Section~\ref{sec:vectrick}).
 For the log-likelihood~(\ref{ll_mC}), the score with respect to $\mC_i$ is the sum of the score 
 functions of the two terms. We start with the simpler first term
 \begin{eqnarray*}
@@ -4077,7 +4077,7 @@ need to post-differentiate the score function. We have
 \mA = \frac{\partial \mL^{-1}}{\partial \mL} = - \mL^{-\top} \otimes \mL^{-1}
 \end{eqnarray*}
 and computing $\svec \mA$ for a score vector $\svec$ with respect to $\mL$ can be
-implemented by the ``vec trick''~(Section~\ref{sec:vectrick})
+implemented by the ``vec-trick''~(Section~\ref{sec:vectrick})
 \begin{eqnarray*}
 \svec \mA = \mL^{-\top} \mS \mL^{-\top}
 \end{eqnarray*}
@@ -6285,6 +6285,9 @@ $\mL$ and the scaled mean $\etavec = \mL \muvec$ instead of the mean
 $\muvec$ is attractive, 
 because the log-density is then jointly concave in $\etavec$ and $\mL$ and
 thus a convex optimisation problem would emerge \citep{Barrathh_Boyd_2023}.
+This also carries over to the interval-censored likelihood because
+probabilities of log-concave densities are again log-concave
+\citep{Prekopa_1973}.
 
 The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
 \mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
@@ -6454,7 +6457,7 @@ $\rX \in \R^{J \times K}$:
 \frac{\partial \yvec^\top \mA \yvec}{\partial \yvec} & = & \yvec^\top (\mA + \mA^\top) \\
 \frac{\partial \mB \mA}{\partial \mA} & = & (\mI_J \otimes \mB)
 \end{eqnarray*}
-and the ``vec trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
+and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \rX \mB)^\top$.
 
 
