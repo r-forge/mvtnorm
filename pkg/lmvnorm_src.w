@@ -6438,15 +6438,19 @@ max(abs(nsc(start) - grad(nll, start)))
 
 \chapter*{Appendix}
 
-This document uses the following matrix derivatives
+This document uses the following matrix derivatives for vectors $\yvec \in
+\R^J$ and matrices $\mA \in \R^{J \times J}$, $\mB \in \R^{K \times J}$, and 
+$\rX \in \R^{J \times K}$:
 \begin{eqnarray*}
+\frac{\partial \mA \yvec}{\partial \yvec} & = & \mA \\
+\frac{\partial \mA \yvec}{\partial \mA} & = & \yvec \otimes \mI_J \\
 \frac{\partial \yvec^\top \mA^\top \mA \yvec}{\partial \mA} & = & 2 \mA \yvec \yvec^\top \\
 \frac{\partial \mA^{-1}}{\partial \mA} & = & -(\mA^{-\top} \otimes \mA^{-1}) \\
 \frac{\partial \mA \mA^\top}{\partial \mA} & = & (\mA \otimes \mI_J) \frac{\partial \mA}{\partial \mA} + (\mI_J \otimes \mA) \frac{\partial \mA^\top}{\partial \mA}
 \\
 & = & (\mA \otimes \mI_J) + (\mI_J \otimes \mA) \frac{\partial \mA^\top}{\partial \mA} \\
 \frac{\partial \diag(\mA)}{\partial \mA} & = & \diag(\vecop(\mI_J)) \\
-\frac{\partial \mA}{\partial \mA} & = & \diag(I_{J^2}) \\
+\frac{\partial \mA}{\partial \mA} & = & \diag(\mI_{J^2}) \\
 \frac{\partial \yvec^\top \mA \yvec}{\partial \yvec} & = & \yvec^\top (\mA + \mA^\top) \\
 \frac{\partial \mB \mA}{\partial \mA} & = & (\mI_J \otimes \mB)
 \end{eqnarray*}
