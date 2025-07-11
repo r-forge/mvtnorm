@@ -5473,9 +5473,6 @@ mvnorm <- function(mean, chol, invchol) {
 }
 @}
 
-It might have been smarter to specify the scaled mean $\etavec = \mL \muvec$
-because the log-density is then jointly convex in $\etavec$ and $\mL$ and
-thus a convex problem would emerge \citep{Barrathh_Boyd_2023}.
 
 We add a \code{names} and \code{aperm} method. The latter returns a
 multivariate normal distribution with permuted order of the variables
@@ -6090,6 +6087,7 @@ introduced in Chapter~\ref{lpmvnorm} does not check if both \code{lower} and
 \code{upper} are infinite and omission thus reduces the dimensionality of
 the integral we evaluate numerically. 
 
+
 \chapter{Reduced Rank Covariance Matrices}
 
 We sometimes can write the $\J \times \J$ covariance matrix as $\mSigma = \mB \mB^\top +
@@ -6277,6 +6275,113 @@ chk(glwr, c(sRR$lower))
 lupr <- function(b) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 gupr <- grad(lupr, b)
 chk(gupr, c(sRR$upper))
+@@
+
+\chapter{Joint Mean and Covariance Estimation}
+
+From a computational points of view, the parameterisation of the
+multivariate normal distribution in terms of the inverse Cholesky factor
+$\mL$ and the scaled mean $\etavec = \mL \muvec$ instead of the mean
+$\muvec$ is attractive, 
+because the log-density is then jointly concave in $\etavec$ and $\mL$ and
+thus a convex optimisation problem would emerge \citep{Barrathh_Boyd_2023}.
+
+The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
+\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
+$\muvec_i = \mL_i^{-1} \etavec$ it is simple to rewrite the log-likelihood
+contribution as a concave function of both parameters as
+\begin{eqnarray*}
+\ell^\text{concave}_i(\etavec_i, \mL_i) = \ell_i(\mL_i^{-1} \etavec, \mL_i).
+\end{eqnarray*}
+The implementation of the corresponding convex negative log-likelihood is
+also easy:
+
+<<concave>>=
+J <- 5
+N <- 100
+### mean
+m <- rnorm(J)
+L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- solve(L, Z) + m
+### scaled mean
+d <- Mult(L, m)
+
+nll <- function(parm) {
+    d <- parm[seq_len(J)]
+    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    -ldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
+}
+
+start <- c(d, prm)
+
+nll(start)
+### identical
+-ldmvnorm(obs = Y, mean = m, invchol = L)
+@@
+
+However, computing the scores is a bit more work. Let's first consider the
+scores with respect to $\etavec_i$. We have
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\etavec_i, \mL_i)}{\partial \etavec_i} & = & 
+  \frac{\partial \ell_i(\mL_i^{-1} \etavec_i, \mL_i)}{\partial \etavec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
+\etavec_i}{\partial \etavec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \mL^{-1}_i.
+\end{eqnarray*}
+The first term is the score with respect to $\muvec_i$ and thus the score with
+respect to $\etavec_i$ is straightforward to compute.
+The score with respect to $\mL_i$ is more complex. With the multivariate
+chain rule we have
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\etavec_i, \mL_i)}{\partial \mL_i} & = & 
+   \frac{\partial \ell_i(\mL_i^{-1} \etavec_i, \mL_i)}{\partial \mL_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
+\etavec_i}{\partial \mL_i} + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i} \frac{\partial \mL_i^{-1}
+\etavec_i}{\partial \mL_i^{-1}} \frac{\partial \mL_i^{-1}}{\partial \mL_i} + 
+\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
+& = & \underbrace{\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \etavec_i}}_{=: \muvec_i^\prime} (\etavec_i^\top \otimes
+\mI_J)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1}) + 
+\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} \\
+& = & \vecop(\muvec_i^\prime \etavec_i^\top)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1})
++ \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \etavec_i} 
+\end{eqnarray*}
+where we apply the vec-trick twice in the last line.
+
+The negative gradient is now
+<<scores>>=
+nsc <- function(parm) {
+    d <- parm[seq_len(J)]
+    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    ret <- sldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
+    C <- solve(L)
+
+    J <- dim(L)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+   
+    X <- -ret$obs
+    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scL <- - vectrick(C, A)
+    scL <- scL[idx,,drop = FALSE]
+    scL <- rowSums(unclass(scL) + unclass(ret$invchol))
+    - c(rowSums(solve(L, -ret$obs, transpose = TRUE)), 
+        scL)
+}
+max(abs(nsc(start) - grad(nll, start)))
 @@
 
 \chapter{Package Infrastructure}
