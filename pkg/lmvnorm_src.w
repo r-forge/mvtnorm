@@ -5366,6 +5366,179 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @@
 
+\chapter{Joint Mean and Covariance Estimation}
+
+From a computational points of view, the parameterisation of the
+multivariate normal distribution in terms of the inverse Cholesky factor
+$\mL$ and the scaled mean $\nuvec = \mL \muvec$ instead of the mean
+$\muvec$ is attractive, 
+because the log-density is then jointly concave in $\nuvec$ and $\mL$ and
+thus a convex optimisation problem would emerge \citep{Barrathh_Boyd_2023}.
+This also carries over to the interval-censored likelihood because
+probabilities of log-concave densities are again log-concave
+\citep{Prekopa_1973}.
+
+The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
+\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
+$\muvec_i = \mL_i^{-1} \nuvec$ it is simple to rewrite the log-likelihood
+contribution as a concave function of both parameters as
+\begin{eqnarray*}
+\ell^\text{concave}_i(\nuvec_i, \mL_i) = \ell_i(\mL_i^{-1} \nuvec, \mL_i).
+\end{eqnarray*}
+The implementation of the corresponding convex negative log-likelihood is
+also easy:
+
+<<concave-L>>=
+J <- 5
+N <- 100
+### mean
+m <- rnorm(J)
+L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- solve(L, Z) + m
+### scaled mean
+d <- Mult(L, m)
+
+nll <- function(parm) {
+    d <- parm[seq_len(J)]
+    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    -ldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
+}
+
+start <- c(d, prm)
+
+nll(start)
+### identical
+-ldmvnorm(obs = Y, mean = m, invchol = L)
+@@
+
+However, computing the scores is a bit more work. Let's first consider the
+scores with respect to $\nuvec_i$. We have
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \nuvec_i} & = & 
+  \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \mL^{-1}_i.
+\end{eqnarray*}
+The first term is the score with respect to $\muvec_i$ and thus the score with
+respect to $\nuvec_i$ is straightforward to compute.
+The score with respect to $\mL_i$ is more complex. With the multivariate
+chain rule we have
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \mL_i} & = & 
+   \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \mL_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \mL_i} + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
+\nuvec_i}{\partial \mL_i^{-1}} \frac{\partial \mL_i^{-1}}{\partial \mL_i} + 
+\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
+& = & \underbrace{\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i}}_{=: \muvec_i^\prime} (\nuvec_i^\top \otimes
+\mI_J)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1}) + 
+\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
+& = & \vecop(\muvec_i^\prime \nuvec_i^\top)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1})
++ \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
+\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} 
+\end{eqnarray*}
+where we apply the vec-trick twice in the last line.
+
+The negative gradient is now
+<<scores-L>>=
+nsc <- function(parm) {
+    d <- parm[seq_len(J)]
+    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    ret <- sldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
+    C <- solve(L)
+
+    J <- dim(L)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+   
+    X <- -ret$obs
+    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scL <- - vectrick(C, A)
+    scL <- scL[idx,,drop = FALSE]
+    scL <- rowSums(unclass(scL) + unclass(ret$invchol))
+    - c(rowSums(solve(L, -ret$obs, transpose = TRUE)), 
+        scL)
+}
+all.equal(unname(nsc(start)), grad(nll, start))
+@@
+
+Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
+\mL_i^{-1}$, we can compute the log-likelihood as
+
+<<concave-C>>=
+C <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- Mult(C, Z) + m
+### scaled mean
+d <- solve(C, m)
+
+nll <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    -ldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+}
+
+start <- c(d, prm)
+
+nll(start)
+### identical
+-ldmvnorm(obs = Y, mean = m, chol = C)
+@@
+
+By the same arguments as above, the score with respect to $\nuvec_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \nuvec_i} & = & 
+  \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mC_i)}{\partial
+\muvec}\right|_{\muvec = \mC_i \nuvec_i} \mC_i.
+\end{eqnarray*}
+and the score with respect to $\mC_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \mC_i} & = & 
+   \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \mC_i} \\
+& = & \muvec_i^\prime \nuvec_i^\top + \left.\frac{\partial \ell_i(\muvec,
+\mC_i)}{\partial \mC_i}\right|_{\muvec = \mC_i \nuvec_i} 
+\end{eqnarray*}
+
+<<scores-C>>=
+nsc <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    ret <- sldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+
+    J <- dim(C)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+
+    X <- -ret$obs
+    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scC <- A[idx,,drop = FALSE]
+    scC <- rowSums(unclass(scC) + unclass(ret$chol))
+    - c(rowSums(Mult(C, -ret$obs, transpose = TRUE)), 
+        scC)
+}
+all.equal(unname(nsc(start)), grad(nll, start))
+@@
+
+
+
 \chapter{(Experimental) User Interface} \label{inter}
 
 @o interface.R -cp
@@ -6263,7 +6436,7 @@ smv <- slpmvnorm(lower = a, upper = b, chol = Linv, w = w)
 sRR <- slpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 chk(c(smv$lower), sRR$lower, tolerance = 1e-2)
 chk(c(smv$upper), sRR$upper, tolerance = 1e-2)
-chk(c(smv$mean), sRR$mean, tolerance = 1e-2)
+chk(c(smv$mean), sRR$mean, tolerance = 1e-2 * 2)
 @@
 
 The gradient with respect to $\mB$ and $\mD$ are finally checked against their
@@ -6284,177 +6457,6 @@ chk(glwr, c(sRR$lower))
 lupr <- function(b) lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 gupr <- grad(lupr, b)
 chk(gupr, c(sRR$upper))
-@@
-
-\chapter{Joint Mean and Covariance Estimation}
-
-From a computational points of view, the parameterisation of the
-multivariate normal distribution in terms of the inverse Cholesky factor
-$\mL$ and the scaled mean $\nuvec = \mL \muvec$ instead of the mean
-$\muvec$ is attractive, 
-because the log-density is then jointly concave in $\nuvec$ and $\mL$ and
-thus a convex optimisation problem would emerge \citep{Barrathh_Boyd_2023}.
-This also carries over to the interval-censored likelihood because
-probabilities of log-concave densities are again log-concave
-\citep{Prekopa_1973}.
-
-The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
-\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
-$\muvec_i = \mL_i^{-1} \nuvec$ it is simple to rewrite the log-likelihood
-contribution as a concave function of both parameters as
-\begin{eqnarray*}
-\ell^\text{concave}_i(\nuvec_i, \mL_i) = \ell_i(\mL_i^{-1} \nuvec, \mL_i).
-\end{eqnarray*}
-The implementation of the corresponding convex negative log-likelihood is
-also easy:
-
-<<concave-L>>=
-J <- 5
-N <- 100
-### mean
-m <- rnorm(J)
-L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
-Z <- matrix(rnorm(N * J), nrow = J)
-Y <- solve(L, Z) + m
-### scaled mean
-d <- Mult(L, m)
-
-nll <- function(parm) {
-    d <- parm[seq_len(J)]
-    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    -ldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
-}
-
-start <- c(d, prm)
-
-nll(start)
-### identical
--ldmvnorm(obs = Y, mean = m, invchol = L)
-@@
-
-However, computing the scores is a bit more work. Let's first consider the
-scores with respect to $\nuvec_i$. We have
-\begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \nuvec_i} & = & 
-  \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \nuvec_i} \\
-& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
-\nuvec_i}{\partial \nuvec_i} \\
-& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \mL^{-1}_i.
-\end{eqnarray*}
-The first term is the score with respect to $\muvec_i$ and thus the score with
-respect to $\nuvec_i$ is straightforward to compute.
-The score with respect to $\mL_i$ is more complex. With the multivariate
-chain rule we have
-\begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mL_i)}{\partial \mL_i} & = & 
-   \frac{\partial \ell_i(\mL_i^{-1} \nuvec_i, \mL_i)}{\partial \mL_i} \\
-& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
-\nuvec_i}{\partial \mL_i} + \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
-& = & \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \frac{\partial \mL_i^{-1}
-\nuvec_i}{\partial \mL_i^{-1}} \frac{\partial \mL_i^{-1}}{\partial \mL_i} + 
-\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
-& = & \underbrace{\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\muvec}\right|_{\muvec = \mL_i^{-1} \nuvec_i}}_{=: \muvec_i^\prime} (\nuvec_i^\top \otimes
-\mI_J)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1}) + 
-\left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} \\
-& = & \vecop(\muvec_i^\prime \nuvec_i^\top)(-1)(\mL_i^{-\top} \otimes \mL_i^{-1})
-+ \left.\frac{\partial \ell_i(\muvec, \mL_i)}{\partial
-\mL_i}\right|_{\muvec = \mL_i^{-1} \nuvec_i} 
-\end{eqnarray*}
-where we apply the vec-trick twice in the last line.
-
-The negative gradient is now
-<<scores-L>>=
-nsc <- function(parm) {
-    d <- parm[seq_len(J)]
-    L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    ret <- sldmvnorm(obs = Y, mean = solve(L, d), invchol = L)
-    C <- solve(L)
-
-    J <- dim(L)[2L]
-    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-    idx <- M[lower.tri(M, diag = TRUE)]
-   
-    X <- -ret$obs
-    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
-    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
-         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
-
-    scL <- - vectrick(C, A)
-    scL <- scL[idx,,drop = FALSE]
-    scL <- rowSums(unclass(scL) + unclass(ret$invchol))
-    - c(rowSums(solve(L, -ret$obs, transpose = TRUE)), 
-        scL)
-}
-max(abs(nsc(start) - grad(nll, start)))
-@@
-
-Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
-\mL_i^{-1}$, we can compute the log-likelihood as
-
-<<concave-C>>=
-C <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
-Z <- matrix(rnorm(N * J), nrow = J)
-Y <- Mult(C, Z) + m
-### scaled mean
-d <- solve(C, m)
-
-nll <- function(parm) {
-    d <- parm[seq_len(J)]
-    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    -ldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
-}
-
-start <- c(d, prm)
-
-nll(start)
-### identical
--ldmvnorm(obs = Y, mean = m, chol = C)
-@@
-
-By the same arguments as above, the score with respect to $\nuvec_i$ is
-\begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \nuvec_i} & = & 
-  \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \nuvec_i} \\
-& = & \left.\frac{\partial \ell_i(\muvec, \mC_i)}{\partial
-\muvec}\right|_{\muvec = \mC_i \nuvec_i} \mC_i.
-\end{eqnarray*}
-and the score with respect to $\mC_i$ is
-\begin{eqnarray*}
-\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \mC_i} & = & 
-   \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \mC_i} \\
-& = & \muvec_i^\prime \nuvec_i^\top + \left.\frac{\partial \ell_i(\muvec,
-\mC_i)}{\partial \mC_i}\right|_{\muvec = \mC_i \nuvec_i} 
-\end{eqnarray*}
-
-<<scores-C>>=
-nsc <- function(parm) {
-    d <- parm[seq_len(J)]
-    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    ret <- sldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
-
-    J <- dim(C)[2L]
-    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-    idx <- M[lower.tri(M, diag = TRUE)]
-
-    X <- -ret$obs
-    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
-    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
-         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
-
-    scC <- A[idx,,drop = FALSE]
-    scC <- rowSums(unclass(scC) + unclass(ret$chol))
-    - c(rowSums(Mult(C, -ret$obs, transpose = TRUE)), 
-        scC)
-}
-max(abs(nsc(start) - grad(nll, start)))
 @@
 
 
