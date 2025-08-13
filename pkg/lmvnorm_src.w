@@ -6308,7 +6308,7 @@ contribution as a concave function of both parameters as
 The implementation of the corresponding convex negative log-likelihood is
 also easy:
 
-<<concave>>=
+<<concave-L>>=
 J <- 5
 N <- 100
 ### mean
@@ -6371,7 +6371,7 @@ chain rule we have
 where we apply the vec-trick twice in the last line.
 
 The negative gradient is now
-<<scores>>=
+<<scores-L>>=
 nsc <- function(parm) {
     d <- parm[seq_len(J)]
     L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
@@ -6395,6 +6395,68 @@ nsc <- function(parm) {
 }
 max(abs(nsc(start) - grad(nll, start)))
 @@
+
+Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
+\mL_i^{-1}$, we can compute the log-likelihood as
+
+<<concave-C>>=
+C <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- Mult(C, Z) + m
+### scaled mean
+d <- solve(C, m)
+
+nll <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    -ldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+}
+
+start <- c(d, prm)
+
+nll(start)
+### identical
+-ldmvnorm(obs = Y, mean = m, chol = C)
+@@
+
+By the same arguments as above, the score with respect to $\nuvec_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \nuvec_i} & = & 
+  \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mC_i)}{\partial
+\muvec}\right|_{\muvec = \mC_i \nuvec_i} \mC_i.
+\end{eqnarray*}
+and the score with respect to $\mC_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \mC_i} & = & 
+   \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \mC_i} \\
+& = & \muvec_i^\prime \nuvec_i^\top + \left.\frac{\partial \ell_i(\muvec,
+\mC_i)}{\partial \mC_i}\right|_{\muvec = \mC_i \nuvec_i} 
+\end{eqnarray*}
+
+<<scores-C>>=
+nsc <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    ret <- sldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+
+    J <- dim(C)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+
+    X <- -ret$obs
+    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scC <- A[idx,,drop = FALSE]
+    scC <- rowSums(unclass(scC) + unclass(ret$chol))
+    - c(rowSums(Mult(C, -ret$obs, transpose = TRUE)), 
+        scC)
+}
+max(abs(nsc(start) - grad(nll, start)))
+@@
+
 
 \chapter{Package Infrastructure}
 

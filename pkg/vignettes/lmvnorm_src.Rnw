@@ -228,7 +228,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb138}{138}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb140}{140}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
@@ -274,7 +274,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb139}{139}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb141}{141}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -4045,7 +4045,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb138}{138}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb140}{140}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb87}{87}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb57a}{57a}}$\,\rangle$}\verb@@\\
@@ -4073,7 +4073,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb139}{139}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb141}{141}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -8481,7 +8481,7 @@ contribution as a concave function of both parameters as
 The implementation of the corresponding convex negative log-likelihood is
 also easy:
 
-<<concave>>=
+<<concave-L>>=
 J <- 5
 N <- 100
 ### mean
@@ -8544,7 +8544,7 @@ chain rule we have
 where we apply the vec-trick twice in the last line.
 
 The negative gradient is now
-<<scores>>=
+<<scores-L>>=
 nsc <- function(parm) {
     d <- parm[seq_len(J)]
     L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
@@ -8569,11 +8569,73 @@ nsc <- function(parm) {
 max(abs(nsc(start) - grad(nll, start)))
 @
 
+Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
+\mL_i^{-1}$, we can compute the log-likelihood as
+
+<<concave-C>>=
+C <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
+Z <- matrix(rnorm(N * J), nrow = J)
+Y <- Mult(C, Z) + m
+### scaled mean
+d <- solve(C, m)
+
+nll <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    -ldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+}
+
+start <- c(d, prm)
+
+nll(start)
+### identical
+-ldmvnorm(obs = Y, mean = m, chol = C)
+@
+
+By the same arguments as above, the score with respect to $\nuvec_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \nuvec_i} & = & 
+  \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \nuvec_i} \\
+& = & \left.\frac{\partial \ell_i(\muvec, \mC_i)}{\partial
+\muvec}\right|_{\muvec = \mC_i \nuvec_i} \mC_i.
+\end{eqnarray*}
+and the score with respect to $\mC_i$ is
+\begin{eqnarray*}
+\frac{\partial \ell^\text{concave}_i(\nuvec_i, \mC_i)}{\partial \mC_i} & = & 
+   \frac{\partial \ell_i(\mC_i \nuvec_i, \mC_i)}{\partial \mC_i} \\
+& = & \muvec_i^\prime \nuvec_i^\top + \left.\frac{\partial \ell_i(\muvec,
+\mC_i)}{\partial \mC_i}\right|_{\muvec = \mC_i \nuvec_i} 
+\end{eqnarray*}
+
+<<scores-C>>=
+nsc <- function(parm) {
+    d <- parm[seq_len(J)]
+    C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
+    ret <- sldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+
+    J <- dim(C)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+
+    X <- -ret$obs
+    Y <- matrix(d, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scC <- A[idx,,drop = FALSE]
+    scC <- rowSums(unclass(scC) + unclass(ret$chol))
+    - c(rowSums(Mult(C, -ret$obs, transpose = TRUE)), 
+        scC)
+}
+max(abs(nsc(start) - grad(nll, start)))
+@
+
+
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap164}\raggedright\small
-\NWtarget{nuweb138}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {138}}$\,\rangle\equiv$
+\NWtarget{nuweb140}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {140}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8610,7 +8672,7 @@ max(abs(nsc(start) - grad(nll, start)))
 \end{flushleft}
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
-\NWtarget{nuweb139}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {139}}$\,\rangle\equiv$
+\NWtarget{nuweb141}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {141}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8694,7 +8756,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 }
 \item $\langle\,$as.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb114b}{114b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb21}{21}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb139}{139}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb65}{, 65}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb141}{141}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb65}{, 65}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb24a}{24a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb24b}{24b}\NWlink{nuweb26}{, 26}\NWlink{nuweb29}{, 29}\NWlink{nuweb33a}{, 33a}\NWlink{nuweb42a}{, 42a}.
 }
@@ -8821,7 +8883,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb85c}{85c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb86b}{86b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb11}{11}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb138}{138}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb64}{, 64}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb140}{140}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb64}{, 64}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb73}{73}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb65}{65}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb84}{84}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb65}{65}.}
