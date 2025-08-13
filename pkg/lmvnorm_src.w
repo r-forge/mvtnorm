@@ -5366,7 +5366,7 @@ if (!inherits(sd_NPML, "try-error")) {
 }
 @@
 
-\chapter{Joint Mean and Covariance Estimation}
+\chapter{Joint Mean and Covariance Estimation} \label{ch:joint}
 
 From a computational points of view, the parameterisation of the
 multivariate normal distribution in terms of the inverse Cholesky factor
@@ -5641,20 +5641,39 @@ if (!missing(mean)) {
 Finally, we put everything together and return an object of class
 \code{mvnorm}, featuring \code{mean} and \code{scale}. The class of the
 latter slot carries the information how this object is to be interpreted (as
-Cholesky factor or inverse thereof)
+Cholesky factor or inverse thereof). We also allow the specification of the
+scaled mean $\nuvec = \mL \muvec$ as argument \code{invcholmean}:
 
 @d mvnorm
 @{
 ### allow more than one distribution
-mvnorm <- function(mean, chol, invchol) {
+mvnorm <- function(mean, invcholmean, chol, invchol) {
 
   @<mvnorm chol invchol@>
+  if (!missing(invcholmean)) {
+      stopifnot(missing(mean))
+      ret$invcholmean <- invcholmean
+      if (!missing(invchol)) mean <- solve(invchol, invcholmean)
+      if (!missing(chol)) mean <- Mult(chol, invcholmean)
+  }
   @<mvnorm mean@>
   class(ret) <- "mvnorm"
   return(ret)
 }
 @}
 
+After updating the object, it might be necessary to update $\nuvec$ as well:
+
+@d mean2invcholmean
+@{
+if (!is.null(ret$mean)) {
+    if (is.chol(ret$scale)) {
+        ret$invcholmean <- solve(ret$scale, ret$mean)
+    } else {
+        ret$invcholmean <- Mult(ret$scale, ret$mean)
+    }
+}
+@}
 
 We add a \code{names} and \code{aperm} method. The latter returns a
 multivariate normal distribution with permuted order of the variables
@@ -5667,8 +5686,10 @@ names.mvnorm <- function(x)
 aperm.mvnorm <- function(a, perm, ...) {
 
     ret <- list(scale = aperm(a$scale, perm = perm, ...))
-    if (!is.null(a$mean))
+    if (!is.null(a$mean)) {
         ret$mean <- a$mean[perm,,drop = FALSE]
+        @<mean2invcholmean@>
+    }
     class(ret) <- "mvnorm"
     ret
 }
@@ -5744,8 +5765,10 @@ margDist.mvnorm <- function(object, which, ...) {
         ret <- list(scale = as.invchol(marg_mvnorm(invchol = object$scale, 
                                                    which = which)$invchol))
     }
-    if (!is.null(object$mean))
+    if (!is.null(object$mean)) {
         ret$mean <- object$mean[which,,drop = FALSE]
+        @<mean2invcholmean@>
+    }
     class(ret) <- "mvnorm"
     return(ret)
 }
@@ -5779,7 +5802,7 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         } else {
             ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
         }
-        
+        @<mean2invcholmean@>
     }
     class(ret) <- "mvnorm"
     return(ret)
@@ -5817,6 +5840,8 @@ marginalisation, and standardisation. We begin with some sanity checks
 @d argchecks
 @{
 args <- c(object, list(...))
+### mean is always there
+args$invcholmean <- NULL
 nargs <- missing(obs) + missing(lower) + missing(upper)
 stopifnot(nargs < 3L)
 
@@ -5863,6 +5888,7 @@ and proceed with the workhorse when $\mC$ was given
 @d logLik chol
 @{
 names(args)[names(args) == "scale"] <- "chol"
+
 if (standardize)
     args$chol <- standardize(chol = args$chol)
 if (!is.null(perm)) {
@@ -6023,13 +6049,37 @@ if (!attr(sc, "diag"))
                            names = dimnames(ret$chol)[[2L]])
 @}
 
-and to return the results, with mean scores in the correct ordering
+and to return the results, with mean scores in the correct ordering.
+Eventually, we have to perform the post-processing steps explained in
+Chapter~\ref{ch:joint} when the scaled mean $\nuvec = \mL \muvec$ was
+specified
 
 @d lLgrad return
 @{
 ret$scale <- ret$chol
 ret$chol <- NULL
 ret$mean <- ret$mean[no,,drop = FALSE]
+if (!is.null(object$invcholmean)) {
+    J <- dim(sc)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+
+    X <- ret$mean
+    Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scC <- ltMatrices(A[idx,,drop = FALSE], diag = TRUE, byrow = FALSE)
+    if (!attr(sc, "diag"))
+        scC <- ltMatrices(Lower_tri(scC, diag = FALSE), diag = FALSE, byrow = FALSE)
+    scC <- ltMatrices(scC, byrow = attr(sc, "byrow"))
+    ret$scale <- ltMatrices(unclass(scC) + unclass(ret$scale), 
+                            diag = attr(sc, "diag"),
+                            byrow = attr(sc, "byrow"),
+                            names = dimnames(sc)[[2L]])
+    ret$invcholmean <- Mult(sc, X, transpose = TRUE)
+    ret$mean <- NULL
+}
 return(ret)
 @}
 
@@ -6089,6 +6139,28 @@ if (!attr(si, "diag"))
 ret$scale <- ret$invchol
 ret$invchol <- NULL
 ret$mean <- ret$mean[no,,drop = FALSE]
+if (!is.null(object$invcholmean)) {
+    J <- dim(si)[2L]
+    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
+    idx <- M[lower.tri(M, diag = TRUE)]
+
+    X <- ret$mean
+    Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))
+    A <- X[rep(1:nrow(X), times = nrow(X)),,drop = FALSE] * 
+         Y[rep(1:nrow(Y), each = nrow(X)),,drop = FALSE]
+
+    scL <- - vectrick(solve(si), A)
+    scL <- ltMatrices(scL[idx,,drop = FALSE], diag = TRUE, byrow = FALSE)
+    if (!attr(si, "diag"))
+        scL <- ltMatrices(Lower_tri(scL, diag = FALSE), diag = FALSE, byrow = FALSE)
+    scL <- ltMatrices(scL, byrow = attr(si, "byrow"))
+    ret$scale <- ltMatrices(unclass(scL) + unclass(ret$scale), 
+                              diag = attr(si, "diag"),
+                              byrow = attr(si, "byrow"),
+                              names = dimnames(si)[[2L]])
+    ret$invcholmean <- solve(si, X, transpose = TRUE)
+    ret$mean <- FALSE
+}
 return(ret)
 @}
 
@@ -6155,6 +6227,46 @@ ML$mean[,,drop = TRUE]
 m
 @@
 
+We now check if we can obtain corresponding results when jointly optimising
+the scaled mean $\nuvec$ and the inverse Cholesky factor $\mL$:
+
+<<iris-lLgrad-nu>>=
+J <- length(vars)
+obs <- t(iris[, vars])
+lower <- upper <- NULL
+ll <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+}
+sc <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    -c(rowSums(ret$invcholmean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
+}
+### note: This is a convex problem now, so (here incorrect) 
+### starting values shouldn't matter
+opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
+            lower = llim, control = list(trace = FALSE))
+Lhat <- ltMatrices(opL$par[-(1:J)], diag = TRUE, names = vars)
+ML <- mvnorm(invcholmean = opL$par[1:J], invchol = Lhat)
+@@
+
+where the comparison to the analytic estimates is
+
+<<iris-ML-hat-nu>>=
+### log-likelihood, note the better fit for the nu, L parameterisation
+op$value
+opL$value
+### covariance
+invchol2cov(ML$scale)
+V
+### mean
+ML$mean[,,drop = TRUE]
+m
+@@
+
 Now, this was a lot of work to replace \code{mean} and \code{var} with
 something more fancy, and we would of course not go down this way in real
 life. But how about a more complex situation where one (or more) variables
@@ -6172,20 +6284,23 @@ The only necessary modification to our code is the specification of
 the first variable from the ``exact continuous'' observations \code{obs}.
 The rest of the machinery \emph{doesn't need any update at all}. Note that
 the mean and covariance parameters are no longer orthogonal (as in the toy
-example above), so we do have to optimise over both sets of parameters
-simultaneously.
+example above), so we need to optimise over both sets of parameters
+simultaneously and therefore opt for the parameterisation in terms of
+$\nuvec$ and $\mL$ because this leads to a convex optimisation problem also
+for interval-censored observations as mentioned in Chapter~\ref{ch:joint}.
 
 <<iris-MLi>>=
 lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
 upper <- matrix(c(q1, Inf)[f1], nrow = 1)
 rownames(lower) <- rownames(upper) <- v1
 obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
+start <- opL$par + .1
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
              lower = llim, control = list(trace = FALSE))
-Chati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
-MLi <- mvnorm(mean = opi$par[1:J], chol = Chati)
+Lhati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
+MLi <- mvnorm(invcholmean = opi$par[1:J], invchol = Lhati)
 @@
 
 Because the likelihood is a product of a continuous density and a
@@ -6195,8 +6310,6 @@ two estimated normal distributions can be compared directly (and are rather
 close in our case)
 
 <<iris-MLi-hat>>=
-op$value
-opi$value
 ### covariance
 chol2cov(MLi$scale)
 chol2cov(ML$scale)
