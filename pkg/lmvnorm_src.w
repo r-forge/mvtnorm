@@ -6188,16 +6188,15 @@ the iris dataset
 <<iris-lLgrad>>=
 J <- length(vars)
 obs <- t(iris[, vars])
-lower <- upper <- NULL
 ll <- function(parm) {
     C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(mean = parm[1:J], chol = C)
-    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+    -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(mean = parm[1:J], chol = C)
-    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$mean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
 @@
@@ -6208,7 +6207,9 @@ maximum-likelihood estimates, is actually zero.
 
 <<iris-ML>>=
 start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
-max(abs(sc(start))) < sqrt(.Machine$double.eps)
+llim <- rep(-Inf, J + J * (J + 1) / 2)
+llim[J + c(diagonals(ltMatrices(seq_len(J * (J + 1) / 2), diag = TRUE)))] <-
+1e-4
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = FALSE))
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
@@ -6231,18 +6232,15 @@ We now check if we can obtain corresponding results when jointly optimising
 the scaled mean $\nuvec$ and the inverse Cholesky factor $\mL$:
 
 <<iris-lLgrad-nu>>=
-J <- length(vars)
-obs <- t(iris[, vars])
-lower <- upper <- NULL
 ll <- function(parm) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+    -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$invcholmean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
 ### note: This is a convex problem now, so (here incorrect) 
@@ -6277,6 +6275,10 @@ case
 v1 <- vars[1]
 q1 <- quantile(iris[[v1]], probs = 1:4 / 5)
 head(f1 <- cut(iris[[v1]], breaks = c(-Inf, q1, Inf)))
+lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
+upper <- matrix(c(q1, Inf)[f1], nrow = 1)
+rownames(lower) <- rownames(upper) <- v1
+obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
 @@
 
 The only necessary modification to our code is the specification of
@@ -6289,12 +6291,30 @@ simultaneously and therefore opt for the parameterisation in terms of
 $\nuvec$ and $\mL$ because this leads to a convex optimisation problem also
 for interval-censored observations as mentioned in Chapter~\ref{ch:joint}.
 
+One additional tweak is necessary for dealing with extreme parameter values
+assigning a likelihood of numerically zero to some observations. In this
+case, the score function is not defined (because we divide the derivative by
+the likelihood). The corresponding values should be \code{NA} and removed
+from the summation.
+
 <<iris-MLi>>=
-lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
-upper <- matrix(c(q1, Inf)[f1], nrow = 1)
-rownames(lower) <- rownames(upper) <- v1
-obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
-start <- opL$par + .1
+ll <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+}
+sc <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
+    -c(rowSums(ret$invcholmean, na.rm = TRUE), 
+       rowSums(Lower_tri(ret$scale, diag = TRUE), na.rm = TRUE))
+}
+@@
+
+<<iris-MLi-opt>>=
+start <- opL$par
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
