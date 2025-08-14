@@ -183,9 +183,68 @@ diagonals(L1) <- plist$Ld1
 
 m0 <- mvnorm(invcholmean = im0, invchol = L0)
 m1 <- mvnorm(invcholmean = im1, invchol = L1)
-HCC$illR <- logLik(m0, obs = obs, logLik = FALSE, lower = lwr, upper = upr, seed = 2908, M = 1000) - 
-           logLik(m1, obs = obs, logLik = FALSE, lower = lwr, upper = upr, seed = 2908, M = 1000)
+
+AFPmiss <- sample.int(ncol(obs), floor(ncol(obs) / 4))
+
+HCC$illR <- 0
+HCC$illR[-AFPmiss] <- 
+    logLik(m0, 
+           obs = obs[, -AFPmiss], 
+           lower = lwr[, -AFPmiss], 
+           upper = upr[, -AFPmiss], 
+           logLik = FALSE, seed = 2908, M = 1000) - 
+    logLik(m1, 
+           obs = obs[, -AFPmiss], 
+           lower = lwr[, -AFPmiss], 
+           upper = upr[, -AFPmiss], 
+           logLik = FALSE, seed = 2908, M = 1000)
+HCC$illR[AFPmiss] <- 
+    logLik(m0, 
+           obs = obs["PIV",AFPmiss,drop = FALSE], 
+           lower = lwr[, AFPmiss], 
+           upper = upr[, AFPmiss], 
+           logLik = FALSE, seed = 2908, M = 1000) - 
+    logLik(m1, 
+           obs = obs["PIV",AFPmiss,drop = FALSE], 
+           lower = lwr[, AFPmiss], 
+           upper = upr[, AFPmiss], 
+           logLik = FALSE, seed = 2908, M = 1000)
+
 boxplot(illR ~ x, data = HCC)
 abline(h = 0, col = "red")
 
-plot(illR ~ llR, data = HCC)
+plot(illR ~ llR, data = HCC, col = 1 + is.na(obs["AFP",]), pch = 19)
+
+### Regression
+data("bodyfat", package = "TH.data")
+bodyfat <- bodyfat[, c((1:ncol(bodyfat))[-2], 2)]
+vars <- colnames(bodyfat)
+ct <- lapply(bodyfat, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
+
+J <- length(ct)
+
+pidx <- rep(gl(J + 1, 1, labels = c(vars, "Lo")), c(sapply(ct, nlevels) - 1, J * (J - 1) / 2))
+
+start <- c(unlist(lapply(ct, function(x) {
+    ret <- qnorm(cumsum(table(x)[-nlevels(x)]) / length(x))
+    c(ret[1], diff(ret))
+})), rep(0, length.out = J * (J - 1) / 2))
+
+llim <- rep(1e-4, length.out = length(start))
+llim[pidx == "Lo"] <- -Inf
+llim[c(1, cumsum(sapply(ct, nlevels) - 1) + 1)] <- -Inf
+                
+cbind(pidx, start, llim)
+
+ll <- function(parm) {
+    plist <- split(parm, pidx)
+    plist[vars] <- lapply(plist[vars], cumsum)
+    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
+    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
+    rownames(lwr) <- rownames(upr) <- vars
+    L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
+    object <- mvnorm(invchol = L)
+    -logLik(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+}
+
+ll(start)
