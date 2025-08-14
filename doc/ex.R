@@ -218,10 +218,83 @@ plot(illR ~ llR, data = HCC, col = 1 + is.na(obs["AFP",]), pch = 19)
 ### Regression
 data("bodyfat", package = "TH.data")
 bodyfat <- bodyfat[, c((1:ncol(bodyfat))[-2], 2)]
-vars <- colnames(bodyfat)
-ct <- lapply(bodyfat, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
+J <- length(vars <- colnames(bodyfat))
 
-J <- length(ct)
+Z <- t(qnorm(do.call("cbind", lapply(bodyfat, rank, ties.method = "max")) / (nrow(bodyfat) + 1)))
+(CR <- cor(t(Z)))
+ll <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(chol = C)
+    -ldmvnorm(obs = Z, chol = Cs)
+}
+sc <- function(parm) {
+    C <- ltMatrices(parm)
+    Cs <- standardize(chol = C)
+    -rowSums(Lower_tri(destandardize(chol = C, 
+        score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
+}
+start <- t(chol(CR))
+start <- start[lower.tri(start)]
+op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
+            control = list(trace = FALSE), hessian = TRUE)
+
+chol2cov(standardize(chol = ltMatrices(op$par)))
+
+ct <- lapply(bodyfat, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
+obs <- do.call("rbind", lapply(ct, function(x) qnorm(cumsum(table(x)) / (length(x) + 1))[x]))
+max(abs(obs - Z))
+
+llC <- function(parm) {
+    L <- ltMatrices(parm, names = vars)
+    object <- mvnorm(chol = L)
+    -logLik(object, obs = obs, standardize = TRUE)
+}
+
+scC <- function(parm) {
+    L <- ltMatrices(parm, names = vars)
+    object <- mvnorm(chol = L)
+    -rowSums(Lower_tri(lLgrad(object, obs = obs, standardize = TRUE)$scale, diag = FALSE))
+}
+
+start <- op$par
+
+ll(start)
+sc(start)
+grad(ll, start)
+
+llC(start)
+scC(start)
+grad(llC, start)
+
+opC <- optim(par = start, fn = llC, gr = scC, hessian = TRUE)
+
+op$par
+opC$par
+
+op$value
+opC$value
+
+llL <- function(parm) {
+    L <- ltMatrices(parm, names = vars)
+    object <- mvnorm(invchol = L)
+    -logLik(object, obs = obs, standardize = TRUE)
+}
+
+scL <- function(parm) {
+    L <- ltMatrices(parm, names = vars)
+    object <- mvnorm(invchol = L)
+    -rowSums(Lower_tri(lLgrad(object, obs = obs, standardize = TRUE)$scale, diag = FALSE))
+}
+
+startL <- c(unclass(solve(ltMatrices(op$par))))
+llL(startL)
+
+opL <- optim(par = startL, fn = llL, gr = scL, hessian = TRUE)
+
+invchol2cov(standardize(invchol = ltMatrices(opL$par)))
+
+
+### with margins
 
 pidx <- rep(gl(J + 1, 1, labels = c(vars, "Lo")), c(sapply(ct, nlevels) - 1, J * (J - 1) / 2))
 
