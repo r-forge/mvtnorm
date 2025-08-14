@@ -2,7 +2,13 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-4 (2025-02-28)}{
+\section{Changes in Version 1.3-4 (2025-08-14)}{
+  \subsection{Features}{
+    \itemize{
+      \item \code{mvnorm} gains a \code{invcholmean} argument allowing a
+             parameterisation leading to convex optimisation problems.
+    }
+  }
   \subsection{Bugfixes}{
     \itemize{
       \item \code{condDist()} sometimes failed to return a 
