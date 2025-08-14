@@ -5285,16 +5285,17 @@ iris data, let's set up a model for these four classical variables
 <<gc-classical>>=
 data("iris", package = "datasets")
 J <- 4
-Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank)) / (nrow(iris) + 1)))
+Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank, ties.method = "max")) / 
+       (nrow(iris) + 1)))
 (CR <- cor(t(Z)))
 ll <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -ldmvnorm(obs = Z, chol = Cs)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -rowSums(Lower_tri(destandardize(chol = C, 
         score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
 }
@@ -5305,7 +5306,7 @@ if (require("numDeriv", quietly = TRUE))
 op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
             control = list(trace = FALSE), hessian = TRUE)
 op$value
-S_ML <- chol2cov(standardize(ltMatrices(op$par)))
+S_ML <- chol2cov(standardize(chol = ltMatrices(op$par)))
 @@
 
 This approach is of course a bit strange, because we estimate the marginal
@@ -5332,12 +5333,12 @@ if (require("qrng", quietly = TRUE)) {
 
 ll <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -lpmvnorm(lower = lwr, upper = upr, chol = Cs, M = M, w = W)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -rowSums(Lower_tri(destandardize(chol = C, 
         score_schol = slpmvnorm(lower = lwr, upper = upr, chol = Cs, 
                                M = M, w = W)$chol)))
@@ -5346,7 +5347,7 @@ if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", 
              control = list(trace = FALSE), hessian = TRUE)
-S_NPML <- chol2cov(standardize(ltMatrices(op2$par)))
+S_NPML <- chol2cov(standardize(chol = ltMatrices(op2$par)))
 @@
 
 For $N = \Sexpr{nrow(iris)}$, the difference is (as expected) marginal:
@@ -5365,6 +5366,10 @@ if (!inherits(sd_NPML, "try-error")) {
     print(sd_NPML)
 }
 @@
+
+However, we are still in the wrong, because we pretended we know the
+marginal distribution functions. A holistic approach would estimate the
+marginal empirical distributions and the copula parameters simultaneously.
 
 \chapter{Joint Mean and Covariance Estimation} \label{ch:joint}
 
@@ -5554,8 +5559,9 @@ all.equal(unname(nsc(start)), grad(nll, start))
 
 The tools provided in the previous chapters are rather low-level, so we will
 invest some time into setting-up a more high-level interface for
-representing normal models, either as $\ND_\J(\muvec, \mC \mC^\top)$ or
-$\ND_\J(\muvec, \mL^{-1} \mL^{-\top})$, for simulating from such models, and
+representing normal models, either as $\ND_\J(\muvec, \mC \mC^\top)$, or
+$\ND_\J(\muvec, \mL^{-1} \mL^{-\top})$, or $\ND_\J(\mL^{-1} \nuvec, \mL^{-1}
+\mL^{-\top})$, or $\ND_\J(\mC \nuvec, \mC \mC^\top)$, for simulating from such models, and
 for evaluating the log-likelihood and corresponding score functions. The
 latter functionality shall also work when only incomplete (variables are
 missing) or censored (observations are only known as intervals) data is
@@ -5947,7 +5953,7 @@ logLik(object = iris_cmvn, obs = t(iris[,rev(vars[-j])]))
 
 The hardest task is the implementation of a score function which features
 the same options as the log-likelihood function and provides the gradients
-with respect not only to the parameters ($\mu$ and $\mC$ or $\mL$), but also
+with respect not only to the parameters ($\muvec$ or $\nuvec$ and $\mC$ or $\mL$), but also
 with respect to the data objects \code{obs}, \code{lower}, and \code{upper}.
 
 In essence, we have to repair the damage imposed by a series of
