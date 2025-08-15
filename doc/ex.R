@@ -218,80 +218,36 @@ plot(illR ~ llR, data = HCC, col = 1 + is.na(obs["AFP",]), pch = 19)
 ### Regression
 data("bodyfat", package = "TH.data")
 bodyfat <- bodyfat[, c((1:ncol(bodyfat))[-2], 2)]
-J <- length(vars <- colnames(bodyfat))
+bodyfat <- bodyfat[,c("age", "hipcirc", "DEXfat")]
+bf <- bodyfat[, colnames(bodyfat) != "age"]
+J <- length(vars <- colnames(bf))
 
-Z <- t(qnorm(do.call("cbind", lapply(bodyfat, rank, ties.method = "max")) / (nrow(bodyfat) + 1)))
-(CR <- cor(t(Z)))
+obs <- t(qnorm(do.call("cbind", lapply(bf, rank, ties.method = "max")) / (nrow(bf) + 1)))
+(CR <- cor(t(obs)))
+
+ct <- lapply(bf, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
+obs2 <- do.call("rbind", lapply(ct, function(x) qnorm(cumsum(table(x)) / (length(x) + 1))[x]))
+max(abs(obs - obs2))
+
 ll <- function(parm) {
-    C <- ltMatrices(parm)
-    Cs <- standardize(chol = C)
-    -ldmvnorm(obs = Z, chol = Cs)
+    L <- ltMatrices(parm, names = vars)
+    object <- mvnorm(invchol = L)
+    -logLik(object, obs = obs, standardize = TRUE)
 }
+
 sc <- function(parm) {
-    C <- ltMatrices(parm)
-    Cs <- standardize(chol = C)
-    -rowSums(Lower_tri(destandardize(chol = C, 
-        score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
-}
-start <- t(chol(CR))
-start <- start[lower.tri(start)]
-op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
-            control = list(trace = FALSE), hessian = TRUE)
-
-chol2cov(standardize(chol = ltMatrices(op$par)))
-
-ct <- lapply(bodyfat, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
-obs <- do.call("rbind", lapply(ct, function(x) qnorm(cumsum(table(x)) / (length(x) + 1))[x]))
-max(abs(obs - Z))
-
-llC <- function(parm) {
     L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(chol = L)
-    -logLik(object, obs = obs, standardize = TRUE)
-}
-
-scC <- function(parm) {
-    L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(chol = L)
+    object <- mvnorm(invchol = L)
     -rowSums(Lower_tri(lLgrad(object, obs = obs, standardize = TRUE)$scale, diag = FALSE))
 }
 
-start <- op$par
-
+start <- rep(0, J * (J - 1) / 2)
 ll(start)
-sc(start)
-grad(ll, start)
 
-llC(start)
-scC(start)
-grad(llC, start)
+op <- optim(par = start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
 
-opC <- optim(par = start, fn = llC, gr = scC, hessian = TRUE)
-
-op$par
-opC$par
-
-op$value
-opC$value
-
-llL <- function(parm) {
-    L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(invchol = L)
-    -logLik(object, obs = obs, standardize = TRUE)
-}
-
-scL <- function(parm) {
-    L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(invchol = L)
-    -rowSums(Lower_tri(lLgrad(object, obs = obs, standardize = TRUE)$scale, diag = FALSE))
-}
-
-startL <- c(unclass(solve(ltMatrices(op$par))))
-llL(startL)
-
-opL <- optim(par = startL, fn = llL, gr = scL, hessian = TRUE)
-
-invchol2cov(standardize(invchol = ltMatrices(opL$par)))
+invchol2cov(Ls <- standardize(invchol = ltMatrices(op$par, names = vars)))
+as.array(Ls)["DEXfat",,]
 
 
 ### with margins
@@ -301,7 +257,7 @@ pidx <- rep(gl(J + 1, 1, labels = c(vars, "Lo")), c(sapply(ct, nlevels) - 1, J *
 start <- c(unlist(lapply(ct, function(x) {
     ret <- qnorm(cumsum(table(x)[-nlevels(x)]) / length(x))
     c(ret[1], diff(ret))
-})), rep(0, length.out = J * (J - 1) / 2))
+})), op$par)
 
 llim <- rep(1e-4, length.out = length(start))
 llim[pidx == "Lo"] <- -Inf
@@ -320,4 +276,75 @@ ll <- function(parm) {
     -logLik(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
 }
 
+X <- lapply(ct, function(x) {
+    X <- diag(nlevels(x))
+    X[lower.tri(X)] <- 1
+    X <- X[x,]
+})
+
+sc <- function(parm) {
+    plist <- split(parm, pidx)
+    plist[vars] <- lapply(plist[vars], cumsum)
+    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
+    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
+    rownames(lwr) <- rownames(upr) <- vars
+    L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
+    object <- mvnorm(invchol = L)
+    ret <- lLgrad(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    -c(do.call("c", lapply(vars, 
+                           function(v) 
+                               colSums(X[[v]][,-ncol(X[[v]])] * c(ret$upper[v,]) + 
+                                       X[[v]][,-2] * c(ret$lower[v,]), na.rm = TRUE))),
+       rowSums(Lower_tri(ret$scale, diag = FALSE)))
+}
+
 ll(start)
+cbind(sc(start), grad(ll, start))
+
+opM <- optim(par = start, fn = ll, gr = sc, 
+             lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+
+### with age-dependent correlation
+pidx <- rep(gl(J + 2, 1, labels = c(vars, "Lo", "Loage")), c(sapply(ct, nlevels) - 1, rep(J * (J - 1) / 2, 2)))
+llim <- c(llim, rep(-Inf, J * (J - 1) / 2))
+
+AGE <- matrix(bodyfat$age, ncol = nrow(bf), nrow = J * (J - 1) / 2, byrow = TRUE)
+
+ll <- function(parm) {
+    plist <- split(parm, pidx)
+    plist[vars] <- lapply(plist[vars], cumsum)
+    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
+    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
+    rownames(lwr) <- rownames(upr) <- vars
+    L <- ltMatrices(plist$Lo + AGE * plist$Loage , diag = FALSE, names = vars)
+    object <- mvnorm(invchol = L)
+    -logLik(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+}
+
+sc <- function(parm) {
+    plist <- split(parm, pidx)
+    plist[vars] <- lapply(plist[vars], cumsum)
+    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
+    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
+    rownames(lwr) <- rownames(upr) <- vars
+    L <- ltMatrices(plist$Lo + AGE * plist$Loage , diag = FALSE, names = vars)
+    object <- mvnorm(invchol = L)
+    ret <- lLgrad(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    ret$lower[!is.finite(ret$lower)] <- NA
+    ret$upper[!is.finite(ret$upper)] <- NA
+    -c(do.call("c", lapply(vars, 
+                           function(v) 
+                               colSums(X[[v]][,-ncol(X[[v]])] * c(ret$upper[v,]) + 
+                                       X[[v]][,-2] * c(ret$lower[v,]), na.rm = TRUE))),
+       rowSums(Lower_tri(ret$scale, diag = FALSE), na.rm = TRUE), 
+       rowSums(AGE * Lower_tri(ret$scale, diag = FALSE), na.rm = TRUE))
+}
+
+start <- c(start, 0)
+
+ll(start)
+cbind(sc(start), grad(ll, start))
+
+opA <- optim(par = start, fn = ll, gr = sc, 
+             lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+
