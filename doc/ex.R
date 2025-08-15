@@ -348,3 +348,59 @@ cbind(sc(start), grad(ll, start))
 opA <- optim(par = start, fn = ll, gr = sc, 
              lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
 
+### SEM
+
+### competing risks
+data("follic", package = "randomForestSRC")
+library("survival")
+  
+## Therapy:
+### Radiotherapy alone (RT) or Chemotherapy + Radiotherapy (CMTRT)
+follic$ch <- factor(as.character(follic$ch),
+  levels = c("N", "Y"), labels = c("RT", "CMTRT")) 
+  
+## Set-up `Surv' object for "Compris":
+### "status" needs to be given in with levels:
+### 1: for independent censoring, 
+### 2: for the event of interest,
+### 3: dependent censoring 
+follic$status <- factor(follic$status, levels = 0:2,
+  labels = c("admin_cens", "relapse", "death"))
+  
+cmpr <- data.frame(time = with(follic, Surv(time = time, event = status)), 
+                   trt = follic$ch)
+
+start <- c(0, 1, 0, 1, 0)
+
+ll <- function(parm) {
+    prelap <- parm[1:2]
+    pdeath <- parm[3:4]
+    lambda <- parm[5]
+    hrelap <- prelap[1] + prelap[2] * log(cmpr$time[,1])
+    hdeath <- pdeath[1] + pdeath[2] * log(cmpr$time[,1])
+    L <- ltMatrices(lambda, names = c("relap", "death"))
+    object <- mvnorm(invchol = L)
+    ret <- 0
+    ret <- ret + logLik(object, 
+                        obs = rbind(relap = hrelap[cmpr$time[,2] == 1]),
+                        lower = rbind(death = hdeath[cmpr$time[,2] == 1]),
+                        upper = rbind(death = rep(Inf, sum(cmpr$time[,2] == 1))),
+                        standardize = TRUE)
+    ret <- ret +  logLik(object, 
+                         obs = rbind(death = hdeath[cmpr$time[,2] == 2]),
+                         lower = rbind(relap = hrelap[cmpr$time[,2] == 2]),
+                         upper = rbind(relap = rep(Inf, sum(cmpr$time[,2] == 2))),
+                         standardize = TRUE)
+    ret <- ret +  logLik(object, 
+                         lower = rbind(relap = hrelap[cmpr$time[,2] == 0], 
+                                       death = hdeath[cmpr$time[,2] == 0]), 
+                         upper = rbind(relap = rep(Inf, sum(cmpr$time[,2] == 0)),
+                                       death = rep(Inf, sum(cmpr$time[,2] == 0))),
+                         standardize = TRUE, seed = 2908, M = 1000)
+    - ret
+}
+
+ll(start)
+
+llim <- c(-Inf, 1e-4, -Inf, 1e-4, -Inf)
+optim(start, fn = ll, lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
