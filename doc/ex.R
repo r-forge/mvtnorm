@@ -354,51 +354,72 @@ HS.model <- ' visual  =~ x1 + x2 + x3
               speed   =~ x7 + x8 + x9 '
      
 fit <- cfa(HS.model, data = HolzingerSwineford1939)
+### meanstructure = TRUE for additional means
 summary(fit, fit.measures = TRUE)
 
 latJ <- 3
 lat <- c("visual", "textual", "speed")
 man <- paste0("x", 1:9)
-obs <- t(as.matrix(HolzingerSwineford1939[, man]))
+manJ <- length(man)
+# obs <- t(as.matrix(HolzingerSwineford1939[, man]))
+obs <- t(scale(HolzingerSwineford1939[,man], center = TRUE, scale = FALSE))
+
+z6 <- rep(0, 6)
+z3 <- rep(0, 3)
+z9 <- rep(0, 9)
 
 ll <- function(parm) {
-    Lo <- matrix(parm[1:12], nrow = 3)
-    L <- diag(parm[13:24])
-    L[2:3,1] <- Lo[1:2,1]
-    L[3,2] <- Lo[3,1]
-    L[4:6,1] <- Lo[,2]
-    L[7:9,2] <- Lo[,3]
-    L[10:12,3] <- Lo[,4]
-    L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE, names = c(lat, man))
-    nu <- parm[-(1:24)]
-    object <- mvnorm(invchol = L, invcholmean = c(rep(0, 3), nu))
+    Lo <- parm[1:9]
+    Ld <- parm[10:21]
+    od <- c(Lo[1:2], 1, Lo[4:5], z6, Lo[3], z3, 1, Lo[6:7], z9, 1, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
+    L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
+    diagonals(L) <- Ld
+#    nu <- parm[-(1:21)]
+    object <- mvnorm(invchol = L)#, invcholmean = c(z3, nu))
     -logLik(object, obs = obs)
 }
 
 sc <- function(parm) {
-    Lo <- matrix(parm[1:12], nrow = 3)
-    L <- diag(parm[13:24])
-    L[2:3,1] <- Lo[1:2,1]
-    L[3,2] <- Lo[3,1]
-    L[4:6,1] <- Lo[,2]
-    L[7:9,2] <- Lo[,3]
-    L[10:12,3] <- Lo[,4]
-    L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE, names = c(lat, man))
-    nu <- parm[-(1:24)]
-    object <- mvnorm(invchol = L, invcholmean = c(rep(0, 3), nu))
+    Lo <- parm[1:9]
+    Ld <- parm[10:21]
+    od <- c(Lo[1:2], NA, Lo[4:5], z6, Lo[3], z3, NA, Lo[6:7], z9, NA, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
+    nn <- which(abs(od) > 0)
+    od[is.na(od)] <- 1.0
+    L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
+    diagonals(L) <- Ld
+#    nu <- parm[-(1:21)]
+    object <- mvnorm(invchol = L)#, invcholmean = c(z3, nu))
     ret <- lLgrad(object, obs = obs)
-    idx <- (abs(L) > 0)[lower.tri(L, diag = FALSE)]
-    Lower.ret$scale
+    so <- rowSums(Lower_tri(ret$scale, diag = FALSE)[nn,])
+    so <- so[c(1, 2, 5, 3:4, 6:9)]
+    sd <- rowSums(diagonals(ret$scale))
+#    sn <- rowSums(ret$invcholmean[-(1:3),])
+    - c(so, sd)#, sn)		
 }
 
-llim <- rep(-Inf, 24 + 9)
-llim[13:24] <- 1e-4
+llim <- rep(-Inf, 21)# + 9)
+llim[10:21] <- 1e-4
 
-start <- rep(.1, 24 + 9)
+start <- rep(.1, 21)# + 9)
+
+ll(start)
+sc(start)
+grad(ll, start)
     
-opCFA <- optim(par = start, fn = ll, # gr = sc, 
+opCFA <- optim(par = start, fn = ll, gr = sc, 
                lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
 
+-opCFA$value
+length(opCFA$value)
+logLik(fit)
+
+Lo <- opCFA$par[1:9]
+Ld <- opCFA$par[10:21]
+od <- c(Lo[1:2], NA, Lo[4:5], z6, Lo[3], z3, NA, Lo[6:7], z9, NA, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
+od[is.na(od)] <- 1.0
+L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
+diagonals(L) <- Ld
+L
 
 
 ### competing risks
