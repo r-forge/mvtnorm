@@ -1,5 +1,5 @@
 
-pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv", "lavaan")
+pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv", "lavaan", "tram")
 
 ip <- rownames(installed.packages())
 if (any(!pkgs %in% ip))
@@ -447,9 +447,9 @@ cmpr <- data.frame(time = with(follic, Surv(time = time, event = status)),
 start <- c(0, 1, 0, 1, 0)
 
 etab <- table(cmpr$time[,2])
+ecens <- cmpr$time[,2] == 0
 erelap <- cmpr$time[,2] == 1
 edeath <- cmpr$time[,2] == 2
-ecens <- cmpr$time[,2] == 0
 
 ll <- function(parm) {
     prelap <- parm[1:2]
@@ -464,22 +464,49 @@ ll <- function(parm) {
                         obs = rbind(relap = hrelap[erelap]),
                         lower = rbind(death = hdeath[erelap]),
                         upper = rbind(death = rep(Inf, etab[2])),
-                        standardize = TRUE) + etab[2] * log(prelap[2])
-    ret <- ret +  logLik(object, 
-                         obs = rbind(death = hdeath[edeath]),
-                         lower = rbind(relap = hrelap[edeath]),
-                         upper = rbind(relap = rep(Inf, etab[3])),
-                         standardize = TRUE) + etab[3] * log(pdeath[2])
-    ret <- ret +  logLik(object, 
-                         lower = rbind(relap = hrelap[ecens], 
-                                       death = hdeath[ecens]), 
-                         upper = rbind(relap = rep(Inf, etab[1]),
-                                       death = rep(Inf, etab[1])),
-                         standardize = TRUE, seed = 2908, M = 1000)
+                        standardize = TRUE) + sum(log(prelap[2] / cmpr$time[erelap,1]))
+    ret <- ret + logLik(object, 
+                        obs = rbind(death = hdeath[edeath]),
+                        lower = rbind(relap = hrelap[edeath]),
+                        upper = rbind(relap = rep(Inf, etab[3])),
+                        standardize = TRUE) + sum(log(pdeath[2] / cmpr$time[edeath,1]))
+    ret <- ret + logLik(object, 
+                        lower = rbind(relap = hrelap[ecens], 
+                                      death = hdeath[ecens]), 
+                        upper = rbind(relap = rep(Inf, etab[1]),
+                                      death = rep(Inf, etab[1])),
+                        standardize = TRUE, seed = 2908, M = 1000)
     - ret
 }
 
 ll(start)
 
 llim <- c(-Inf, 1e-4, -Inf, 1e-4, -Inf)
-optim(start, fn = ll, lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+opCMP <- optim(start, fn = ll, lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+
+m <- Compris(time ~ 1, data = cmpr, primary = "BoxCox", 
+             log_first = TRUE, order = 1, 
+args = list(seed = 2908, type = "MC", M = 1000))
+
+tm <- 1:10
+predict(m$models[[1]]$Event_relapse, q = tm)
+opCMP$par[1] + opCMP$par[2] * log(tm)
+
+y <- predict(m$models[[1]]$Event_relapse, q = tm)
+cf <- coef(lm(y ~ log(tm)))
+
+predict(m$models[[1]]$Event_death, q = tm)
+opCMP$par[3] + opCMP$par[4] * log(tm)
+
+cf <- c(cf, coef(m)[-(1:2)])
+
+ll(cf)
+
+### note: negative lambda
+mC <- Compris(time ~ 1, data = cmpr, primary = "Coxph", 
+             log_first = TRUE, order = 1, 
+args = list(seed = 2908, type = "MC", M = 1000))
+
+### lambda extremely variable
+sqrt(diag(vcov(m)))
+sqrt(diag(vcov(mC)))
