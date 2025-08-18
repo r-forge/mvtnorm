@@ -421,6 +421,8 @@ L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
 diagonals(L) <- Ld
 L
 
+round(as.array(invchol2cov(L))[man,man,1], 3)
+fitted(fit)
 
 ### competing risks
 data("follic", package = "randomForestSRC")
