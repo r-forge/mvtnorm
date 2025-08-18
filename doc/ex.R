@@ -1,6 +1,5 @@
 
-### Diagnostic tests
-pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv")
+pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv", "lavaan")
 
 ip <- rownames(installed.packages())
 if (any(!pkgs %in% ip))
@@ -10,6 +9,7 @@ OK <- sapply(pkgs, require, character.only = TRUE)
 if (!all(OK)) 
     stop("package(s) ", paste(pkgs[!OK], collapse = ", "), " not available")
 
+### Diagnostic tests
 ### Load data
 if (file.exists("HCC.rda")) {
     load("HCC.rda")
@@ -122,7 +122,7 @@ HCC$llR <- logLik(m0, obs = obs, logLik = FALSE) - logLik(m1, obs = obs, logLik 
 boxplot(llR ~ x, data = HCC)
 abline(h = 0, col = "red")
 
-### discrete QDA
+### mixed discrete-continuous QDA
 iHCC <- HCC
 qOPN <- quantile(HCC$OPN, probs = 1:4 / 5)
 iHCC$OPN <- cut(iHCC$OPN, breaks = c(-Inf, qOPN, Inf))
@@ -226,8 +226,6 @@ obs <- t(qnorm(do.call("cbind", lapply(bf, rank, ties.method = "max")) / (nrow(b
 (CR <- cor(t(obs)))
 
 ct <- lapply(bf, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
-obs2 <- do.call("rbind", lapply(ct, function(x) qnorm(cumsum(table(x)) / (length(x) + 1))[x]))
-max(abs(obs - obs2))
 
 ll <- function(parm) {
     L <- ltMatrices(parm, names = vars)
@@ -348,7 +346,60 @@ cbind(sc(start), grad(ll, start))
 opA <- optim(par = start, fn = ll, gr = sc, 
              lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
 
-### SEM
+### SEM: CFA
+data("HolzingerSwineford1939", package = "lavaan")
+## The famous Holzinger and Swineford (1939) example
+HS.model <- ' visual  =~ x1 + x2 + x3
+              textual =~ x4 + x5 + x6
+              speed   =~ x7 + x8 + x9 '
+     
+fit <- cfa(HS.model, data = HolzingerSwineford1939)
+summary(fit, fit.measures = TRUE)
+
+latJ <- 3
+lat <- c("visual", "textual", "speed")
+man <- paste0("x", 1:9)
+obs <- t(as.matrix(HolzingerSwineford1939[, man]))
+
+ll <- function(parm) {
+    Lo <- matrix(parm[1:12], nrow = 3)
+    L <- diag(parm[13:24])
+    L[2:3,1] <- Lo[1:2,1]
+    L[3,2] <- Lo[3,1]
+    L[4:6,1] <- Lo[,2]
+    L[7:9,2] <- Lo[,3]
+    L[10:12,3] <- Lo[,4]
+    L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE, names = c(lat, man))
+    nu <- parm[-(1:24)]
+    object <- mvnorm(invchol = L, invcholmean = c(rep(0, 3), nu))
+    -logLik(object, obs = obs)
+}
+
+sc <- function(parm) {
+    Lo <- matrix(parm[1:12], nrow = 3)
+    L <- diag(parm[13:24])
+    L[2:3,1] <- Lo[1:2,1]
+    L[3,2] <- Lo[3,1]
+    L[4:6,1] <- Lo[,2]
+    L[7:9,2] <- Lo[,3]
+    L[10:12,3] <- Lo[,4]
+    L <- ltMatrices(L[lower.tri(L, diag = TRUE)], diag = TRUE, names = c(lat, man))
+    nu <- parm[-(1:24)]
+    object <- mvnorm(invchol = L, invcholmean = c(rep(0, 3), nu))
+    ret <- lLgrad(object, obs = obs)
+    idx <- (abs(L) > 0)[lower.tri(L, diag = FALSE)]
+    Lower.ret$scale
+}
+
+llim <- rep(-Inf, 24 + 9)
+llim[13:24] <- 1e-4
+
+start <- rep(.1, 24 + 9)
+    
+opCFA <- optim(par = start, fn = ll, # gr = sc, 
+               lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+
+
 
 ### competing risks
 data("follic", package = "randomForestSRC")
@@ -372,6 +423,11 @@ cmpr <- data.frame(time = with(follic, Surv(time = time, event = status)),
 
 start <- c(0, 1, 0, 1, 0)
 
+etab <- table(cmpr$time[,2])
+erelap <- cmpr$time[,2] == 1
+edeath <- cmpr$time[,2] == 2
+ecens <- cmpr$time[,2] == 0
+
 ll <- function(parm) {
     prelap <- parm[1:2]
     pdeath <- parm[3:4]
@@ -382,20 +438,20 @@ ll <- function(parm) {
     object <- mvnorm(invchol = L)
     ret <- 0
     ret <- ret + logLik(object, 
-                        obs = rbind(relap = hrelap[cmpr$time[,2] == 1]),
-                        lower = rbind(death = hdeath[cmpr$time[,2] == 1]),
-                        upper = rbind(death = rep(Inf, sum(cmpr$time[,2] == 1))),
-                        standardize = TRUE)
+                        obs = rbind(relap = hrelap[erelap]),
+                        lower = rbind(death = hdeath[erelap]),
+                        upper = rbind(death = rep(Inf, etab[2])),
+                        standardize = TRUE) + etab[2] * log(prelap[2])
     ret <- ret +  logLik(object, 
-                         obs = rbind(death = hdeath[cmpr$time[,2] == 2]),
-                         lower = rbind(relap = hrelap[cmpr$time[,2] == 2]),
-                         upper = rbind(relap = rep(Inf, sum(cmpr$time[,2] == 2))),
-                         standardize = TRUE)
+                         obs = rbind(death = hdeath[edeath]),
+                         lower = rbind(relap = hrelap[edeath]),
+                         upper = rbind(relap = rep(Inf, etab[3])),
+                         standardize = TRUE) + etab[3] * log(pdeath[2])
     ret <- ret +  logLik(object, 
-                         lower = rbind(relap = hrelap[cmpr$time[,2] == 0], 
-                                       death = hdeath[cmpr$time[,2] == 0]), 
-                         upper = rbind(relap = rep(Inf, sum(cmpr$time[,2] == 0)),
-                                       death = rep(Inf, sum(cmpr$time[,2] == 0))),
+                         lower = rbind(relap = hrelap[ecens], 
+                                       death = hdeath[ecens]), 
+                         upper = rbind(relap = rep(Inf, etab[1]),
+                                       death = rep(Inf, etab[1])),
                          standardize = TRUE, seed = 2908, M = 1000)
     - ret
 }
