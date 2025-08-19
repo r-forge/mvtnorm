@@ -55,7 +55,7 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
         else
             nonames <- TRUE
     } else {
-        names <- as.character(1:J)
+        names <- as.character(seq_len(J))
     }
 
     if (!nonames) {
@@ -187,8 +187,11 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
 as.array.syMatrices <- function(x, ...)
     return(as.array.ltMatrices(x, symmetric = TRUE))
 
-print.ltMatrices <- function(x, ...)
-    print(as.array(x))
+print.ltMatrices <- function(x, zero.print = ".", ...) {
+    if (is.null(attr(x, "dimnames")[[2L]]))
+        attr(x, "dimnames")[[2L]] <- as.character(seq_len(dim(x)[1L]))
+    print(as.table(as.array(x)), zero.print = zero.print, ...)
+}
 
 print.syMatrices <- function(x, ...)
     print(as.array(x))

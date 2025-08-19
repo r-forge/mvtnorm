@@ -386,7 +386,7 @@ order on request (for later printing)
 \mbox{}\verb@    else@\\
 \mbox{}\verb@        nonames <- TRUE@\\
 \mbox{}\verb@} else {@\\
-\mbox{}\verb@    names <- as.character(1:J)@\\
+\mbox{}\verb@    names <- as.character(seq_len(J))@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@if (!nonames) {@\\
@@ -713,8 +713,11 @@ triangular matrix to by interpreted as a symmetric matrix.
 \mbox{}\verb@as.array.syMatrices <- function(x, ...)@\\
 \mbox{}\verb@    return(as.array.ltMatrices(x, symmetric = TRUE))@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@print.ltMatrices <- function(x, ...)@\\
-\mbox{}\verb@    print(as.array(x))@\\
+\mbox{}\verb@print.ltMatrices <- function(x, zero.print = ".", ...) {@\\
+\mbox{}\verb@    if (is.null(attr(x, "dimnames")[[2L]]))@\\
+\mbox{}\verb@        attr(x, "dimnames")[[2L]] <- as.character(seq_len(dim(x)[1L]))@\\
+\mbox{}\verb@    print(as.table(as.array(x)), zero.print = zero.print, ...)@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@print.syMatrices <- function(x, ...)@\\
 \mbox{}\verb@    print(as.array(x))@\\
@@ -7083,16 +7086,17 @@ iris data, let's set up a model for these four classical variables
 <<gc-classical>>=
 data("iris", package = "datasets")
 J <- 4
-Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank)) / (nrow(iris) + 1)))
+Z <- t(qnorm(do.call("cbind", lapply(iris[1:J], rank, ties.method = "max")) / 
+       (nrow(iris) + 1)))
 (CR <- cor(t(Z)))
 ll <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -ldmvnorm(obs = Z, chol = Cs)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -rowSums(Lower_tri(destandardize(chol = C, 
         score_schol = sldmvnorm(obs = Z, chol = Cs)$chol)))
 }
@@ -7103,7 +7107,7 @@ if (require("numDeriv", quietly = TRUE))
 op <- optim(start, fn = ll, gr = sc, method = "BFGS", 
             control = list(trace = FALSE), hessian = TRUE)
 op$value
-S_ML <- chol2cov(standardize(ltMatrices(op$par)))
+S_ML <- chol2cov(standardize(chol = ltMatrices(op$par)))
 @
 
 This approach is of course a bit strange, because we estimate the marginal
@@ -7130,12 +7134,12 @@ if (require("qrng", quietly = TRUE)) {
 
 ll <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -lpmvnorm(lower = lwr, upper = upr, chol = Cs, M = M, w = W)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm)
-    Cs <- standardize(C)
+    Cs <- standardize(chol = C)
     -rowSums(Lower_tri(destandardize(chol = C, 
         score_schol = slpmvnorm(lower = lwr, upper = upr, chol = Cs, 
                                M = M, w = W)$chol)))
@@ -7144,7 +7148,7 @@ if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 op2 <- optim(start, fn = ll, gr = sc, method = "BFGS", 
              control = list(trace = FALSE), hessian = TRUE)
-S_NPML <- chol2cov(standardize(ltMatrices(op2$par)))
+S_NPML <- chol2cov(standardize(chol = ltMatrices(op2$par)))
 @
 
 For $N = \Sexpr{nrow(iris)}$, the difference is (as expected) marginal:
@@ -7163,6 +7167,10 @@ if (!inherits(sd_NPML, "try-error")) {
     print(sd_NPML)
 }
 @
+
+However, we are still in the wrong, because we pretended we know the
+marginal distribution functions. A holistic approach would estimate the
+marginal empirical distributions and the copula parameters simultaneously.
 
 \chapter{Joint Mean and Covariance Estimation} \label{ch:joint}
 
@@ -7364,8 +7372,9 @@ all.equal(unname(nsc(start)), grad(nll, start))
 \end{flushleft}
 The tools provided in the previous chapters are rather low-level, so we will
 invest some time into setting-up a more high-level interface for
-representing normal models, either as $\ND_\J(\muvec, \mC \mC^\top)$ or
-$\ND_\J(\muvec, \mL^{-1} \mL^{-\top})$, for simulating from such models, and
+representing normal models, either as $\ND_\J(\muvec, \mC \mC^\top)$, or
+$\ND_\J(\muvec, \mL^{-1} \mL^{-\top})$, or $\ND_\J(\mL^{-1} \nuvec, \mL^{-1}
+\mL^{-\top})$, or $\ND_\J(\mC \nuvec, \mC \mC^\top)$, for simulating from such models, and
 for evaluating the log-likelihood and corresponding score functions. The
 latter functionality shall also work when only incomplete (variables are
 missing) or censored (observations are only known as intervals) data is
@@ -7926,7 +7935,7 @@ logLik(object = iris_cmvn, obs = t(iris[,rev(vars[-j])]))
 
 The hardest task is the implementation of a score function which features
 the same options as the log-likelihood function and provides the gradients
-with respect not only to the parameters ($\mu$ and $\mC$ or $\mL$), but also
+with respect not only to the parameters ($\muvec$ or $\nuvec$ and $\mC$ or $\mL$), but also
 with respect to the data objects \code{obs}, \code{lower}, and \code{upper}.
 
 In essence, we have to repair the damage imposed by a series of
@@ -8284,16 +8293,15 @@ the iris dataset
 <<iris-lLgrad>>=
 J <- length(vars)
 obs <- t(iris[, vars])
-lower <- upper <- NULL
 ll <- function(parm) {
     C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(mean = parm[1:J], chol = C)
-    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+    -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
     C <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(mean = parm[1:J], chol = C)
-    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$mean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
 @
@@ -8304,7 +8312,9 @@ maximum-likelihood estimates, is actually zero.
 
 <<iris-ML>>=
 start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
-max(abs(sc(start))) < sqrt(.Machine$double.eps)
+llim <- rep(-Inf, J + J * (J + 1) / 2)
+llim[J + c(diagonals(ltMatrices(seq_len(J * (J + 1) / 2), diag = TRUE)))] <-
+1e-4
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = FALSE))
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
@@ -8327,18 +8337,15 @@ We now check if we can obtain corresponding results when jointly optimising
 the scaled mean $\nuvec$ and the inverse Cholesky factor $\mL$:
 
 <<iris-lLgrad-nu>>=
-J <- length(vars)
-obs <- t(iris[, vars])
-lower <- upper <- NULL
 ll <- function(parm) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+    -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$invcholmean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
 ### note: This is a convex problem now, so (here incorrect) 
@@ -8371,8 +8378,12 @@ case
 
 <<iris-interval>>=
 v1 <- vars[1]
-q1 <- quantile(iris[[v1]], probs = 1:9 / 10)
+q1 <- quantile(iris[[v1]], probs = 1:4 / 5)
 head(f1 <- cut(iris[[v1]], breaks = c(-Inf, q1, Inf)))
+lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
+upper <- matrix(c(q1, Inf)[f1], nrow = 1)
+rownames(lower) <- rownames(upper) <- v1
+obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
 @
 
 The only necessary modification to our code is the specification of
@@ -8385,12 +8396,30 @@ simultaneously and therefore opt for the parameterisation in terms of
 $\nuvec$ and $\mL$ because this leads to a convex optimisation problem also
 for interval-censored observations as mentioned in Chapter~\ref{ch:joint}.
 
+One additional tweak is necessary for dealing with extreme parameter values
+assigning a likelihood of numerically zero to some observations. In this
+case, the score function is not defined (because we divide the derivative by
+the likelihood). The corresponding values should be \code{NA} and removed
+from the summation.
+
 <<iris-MLi>>=
-lower <- matrix(c(-Inf, q1)[f1], nrow = 1)
-upper <- matrix(c(q1, Inf)[f1], nrow = 1)
-rownames(lower) <- rownames(upper) <- v1
-obs <- obs[!rownames(obs) %in% v1,,drop = FALSE]
-start <- opL$par + .1
+ll <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+}
+sc <- function(parm) {
+    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
+    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
+    ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
+    -c(rowSums(ret$invcholmean, na.rm = TRUE), 
+       rowSums(Lower_tri(ret$scale, diag = TRUE), na.rm = TRUE))
+}
+@
+
+<<iris-MLi-opt>>=
+start <- opL$par
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 

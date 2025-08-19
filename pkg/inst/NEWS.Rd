@@ -7,6 +7,8 @@
     \itemize{
       \item \code{mvnorm} gains a \code{invcholmean} argument allowing a
              parameterisation leading to convex optimisation problems.
+      \item Added \code{zero.print = "."} argument for printing lower
+            triangular matrices.
     }
   }
   \subsection{Bugfixes}{
