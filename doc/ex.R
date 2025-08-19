@@ -9,6 +9,8 @@ OK <- sapply(pkgs, require, character.only = TRUE)
 if (!all(OK)) 
     stop("package(s) ", paste(pkgs[!OK], collapse = ", "), " not available")
 
+CHKsc <- FALSE
+
 ### Diagnostic tests
 ### Load data
 if (file.exists("HCC.rda")) {
@@ -64,7 +66,8 @@ sc <- function(parm) {
 
 ll(start)
 sc(start)
-grad(ll, start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
 
 (opLDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower =
 plim))
@@ -104,7 +107,8 @@ sc <- function(parm) {
 
 ll(start)
 sc(start)
-grad(ll, start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
 
 (opQDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower = plim))
 
@@ -168,7 +172,8 @@ sc <- function(parm) {
 start <- opQDA$par
 ll(start)
 sc(start)
-grad(ll, start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
 
 (iopQDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower =
 plim))
@@ -245,8 +250,12 @@ ll(start)
 op <- optim(par = start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
 
 invchol2cov(Ls <- standardize(invchol = ltMatrices(op$par, names = vars)))
-as.array(Ls)["DEXfat",,]
+- as.array(Ls)["DEXfat",vars[vars != "DEXfat"],] / as.array(Ls)["DEXfat","DEXfat",]
 
+coef(lm(DEXfat ~ 0 + ., data = as.data.frame(t(obs))))
+
+### Standard errors
+ltMatrices(sqrt(diag(solve(op$hessian))), names = vars)
 
 ### with margins
 
@@ -289,18 +298,33 @@ sc <- function(parm) {
     L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
     object <- mvnorm(invchol = L)
     ret <- lLgrad(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    ret$upper[!is.finite(ret$upper)] <- NA
+    ret$lower[!is.finite(ret$lower)] <- NA
     -c(do.call("c", lapply(vars, 
                            function(v) 
                                colSums(X[[v]][,-ncol(X[[v]])] * c(ret$upper[v,]) + 
                                        X[[v]][,-2] * c(ret$lower[v,]), na.rm = TRUE))),
-       rowSums(Lower_tri(ret$scale, diag = FALSE)))
+       rowSums(Lower_tri(ret$scale, diag = FALSE), na.rm = TRUE))
 }
 
 ll(start)
-cbind(sc(start), grad(ll, start))
+sc(start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
 
 opM <- optim(par = start, fn = ll, gr = sc, 
-             lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+             lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
+
+invchol2cov(Ls <- standardize(invchol = ltMatrices(split(opM$par, pidx)[["Lo"]], names = vars)))
+- as.array(Ls)["DEXfat",vars[vars != "DEXfat"],] / as.array(Ls)["DEXfat","DEXfat",]
+
+coef(lm(DEXfat ~ 0 + ., data = as.data.frame(t(obs))))
+
+### Standard errors
+as.array(ltMatrices(sqrt(diag(solve(op$hessian))), names = vars))["DEXfat",,1]
+as.array(ltMatrices(split(sqrt(diag(solve(opM$hessian))), pidx)[["Lo"]], names =
+vars))["DEXfat",,1]
+
 
 ### with age-dependent correlation
 pidx <- rep(gl(J + 2, 1, labels = c(vars, "Lo", "Loage")), c(sapply(ct, nlevels) - 1, rep(J * (J - 1) / 2, 2)))
@@ -338,13 +362,20 @@ sc <- function(parm) {
        rowSums(AGE * Lower_tri(ret$scale, diag = FALSE), na.rm = TRUE))
 }
 
-start <- c(start, 0)
+start <- c(start, rep(0, J * (J - 1) / 2))
 
 ll(start)
-cbind(sc(start), grad(ll, start))
+sc(start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
 
 opA <- optim(par = start, fn = ll, gr = sc, 
-             lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+             lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
+
+pchisq(2 * (opA$value - opM$value), df = length(opA$par) - length(opM$par), lower.tail = FALSE)
+
+split(opA$par, pidx)[["Loage"]]
+# split(sqrt(diag(solve(opA$hessian))), pidx)[["Loage"]]
 
 ### SEM: CFA
 data("HolzingerSwineford1939", package = "lavaan")
@@ -404,7 +435,8 @@ start <- rep(.1, 21)# + 9)
 
 ll(start)
 sc(start)
-grad(ll, start)
+if (CHKsc)
+  print(all.equal(sc(start), grad(ll, start)))
     
 opCFA <- optim(par = start, fn = ll, gr = sc, 
                lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
@@ -482,25 +514,14 @@ ll <- function(parm) {
 ll(start)
 
 llim <- c(-Inf, 1e-4, -Inf, 1e-4, -Inf)
-opCMP <- optim(start, fn = ll, lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
+opCMP <- optim(start, fn = ll, lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
+
+opCMP$par
+sqrt(diag(solve(opCMP$hessian)))
 
 m <- Compris(time ~ 1, data = cmpr, primary = "BoxCox", 
              log_first = TRUE, order = 1, 
-args = list(seed = 2908, type = "MC", M = 1000))
-
-tm <- 1:10
-predict(m$models[[1]]$Event_relapse, q = tm)
-opCMP$par[1] + opCMP$par[2] * log(tm)
-
-y <- predict(m$models[[1]]$Event_relapse, q = tm)
-cf <- coef(lm(y ~ log(tm)))
-
-predict(m$models[[1]]$Event_death, q = tm)
-opCMP$par[3] + opCMP$par[4] * log(tm)
-
-cf <- c(cf, coef(m)[-(1:2)])
-
-ll(cf)
+             args = list(seed = 2908, type = "MC", M = 1000))
 
 ### note: negative lambda
 mC <- Compris(time ~ 1, data = cmpr, primary = "Coxph", 
