@@ -229,6 +229,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<logdet ltMatrices@>
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
+@<%*% crossprod tcrossprod methods@>
 @<chol syMatrices@>
 @<add diagonal elements@>
 @<assign diagonal elements@>
@@ -1771,6 +1772,109 @@ chk(d, apply(a, 3, diag))
 chk(d, diagonals(Crossprod(lxd)))
 @@
 
+We now also add methods implementing a standard user interface
+
+@d %*% crossprod tcrossprod methods
+@{
+crossprod.ltMatrices <- function(x, y = NULL, ...) {
+
+    if (is.null(y))
+        return(Crossprod(x = x))
+    return(Mult(x, y, transpose = TRUE))
+}
+
+crossprod.syMatrices <- crossprod.ltMatrices
+
+tcrossprod.ltMatrices <- function(x, y = NULL, ...) {
+
+    if (is.null(y))
+        return(Tcrossprod(x = x))
+    return(Mult(x, y, transpose = FALSE))
+}
+
+tcrossprod.syMatrices <- tcrossprod.ltMatrices
+
+'%*%.ltMatrices' <- function(x, y)
+    Mult(x, y)
+
+'%*%.syMatrices' <- function(x, y)
+    Mult(x, y)
+@}
+
+which allows coding closer to the standard
+
+<<ex-tcrossprod-2>>=
+### tcrossprod
+a <- as.array(tcrossprod(lxn))
+b <- array(apply(as.array(lxn), 3L, function(x) tcrossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxn)))
+chk(a, b, check.attributes = FALSE)
+
+a <- as.array(tcrossprod(lxd))
+b <- array(apply(as.array(lxd), 3L, function(x) tcrossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxd)))
+chk(a, b, check.attributes = FALSE)
+
+## crossprod
+a <- as.array(crossprod(lxn))
+b <- array(apply(as.array(lxn), 3L, function(x) crossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxn)))
+chk(a, b, check.attributes = FALSE)
+
+a <- as.array(crossprod(lxd))
+b <- array(apply(as.array(lxd), 3L, function(x) crossprod(x), simplify = TRUE), 
+           dim = rev(dim(lxd)))
+chk(a, b, check.attributes = FALSE)
+@@
+
+Multiplication also works in this simple way
+<<ex-Mult>>=
+a <- lxn %*% y
+A <- as.array(lxn)
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+a <- lxd %*% y
+A <- as.array(lxd)
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(A[,,i] %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+### recycle C
+chk(lxn[rep(1, N),] %*% y, lxn[1,] %*% y, check.attributes = FALSE)
+
+### recycle y
+chk(lxn %*% y[,1], lxn %*% y[,rep(1, N)])
+
+### tcrossprod as multiplication
+i <- sample(1:N)[1]
+M <- t(as.array(lxn)[,,i])
+a <- sapply(1:J, function(j) lxn[i,] %*% M[,j,drop = FALSE])
+rownames(a) <- colnames(a) <- dimnames(lxn)[[2L]]
+b <- as.array(tcrossprod(lxn[i,]))[,,1]
+chk(a, b, check.attributes = FALSE)
+
+a <- crossprod(lxn, y)
+A <- as.array(lxn)
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+a <- crossprod(lxd, y)
+A <- as.array(lxd)
+b <- do.call("rbind", lapply(1:ncol(y), 
+    function(i) t(t(A[,,i]) %*% y[,i,drop = FALSE])))
+chk(a, t(b), check.attributes = FALSE)
+
+### recycle C
+chk(crossprod(lxn[rep(1, N),], y), 
+    crossprod(lxn[1,], y), check.attributes = FALSE)
+
+### recycle y
+chk(crossprod(lxn, y[,1]), 
+    crossprod(lxn, y[,rep(1, N)]))
+@@
 
 \section{Cholesky Factorisation}
 

@@ -579,6 +579,32 @@ Tcrossprod <- function(x, diag_only = FALSE)
 Crossprod <- function(x, diag_only = FALSE)
     .Tcrossprod(x, diag_only = diag_only, transpose = TRUE)
 
+# %*% crossprod tcrossprod methods
+
+crossprod.ltMatrices <- function(x, y = NULL, ...) {
+
+    if (is.null(y))
+        return(Crossprod(x = x))
+    return(Mult(x, y, transpose = TRUE))
+}
+
+crossprod.syMatrices <- crossprod.ltMatrices
+
+tcrossprod.ltMatrices <- function(x, y = NULL, ...) {
+
+    if (is.null(y))
+        return(Tcrossprod(x = x))
+    return(Mult(x, y, transpose = FALSE))
+}
+
+tcrossprod.syMatrices <- tcrossprod.ltMatrices
+
+'%*%.ltMatrices' <- function(x, y)
+    Mult(x, y)
+
+'%*%.syMatrices' <- function(x, y)
+    Mult(x, y)
+
 # chol syMatrices
 
 chol.syMatrices <- function(x, ...) {
