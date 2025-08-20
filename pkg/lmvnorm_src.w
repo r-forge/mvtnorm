@@ -1828,7 +1828,7 @@ chk(a, b, check.attributes = FALSE)
 @@
 
 Multiplication also works in this simple way
-<<ex-Mult>>=
+<<ex-Mult-2>>=
 a <- lxn %*% y
 A <- as.array(lxn)
 b <- do.call("rbind", lapply(1:ncol(y), 
@@ -1959,9 +1959,9 @@ This new \code{chol} method can be used to revert \code{Tcrossprod} for
 \code{ltMatrices} with and without unit diagonals:
 
 <<chol>>=
-Sigma <- Tcrossprod(lxd)
+Sigma <- tcrossprod(lxd)
 chk(chol(Sigma), lxd)
-Sigma <- Tcrossprod(lxn)
+Sigma <- tcrossprod(lxn)
 ## Sigma and chol(Sigma) always have diagonal, lxn doesn't
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
@@ -2394,7 +2394,7 @@ chk(unlist(Prec), c(as.array(invchol2pre(L))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(invchol2cor(L))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
+chk(unlist(CP), c(as.array(crossprod(invcholD(L)))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(invchol2pc(L))), 
     check.attributes = FALSE)
@@ -2414,7 +2414,7 @@ chk(unlist(Prec), c(as.array(chol2pre(C))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(chol2cor(C))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
+chk(unlist(CP), c(as.array(crossprod(solve(Dchol(C))))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(chol2pc(C))), 
     check.attributes = FALSE)
@@ -2434,7 +2434,7 @@ chk(unlist(Prec), c(as.array(invchol2pre(L))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(invchol2cor(L))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
+chk(unlist(CP), c(as.array(crossprod(invcholD(L)))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(invchol2pc(L))), 
     check.attributes = FALSE)
@@ -2454,7 +2454,7 @@ chk(unlist(Prec), c(as.array(chol2pre(C))),
     check.attributes = FALSE)
 chk(unlist(Corr), c(as.array(chol2cor(C))), 
     check.attributes = FALSE)
-chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
+chk(unlist(CP), c(as.array(crossprod(solve(Dchol(C))))), 
     check.attributes = FALSE)
 chk(unlist(PC), c(as.array(chol2pc(C))), 
     check.attributes = FALSE)
@@ -2741,23 +2741,23 @@ Let's check this against the commonly used formula based on the covariance
 matrix, first for the marginal distribution
 
 <<marg>>=
-Sigma <- Tcrossprod(lxd)
+Sigma <- tcrossprod(lxd)
 j <- 1:3
-chk(Sigma[,j], Tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
+chk(Sigma[,j], tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
 j <- 2:4
-chk(Sigma[,j], Tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
+chk(Sigma[,j], tcrossprod(marg_mvnorm(chol = lxd, which = j)$chol))
 
-Sigma <- Tcrossprod(solve(lxd))
+Sigma <- tcrossprod(solve(lxd))
 j <- 1:3
-chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
+chk(Sigma[,j], tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
 j <- 2:4
-chk(Sigma[,j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
+chk(Sigma[,j], tcrossprod(solve(marg_mvnorm(invchol = lxd, which = j)$invchol)))
 @@
 
 and then for conditional distributions. The general case is
 
 <<cond-general>>=
-Sigma <- as.array(Tcrossprod(lxd))[,,1]
+Sigma <- as.array(tcrossprod(lxd))[,,1]
 j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
@@ -2768,9 +2768,9 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 cmv <- cond_mvnorm(chol = lxd[1,], which_given = j, given = y)
 
 chk(cm, cmv$mean)
-chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
+chk(cS, as.array(tcrossprod(cmv$chol))[,,1])
 
-Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
+Sigma <- as.array(tcrossprod(solve(lxd)))[,,1]
 j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
@@ -2781,13 +2781,13 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 cmv <- cond_mvnorm(invchol = lxd[1,], which_given = j, given = y)
 
 chk(cm, cmv$mean)
-chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
+chk(cS, as.array(tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
 and the simple case is
 
 <<cond-simple>>=
-Sigma <- as.array(Tcrossprod(lxd))[,,1]
+Sigma <- as.array(tcrossprod(lxd))[,,1]
 j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
@@ -2798,9 +2798,9 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 cmv <- cond_mvnorm(chol = lxd[1,], which_given = j, given = y)
 
 chk(c(cm), c(cmv$mean))
-chk(cS, as.array(Tcrossprod(cmv$chol))[,,1])
+chk(cS, as.array(tcrossprod(cmv$chol))[,,1])
 
-Sigma <- as.array(Tcrossprod(solve(lxd)))[,,1]
+Sigma <- as.array(tcrossprod(solve(lxd)))[,,1]
 j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
@@ -2811,7 +2811,7 @@ cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*%
 cmv <- cond_mvnorm(invchol = lxd[1,], which_given = j, given = y)
 
 chk(c(cm), c(cmv$mean))
-chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[,,1])
+chk(cS, as.array(tcrossprod(solve(cmv$invchol)))[,,1])
 @@
 
 \section{Continuous Log-likelihoods}
@@ -3069,9 +3069,9 @@ lt <- ltMatrices(matrix(runif(N * J * (J + 1) / 2) + 1, ncol = N),
                  diag = TRUE, byrow = FALSE)
 Z <- matrix(rnorm(N * J), ncol = N)
 Y <- solve(lt, Z)
-ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
+ll1 <- sum(dnorm(lt %*% Y, log = TRUE)) + sum(log(diagonals(lt)))
 
-S <- as.array(Tcrossprod(solve(lt)))
+S <- as.array(tcrossprod(solve(lt)))
 ll2 <- sum(sapply(1:N, function(i) 
                            dmvnorm(x = Y[,i], sigma = S[,,i], log = TRUE)))
 chk(ll1, ll2)
@@ -3101,9 +3101,9 @@ conditional densities and we can check if this works for our example by
 md <- marg_mvnorm(invchol = lt, which = j)
 cd <- cond_mvnorm(invchol = lt, which_given = j, given = Y[j,])
 
-ll3 <- sum(dnorm(Mult(md$invchol, Y[j,]), log = TRUE)) + 
+ll3 <- sum(dnorm(md$invchol %*% Y[j,], log = TRUE)) + 
        sum(log(diagonals(md$invchol))) +
-       sum(dnorm(Mult(cd$invchol, Y[-j,] - cd$mean), log = TRUE)) + 
+       sum(dnorm(cd$invchol %*% (Y[-j,] - cd$mean), log = TRUE)) + 
        sum(log(diagonals(cd$invchol)))
 chk(ll1, ll3)
 @@
@@ -4379,7 +4379,7 @@ BYROW <- FALSE   ### later checks
 lt <- ltMatrices(lt, 
                  byrow = BYROW)   ### convert to row-major
 chk(C, as.array(lt)[,,1], check.attributes = FALSE)
-chk(Sigma, as.array(Tcrossprod(lt))[,,1], check.attributes = FALSE)
+chk(Sigma, as.array(tcrossprod(lt))[,,1], check.attributes = FALSE)
 @@
 
 We generate some data from $\ND_\J(\mathbf{0}_\J, \Sigma)$ by first sampling
@@ -4389,7 +4389,7 @@ from $\rZ \sim \ND_\J(\mathbf{0}_\J, \mI_\J)$ and then computing $\rY = \mC \rZ 
 <<ex-ML-data>>=
 N <- 100L
 Z <- matrix(rnorm(N * J), nrow = J)
-Y <- Mult(lt, Z) + (mn <- 1:J)
+Y <- lt %*% Z + (mn <- 1:J)
 @@
 
 Before we add some interval-censoring to the data, let's estimate the
@@ -4664,8 +4664,8 @@ We can also compare the results on the scale of the covariance matrix
 
 <<ex-ML-Shat>>=
 ### ATLAS print issues
-round(Tcrossprod(lt), 4)  ### true Sigma
-Tcrossprod(C)             ### interval-censored obs
+round(tcrossprod(lt), 4)  ### true Sigma
+tcrossprod(C)             ### interval-censored obs
 Shat                      ### "exact" obs
 @@
 
@@ -4739,7 +4739,7 @@ The standard error in this sample should be close to the ones obtained from
 the inverse Fisher information
 <<ML-check>>=
 c(sqrt(rowMeans((rC - rowMeans(rC))^2)))
-c(sqrt(diagonals(Crossprod(solve(L)))))
+c(sqrt(diagonals(crossprod(solve(L)))))
 @@
 We now coerse the matrix \code{rC} to an object of class \code{ltMatrices}
 <<rC>>=
@@ -5262,11 +5262,11 @@ standardize <- function(chol, invchol) {
 
 <<ex-stand>>=
 C <- ltMatrices(runif(10))
-all.equal(as.array(chol2cov(standardize(chol = C))),
-          as.array(chol2cor(standardize(chol = C))))
+chk(as.array(chol2cov(standardize(chol = C))),
+    as.array(chol2cor(standardize(chol = C))))
 L <- solve(C)
-all.equal(as.array(invchol2cov(standardize(invchol = L))),
-          as.array(invchol2cor(standardize(invchol = L))))
+chk(as.array(invchol2cov(standardize(invchol = L))),
+    as.array(invchol2cor(standardize(invchol = L))))
 @@
 
 The log-likelihood function is $\ell_i(\mC_i)$ (we omit $i$ in the
@@ -5509,7 +5509,7 @@ L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 Y <- solve(L, Z) + m
 ### scaled mean
-d <- Mult(L, m)
+d <- L %*% m
 
 nll <- function(parm) {
     d <- parm[seq_len(J)]
@@ -5585,7 +5585,7 @@ nsc <- function(parm) {
     - c(rowSums(solve(L, -ret$obs, transpose = TRUE)), 
         scL)
 }
-all.equal(unname(nsc(start)), grad(nll, start))
+chk(unname(nsc(start)), grad(nll, start))
 @@
 
 Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
@@ -5594,14 +5594,14 @@ Similarily, when the model is parameterized by $\nuvec_i$ and $\mC_i =
 <<concave-C>>=
 C <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
-Y <- Mult(C, Z) + m
+Y <- C %*% Z + m
 ### scaled mean
 d <- solve(C, m)
 
 nll <- function(parm) {
     d <- parm[seq_len(J)]
     C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    -ldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+    -ldmvnorm(obs = Y, mean = C %*% d, chol = C)
 }
 
 start <- c(d, prm)
@@ -5630,7 +5630,7 @@ and the score with respect to $\mC_i$ is
 nsc <- function(parm) {
     d <- parm[seq_len(J)]
     C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-    ret <- sldmvnorm(obs = Y, mean = Mult(C, d), chol = C)
+    ret <- sldmvnorm(obs = Y, mean = C %*% d, chol = C)
 
     J <- dim(C)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
@@ -5643,15 +5643,15 @@ nsc <- function(parm) {
 
     scC <- A[idx,,drop = FALSE]
     scC <- rowSums(unclass(scC) + unclass(ret$chol))
-    - c(rowSums(Mult(C, -ret$obs, transpose = TRUE)), 
+    - c(rowSums(crossprod(C, -ret$obs)), 
         scC)
 }
-all.equal(unname(nsc(start)), grad(nll, start))
+chk(unname(nsc(start)), grad(nll, start))
 @@
 
 
 
-\chapter{(Experimental) User Interface} \label{inter}
+\chapter{User Interface} \label{inter}
 
 @o interface.R -cp
 @{

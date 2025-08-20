@@ -643,11 +643,97 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(d, diagonals(Crossprod(lxd)))
 
-> Sigma <- Tcrossprod(lxd)
+> a <- as.array(tcrossprod(lxn))
+
+> b <- array(apply(as.array(lxn), 3, function(x) tcrossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxn)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> a <- as.array(tcrossprod(lxd))
+
+> b <- array(apply(as.array(lxd), 3, function(x) tcrossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxd)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> a <- as.array(crossprod(lxn))
+
+> b <- array(apply(as.array(lxn), 3, function(x) crossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxn)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> a <- as.array(crossprod(lxd))
+
+> b <- array(apply(as.array(lxd), 3, function(x) crossprod(x), 
++     simplify = TRUE), dim = rev(dim(lxd)))
+
+> chk(a, b, check.attributes = FALSE)
+
+> a <- lxn %*% y
+
+> A <- as.array(lxn)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[, 
++     , i] %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> a <- lxd %*% y
+
+> A <- as.array(lxd)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(A[, 
++     , i] %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> chk(lxn[rep(1, N), ] %*% y, lxn[1, ] %*% y, check.attributes = FALSE)
+
+> chk(lxn %*% y[, 1], lxn %*% y[, rep(1, N)])
+
+> i <- sample(1:N)[1]
+
+> M <- t(as.array(lxn)[, , i])
+
+> a <- sapply(1:J, function(j) lxn[i, ] %*% M[, j, drop = FALSE])
+
+> rownames(a) <- colnames(a) <- dimnames(lxn)[[2]]
+
+> b <- as.array(tcrossprod(lxn[i, ]))[, , 1]
+
+> chk(a, b, check.attributes = FALSE)
+
+> a <- crossprod(lxn, y)
+
+> A <- as.array(lxn)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[, 
++     , i]) %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> a <- crossprod(lxd, y)
+
+> A <- as.array(lxd)
+
+> b <- do.call("rbind", lapply(1:ncol(y), function(i) t(t(A[, 
++     , i]) %*% y[, i, drop = FALSE])))
+
+> chk(a, t(b), check.attributes = FALSE)
+
+> chk(crossprod(lxn[rep(1, N), ], y), crossprod(lxn[1, 
++     ], y), check.attributes = FALSE)
+
+> chk(crossprod(lxn, y[, 1]), crossprod(lxn, y[, rep(1, 
++     N)]))
+
+> Sigma <- tcrossprod(lxd)
 
 > chk(chol(Sigma), lxd)
 
-> Sigma <- Tcrossprod(lxn)
+> Sigma <- tcrossprod(lxn)
 
 > chk(as.array(chol(Sigma)), as.array(lxn))
 
@@ -750,7 +836,7 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(invchol2cor(L))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
+> chk(unlist(CP), c(as.array(crossprod(invcholD(L)))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(invchol2pc(L))), check.attributes = FALSE)
@@ -774,7 +860,7 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
+> chk(unlist(CP), c(as.array(crossprod(solve(Dchol(C))))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
@@ -798,7 +884,7 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(invchol2cor(L))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(invcholD(L)))), 
+> chk(unlist(CP), c(as.array(crossprod(invcholD(L)))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(invchol2pc(L))), check.attributes = FALSE)
@@ -822,7 +908,7 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(unlist(Corr), c(as.array(chol2cor(C))), check.attributes = FALSE)
 
-> chk(unlist(CP), c(as.array(Crossprod(solve(Dchol(C))))), 
+> chk(unlist(CP), c(as.array(crossprod(solve(Dchol(C))))), 
 +     check.attributes = FALSE)
 
 > chk(unlist(PC), c(as.array(chol2pc(C))), check.attributes = FALSE)
@@ -843,31 +929,31 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(chol2cov(C)[, p], chol2cov(Cp))
 
-> Sigma <- Tcrossprod(lxd)
+> Sigma <- tcrossprod(lxd)
 
 > j <- 1:3
 
-> chk(Sigma[, j], Tcrossprod(marg_mvnorm(chol = lxd, 
+> chk(Sigma[, j], tcrossprod(marg_mvnorm(chol = lxd, 
 +     which = j)$chol))
 
 > j <- 2:4
 
-> chk(Sigma[, j], Tcrossprod(marg_mvnorm(chol = lxd, 
+> chk(Sigma[, j], tcrossprod(marg_mvnorm(chol = lxd, 
 +     which = j)$chol))
 
-> Sigma <- Tcrossprod(solve(lxd))
+> Sigma <- tcrossprod(solve(lxd))
 
 > j <- 1:3
 
-> chk(Sigma[, j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, 
+> chk(Sigma[, j], tcrossprod(solve(marg_mvnorm(invchol = lxd, 
 +     which = j)$invchol)))
 
 > j <- 2:4
 
-> chk(Sigma[, j], Tcrossprod(solve(marg_mvnorm(invchol = lxd, 
+> chk(Sigma[, j], tcrossprod(solve(marg_mvnorm(invchol = lxd, 
 +     which = j)$invchol)))
 
-> Sigma <- as.array(Tcrossprod(lxd))[, , 1]
+> Sigma <- as.array(tcrossprod(lxd))[, , 1]
 
 > j <- 2:4
 
@@ -884,9 +970,9 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(cm, cmv$mean)
 
-> chk(cS, as.array(Tcrossprod(cmv$chol))[, , 1])
+> chk(cS, as.array(tcrossprod(cmv$chol))[, , 1])
 
-> Sigma <- as.array(Tcrossprod(solve(lxd)))[, , 1]
+> Sigma <- as.array(tcrossprod(solve(lxd)))[, , 1]
 
 > j <- 2:4
 
@@ -903,10 +989,10 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(cm, cmv$mean)
 
-> chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[, 
+> chk(cS, as.array(tcrossprod(solve(cmv$invchol)))[, 
 +     , 1])
 
-> Sigma <- as.array(Tcrossprod(lxd))[, , 1]
+> Sigma <- as.array(tcrossprod(lxd))[, , 1]
 
 > j <- 1:3
 
@@ -923,9 +1009,9 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(c(cm), c(cmv$mean))
 
-> chk(cS, as.array(Tcrossprod(cmv$chol))[, , 1])
+> chk(cS, as.array(tcrossprod(cmv$chol))[, , 1])
 
-> Sigma <- as.array(Tcrossprod(solve(lxd)))[, , 1]
+> Sigma <- as.array(tcrossprod(solve(lxd)))[, , 1]
 
 > j <- 1:3
 
@@ -942,7 +1028,7 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > chk(c(cm), c(cmv$mean))
 
-> chk(cS, as.array(Tcrossprod(solve(cmv$invchol)))[, 
+> chk(cS, as.array(tcrossprod(solve(cmv$invchol)))[, 
 +     , 1])
 
 > N <- 1000
@@ -956,9 +1042,9 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > Y <- solve(lt, Z)
 
-> ll1 <- sum(dnorm(Mult(lt, Y), log = TRUE)) + sum(log(diagonals(lt)))
+> ll1 <- sum(dnorm(lt %*% Y, log = TRUE)) + sum(log(diagonals(lt)))
 
-> S <- as.array(Tcrossprod(solve(lt)))
+> S <- as.array(tcrossprod(solve(lt)))
 
 > ll2 <- sum(sapply(1:N, function(i) dmvnorm(x = Y[, 
 +     i], sigma = S[, , i], log = TRUE)))
@@ -977,9 +1063,9 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 > cd <- cond_mvnorm(invchol = lt, which_given = j, given = Y[j, 
 +     ])
 
-> ll3 <- sum(dnorm(Mult(md$invchol, Y[j, ]), log = TRUE)) + 
-+     sum(log(diagonals(md$invchol))) + sum(dnorm(Mult(cd$invchol, 
-+     Y[-j, ] - cd$me .... [TRUNCATED] 
+> ll3 <- sum(dnorm(md$invchol %*% Y[j, ], log = TRUE)) + 
++     sum(log(diagonals(md$invchol))) + sum(dnorm(cd$invchol %*% 
++     (Y[-j, ] - cd$mean), .... [TRUNCATED] 
 
 > chk(ll1, ll3)
 
@@ -1209,13 +1295,13 @@ attr(,"rcnames")
 
 > chk(C, as.array(lt)[, , 1], check.attributes = FALSE)
 
-> chk(Sigma, as.array(Tcrossprod(lt))[, , 1], check.attributes = FALSE)
+> chk(Sigma, as.array(tcrossprod(lt))[, , 1], check.attributes = FALSE)
 
 > N <- 100
 
 > Z <- matrix(rnorm(N * J), nrow = J)
 
-> Y <- Mult(lt, Z) + (mn <- 1:J)
+> Y <- lt %*% Z + (mn <- 1:J)
 
 > rowMeans(Y)
      1      2      3      4 
@@ -1440,7 +1526,7 @@ attr(,"rcnames")
 > mn
 [1] 1 2 3 4
 
-> round(Tcrossprod(lt), 4)
+> round(tcrossprod(lt), 4)
 , , 1
 
        1      2     3     4
@@ -1450,7 +1536,7 @@ attr(,"rcnames")
 4 0.0000 1.0607 0.000 2.000
 
 
-> Tcrossprod(C)
+> tcrossprod(C)
 , , 1
 
         1       2       3       4
@@ -1510,7 +1596,7 @@ attr(,"rcnames")
       5       6       7       8       9      10      11      12      13      14 
 0.05130 0.07990 0.12446 0.16090 0.07609 0.11567 0.14020 0.09622 0.10415 0.08279 
 
-> c(sqrt(diagonals(Crossprod(solve(L)))))
+> c(sqrt(diagonals(crossprod(solve(L)))))
  [1] 0.06826 0.10816 0.12670 0.14074 0.05498 0.10839 0.12442 0.14312 0.08813
 [10] 0.11638 0.13340 0.09587 0.10451 0.08154
 
@@ -1619,15 +1705,12 @@ attr(,"rcnames")
 
 > C <- ltMatrices(runif(10))
 
-> all.equal(as.array(chol2cov(standardize(chol = C))), 
-+     as.array(chol2cor(standardize(chol = C))))
-[1] TRUE
+> chk(as.array(chol2cov(standardize(chol = C))), as.array(chol2cor(standardize(chol = C))))
 
 > L <- solve(C)
 
-> all.equal(as.array(invchol2cov(standardize(invchol = L))), 
+> chk(as.array(invchol2cov(standardize(invchol = L))), 
 +     as.array(invchol2cor(standardize(invchol = L))))
-[1] TRUE
 
 > data("iris", package = "datasets")
 
@@ -1764,7 +1847,7 @@ Petal.Width       0.76951    -0.19082       0.8577      1.0000
 
 > Y <- solve(L, Z) + m
 
-> d <- Mult(L, m)
+> d <- L %*% m
 
 > nll <- function(parm) {
 +     d <- parm[seq_len(J)]
@@ -1784,21 +1867,20 @@ Petal.Width       0.76951    -0.19082       0.8577      1.0000
 +     L <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
 +     ret <- sldmvnorm(obs = Y, mean = sol .... [TRUNCATED] 
 
-> all.equal(unname(nsc(start)), grad(nll, start))
-[1] TRUE
+> chk(unname(nsc(start)), grad(nll, start))
 
 > C <- ltMatrices(prm <- runif(J * (J + 1)/2), diag = TRUE)
 
 > Z <- matrix(rnorm(N * J), nrow = J)
 
-> Y <- Mult(C, Z) + m
+> Y <- C %*% Z + m
 
 > d <- solve(C, m)
 
 > nll <- function(parm) {
 +     d <- parm[seq_len(J)]
 +     C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-+     -ldmvnorm(obs = Y, mean = Mult(C, d) .... [TRUNCATED] 
++     -ldmvnorm(obs = Y, mean = C %*% d, c .... [TRUNCATED] 
 
 > start <- c(d, prm)
 
@@ -1811,10 +1893,9 @@ Petal.Width       0.76951    -0.19082       0.8577      1.0000
 > nsc <- function(parm) {
 +     d <- parm[seq_len(J)]
 +     C <- ltMatrices(parm[-seq_len(J)], diag = TRUE)
-+     ret <- sldmvnorm(obs = Y, mean = Mul .... [TRUNCATED] 
++     ret <- sldmvnorm(obs = Y, mean = C % .... [TRUNCATED] 
 
-> all.equal(unname(nsc(start)), grad(nll, start))
-[1] TRUE
+> chk(unname(nsc(start)), grad(nll, start))
 
 > data("iris", package = "datasets")
 
@@ -2174,4 +2255,4 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.522   0.212  15.743 
+  15.51    0.24   15.75 
