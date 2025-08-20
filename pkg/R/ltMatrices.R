@@ -579,7 +579,7 @@ Tcrossprod <- function(x, diag_only = FALSE)
 Crossprod <- function(x, diag_only = FALSE)
     .Tcrossprod(x, diag_only = diag_only, transpose = TRUE)
 
-# %*% crossprod tcrossprod methods
+# crossprod tcrossprod methods
 
 crossprod.ltMatrices <- function(x, y = NULL, ...) {
 

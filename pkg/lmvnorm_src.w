@@ -229,7 +229,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<logdet ltMatrices@>
 @<tcrossprod ltMatrices@>
 @<crossprod ltMatrices@>
-@<%*% crossprod tcrossprod methods@>
+@<crossprod tcrossprod methods@>
 @<chol syMatrices@>
 @<add diagonal elements@>
 @<assign diagonal elements@>
@@ -1774,7 +1774,7 @@ chk(d, diagonals(Crossprod(lxd)))
 
 We now also add methods implementing a standard user interface
 
-@d %*% crossprod tcrossprod methods
+@d crossprod tcrossprod methods
 @{
 crossprod.ltMatrices <- function(x, y = NULL, ...) {
 
