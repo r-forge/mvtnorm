@@ -1,0 +1,161 @@
+
+\documentclass[article,nojss,shortnames]{jss}
+
+%% packages
+\usepackage{thumbpdf}
+\usepackage{amsfonts,amstext,amsmath,amssymb,amsthm}
+\usepackage{accents}
+\usepackage{color}
+\usepackage{rotating}
+\usepackage{verbatim}
+\usepackage{xspace}
+%% need no \usepackage{Sweave.sty}
+%\usepackage[nolists]{endfloat}
+
+\newcommand{\blind}{1}
+\newcommand{\compact}{0}
+\newcommand{\compacteval}{0}
+\newcommand{\SM}{Appendix}
+
+\newcommand{\applications}{Section~\ref{sec:appl}}
+
+\newcommand{\TODO}[1]{{\color{red} #1}}
+
+\newcommand\Peter[1]{{\color{red}Peter: ``#1''}}
+\newcommand\Torsten[1]{{\color{blue}Torsten: ``#1''}}
+
+% File with math commands etc.
+\input{defs}
+
+\renewcommand{\thefootnote}{}
+\newcommand{\rev}[1]{#1}
+
+%% code commands
+\newcommand{\Rclass}[1]{`\code{#1}'}
+%% JSS
+\author{Torsten Hothorn \\ Universit\"at Z\"urich}
+\Plainauthor{Hothorn}
+
+\title{Evaluating Multivariate Normal Likelihood Functions}
+\Plaintitle{Normal Likelihoods}
+\Shorttitle{Normal Likelihoods}
+
+\Abstract{
+}
+
+\Keywords{integration, convex optimisation}
+\Plainkeywords{integration, convex optimisation}
+
+\Address{
+  Torsten Hothorn\\
+  Institut f\"ur Epidemiologie, Biostatistik und Pr\"avention \\
+  Universit\"at Z\"urich \\
+  Hirschengraben 84, CH-8001 Z\"urich, Switzerland \\
+  \texttt{Torsten.Hothorn@uzh.ch}
+}
+
+
+\begin{document}
+
+\section{Introduction}
+
+$\mY = (\rY_1, \dots, \rY_J)^\top \in \RR^J$ with $\mY \sim \ND_J(\muvec,
+\mSigma)$, $\mSigma$ denoting a symmetric and positive definite $J \times J$
+matrix and $\muvec \in \RR^J$ a mean vector.
+
+With lower-triangular Cholesky factor $\mSigma = \mGamma \mGamma^\top$: $\ND_J(\muvec, \mGamma
+\mGamma^\top)$, $\diag(\mGamma) > 0$.
+
+With (also lower-triangular) inverse Cholesky factor $\mSigma = \mLambda^{-1} \mLambda^{-\top}$: $\ND_J(\muvec, \mLambda^{-1} \mLambda^{-\top})$
+
+With scaled mean $\nuvec = \mLambda \muvec$
+
+$\ND_J(\mLambda^{-1} \nuvec, \mLambda^{-1} \mLambda^{-\top})$ with Lebesque
+density $(2 \pi)^{-\nicefrac{J}{2}} \det(\mLambda) \exp(-\nicefrac{1}{2} \|
+\mLambda \yvec - \nuvec \|_2^2)$ which is log-concave in $(\mLambda, \nuvec)$.
+
+$\avec = (a_1, \dots, a_J)^\top \in \RR^J$ and 
+$\bvec = (b_1, \dots, b_J)^\top \in \RR^J$ with $a_j \le \rY_j \le b_j$
+(that is, $a_j = b_j$ is explicitely allowed), also $a_j = -\infty$ and $a_j
+= \infty$
+
+Independent variables $\rY_i, i = 1, \dots, N$, observe $\avec_i$ and
+$\bvec_i$. Parameters $\mLambda_i$ and $\nuvec_i$
+
+
+\begin{eqnarray*}
+\ell_i(\mLambda_i, \nuvec_i, \avec_i, \bvec_i) =  -\frac{J}{2} \log(2\pi) + \log(\det(\mLambda_i)) +
+\log\left(\int_{\avec_i}^{\bvec_i}
+\exp\left(-\frac{1}{2} \| \mLambda_i \yvec - \nuvec_i \|_2^2\right) \,
+d\yvec\right)
+\end{eqnarray*}
+
+with the dimension of the integral depending on $\bvec_i - \avec_i > 0$
+
+scores:
+
+$\svec_i(\mLambda_i) = \frac{\partial \ell_i(\mLambda_i, \nuvec_i, \avec_i, \bvec_i)}{\partial \mLambda_i}
+\in \RR^{\nicefrac{J(J+1)}{2}}$
+
+$\svec_i(\nuvec_i) = \frac{\partial \ell_i(\mLambda_i, \nuvec_i, \avec_i, \bvec_i)}{\partial \nuvec_i} \in
+\RR^J$
+
+$\svec_i(\avec_i) = \frac{\partial \ell_i(\mLambda_i, \nuvec_i, \avec_i, \bvec_i)}{\partial \avec_i}
+\in \RR^J$
+
+$\svec_i(\bvec_i) =\frac{\partial \ell_i(\mLambda_i, \nuvec_i, \avec_i, \bvec_i)}{\partial \bvec_i}
+\in \RR^J$
+
+alternatives:
+
+$\ell_i(\mLambda_i, \mLambda_i \muvec_i, \avec_i, \bvec_i)$
+
+$\ell_i(\mGamma^{-1}_i, \nuvec_i, \avec_i, \bvec_i)$
+
+$\ell_i(\mGamma^{-1}_i, \mGamma^{-1}_i \muvec_i, \avec_i, \bvec_i)$
+
+also with corresponding scores
+
+Motivating example
+<<motivation>>=
+library("mvtnorm")
+J <- length(vn <- paste0("Y", 1:4))
+N <- 3
+(L <- ltMatrices(matrix(runif(N * J * (J + 1) / 2), ncol = N), 
+                 diag = TRUE, names = vn))
+(nu <- matrix(rnorm(N * J), ncol = N, dimnames = list(Y = vn, i = 1:N)))
+obj <- mvnorm(invchol = L, invcholmean = nu)
+Y <- a <- b <- simulate(obj)
+sum(log(diagonals(L))) + sum(dnorm(L %*% a - nu, log = TRUE))
+logLik(mvnorm(chol = solve(L), mean = solve(L, nu)), obs = Y)
+logLik(mvnorm(invchol = L, mean = solve(L, nu)), obs = Y)
+logLik(obj, obs = Y)
+@
+
+That was easy. But what when $\rY_1$ is missing completely, and only a lower
+bound for $\rY_4$ was observed?
+
+<<motivation-int>>=
+Y23 <- a[c("Y2", "Y3"),]
+a <- a["Y4",,drop = FALSE]
+b <- rbind(Y4 = rep(Inf, N))
+logLik(obj, obs = Y23, lower = a, upper = b)
+@
+
+scores
+<<motivation-scores>>=
+lLgrad(obj, obs = Y)
+lLgrad(obj, obs = Y23, lower = a, upper = b)
+@
+
+%\bibliography{mlt,packages}
+
+\newpage
+
+\begin{appendix}
+\end{appendix}
+
+\clearpage
+
+\end{document}
+
