@@ -6359,14 +6359,14 @@ sc <- function(parm) {
 ### note: This is a convex problem now, so (here incorrect) 
 ### starting values shouldn't matter
 opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = FALSE))
+            lower = llim, control = list(trace = FALSE, maxit = 500))
 MLL <- ll(opL$par, logLik = FALSE)
 @@
 
 where the comparison to the analytic estimates is
 
 <<iris-ML-hat-nu>>=
-### log-likelihood, note the better fit for the nu, L parameterisation
+### log-likelihood
 op$value
 opL$value
 ### covariance
@@ -6442,8 +6442,8 @@ close in our case)
 
 <<iris-MLi-hat>>=
 ### covariance
-chol2cov(MLi$scale)
-chol2cov(MLL$scale)
+invchol2cov(MLi$scale)
+invchol2cov(MLL$scale)
 chol2cov(ML$scale)
 ### mean
 MLi$mean[,,drop = TRUE]
@@ -6463,11 +6463,11 @@ cdstr$mean - ML$mean["Petal.Width",]
 summary(irislm)$sigma^2
 c(cdstr$scale^2) ### note: "chol" defines the distribution
 @@
-The regression coefficients and the residual variance are identical with
+The regression coefficients and the residual variance are almost identical with
 those obtained from \code{lm()}. The same exericise, now with the 
 $\nuvec$ and $\mL$ parameterisation for exact and interval-censored
-observations, gives slightly different results, due to the alternative
-parameterisation used and due to data having been censored:
+observations, gives slightly different results for the latter, 
+due to censoring:
 <<iris-lm-iL>>=
 ### nu, L for exact observations
 cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
@@ -6482,7 +6482,6 @@ cdstr$mean - ML$mean["Petal.Width",]
 ### residual variance
 c(1 / cdstr$scale^2)
 @@
-
 
 The log-likelihood and score function automagically marginalise over
 dimensions where all observations are $(-\infty, \infty)$. We can simply
