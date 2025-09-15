@@ -228,7 +228,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb142}{142}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb144}{144}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape syMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6b}{6b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape dim ltMatrices}\nobreak\ {\footnotesize \NWlink{nuweb6c}{6c}}$\,\rangle$}\verb@@\\
@@ -275,7 +275,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb143}{143}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb145}{145}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -4165,7 +4165,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb142}{142}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape R Header}\nobreak\ {\footnotesize \NWlink{nuweb144}{144}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb77}{77}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb89}{89}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape ldmvnorm}\nobreak\ {\footnotesize \NWlink{nuweb59a}{59a}}$\,\rangle$}\verb@@\\
@@ -4175,8 +4175,8 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \mbox{}\verb@@\hbox{$\langle\,${\itshape deperma}\nobreak\ {\footnotesize \NWlink{nuweb108}{108}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape standardize}\nobreak\ {\footnotesize \NWlink{nuweb110}{110}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape destandardize}\nobreak\ {\footnotesize \NWlink{nuweb112}{112}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape lpRR}\nobreak\ {\footnotesize \NWlink{nuweb139}{139}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape slpRR}\nobreak\ {\footnotesize \NWlink{nuweb140}{140}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape lpRR}\nobreak\ {\footnotesize \NWlink{nuweb141}{141}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape slpRR}\nobreak\ {\footnotesize \NWlink{nuweb142}{142}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
 \vspace{-1.5ex}
@@ -4193,7 +4193,7 @@ functions for all arguments $\avec_i$, $\bvec_i$, and $\mC_i$.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb143}{143}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@@\hbox{$\langle\,${\itshape C Header}\nobreak\ {\footnotesize \NWlink{nuweb145}{145}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@#ifndef  USE_FC_LEN_T@\\
 \mbox{}\verb@# define USE_FC_LEN_T@\\
 \mbox{}\verb@#endif@\\
@@ -8454,14 +8454,14 @@ We now check if we can obtain corresponding results when jointly optimising
 the scaled mean $\nuvec$ and the inverse Cholesky factor $\mL$:
 
 <<iris-lLgrad-nu>>=
-ll <- function(parm) {
+ll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    if (!logLik) return(x)
     -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
-    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    x <- ll(parm, logLik = FALSE)
     ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$invcholmean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
@@ -8469,8 +8469,7 @@ sc <- function(parm) {
 ### starting values shouldn't matter
 opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = FALSE))
-Lhat <- ltMatrices(opL$par[-(1:J)], diag = TRUE, names = vars)
-ML <- mvnorm(invcholmean = opL$par[1:J], invchol = Lhat)
+MLL <- ll(opL$par, logLik = FALSE)
 @
 
 where the comparison to the analytic estimates is
@@ -8480,10 +8479,10 @@ where the comparison to the analytic estimates is
 op$value
 opL$value
 ### covariance
-invchol2cov(ML$scale)
+invchol2cov(MLL$scale)
 V
 ### mean
-ML$mean[,,drop = TRUE]
+MLL$mean[,,drop = TRUE]
 m
 @
 
@@ -8520,14 +8519,14 @@ the likelihood). The corresponding values should be \code{NA} and removed
 from the summation.
 
 <<iris-MLi>>=
-ll <- function(parm) {
+ll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    if (!logLik) return(x)
     -logLik(object = x, obs = obs, lower = lower, upper = upper)
 }
 sc <- function(parm) {
-    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    x <- ll(parm, logLik = FALSE)
     ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
     ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
     -c(rowSums(ret$invcholmean, na.rm = TRUE), 
@@ -8541,8 +8540,7 @@ if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
              lower = llim, control = list(trace = FALSE))
-Lhati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
-MLi <- mvnorm(invcholmean = opi$par[1:J], invchol = Lhati)
+MLi <- ll(opi$par, logLik = FALSE)
 @
 
 Because the likelihood is a product of a continuous density and a
@@ -8554,16 +8552,46 @@ close in our case)
 <<iris-MLi-hat>>=
 ### covariance
 chol2cov(MLi$scale)
+chol2cov(MLL$scale)
 chol2cov(ML$scale)
 ### mean
 MLi$mean[,,drop = TRUE]
+MLL$mean[,,drop = TRUE]
 ML$mean[,,drop = TRUE]
 @
 
-We close this chapter with a word of warning: If more than one variable is
-censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
-\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
-additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
+Again, we can extract the regression coefficients from these multivariate
+normal distributions. We start with the $\muvec$ and $\mC$ parameterisation:
+<<iris-lm>>=
+cdstr <- condDist(ML, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + Petal.Length, 
+                  data = iris))
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+summary(irislm)$sigma^2
+c(cdstr$scale^2) ### note: "chol" defines the distribution
+@
+The regression coefficients and the residual variance are identical with
+those obtained from \code{lm()}. The same exericise, now with the 
+$\nuvec$ and $\mL$ parameterisation for exact and interval-censored
+observations, gives slightly different results, due to the alternative
+parameterisation used and due to data having been censored:
+<<iris-lm-iL>>=
+### nu, L for exact observations
+cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+c(1 / cdstr$scale^2) ### note: "invchol" defines the distribution
+### nu, L for censored observations
+cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+c(1 / cdstr$scale^2)
+@
+
 
 The log-likelihood and score function automagically marginalise over
 dimensions where all observations are $(-\infty, \infty)$. We can simply
@@ -8624,6 +8652,11 @@ introduced in Chapter~\ref{lpmvnorm} does not check if both \code{lower} and
 \code{upper} are infinite and omission thus reduces the dimensionality of
 the integral we evaluate numerically. 
 
+We close this chapter with a word of warning: If more than one variable is
+censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
+\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
+additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
+
 
 \chapter{Reduced Rank Covariance Matrices}
 
@@ -8648,7 +8681,7 @@ keeping
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap159}\raggedright\small
-\NWtarget{nuweb137a}{} $\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize {137a}}$\,\rangle\equiv$
+\NWtarget{nuweb139a}{} $\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize {139a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8662,7 +8695,7 @@ keeping
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 
 \item{}
 \end{list}
@@ -8674,7 +8707,7 @@ elements of $\mD$.
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap160}\raggedright\small
-\NWtarget{nuweb137b}{} $\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize {137b}}$\,\rangle\equiv$
+\NWtarget{nuweb139b}{} $\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize {139b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8686,7 +8719,7 @@ elements of $\mD$.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 
 \item{}
 \end{list}
@@ -8696,7 +8729,7 @@ The limits $\avec$
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap161}\raggedright\small
-\NWtarget{nuweb138a}{} $\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize {138a}}$\,\rangle\equiv$
+\NWtarget{nuweb140a}{} $\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize {140a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8713,7 +8746,7 @@ The limits $\avec$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 
 \item{}
 \end{list}
@@ -8723,7 +8756,7 @@ and $\bvec$
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap162}\raggedright\small
-\NWtarget{nuweb138b}{} $\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize {138b}}$\,\rangle\equiv$
+\NWtarget{nuweb140b}{} $\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize {140b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8740,7 +8773,7 @@ and $\bvec$
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 
 \item{}
 \end{list}
@@ -8755,7 +8788,7 @@ can be utilised.
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap163}\raggedright\small
-\NWtarget{nuweb138c}{} $\langle\,${\itshape RR inner}\nobreak\ {\footnotesize {138c}}$\,\rangle\equiv$
+\NWtarget{nuweb140c}{} $\langle\,${\itshape RR inner}\nobreak\ {\footnotesize {140c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8768,7 +8801,7 @@ can be utilised.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 
 \item{}
 \end{list}
@@ -8778,19 +8811,19 @@ Finally, we wrap everything up in a function called \code{lpRR}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap164}\raggedright\small
-\NWtarget{nuweb139}{} $\langle\,${\itshape lpRR}\nobreak\ {\footnotesize {139}}$\,\rangle\equiv$
+\NWtarget{nuweb141}{} $\langle\,${\itshape lpRR}\nobreak\ {\footnotesize {141}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@lpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)), @\\
 \mbox{}\verb@                 Z, weights = 1 / ncol(Z), log.p = TRUE) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize \NWlink{nuweb137a}{137a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize \NWlink{nuweb137b}{137b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize \NWlink{nuweb138a}{138a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize \NWlink{nuweb138b}{138b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize \NWlink{nuweb139a}{139a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize \NWlink{nuweb139b}{139b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize \NWlink{nuweb140a}{140a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize \NWlink{nuweb140b}{140b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb138c}{138c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb140c}{140c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    ret <- sum(retw)@\\
 \mbox{}\verb@    if (log.p) return(log(max(c(0, ret))))@\\
 \mbox{}\verb@    return(ret)@\\
@@ -8831,18 +8864,18 @@ The score function with respect to $\avec$, $\bvec$, $\mB$, and $\mD$ is
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
-\NWtarget{nuweb140}{} $\langle\,${\itshape slpRR}\nobreak\ {\footnotesize {140}}$\,\rangle\equiv$
+\NWtarget{nuweb142}{} $\langle\,${\itshape slpRR}\nobreak\ {\footnotesize {142}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@slpRR <- function(lower, upper, mean = 0, B, D = rep(1, nrow(B)), @\\
 \mbox{}\verb@                  Z, weights = 1 / ncol(Z), log.p = TRUE) {@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize \NWlink{nuweb137a}{137a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize \NWlink{nuweb137b}{137b}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize \NWlink{nuweb138a}{138a}}$\,\rangle$}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize \NWlink{nuweb138b}{138b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize \NWlink{nuweb139a}{139a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize \NWlink{nuweb139b}{139b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize \NWlink{nuweb140a}{140a}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize \NWlink{nuweb140b}{140b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb138c}{138c}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape RR inner}\nobreak\ {\footnotesize \NWlink{nuweb140c}{140c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@ @\\
 \mbox{}\verb@    dlBZ <- dnorm(lBZ)@\\
 \mbox{}\verb@    duBZ <- dnorm(uBZ)@\\
@@ -8910,7 +8943,7 @@ chk(gupr, c(sRR$upper))
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap166}\raggedright\small
-\NWtarget{nuweb142}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {142}}$\,\rangle\equiv$
+\NWtarget{nuweb144}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {144}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -8947,7 +8980,7 @@ chk(gupr, c(sRR$upper))
 \end{flushleft}
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap167}\raggedright\small
-\NWtarget{nuweb143}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {143}}$\,\rangle\equiv$
+\NWtarget{nuweb145}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {145}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
@@ -9031,7 +9064,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 }
 \item $\langle\,$as.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb119b}{119b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$assign diagonal elements\nobreak\ {\footnotesize \NWlink{nuweb21}{21}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb143}{143}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb67}{, 67}.
+\item $\langle\,$C Header\nobreak\ {\footnotesize \NWlink{nuweb145}{145}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}\NWlink{nuweb67}{, 67}.
 }
 \item $\langle\,$C length\nobreak\ {\footnotesize \NWlink{nuweb24a}{24a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb24b}{24b}\NWlink{nuweb26}{, 26}\NWlink{nuweb29}{, 29}\NWlink{nuweb33a}{, 33a}\NWlink{nuweb44a}{, 44a}.
 }
@@ -9120,7 +9153,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$lower triangular elements\nobreak\ {\footnotesize \NWlink{nuweb17}{17}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb77}{77}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
 \item $\langle\,$lpmvnormR\nobreak\ {\footnotesize \NWlink{nuweb65}{65}}$\,\rangle$ {\footnotesize {\NWtxtNoRef}.}
-\item $\langle\,$lpRR\nobreak\ {\footnotesize \NWlink{nuweb139}{139}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
+\item $\langle\,$lpRR\nobreak\ {\footnotesize \NWlink{nuweb141}{141}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
 \item $\langle\,$ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb6a}{6a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$ltMatrices dim\nobreak\ {\footnotesize \NWlink{nuweb4}{4}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb6a}{6a}.}
 \item $\langle\,$ltMatrices input\nobreak\ {\footnotesize \NWlink{nuweb5b}{5b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb6a}{6a}.}
@@ -9161,7 +9194,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$post differentiate upper score\nobreak\ {\footnotesize \NWlink{nuweb87c}{87c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb89}{89}.}
 \item $\langle\,$post process score\nobreak\ {\footnotesize \NWlink{nuweb88b}{88b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb89}{89}.}
 \item $\langle\,$print ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb11}{11}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb142}{142}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb66}{, 66}.
+\item $\langle\,$R Header\nobreak\ {\footnotesize \NWlink{nuweb144}{144}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}\NWlink{nuweb66}{, 66}.
 }
 \item $\langle\,$R lpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb75}{75}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb67}{67}.}
 \item $\langle\,$R slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb86}{86}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb67}{67}.}
@@ -9170,15 +9203,15 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$RC input\nobreak\ {\footnotesize \NWlink{nuweb23b}{23b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb24b}{24b}\NWlink{nuweb26}{, 26}\NWlink{nuweb29}{, 29}\NWlink{nuweb30}{, 30}\NWlink{nuweb33a}{, 33a}\NWlink{nuweb36}{, 36}\NWlink{nuweb44a}{, 44a}.
 }
 \item $\langle\,$reorder ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb12}{12}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
-\item $\langle\,$RR inner\nobreak\ {\footnotesize \NWlink{nuweb138c}{138c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item $\langle\,$RR inner\nobreak\ {\footnotesize \NWlink{nuweb140c}{140c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 }
-\item $\langle\,$RR input B D\nobreak\ {\footnotesize \NWlink{nuweb137a}{137a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item $\langle\,$RR input B D\nobreak\ {\footnotesize \NWlink{nuweb139a}{139a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 }
-\item $\langle\,$RR input lower\nobreak\ {\footnotesize \NWlink{nuweb138a}{138a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item $\langle\,$RR input lower\nobreak\ {\footnotesize \NWlink{nuweb140a}{140a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 }
-\item $\langle\,$RR input upper\nobreak\ {\footnotesize \NWlink{nuweb138b}{138b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item $\langle\,$RR input upper\nobreak\ {\footnotesize \NWlink{nuweb140b}{140b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 }
-\item $\langle\,$RR input Z, weights\nobreak\ {\footnotesize \NWlink{nuweb137b}{137b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb139}{139}\NWlink{nuweb140}{, 140}.
+\item $\langle\,$RR input Z, weights\nobreak\ {\footnotesize \NWlink{nuweb139b}{139b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb141}{141}\NWlink{nuweb142}{, 142}.
 }
 \item $\langle\,$score a, b\nobreak\ {\footnotesize \NWlink{nuweb80b}{80b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb80c}{80c}\NWlink{nuweb86}{, 86}.
 }
@@ -9193,7 +9226,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$sldpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb103}{103}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
 \item $\langle\,$sldpmvnorm invchol\nobreak\ {\footnotesize \NWlink{nuweb102}{102}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb103}{103}.}
 \item $\langle\,$slpmvnorm\nobreak\ {\footnotesize \NWlink{nuweb89}{89}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
-\item $\langle\,$slpRR\nobreak\ {\footnotesize \NWlink{nuweb140}{140}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
+\item $\langle\,$slpRR\nobreak\ {\footnotesize \NWlink{nuweb142}{142}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}.}
 \item $\langle\,$solve\nobreak\ {\footnotesize \NWlink{nuweb29}{29}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}.}
 \item $\langle\,$solve C\nobreak\ {\footnotesize \NWlink{nuweb30}{30}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb3}{3}.}
 \item $\langle\,$solve ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb31}{31}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}

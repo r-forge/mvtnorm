@@ -2000,22 +2000,19 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.843        3.057        3.758        1.199 
 
-> ll <- function(parm) {
+> ll <- function(parm, logLik = TRUE) {
 +     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-+     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-+      .... [TRUNCATED] 
++     x <- mvnorm(invcholmean = parm[1:J], invc .... [TRUNCATED] 
 
 > sc <- function(parm) {
-+     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-+     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-+      .... [TRUNCATED] 
++     x <- ll(parm, logLik = FALSE)
++     ret <- lLgrad(object = x, obs = obs)
++     -c(rowSums(ret$invcholmean), rowSums(Low .... [TRUNCATED] 
 
 > opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = FALSE))
 
-> Lhat <- ltMatrices(opL$par[-(1:J)], diag = TRUE, names = vars)
-
-> ML <- mvnorm(invcholmean = opL$par[1:J], invchol = Lhat)
+> MLL <- ll(opL$par, logLik = FALSE)
 
 > op$value
 [1] 379.9
@@ -2023,7 +2020,7 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
 > opL$value
 [1] 383.4
 
-> invchol2cov(ML$scale)
+> invchol2cov(MLL$scale)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2040,7 +2037,7 @@ Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
 Petal.Length      1.26582    -0.32746       3.0955      1.2870
 Petal.Width       0.51283    -0.12083       1.2870      0.5771
 
-> ML$mean[, , drop = TRUE]
+> MLL$mean[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.852        3.068        3.778        1.211 
 
@@ -2064,15 +2061,14 @@ Levels: (-Inf,5] (5,5.6] (5.6,6.1] (6.1,6.52] (6.52, Inf]
 
 > obs <- obs[!rownames(obs) %in% v1, , drop = FALSE]
 
-> ll <- function(parm) {
+> ll <- function(parm, logLik = TRUE) {
 +     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-+     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-+      .... [TRUNCATED] 
++     x <- mvnorm(invcholmean = parm[1:J], invc .... [TRUNCATED] 
 
 > sc <- function(parm) {
-+     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-+     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
-+      .... [TRUNCATED] 
++     x <- ll(parm, logLik = FALSE)
++     ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
++     ret$invcho .... [TRUNCATED] 
 
 > start <- opL$par
 
@@ -2082,10 +2078,7 @@ Levels: (-Inf,5] (5,5.6] (5.6,6.1] (6.1,6.52] (6.52, Inf]
 > opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
 +     lower = llim, control = list(trace = FALSE))
 
-> Lhati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, 
-+     names = vars)
-
-> MLi <- mvnorm(invcholmean = opi$par[1:J], invchol = Lhati)
+> MLi <- ll(opi$par, logLik = FALSE)
 
 > chol2cov(MLi$scale)
 , , 1
@@ -2097,7 +2090,7 @@ Petal.Length     -3.08540     4.90917       13.861      -7.633
 Petal.Width       0.80603    -2.19047       -7.633      33.383
 
 
-> chol2cov(ML$scale)
+> chol2cov(MLL$scale)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2107,13 +2100,62 @@ Petal.Length      -3.2889      4.6755       13.924      -9.960
 Petal.Width        1.4578     -2.3043       -9.960      45.708
 
 
+> chol2cov(ML$scale)
+, , 1
+
+             Sepal.Length Sepal.Width Petal.Length Petal.Width
+Sepal.Length      0.68112    -0.04215       1.2658      0.5128
+Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
+Petal.Length      1.26582    -0.32746       3.0955      1.2870
+Petal.Width       0.51283    -0.12083       1.2870      0.5771
+
+
 > MLi$mean[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.760        3.057        3.758        1.199 
 
-> ML$mean[, , drop = TRUE]
+> MLL$mean[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.852        3.068        3.778        1.211 
+
+> ML$mean[, , drop = TRUE]
+Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
+       5.843        3.057        3.758        1.199 
+
+> cdstr <- condDist(ML, which_given = vars[1:3], given = diag(3))
+
+> coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + 
++     Petal.Length, data = iris))
+ (Intercept) Sepal.Length  Sepal.Width Petal.Length 
+     -0.2403      -0.2073       0.2228       0.5241 
+
+> cdstr$mean - ML$mean["Petal.Width", ]
+               [,1]   [,2]   [,3]
+Petal.Width -0.2073 0.2228 0.5241
+
+> summary(irislm)$sigma^2
+[1] 0.03685
+
+> c(cdstr$scale^2)
+[1] 0.03587
+
+> cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
+
+> cdstr$mean - ML$mean["Petal.Width", ]
+              [,1]   [,2]   [,3]
+Petal.Width -0.187 0.1938 0.5284
+
+> c(1/cdstr$scale^2)
+[1] 0.02932
+
+> cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
+
+> cdstr$mean - ML$mean["Petal.Width", ]
+              [,1]   [,2]   [,3]
+Petal.Width -0.134 0.1907 0.4893
+
+> c(1/cdstr$scale^2)
+[1] 0.03876
 
 > N <- 3
 
@@ -2255,4 +2297,4 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
-  15.51    0.24   15.75 
+ 15.664   0.195  15.872 

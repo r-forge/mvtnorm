@@ -6345,14 +6345,14 @@ We now check if we can obtain corresponding results when jointly optimising
 the scaled mean $\nuvec$ and the inverse Cholesky factor $\mL$:
 
 <<iris-lLgrad-nu>>=
-ll <- function(parm) {
+ll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    if (!logLik) return(x)
     -logLik(object = x, obs = obs)
 }
 sc <- function(parm) {
-    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    x <- ll(parm, logLik = FALSE)
     ret <- lLgrad(object = x, obs = obs)
     -c(rowSums(ret$invcholmean), rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
@@ -6360,8 +6360,7 @@ sc <- function(parm) {
 ### starting values shouldn't matter
 opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
             lower = llim, control = list(trace = FALSE))
-Lhat <- ltMatrices(opL$par[-(1:J)], diag = TRUE, names = vars)
-ML <- mvnorm(invcholmean = opL$par[1:J], invchol = Lhat)
+MLL <- ll(opL$par, logLik = FALSE)
 @@
 
 where the comparison to the analytic estimates is
@@ -6371,10 +6370,10 @@ where the comparison to the analytic estimates is
 op$value
 opL$value
 ### covariance
-invchol2cov(ML$scale)
+invchol2cov(MLL$scale)
 V
 ### mean
-ML$mean[,,drop = TRUE]
+MLL$mean[,,drop = TRUE]
 m
 @@
 
@@ -6411,14 +6410,14 @@ the likelihood). The corresponding values should be \code{NA} and removed
 from the summation.
 
 <<iris-MLi>>=
-ll <- function(parm) {
+ll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    if (!logLik) return(x)
     -logLik(object = x, obs = obs, lower = lower, upper = upper)
 }
 sc <- function(parm) {
-    L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
-    x <- mvnorm(invcholmean = parm[1:J], invchol = L)
+    x <- ll(parm, logLik = FALSE)
     ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
     ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
     -c(rowSums(ret$invcholmean, na.rm = TRUE), 
@@ -6432,8 +6431,7 @@ if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
              lower = llim, control = list(trace = FALSE))
-Lhati <- ltMatrices(opi$par[-(1:J)], diag = TRUE, names = vars)
-MLi <- mvnorm(invcholmean = opi$par[1:J], invchol = Lhati)
+MLi <- ll(opi$par, logLik = FALSE)
 @@
 
 Because the likelihood is a product of a continuous density and a
@@ -6445,16 +6443,46 @@ close in our case)
 <<iris-MLi-hat>>=
 ### covariance
 chol2cov(MLi$scale)
+chol2cov(MLL$scale)
 chol2cov(ML$scale)
 ### mean
 MLi$mean[,,drop = TRUE]
+MLL$mean[,,drop = TRUE]
 ML$mean[,,drop = TRUE]
 @@
 
-We close this chapter with a word of warning: If more than one variable is
-censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
-\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
-additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
+Again, we can extract the regression coefficients from these multivariate
+normal distributions. We start with the $\muvec$ and $\mC$ parameterisation:
+<<iris-lm>>=
+cdstr <- condDist(ML, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + Petal.Length, 
+                  data = iris))
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+summary(irislm)$sigma^2
+c(cdstr$scale^2) ### note: "chol" defines the distribution
+@@
+The regression coefficients and the residual variance are identical with
+those obtained from \code{lm()}. The same exericise, now with the 
+$\nuvec$ and $\mL$ parameterisation for exact and interval-censored
+observations, gives slightly different results, due to the alternative
+parameterisation used and due to data having been censored:
+<<iris-lm-iL>>=
+### nu, L for exact observations
+cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+c(1 / cdstr$scale^2) ### note: "invchol" defines the distribution
+### nu, L for censored observations
+cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
+### least-squares coefficients
+cdstr$mean - ML$mean["Petal.Width",]
+### residual variance
+c(1 / cdstr$scale^2)
+@@
+
 
 The log-likelihood and score function automagically marginalise over
 dimensions where all observations are $(-\infty, \infty)$. We can simply
@@ -6514,6 +6542,11 @@ Omitting dimensions might be important because \code{lpmvnorm}
 introduced in Chapter~\ref{lpmvnorm} does not check if both \code{lower} and
 \code{upper} are infinite and omission thus reduces the dimensionality of
 the integral we evaluate numerically. 
+
+We close this chapter with a word of warning: If more than one variable is
+censored, the \code{M} and \code{w} arguments to \code{lpmvnorm} and
+\code{slpmvnorm} have to be specified in \code{logLik} and \code{lLgrad} as
+additional arguments (\code{...}) \emph{AND MUST BE IDENTICAL} in both calls.
 
 
 \chapter{Reduced Rank Covariance Matrices}
