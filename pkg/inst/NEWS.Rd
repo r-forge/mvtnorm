@@ -2,7 +2,7 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-4 (2025-08-14)}{
+\section{Changes in Version 1.3-4 (2025-09-15)}{
   \subsection{Features}{
     \itemize{
       \item \code{mvnorm} gains a \code{invcholmean} argument allowing a
@@ -15,6 +15,12 @@
     \itemize{
       \item \code{condDist()} sometimes failed to return a 
             \code{scale} slot.
+    }
+  }
+  \subsection{Documentation}{
+    \itemize{
+      \item Explain how to use \code{condDist()} to obtain regression
+            coefficients for an example involving means.
     }
   }
 }
