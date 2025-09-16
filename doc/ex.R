@@ -1,5 +1,6 @@
 
-pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv", "lavaan", "tram")
+pkgs <- c("openxlsx", "mvtnorm", "lattice", "MASS", "numDeriv", "lavaan", "tram", 
+          "lava", "survival", "randomForestSRC")
 
 ip <- rownames(installed.packages())
 if (any(!pkgs %in% ip))
@@ -42,21 +43,18 @@ plim <- rep(-Inf, length.out = length(pidx))
 plim[pidx == "Ld"] <- 1e-4
 start <- runif(length(pidx))
 
-ll <- function(parm) {
+nll <- function(parm, logLik = TRUE) {
     plist <- split(parm, pidx)
     im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
     L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
     diagonals(L) <- plist$Ld
     object <- mvnorm(invcholmean = im, invchol = L)
-    -logLik(object, obs = obs)
+    if (!logLik) return(object)
+    - logLik(object, obs = obs)
 }
 
-sc <- function(parm) {
-    plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
-    L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
-    diagonals(L) <- plist$Ld
-    object <- mvnorm(invcholmean = im, invchol = L)
+nsc <- function(parm) {
+    object <- nll(parm, logLik = FALSE)
     ret <- lLgrad(object, obs = obs)
     -c(rowSums(ret$invcholmean),
        rowSums(ret$invcholmean[,HCC$x == "1"]),
@@ -64,12 +62,12 @@ sc <- function(parm) {
        rowSums(Lower_tri(ret$scale, diag = FALSE)))
 }
 
-ll(start)
-sc(start)
+nll(start)
+nsc(start)
 if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
+  print(all.equal(nsc(start), grad(nll, start)))
 
-(opLDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower =
+(opLDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower =
 plim))
 
 ### QDA
@@ -79,38 +77,34 @@ plim <- rep(-Inf, length.out = length(pidx))
 plim[pidx %in% c("Ld0", "Ld1")] <- 1e-4
 start <- runif(length(pidx))
 
-ll <- function(parm) {
+nll <- function(parm, logLik = TRUE) {
     plist <- split(parm, pidx)
     im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
     L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
     diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
     L <- L[HCC$x,]
     object <- mvnorm(invcholmean = im, invchol = L)
-    -logLik(object, obs = obs)
+    if (!logLik) return(object)
+    - logLik(object, obs = obs)
 }
 
-sc <- function(parm) {
-    plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
-    L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
-    diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
-    L <- L[HCC$x,]
-    object <- mvnorm(invcholmean = im, invchol = L)
+nsc <- function(parm) {
+    object <- nll(parm, logLik = FALSE)
     ret <- lLgrad(object, obs = obs)
-    -c(rowSums(ret$invcholmean),
-       rowSums(ret$invcholmean[,HCC$x == "1"]),
-       rowSums(diagonals(ret$scale)[, HCC$x == "0"]),
-       rowSums(diagonals(ret$scale)[, HCC$x == "1"]),
-       rowSums(Lower_tri(ret$scale, diag = FALSE)[, HCC$x == "0"]),
-       rowSums(Lower_tri(ret$scale, diag = FALSE)[, HCC$x == "1"]))
+    - c(rowSums(ret$invcholmean),
+        rowSums(ret$invcholmean[,HCC$x == "1"]),
+        rowSums(diagonals(ret$scale)[, HCC$x == "0"]),
+        rowSums(diagonals(ret$scale)[, HCC$x == "1"]),
+        rowSums(Lower_tri(ret$scale, diag = FALSE)[, HCC$x == "0"]),
+        rowSums(Lower_tri(ret$scale, diag = FALSE)[, HCC$x == "1"]))
 }
 
-ll(start)
-sc(start)
+nll(start)
+nsc(start)
 if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
+  print(all.equal(nsc(start), grad(nll, start)))
 
-(opQDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower = plim))
+(opQDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower = plim))
 
 plist <- split(opQDA$par, pidx)
 im0 <- plist$Lm
@@ -140,24 +134,21 @@ upr <- rbind(OPN = c(-Inf, qOPN, Inf)[unclass(iHCC$OPN) + 1L],
 obs <- obs[c("AFP", "PIV"),]
 
 
-ll <- function(parm) {
+nll <- function(parm, logLik = TRUE) {
     plist <- split(parm, pidx)
     im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
     L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
     diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
     L <- L[HCC$x,]
-    object <- mvnorm(invcholmean = im, invchol = L)
-    -logLik(object, obs = obs, lower = lwr, upper = upr, seed = 2908, M = 1000)
+    object <- list(object = mvnorm(invcholmean = im, invchol = L),
+                   obs = obs, lower = lwr, upper = upr, seed = 2908, M = 1000)
+    if (!logLik) return(object)
+    - do.call("logLik", object)
 }
 
-sc <- function(parm) {
-    plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
-    L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
-    diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
-    L <- L[HCC$x,]
-    object <- mvnorm(invcholmean = im, invchol = L)
-    ret <- lLgrad(object, obs = obs, lower = lwr, upper = upr, seed = 2908, M = 1000)
+nsc <- function(parm) {
+    args <- nll(parm, logLik = FALSE)
+    ret <- do.call("lLgrad", args)
     ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
     lt <- Lower_tri(ret$scale, diag = FALSE)
     lt[!is.finite(lt)] <- NA
@@ -170,12 +161,12 @@ sc <- function(parm) {
 }
 
 start <- opQDA$par
-ll(start)
-sc(start)
+nll(start)
+nsc(start)
 if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
+  print(all.equal(nsc(start), grad(nll, start)))
 
-(iopQDA <- optim(par = start, fn = ll, gr = sc, method = "L-BFGS-B", lower =
+(iopQDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower =
 plim))
 
 plist <- split(iopQDA$par, pidx)
@@ -232,22 +223,23 @@ obs <- t(qnorm(do.call("cbind", lapply(bf, rank, ties.method = "max")) / (nrow(b
 
 ct <- lapply(bf, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
 
-ll <- function(parm) {
+nll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(invchol = L)
-    -logLik(object, obs = obs, standardize = TRUE)
+    object <- list(object = mvnorm(invchol = L),
+                   obs = obs, standardize = TRUE)
+    if (!logLik) return(object)
+    - do.call("logLik", object)
 }
 
-sc <- function(parm) {
-    L <- ltMatrices(parm, names = vars)
-    object <- mvnorm(invchol = L)
-    -rowSums(Lower_tri(lLgrad(object, obs = obs, standardize = TRUE)$scale, diag = FALSE))
+nsc <- function(parm) {
+    ret <- do.call("lLgrad", nll(parm, logLik = FALSE))
+    -rowSums(Lower_tri(ret$scale, diag = FALSE))
 }
 
 start <- rep(0, J * (J - 1) / 2)
-ll(start)
+nll(start)
 
-op <- optim(par = start, fn = ll, gr = sc, method = "BFGS", hessian = TRUE)
+op <- optim(par = start, fn = nll, gr = nsc, method = "BFGS", hessian = TRUE)
 
 invchol2cov(Ls <- standardize(invchol = ltMatrices(op$par, names = vars)))
 - as.array(Ls)["DEXfat",vars[vars != "DEXfat"],] / as.array(Ls)["DEXfat","DEXfat",]
@@ -272,15 +264,17 @@ llim[c(1, cumsum(sapply(ct, nlevels) - 1) + 1)] <- -Inf
                 
 cbind(pidx, start, llim)
 
-ll <- function(parm) {
+nll <- function(parm, logLik = TRUE) {
     plist <- split(parm, pidx)
     plist[vars] <- lapply(plist[vars], cumsum)
     lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
     upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
     rownames(lwr) <- rownames(upr) <- vars
     L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
-    object <- mvnorm(invchol = L)
-    -logLik(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    object <- list(object = mvnorm(invchol = L),
+                   lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    if (!logLik) return(object)
+    - do.call("logLik", object)
 }
 
 X <- lapply(ct, function(x) {
@@ -289,15 +283,8 @@ X <- lapply(ct, function(x) {
     X <- X[x,]
 })
 
-sc <- function(parm) {
-    plist <- split(parm, pidx)
-    plist[vars] <- lapply(plist[vars], cumsum)
-    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
-    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
-    rownames(lwr) <- rownames(upr) <- vars
-    L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
-    object <- mvnorm(invchol = L)
-    ret <- lLgrad(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+nsc <- function(parm) {
+    ret <- do.call("lLgrad", nll(parm, logLik = FALSE))
     ret$upper[!is.finite(ret$upper)] <- NA
     ret$lower[!is.finite(ret$lower)] <- NA
     -c(do.call("c", lapply(vars, 
@@ -307,12 +294,12 @@ sc <- function(parm) {
        rowSums(Lower_tri(ret$scale, diag = FALSE), na.rm = TRUE))
 }
 
-ll(start)
-sc(start)
+nll(start)
+nsc(start)
 if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
+  print(all.equal(nsc(start), grad(nll, start)))
 
-opM <- optim(par = start, fn = ll, gr = sc, 
+opM <- optim(par = start, fn = nll, gr = nsc, 
              lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
 
 invchol2cov(Ls <- standardize(invchol = ltMatrices(split(opM$par, pidx)[["Lo"]], names = vars)))
@@ -339,19 +326,14 @@ ll <- function(parm) {
     upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
     rownames(lwr) <- rownames(upr) <- vars
     L <- ltMatrices(plist$Lo + AGE * plist$Loage , diag = FALSE, names = vars)
-    object <- mvnorm(invchol = L)
-    -logLik(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    object <- list(object = mvnorm(invchol = L),
+                   lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+    if (!logLik) return(object)
+    - do.call("logLik", object)
 }
 
-sc <- function(parm) {
-    plist <- split(parm, pidx)
-    plist[vars] <- lapply(plist[vars], cumsum)
-    lwr <- do.call("rbind", lapply(vars, function(x) c(-Inf, plist[[x]])[ct[[x]]]))
-    upr <- do.call("rbind", lapply(vars, function(x) c(plist[[x]], Inf)[ct[[x]]]))
-    rownames(lwr) <- rownames(upr) <- vars
-    L <- ltMatrices(plist$Lo + AGE * plist$Loage , diag = FALSE, names = vars)
-    object <- mvnorm(invchol = L)
-    ret <- lLgrad(object, lower = lwr, upper = upr, standardize = TRUE, seed = 2908, M = 250)
+nsc <- function(parm) {
+    ret <- do.call("lLgrad", nll(parm, logLik = FALSE))
     ret$lower[!is.finite(ret$lower)] <- NA
     ret$upper[!is.finite(ret$upper)] <- NA
     -c(do.call("c", lapply(vars, 
@@ -364,12 +346,12 @@ sc <- function(parm) {
 
 start <- c(start, rep(0, J * (J - 1) / 2))
 
-ll(start)
-sc(start)
+nll(start)
+nsc(start)
 if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
+  print(all.equal(nsc(start), grad(nll, start)))
 
-opA <- optim(par = start, fn = ll, gr = sc, 
+opA <- optim(par = start, fn = nll, gr = nsc, 
              lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
 
 pchisq(2 * (opA$value - opM$value), df = length(opA$par) - length(opM$par), lower.tail = FALSE)
@@ -384,81 +366,145 @@ HS.model <- ' visual  =~ x1 + x2 + x3
               textual =~ x4 + x5 + x6
               speed   =~ x7 + x8 + x9 '
      
-fit <- cfa(HS.model, data = HolzingerSwineford1939)
-### meanstructure = TRUE for additional means
+fit <- cfa(HS.model, data = HolzingerSwineford1939, meanstructure = TRUE)
 summary(fit, fit.measures = TRUE)
 
-latJ <- 3
 lat <- c("visual", "textual", "speed")
 man <- paste0("x", 1:9)
-manJ <- length(man)
-# obs <- t(as.matrix(HolzingerSwineford1939[, man]))
-obs <- t(scale(HolzingerSwineford1939[,man], center = TRUE, scale = FALSE))
 
-z6 <- rep(0, 6)
-z3 <- rep(0, 3)
-z9 <- rep(0, 9)
+## with lava
+mlvm <- lvm(list(x1 + x2 + x3 ~ visual,
+              x4 + x5 + x6 ~ textual,
+              x7 + x8 + x9 ~ speed))
+latent(mlvm) <- ~ visual + textual + speed
+covariance(mlvm) <- visual ~ textual
+covariance(mlvm) <- textual ~ speed
+covariance(mlvm) <- visual ~ speed
+intercept(mlvm, ~ visual + textual + speed) <- 0
+plot(mlvm)
 
-ll <- function(parm) {
-    Lo <- parm[1:9]
-    Ld <- parm[10:21]
-    od <- c(Lo[1:2], 1, Lo[4:5], z6, Lo[3], z3, 1, Lo[6:7], z9, 1, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
-    L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
-    diagonals(L) <- Ld
-#    nu <- parm[-(1:21)]
-    object <- mvnorm(invchol = L)#, invcholmean = c(z3, nu))
-    -logLik(object, obs = obs)
-}
+mf <- estimate(mlvm, data = HolzingerSwineford1939)
 
-sc <- function(parm) {
-    Lo <- parm[1:9]
-    Ld <- parm[10:21]
-    od <- c(Lo[1:2], NA, Lo[4:5], z6, Lo[3], z3, NA, Lo[6:7], z9, NA, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
-    nn <- which(abs(od) > 0)
-    od[is.na(od)] <- 1.0
-    L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
-    diagonals(L) <- Ld
-#    nu <- parm[-(1:21)]
-    object <- mvnorm(invchol = L)#, invcholmean = c(z3, nu))
-    ret <- lLgrad(object, obs = obs)
-    so <- rowSums(Lower_tri(ret$scale, diag = FALSE)[nn,])
-    so <- so[c(1, 2, 5, 3:4, 6:9)]
-    sd <- rowSums(diagonals(ret$scale))
-#    sn <- rowSums(ret$invcholmean[-(1:3),])
-    - c(so, sd)#, sn)		
-}
-
-llim <- rep(-Inf, 21)# + 9)
-llim[10:21] <- 1e-4
-
-start <- rep(.1, 21)# + 9)
-
-ll(start)
-sc(start)
-if (CHKsc)
-  print(all.equal(sc(start), grad(ll, start)))
-    
-opCFA <- optim(par = start, fn = ll, gr = sc, 
-               lower = llim, method = "L-BFGS-B", hessian = FALSE, control = list(trace = TRUE))
-
--opCFA$value
-length(opCFA$value)
 logLik(fit)
+logLik(mf)
 
-Lo <- opCFA$par[1:9]
-Ld <- opCFA$par[10:21]
-od <- c(Lo[1:2], NA, Lo[4:5], z6, Lo[3], z3, NA, Lo[6:7], z9, NA, Lo[8:9], rep(0, manJ * (manJ - 1) / 2))
-od[is.na(od)] <- 1.0
-L <- ltMatrices(od, diag = FALSE, names = c(lat, man))
-diagonals(L) <- Ld
-L
+nm <- c(lat, man)
+J <- length(nm)
+tmp <- unclass(ltMatrices(rep.int(0, J * (J + 1) / 2), diag = TRUE, names = nm))
 
-round(as.array(invchol2cov(L))[man,man,1], 3)
-fitted(fit)
+fix <- paste(man[1 + 0:2 * 3], lat, sep = ".")
+meas <- paste(man[-(1 + 0:2 * 3)], rep(lat, each = 2), sep = ".")
+cova <- c("textual.visual", "speed.visual", "speed.textual")
+tmp[fix,] <- 1
+
+m <- matrix(0, ncol = 1, nrow = J)
+rownames(m) <- c(lat, man)
+
+obs <- t(as.matrix(HolzingerSwineford1939[, man]))
+
+lower <- upper <- NULL
+
+nll <- function(parm, logLik = TRUE, obs, lower = NULL, upper = NULL) {
+    Ld <- parm[seq_len(J)]
+    im <- parm[J + seq_len(J - 3)]
+    Lo <- parm[-seq_len(2 * J - 3)]
+    tmp[c(cova, meas),] <- Lo
+    L <- ltMatrices(tmp, diag = TRUE, names = nm)
+    diagonals(L) <- Ld
+    m[man,] <- im
+    object <- list(object = mvnorm(mean = m, invchol = L), 
+                   obs = obs, lower = lower, upper = upper, 
+                   seed = 2908, M = 1000)
+    if (!logLik) return(object)
+    - do.call("logLik", object)
+}
+
+nsc <- function(parm, ...) {
+    ret <- do.call("lLgrad", nll(parm, logLik = FALSE, ...))
+    - c(rowSums(diagonals(ret$scale)),
+        rowSums(ret$mean)[man],
+        rowSums(Lower_tri(ret$scale))[c(cova, meas)])
+}
+
+start <- runif(J + J - 3 + length(cova) + length(meas))
+nll(start, logLik = FALSE, obs = obs)$object
+
+nll(start, obs = obs)
+nsc(start, obs = obs)
+if (CHKsc)
+  print(all.equal(nsc(start, obs = obs), grad(nll, start, obs = obs)))
+
+lwr <- start
+lwr[] <- -Inf
+lwr[seq_len(J)] <- 0
+
+op <- optim(start, fn = function(parm) nll(parm, obs = obs), 
+            gr = function(parm) nsc(parm, obs = obs), lower = lwr, method = "L-BFGS-B",
+      control = list(trace = TRUE, maxit = 1000))
+
+logLik(mf)
+-op$value
+   
+r <- nll(op$par, logLik = FALSE, obs = obs)$object
+ 
+margDist(r, which = lat)
+
+cdstr <- condDist(r, which_given = lat, given = diag(length(lat)))
+
+r$mean[man,]
+1 / diagonals(cdstr$scale)^2
+- (cdstr$mean - r$mean[man,])
+
+### with censoring
+HS <- HolzingerSwineford1939
+HS$x9 <- with(HS, Surv(pmin(x9, 6), x9 < 6))
+
+mfi <- estimate(mlvm, data = HS) # control = list(start = coef(mf))
+
+lower <- upper <- obs
+lower["x9",] <- pmin(lower["x9", ], 6)
+upper["x9", upper["x9",] > 6] <- Inf
+lower <- lower["x9",,drop = FALSE]
+upper <- upper["x9",,drop = FALSE]
+
+start <- op$par
+
+sll <- function(parm) {
+    nll(parm, obs = obs[,is.finite(upper)]) + 
+    nll(parm, obs = obs[1:8,!is.finite(upper)],
+              lower = lower[, !is.finite(upper),drop = FALSE],
+              upper = upper[, !is.finite(upper), drop = FALSE])
+}
+
+ssc <- function(parm) {
+    nsc(parm, obs = obs[,is.finite(upper)]) + 
+    nsc(parm, obs = obs[1:8,!is.finite(upper)],
+              lower = lower[, !is.finite(upper),drop = FALSE],
+              upper = upper[, !is.finite(upper), drop = FALSE])
+}
+
+sll(start)
+ssc(start)
+if (CHKsc)
+  print(all.equal(ssc(start), grad(sll, start)))
+
+opi <- optim(start, fn = sll, gr = ssc, lower = lwr, method = "L-BFGS-B",
+              control = list(trace = TRUE, maxit = 1000))
+
+nll(opi$par, logLik = FALSE, obs = obs)$object
+
+logLik(mfi)
+-opi$value
+
+### with ordinal
+HS <- HolzingerSwineford1939
+HS$x1 <- as.ordered(HS$x1)
+HS$x2 <- as.ordered(HS$x2)
+
+mfo <- estimate(mlvm, data = HS) # control = list(start = coef(mf))
 
 ### competing risks
 data("follic", package = "randomForestSRC")
-library("survival")
   
 ## Therapy:
 ### Radiotherapy alone (RT) or Chemotherapy + Radiotherapy (CMTRT)
@@ -531,3 +577,60 @@ args = list(seed = 2908, type = "MC", M = 1000))
 ### lambda extremely variable
 sqrt(diag(vcov(m)))
 sqrt(diag(vcov(mC)))
+
+### lava
+set.seed(290875)
+N <- 100
+J <- 3
+Yn <- paste0("Y", seq_len(J))
+nm <- c("Z", Yn)
+
+m <- lvm(list(Y1 ~ Z, Y2 ~ Z, Y3 ~ Z))
+latent(m) <- ~ Z
+intercept(m, ~ Z) <- 0
+covariance(m, ~ Z) <- 1
+parm <- 2 + runif(9)
+d <- sim(m, n = N, p = parm)
+mh <- estimate(m, data = d)
+logLik(mh)
+
+summary(mh)
+
+obs <- t(as.matrix(d[, Yn]))
+
+nll <- function(parm, logLik = TRUE) {
+    dg <- c(1, parm[seq_len(J)])
+    im <- c(0, parm[J + seq_len(J)])
+    bZ <- c(parm[2 * J + seq_len(J)], rep(0, J * (J - 1) / 2))
+    L <- ltMatrices(bZ, byrow = FALSE, diag = FALSE, names = nm)
+    diagonals(L) <- dg
+    obj <- mvnorm(invcholmean = im, invchol = L)
+    if (!logLik) return(obj)
+    - logLik(obj, obs = obs)
+}
+
+nsc <- function(parm) {
+    obj <- nll(parm, logLik = FALSE)
+    ret <- lLgrad(obj, obs = obs)
+    - c(rowSums(diagonals(ret$scale))[-1L],
+        rowSums(ret$invcholmean)[-1L],
+        rowSums(Lower_tri(ret$scale))[1:3])
+}
+
+nll(parm)
+all.equal(nsc(parm), grad(nll, parm), check.attributes = FALSE)
+
+op <- optim(parm, fn = nll, gr = nsc, 
+            lower = c(rep(0, 3), rep(-Inf, 6)),
+            method = "L-BFGS-B", hessian = TRUE)
+-op$value
+logLik(mh)
+r <- nll(op$par, logLik = FALSE)
+cdstr <- condDist(r, which_given = "Z", given = matrix(1))
+
+cf <- c(r$mean[-1L], -(cdstr$mean - r$mean[Yn,]), 1 / diagonals(cdstr$scale)^2)
+cbind(cf, coef(mh))
+
+### saturated model
+logLik(margDist(r, which = Yn), obs = obs)
+
