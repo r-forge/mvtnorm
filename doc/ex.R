@@ -221,7 +221,7 @@ J <- length(vars <- colnames(bf))
 obs <- t(qnorm(do.call("cbind", lapply(bf, rank, ties.method = "max")) / (nrow(bf) + 1)))
 (CR <- cor(t(obs)))
 
-ct <- lapply(bf, function(x) cut(x, breaks = c(-Inf, sort(unique(x)))))
+ct <- as.data.frame(lapply(bf, function(x) cut(x, breaks = c(-Inf, sort(unique(x))))))
 
 nll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm, names = vars)
@@ -312,6 +312,18 @@ as.array(ltMatrices(sqrt(diag(solve(op$hessian))), names = vars))["DEXfat",,1]
 as.array(ltMatrices(split(sqrt(diag(solve(opM$hessian))), pidx)[["Lo"]], names =
 vars))["DEXfat",,1]
 
+### same with lava
+fm <- as.formula(paste(paste(colnames(ct), collapse = "+"), "~1"))
+m <- lvm(fm)
+m <- covariance(m, var1 = colnames(ct), pairwise = TRUE)
+plot(m)
+system.time(mf <- estimate(m, data = ct))
+### not converged
+mf$opt
+
+logLik(mf)
+-opM$value
+invchol2cor(nll(opM$par, logLik = FALSE)$object$scale)
 
 ### with age-dependent correlation
 pidx <- rep(gl(J + 2, 1, labels = c(vars, "Lo", "Loage")), c(sapply(ct, nlevels) - 1, rep(J * (J - 1) / 2, 2)))
