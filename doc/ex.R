@@ -29,68 +29,108 @@ if (file.exists("HCC.rda")) {
 
 vars <- c("AFP", "PIV", "OPN", "DKK")
 
-splom(~ HCC[, vars], groups = x, data = HCC)
+#splom(~ HCC[, vars], groups = x, data = HCC)
 
 ### LDA
-lda(x ~ AFP + PIV + OPN + DKK, data = HCC)
+#lda(x ~ AFP + PIV + OPN + DKK, data = HCC)
 
+N <- nrow(HCC)
+m <- matrix(sapply(y <- split(HCC[, vars,drop = FALSE], HCC$x), colMeans), ncol = 2)
+S <- var(HCC[, vars,drop = FALSE] - t(m)[HCC$x,]) * (N - 1) / N
+Sg <- lapply(y, function(x) var(x) * (nrow(x) - 1) / nrow(x))
 
-obs <- t(HCC[, vars])
+sum(dmvnorm(y[[1]], mean = m[,1,drop = FALSE], sigma = S, log = TRUE)) + 
+sum(dmvnorm(y[[2]], mean = m[,2,drop = FALSE], sigma = S, log = TRUE))
+
+HCC$llR <- dmvnorm(HCC[,vars,drop = FALSE], mean = m[,1, drop = FALSE], sigma = S, log = TRUE) - 
+           dmvnorm(HCC[,vars,drop = FALSE], mean = m[,2, drop = FALSE], sigma = S, log = TRUE) 
+
+obs <- t(HCC[, vars, drop = FALSE])
 J <- dim(obs)[1L]
 pidx <- rep(gl(4, 1, labels = c("Lm", "Lm1", "Ld", "Lo")), 
             times = c(J, J, J, J * (J - 1) / 2))
-plim <- rep(-Inf, length.out = length(pidx))
+plim <- rep_len(-Inf, length.out = length(pidx))
 plim[pidx == "Ld"] <- 1e-4
-start <- runif(length(pidx))
+start <- rep_len(0, length.out = length(pidx))
+start[pidx == "Ld"] <- 1
 
-nll <- function(parm, logLik = TRUE) {
+nllLDA <- function(parm, group = HCC$x, object = FALSE) {
     plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
+    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[, group, drop = FALSE]
     L <- ltMatrices(plist$Lo, diag = FALSE, names = vars)
     diagonals(L) <- plist$Ld
-    object <- mvnorm(invcholmean = im, invchol = L)
-    if (!logLik) return(object)
-    - logLik(object, obs = obs)
+    obj <- mvnorm(invcholmean = im, invchol = L)
+    if (object) return(obj)
+    - logLik(obj, obs = obs)
 }
 
-nsc <- function(parm) {
-    object <- nll(parm, logLik = FALSE)
-    ret <- lLgrad(object, obs = obs)
+nscLDA <- function(parm) {
+    obj <- nllLDA(parm, object = TRUE)
+    ret <- lLgrad(obj, obs = obs)
     -c(rowSums(ret$invcholmean),
-       rowSums(ret$invcholmean[,HCC$x == "1"]),
+       rowSums(ret$invcholmean[,HCC$x == "1",drop = FALSE]),
        rowSums(diagonals(ret$scale)),
        rowSums(Lower_tri(ret$scale, diag = FALSE)))
 }
 
-nll(start)
-nsc(start)
 if (CHKsc)
-  print(all.equal(nsc(start), grad(nll, start)))
+  print(all.equal(unname(nscLDA(start)), grad(nllLDA, start)))
 
-(opLDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower =
-plim))
+ctrl <- list(trace = TRUE, maxit = 1000)
+(opLDA <- optim(par = start, fn = nllLDA, gr = nscLDA, 
+                method = "L-BFGS-B", lower = plim, control = ctrl))
+
+grp <- sort(unique(HCC$x))
+grp0 <- rep(grp[1], length.out = nrow(HCC))
+grp1 <- rep(grp[2], length.out = nrow(HCC))
+HCC$llR_LDA <- logLik(nllLDA(opLDA$par, group = grp0, object = TRUE), 
+                      obs = obs, logLik = FALSE) -
+               logLik(nllLDA(opLDA$par, group = grp1, object = TRUE), 
+                      obs = obs, logLik = FALSE)
+
+boxplot(llR_LDA ~ x, data = HCC)
+abline(h = 0, col = "red")
+
+nllLDA(opLDA$par, object = TRUE)$mean[,c(1, 300)]
+m
+invchol2cov(nllLDA(opLDA$par, object = TRUE)$scale)
+S
+
+plot(llR ~ llR_LDA, data = HCC)
+abline(a = 0, b = 1)
+
+AO <- c("AFP", "OPN")
+HCC$llR_LDA_AO <- logLik(nllLDA(opLDA$par, group = grp0, object = TRUE), 
+                         obs = obs[AO,], logLik = FALSE) -
+                  logLik(nllLDA(opLDA$par, group = grp1, object = TRUE), 
+                         obs = obs[AO,], logLik = FALSE)
+
+plot(llR_LDA ~ llR_LDA_AO, data = HCC, col = (1:2)[HCC$x])
+abline(a = 0, b = 1)
+abline(h = 0, v = 0)
 
 ### QDA
 pidx <- rep(gl(6, 1, labels = c("Lm", "Lm1", "Ld0", "Ld1", "Lo0", "Lo1")), 
             times = c(rep(J, 4), rep(J * (J - 1) / 2, 2)))
 plim <- rep(-Inf, length.out = length(pidx))
 plim[pidx %in% c("Ld0", "Ld1")] <- 1e-4
-start <- runif(length(pidx))
+start <- rep_len(0, length.out = length(pidx))
+start[pidx %in% c("Ld0", "Ld1")] <- 1
 
-nll <- function(parm, logLik = TRUE) {
+nllQDA <- function(parm, group = HCC$x, object = FALSE) {
     plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
+    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,group]
     L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
     diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
-    L <- L[HCC$x,]
-    object <- mvnorm(invcholmean = im, invchol = L)
-    if (!logLik) return(object)
-    - logLik(object, obs = obs)
+    L <- L[group,]
+    obj <- mvnorm(invcholmean = im, invchol = L)
+    if (object) return(obj)
+    - logLik(obj, obs = obs)
 }
 
-nsc <- function(parm) {
-    object <- nll(parm, logLik = FALSE)
-    ret <- lLgrad(object, obs = obs)
+nscQDA <- function(parm) {
+    obj <- nllQDA(parm, object = TRUE)
+    ret <- lLgrad(obj, obs = obs)
     - c(rowSums(ret$invcholmean),
         rowSums(ret$invcholmean[,HCC$x == "1"]),
         rowSums(diagonals(ret$scale)[, HCC$x == "0"]),
@@ -99,26 +139,23 @@ nsc <- function(parm) {
         rowSums(Lower_tri(ret$scale, diag = FALSE)[, HCC$x == "1"]))
 }
 
-nll(start)
-nsc(start)
 if (CHKsc)
   print(all.equal(nsc(start), grad(nll, start)))
 
-(opQDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower = plim))
+(opQDA <- optim(par = start, fn = nllQDA, gr = nscQDA, method = "L-BFGS-B", lower = plim, control = ctrl))
 
-plist <- split(opQDA$par, pidx)
-im0 <- plist$Lm
-im1 <- plist$Lm + plist$Lm1 
-L0 <- ltMatrices(plist$Lo0, diag = FALSE, names = vars)
-diagonals(L0) <- plist$Ld0
-L1 <- ltMatrices(plist$Lo1, diag = FALSE, names = vars)
-diagonals(L1) <- plist$Ld1
+HCC$llR_QDA <- logLik(nllQDA(opQDA$par, group = grp0, object = TRUE), 
+                      obs = obs, logLik = FALSE) - 
+               logLik(nllQDA(opQDA$par, group = grp1, object = TRUE), 
+                      obs = obs, logLik = FALSE)
 
-m0 <- mvnorm(invcholmean = im0, invchol = L0)
-m1 <- mvnorm(invcholmean = im1, invchol = L1)
-HCC$llR <- logLik(m0, obs = obs, logLik = FALSE) - logLik(m1, obs = obs, logLik = FALSE)
-boxplot(llR ~ x, data = HCC)
+boxplot(llR_QDA ~ x, data = HCC)
 abline(h = 0, col = "red")
+
+nllQDA(opQDA$par, object = TRUE)$mean[,c(1, 300)]
+m
+invchol2cov(nllQDA(opQDA$par, object = TRUE)$scale[c(1, 300),])
+Sg
 
 ### mixed discrete-continuous QDA
 iHCC <- HCC
@@ -131,23 +168,17 @@ lwr <- rbind(OPN = c(-Inf, qOPN, Inf)[iHCC$OPN],
              DKK = c(-Inf, qDKK, Inf)[iHCC$DKK])
 upr <- rbind(OPN = c(-Inf, qOPN, Inf)[unclass(iHCC$OPN) + 1L],
              DKK = c(-Inf, qDKK, Inf)[unclass(iHCC$DKK) + 1L])
-obs <- obs[c("AFP", "PIV"),]
 
-
-nll <- function(parm, logLik = TRUE) {
-    plist <- split(parm, pidx)
-    im <- cbind(plist$Lm, plist$Lm + plist$Lm1)[,HCC$x]
-    L <- ltMatrices(cbind(plist$Lo0, plist$Lo1), diag = FALSE, names = vars)
-    diagonals(L) <- cbind(plist$Ld0, plist$Ld1)
-    L <- L[HCC$x,]
-    object <- list(object = mvnorm(invcholmean = im, invchol = L),
-                   obs = obs, lower = lwr, upper = upr, seed = 2908, M = 1000)
-    if (!logLik) return(object)
-    - do.call("logLik", object)
+nllQDAi <- function(parm, group = HCC$x, object = FALSE) {
+    obj <- nllQDA(parm, group = group, object = TRUE)
+    obj <- list(object = obj, 
+                obs = obs[c("AFP", "PIV"),], lower = lwr, upper = upr, seed = 2908, M = 1000)
+    if (object) return(obj)
+    - do.call("logLik", obj)
 }
 
-nsc <- function(parm) {
-    args <- nll(parm, logLik = FALSE)
+nscQDAi <- function(parm) {
+    args <- nllQDAi(parm, object = TRUE)
     ret <- do.call("lLgrad", args)
     ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
     lt <- Lower_tri(ret$scale, diag = FALSE)
@@ -161,60 +192,35 @@ nsc <- function(parm) {
 }
 
 start <- opQDA$par
-nll(start)
-nsc(start)
 if (CHKsc)
-  print(all.equal(nsc(start), grad(nll, start)))
+  print(all.equal(nscQDAi(start), gradQDAi(nll, start)))
 
-(iopQDA <- optim(par = start, fn = nll, gr = nsc, method = "L-BFGS-B", lower =
-plim))
+(opQDAi <- optim(par = start, fn = nllQDAi, gr = nscQDAi, method = "L-BFGS-B", lower = plim, control = ctrl))
 
-plist <- split(iopQDA$par, pidx)
-im0 <- plist$Lm
-im1 <- plist$Lm + plist$Lm1 
-L0 <- ltMatrices(plist$Lo0, diag = FALSE, names = vars)
-diagonals(L0) <- plist$Ld0
-L1 <- ltMatrices(plist$Lo1, diag = FALSE, names = vars)
-diagonals(L1) <- plist$Ld1
+cbind(opQDA$par, opQDAi$par)
+nllQDA(opQDA$par)
+nllQDA(opQDAi$par)
 
-m0 <- mvnorm(invcholmean = im0, invchol = L0)
-m1 <- mvnorm(invcholmean = im1, invchol = L1)
+HCC$llR_QDAi_AO <- logLik(nllQDAi(opQDAi$par, group = grp0, object = TRUE)$object, 
+                          obs = obs["AFP",,drop = FALSE], 
+                          lower = lwr["OPN",,drop = FALSE],
+                          upper = upr["OPN",,drop = FALSE], 
+                          logLik = FALSE) -
+                   logLik(nllQDAi(opQDAi$par, group = grp1, object = TRUE)$object, 
+                          obs = obs["AFP",,drop = FALSE], 
+                          lower = lwr["OPN",,drop = FALSE],
+                          upper = upr["OPN",,drop = FALSE], 
+                          logLik = FALSE)
 
-AFPmiss <- sample.int(ncol(obs), floor(ncol(obs) / 4))
+plot(llR_QDAi_AO ~ llR_LDA_AO, data = HCC, col = (1:2)[HCC$x])
+abline(a = 0, b = 1)
+abline(h = 0, v = 0)
 
-HCC$illR <- 0
-HCC$illR[-AFPmiss] <- 
-    logLik(m0, 
-           obs = obs[, -AFPmiss], 
-           lower = lwr[, -AFPmiss], 
-           upper = upr[, -AFPmiss], 
-           logLik = FALSE, seed = 2908, M = 1000) - 
-    logLik(m1, 
-           obs = obs[, -AFPmiss], 
-           lower = lwr[, -AFPmiss], 
-           upper = upr[, -AFPmiss], 
-           logLik = FALSE, seed = 2908, M = 1000)
-HCC$illR[AFPmiss] <- 
-    logLik(m0, 
-           obs = obs["PIV",AFPmiss,drop = FALSE], 
-           lower = lwr[, AFPmiss], 
-           upper = upr[, AFPmiss], 
-           logLik = FALSE, seed = 2908, M = 1000) - 
-    logLik(m1, 
-           obs = obs["PIV",AFPmiss,drop = FALSE], 
-           lower = lwr[, AFPmiss], 
-           upper = upr[, AFPmiss], 
-           logLik = FALSE, seed = 2908, M = 1000)
-
-boxplot(illR ~ x, data = HCC)
-abline(h = 0, col = "red")
-
-plot(illR ~ llR, data = HCC, col = 1 + is.na(obs["AFP",]), pch = 19)
+splom(~ HCC[, grep("llR", colnames(HCC))], groups = x, data = HCC)
 
 ### Regression
 data("bodyfat", package = "TH.data")
-bodyfat <- bodyfat[, c((1:ncol(bodyfat))[-2], 2)]
-bodyfat <- bodyfat[,c("age", "hipcirc", "DEXfat")]
+bodyfat <- bodyfat[, c("age", "waistcirc", "hipcirc", "DEXfat")]
 bf <- bodyfat[, colnames(bodyfat) != "age"]
 J <- length(vars <- colnames(bf))
 
@@ -247,7 +253,7 @@ invchol2cov(Ls <- standardize(invchol = ltMatrices(op$par, names = vars)))
 coef(lm(DEXfat ~ 0 + ., data = as.data.frame(t(obs))))
 
 ### Standard errors
-ltMatrices(sqrt(diag(solve(op$hessian))), names = vars)
+Lower_tri(ltMatrices(sqrt(diag(solve(op$hessian))), names = vars))
 
 ### with margins
 
@@ -300,7 +306,7 @@ if (CHKsc)
   print(all.equal(nsc(start), grad(nll, start)))
 
 opM <- optim(par = start, fn = nll, gr = nsc, 
-             lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE))
+             lower = llim, method = "L-BFGS-B", hessian = TRUE, control = list(trace = TRUE, maxit = 1000))
 
 invchol2cov(Ls <- standardize(invchol = ltMatrices(split(opM$par, pidx)[["Lo"]], names = vars)))
 - as.array(Ls)["DEXfat",vars[vars != "DEXfat"],] / as.array(Ls)["DEXfat","DEXfat",]
@@ -317,11 +323,11 @@ fm <- as.formula(paste(paste(colnames(ct), collapse = "+"), "~1"))
 m <- lvm(fm)
 m <- covariance(m, var1 = colnames(ct), pairwise = TRUE)
 plot(m)
-system.time(mf <- estimate(m, data = ct))
+#system.time(mf <- estimate(m, data = ct))
 ### not converged
-mf$opt
+#mf$opt
 
-logLik(mf)
+# logLik(mf)
 -opM$value
 invchol2cor(nll(opM$par, logLik = FALSE)$object$scale)
 
