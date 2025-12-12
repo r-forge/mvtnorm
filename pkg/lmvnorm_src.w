@@ -3720,7 +3720,9 @@ if (require("qrng", quietly = TRUE)) {
     W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
+    ### byrow = TRUE because adding / removing dimensions
+    ### keeps the MC points for the remaining dimensions constant
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
 }
 
 ### Genz & Bretz, 2002, without early stopping (really?)
@@ -4577,7 +4579,7 @@ if (require("qrng", quietly = TRUE)) {
     W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
 }
 ll <- function(parm, J) {
      m <- parm[1:J]             ### mean parameters
@@ -5435,7 +5437,7 @@ if (require("qrng", quietly = TRUE)) {
     W <- t(ghalton(M, d = J - 1))
 } else {
     ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), nrow = J - 1)
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
 }
 
 ll <- function(parm) {
@@ -6512,7 +6514,7 @@ obs <- Y[rev(LETTERS[3:J]),]    ### change order of dimensions
 With this data, we first compute the log-likelihood and score functions for
 the complete data, that is, including the infinite intervals for $B$.
 <<marginBllsc>>=
-w <- matrix(runif(1000), nrow = 1)
+w <- matrix(runif(1000), nrow = 1, byrow = TRUE)
 lABCD <- logLik(mvnorm(invchol = L), obs = obs, lower = lwr, upper = upr, w = w)
 sABCD <- lLgrad(mvnorm(invchol = L), obs = obs, lower = lwr, upper = upr, w = w)
 @@
@@ -6666,7 +6668,7 @@ Linv <- ltMatrices(Linv[lower.tri(Linv, diag = TRUE)], diag = TRUE)
 a <- -(2 + runif(J))
 b <- 2 + runif(J)
 M <- 1e6
-dim(w <- matrix(runif((J - 1) * M), nrow = J - 1))
+dim(w <- matrix(runif((J - 1) * M), nrow = J - 1, byrow = TRUE))
 lpmvnorm(lower = a, upper = b, chol = Linv, w = w)
 dim(Z <- matrix(rnorm(K * M), nrow = K))
 lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
