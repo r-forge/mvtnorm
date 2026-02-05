@@ -392,8 +392,8 @@ man <- paste0("x", 1:9)
 
 ## with lava
 mlvm <- lvm(list(x1 + x2 + x3 ~ visual,
-              x4 + x5 + x6 ~ textual,
-              x7 + x8 + x9 ~ speed))
+                 x4 + x5 + x6 ~ textual,
+                 x7 + x8 + x9 ~ speed))
 latent(mlvm) <- ~ visual + textual + speed
 covariance(mlvm) <- visual ~ textual
 covariance(mlvm) <- textual ~ speed
@@ -472,6 +472,18 @@ cdstr <- condDist(r, which_given = lat, given = diag(length(lat)))
 r$mean[man,]
 1 / diagonals(cdstr$scale)^2
 - (cdstr$mean - r$mean[man,])
+
+## compare with lavaan: DOI:10.1111/bmsp.70003
+
+standardizedSolution(fit)
+Lower_tri(invchol2cor(margDist(r, which = lat)$scale))
+
+Lam <- r$scale
+class(Lam) <- class(Lam)[-1L]
+invcholD(Lam, D = 1 / diagonals(Lam))
+
+
+
 
 ### with censoring
 HS <- HolzingerSwineford1939
