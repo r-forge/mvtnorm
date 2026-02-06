@@ -119,21 +119,12 @@ depending on $\nuvec$ and $\mLambda$.
 log-likelihood gradients (or scores):
 
 \begin{eqnarray}
-\svec(\nuvec) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \nuvec} \in \RR^J
+\svec(\nuvec \mid \avec, \bvec) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \nuvec} \in \RR^J
 \end{eqnarray}
 
 \begin{eqnarray}
-\svec(\mLambda) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \mLambda} \in \RR^{\nicefrac{J(J+1)}{2}}
+\svec(\mLambda \mid \avec, \bvec) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \mLambda} \in \RR^{\nicefrac{J(J+1)}{2}}
 \end{eqnarray}
-
-\begin{eqnarray*}
-\svec(\avec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \avec}
-\in \RR^J
-\end{eqnarray*}
-
-\begin{eqnarray*}
-\svec(\bvec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \bvec} \in \RR^J
-\end{eqnarray*}
 
 \begin{table}
 \begin{tabular}{llll} \hline \hline
@@ -154,18 +145,15 @@ The dependence of $\ell()$ and $\svec()$ on the data $\avec$ and $\bvec$ is
 omitted.}
 \end{table}
 
-
-also with corresponding scores (except for the last one)
-
 Motivating example
 <<motivation>>=
 library("mvtnorm")
 J <- length(vn <- paste0("Y", seq_len(4)))
 N <- 3
-Lparm <- matrix(runif(N * J * (J + 1) / 2), ncol = N, 
+Ltheta <- matrix(.5 + runif(N * J * (J + 1) / 2), ncol = N, 
                 dimnames = list(var = NULL, 
                                 obs = paste("i =", seq_len(N))))
-(L <- ltMatrices(Lparm, diag = TRUE, names = vn))
+(L <- ltMatrices(Ltheta, diag = TRUE, names = vn))
 class(L)
 (nu <- matrix(rnorm(N * J), ncol = N, 
               dimnames = list(Y = vn, i = seq_len(N))))
@@ -176,8 +164,9 @@ ND_nu_L <- mvnorm(invcholmean = nu, invchol = L)
 sum(log(diagonals(L))) + sum(dnorm(L %*% y - nu, log = TRUE))
 
 logLik(mvnorm(invcholmean = nu,           invchol = L),        obs = y)
-logLik(mvnorm(       mean = solve(L, nu),    chol = solve(L)), obs = y)
 logLik(mvnorm(       mean = solve(L, nu), invchol = L),        obs = y)
+logLik(mvnorm(invcholmean = nu,              chol = solve(L)), obs = y)
+logLik(mvnorm(       mean = solve(L, nu),    chol = solve(L)), obs = y)
 
 sum(sapply(seq_len(N), function(i)
     dmvnorm(x     = y[,i],
@@ -191,17 +180,18 @@ scores
 <<motivation-scores>>=
 sc <- lLgrad(ND_nu_L, obs = y)
 library("numDeriv")
-ll <- function(parm)
+tol <- 1e-8
+ll_nu <- function(parm, ...)
     logLik(mvnorm(invcholmean = matrix(parm, ncol = N), invchol = L), 
-                  obs = y)
-max(abs(grad(ll, c(nu)) - sc$invcholmean))
+           ...)
+max(abs(grad(ll_nu, nu, obs = y) - sc$invcholmean)) < tol
 
-ll <- function(parm)
+ll_L <- function(parm, ...)
     logLik(mvnorm(invcholmean = nu, 
                   invchol = ltMatrices(matrix(parm, ncol = N), 
                                        diag = TRUE, names = vn)), 
-           obs = y)
-max(abs(grad(ll, c(Lparm)) - unclass(sc$scale)))
+           ...)
+max(abs(grad(ll_L, Ltheta, obs = y) - unclass(sc$scale))) < tol
 @
 
 <<interval>>=
@@ -219,20 +209,12 @@ sum(sapply(seq_len(N), function(i)
 @
 
 <<interval-score>>=
-system.time(sc <- lLgrad(ND_nu_L, lower = a, upper = b, seed = S, M = M))
-ll <- function(parm)
-    logLik(mvnorm(invcholmean = matrix(parm, ncol = N), invchol = L), 
-                  lower = a, upper = b, seed = S, M = M)
-system.time(gr <- grad(ll, c(nu)))
-max(abs(gr - sc$invcholmean))
-
-ll <- function(parm)
-    logLik(mvnorm(invcholmean = nu, 
-                  invchol = ltMatrices(matrix(parm, ncol = N), 
-                                       diag = TRUE, names = vn)), 
-           lower = a, upper = b, seed = S, M = M)
-system.time(gr <- grad(ll, c(Lparm)))
-max(abs(gr - unclass(sc$scale)))
+tol <- 1e-8
+sc <- lLgrad(ND_nu_L, lower = a, upper = b, seed = S, M = M)
+gr <- grad(ll_nu, nu, lower = a, upper = b, seed = S, M = M)
+max(abs(gr - sc$invcholmean)) < tol
+gr <- grad(ll_L, Ltheta, lower = a, upper = b, seed = S, M = M)
+max(abs(gr - unclass(sc$scale))) < tol
 @
 
 That was easy. But what when $\rY_1$ is missing completely, and only a lower
@@ -245,9 +227,42 @@ b4  <- rbind(Y4 = rep(Inf, N))
 logLik(ND_nu_L, obs = y23, lower = a4, upper = b4)
 @
 
-<<scores-int>>=
-lLgrad(ND_nu_L, obs = y23, lower = a4, upper = b4)
+<<mixed-score>>=
+sc <- lLgrad(ND_nu_L, obs = y23, lower = a4, upper = b4)
+gr <- grad(ll_nu, nu, obs = y23, lower = a4, upper = b4)
+max(abs(gr - sc$invcholmean)) < tol
+gr <- grad(ll_L, Ltheta, obs = y23, lower = a4, upper = b4)
+max(abs(gr - unclass(sc$scale))) < tol
 @
+
+
+For independent observations $\mY_1, \dots, \mY_J$ with $\mY_i \sim
+\ND_J(\mLambda_i(\varthetavec)^{-1} \nuvec_i(\varthetavec), \mLambda_i(\varthetavec)^{-1}
+\mLambda_i(\varthetavec)^{-\top})$ and parameter vector $\varthetavec \in
+\mTheta \subseteq \RR^P$
+\begin{eqnarray*}
+\hat{\varthetavec}_N = \argmax_{\varthetavec} \underbrace{\sum_{i = 1}^N \ell(\nuvec_i(\varthetavec), \mLambda_i(\varthetavec) \mid \avec_i, \bvec_i)}_{=: \ell(\varthetavec)}
+\end{eqnarray*}
+with gradient
+\begin{eqnarray*}
+\svec(\varthetavec) = \sum_{i = 1}^N 
+\svec(\nuvec_i(\varthetavec) \mid \avec, \bvec) \frac{\partial \nuvec_i(\varthetavec)}{\varthetavec}
++ \svec(\mLambda_i(\varthetavec) \mid \avec, \bvec) \frac{\partial \mLambda_i(\varthetavec)}{\varthetavec}
+\end{eqnarray*}
+
+
+
+\section{Additional Functionality}
+
+\begin{eqnarray*}
+\svec(\avec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \avec}
+\in \RR^J
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\svec(\bvec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \bvec} \in \RR^J
+\end{eqnarray*}
+
 
 %\bibliography{mlt,packages}
 
