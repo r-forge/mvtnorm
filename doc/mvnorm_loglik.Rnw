@@ -57,6 +57,10 @@
 
 \begin{document}
 
+<<setup, results = "hide">>=
+options(digits = 5)
+@
+
 \section{Introduction}
 
 $\mY_i \in \RR^J$ with $\mY_i \sim \ND_J(\muvec_i, \mSigma_i)$, $\mSigma_i$ denoting a symmetric and positive definite $J \times J$
@@ -140,16 +144,18 @@ also with corresponding scores (except for the last one)
 Motivating example
 <<motivation>>=
 library("mvtnorm")
-J <- length(vn <- paste0("Y", 1:4))
+J <- length(vn <- paste0("Y", seq_len(4)))
 N <- 3
-(L <- ltMatrices(matrix(runif(N * J * (J + 1) / 2), ncol = N, 
-                        dimnames = list(var = NULL, 
-                                        obs = paste("i =", seq_len(N)))), 
-                 diag = TRUE, names = vn))
-(nu <- matrix(rnorm(N * J), ncol = N, dimnames = list(Y = vn, i = seq_len(N))))
+Lparm <- matrix(runif(N * J * (J + 1) / 2), ncol = N, 
+                dimnames = list(var = NULL, 
+                                obs = paste("i =", seq_len(N))))
+(L <- ltMatrices(Lparm, diag = TRUE, names = vn))
+class(L)
+(nu <- matrix(rnorm(N * J), ncol = N, 
+              dimnames = list(Y = vn, i = seq_len(N))))
 
 ND_nu_L <- mvnorm(invcholmean = nu, invchol = L)
-y <- a <- b <- simulate(ND_nu_L)
+(y <- a <- b <- simulate(ND_nu_L))
 
 sum(log(diagonals(L))) + sum(dnorm(L %*% y - nu, log = TRUE))
 
@@ -167,7 +173,50 @@ sum(sapply(seq_len(N), function(i)
 
 scores
 <<motivation-scores>>=
-lLgrad(ND_nu_L, obs = y)
+sc <- lLgrad(ND_nu_L, obs = y)
+library("numDeriv")
+ll <- function(parm)
+    logLik(mvnorm(invcholmean = matrix(parm, ncol = N), invchol = L), 
+                  obs = y)
+max(abs(grad(ll, c(nu)) - sc$invcholmean))
+
+ll <- function(parm)
+    logLik(mvnorm(invcholmean = nu, 
+                  invchol = ltMatrices(matrix(parm, ncol = N), 
+                                       diag = TRUE, names = vn)), 
+           obs = y)
+max(abs(grad(ll, c(Lparm)) - unclass(sc$scale)))
+@
+
+<<interval>>=
+a <- a - 1
+b <- b + 1
+M <- 1e4
+S <- 29
+logLik(ND_nu_L, lower = a, upper = b, seed = S, M = M)
+sum(sapply(seq_len(N), function(i)
+    log(pmvnorm(lower = a[,i],
+                upper = b[,i],
+                mean  = solve(L, nu)[,i], 
+                sigma = as.array(invchol2cov(L))[,,i]))
+))
+@
+
+<<interval-score>>=
+system.time(sc <- lLgrad(ND_nu_L, lower = a, upper = b, seed = S, M = M))
+ll <- function(parm)
+    logLik(mvnorm(invcholmean = matrix(parm, ncol = N), invchol = L), 
+                  lower = a, upper = b, seed = S, M = M)
+system.time(gr <- grad(ll, c(nu)))
+max(abs(gr - sc$invcholmean))
+
+ll <- function(parm)
+    logLik(mvnorm(invcholmean = nu, 
+                  invchol = ltMatrices(matrix(parm, ncol = N), 
+                                       diag = TRUE, names = vn)), 
+           lower = a, upper = b, seed = S, M = M)
+system.time(gr <- grad(ll, c(Lparm)))
+max(abs(gr - unclass(sc$scale)))
 @
 
 That was easy. But what when $\rY_1$ is missing completely, and only a lower
@@ -175,7 +224,7 @@ bound for $\rY_4$ was observed?
 
 <<motivation-int>>=
 y23 <- y[c("Y2", "Y3"),]
-a4  <- a["Y4",,drop = FALSE]
+a4  <- y["Y4",,drop = FALSE]
 b4  <- rbind(Y4 = rep(Inf, N))
 logLik(ND_nu_L, obs = y23, lower = a4, upper = b4)
 @
