@@ -57,7 +57,7 @@
 
 \begin{document}
 
-<<setup, results = "hide">>=
+<<setup, echo = FALSE, results = "hide">>=
 options(digits = 5)
 @
 
@@ -116,27 +116,43 @@ distribution of $(\rY_{\jmath + 1}, \dots, \rY_J) \mid (\rY_1, \dots,
 \rY_\jmath)$, which again is a normal in $J - \jmath$ dimensions only
 depending on $\nuvec$ and $\mLambda$.
 
-scores:
+log-likelihood gradients (or scores):
 
-$\svec(\nuvec) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \nuvec} \in
-\RR^J$
+\begin{eqnarray}
+\svec(\nuvec) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \nuvec} \in \RR^J
+\end{eqnarray}
 
-$\svec(\mLambda) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \mLambda} \in \RR^{\nicefrac{J(J+1)}{2}}$
+\begin{eqnarray}
+\svec(\mLambda) = \frac{\partial \ell(\nuvec, \mLambda \mid \avec, \bvec)}{\partial \mLambda} \in \RR^{\nicefrac{J(J+1)}{2}}
+\end{eqnarray}
 
-$\svec(\avec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \avec}
-\in \RR^J$
+\begin{eqnarray*}
+\svec(\avec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \avec}
+\in \RR^J
+\end{eqnarray*}
 
-$\svec(\bvec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \bvec} \in \RR^J$
+\begin{eqnarray*}
+\svec(\bvec) = \frac{\partial \ell(\nuvec, \mLambda, \mid \avec, \bvec)}{\partial \bvec} \in \RR^J
+\end{eqnarray*}
 
-alternative parameterisations:
-
-$\ell(\mLambda \muvec, \mLambda \mid \avec, \bvec)$ for $\ND_J(\muvec, \mLambda^{-1} \mLambda^{-\top})$
-
-$\ell(\nuvec, \mGamma^{-1} \mid \avec, \bvec)$ for $\ND_J(\mGamma \nuvec, \mGamma \mGamma^\top)$
-
-$\ell(\mGamma^{-1} \muvec, \mGamma^{-1} \mid \avec, \bvec)$ for $\ND_J(\muvec, \mGamma \mGamma^\top)$
-
-$\ell(\chol(\mSigma)^{-1} \muvec, \chol(\mSigma)^{-1} \mid \avec, \bvec)$ for $\ND_J(\muvec, \mSigma)$
+\begin{table}
+\begin{tabular}{llll} \hline \hline
+Parameter & Model & Log-likelihood & Gradient \\ \hline \hline
+$\nuvec$ & $\ND_J(\mLambda^{-1} \nuvec, \mLambda^{-1} \mLambda^{-\top})$ & $\ell(\nuvec, \mLambda)$ & $\svec(\nuvec)$ \\ 
+$\mLambda$ & & & $\svec(\mLambda)$ \\ \hline
+$\muvec$ & $\ND_J(\muvec, \mLambda^{-1} \mLambda^{-\top})$ & $\ell(\mLambda \muvec, \mLambda)$ & $\svec(\mLambda \muvec) \mLambda $\\
+$\mLambda$ & & & $\svec(\mLambda)$ \\ \hline
+$\nuvec$ & $\ND_J(\mGamma \nuvec, \mGamma \mGamma^\top)$ & $\ell(\nuvec, \mGamma^{-1})$ & $\svec(\nuvec)$ \\
+$\mGamma$ & & & $\svec(\mGamma^{-1})(\mGamma^{-\top} \otimes \mGamma^{-1})(-1)$ \\ \hline
+$\muvec$ & $\ND_J(\muvec, \mGamma \mGamma^\top)$ & $\ell(\mGamma^{-1} \muvec, \mGamma^{-1})$ & $\svec(\mGamma^{-1} \muvec) \mGamma^{-1}$ \\ 
+$\mGamma$ & & & $\svec(\mGamma^{-1})(\mGamma^{-\top} \otimes \mGamma^{-1})(-1)$  \\ \hline
+$\muvec$ & $\ND_J(\muvec, \mSigma)$ & $\ell(\chol(\mSigma)^{-1} \muvec, \chol(\mSigma)^{-1})$ & $\svec(\chol(\mSigma)^{-1} \muvec) \chol(\mSigma)^{-1}$\\
+$\mSigma$ & & & \\ \hline \hline
+\end{tabular}
+\caption{Alternative model parameterisations and corresponding log-likelihoods.
+The dependence of $\ell()$ and $\svec()$ on the data $\avec$ and $\bvec$ is
+omitted.}
+\end{table}
 
 
 also with corresponding scores (except for the last one)
@@ -191,7 +207,7 @@ max(abs(grad(ll, c(Lparm)) - unclass(sc$scale)))
 <<interval>>=
 a <- a - 1
 b <- b + 1
-M <- 1e4
+M <- 1e3
 S <- 29
 logLik(ND_nu_L, lower = a, upper = b, seed = S, M = M)
 sum(sapply(seq_len(N), function(i)
