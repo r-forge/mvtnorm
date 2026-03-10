@@ -2,6 +2,14 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.3-5 (2026-03-10)}{
+  \subsection{Documentation}{
+    \itemize{
+      \item Use \code{REFERENCES.bib}.
+    }
+  }
+}
+
 \section{Changes in Version 1.3-4 (2025-09-15)}{
   \subsection{Features}{
     \itemize{

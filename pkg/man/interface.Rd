@@ -10,10 +10,10 @@
 \alias{condDist}
 \alias{condDist.mvnorm}
 \title{
-    (Experimental) User Interface to Multiple Multivariate Normal Distributions
+    User Interface to Multiple Multivariate Normal Distributions
 }
 \description{
-    A (still experimental) simple user interface for computing on multiple multivariate
+    A simple user interface for computing on multiple multivariate
     normal distributions.
 }
 \usage{
