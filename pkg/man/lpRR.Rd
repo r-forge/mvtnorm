@@ -42,7 +42,7 @@ recycled to length of \code{lower} and \code{upper}).
   Evaluates the multivariate normal log-likelihood defined by \code{means},
   \code{B} and \code{D} when the covariance is \eqn{Sigma = B B^\top + D} 
   over boxes defined by \code{lower} and \code{upper}. Details are given
-  in Genz and Bretz (2009, Chapter 2.3.1.).
+  in \bibcitet{mvtnorm::Genz_Bretz_2009}, Chapter 2.3.1.
   
   \code{slpmvnorm} computes 
   the corresponding score functions with respect to \code{lower},
@@ -56,13 +56,7 @@ The log-likelihood (\code{log.p = TRUE}) or corresponding probability.
 \code{slpRR} return the scores.
 }
 \seealso{\code{vignette("lmvnorm_src", package = "mvtnorm")}}
-\references{
-
-  Genz, A. and Bretz, F. (2009), \emph{Computation of Multivariate Normal and
-  t Probabilities}. Lecture Notes in Statistics, Vol. 195. Springer-Verlag,
-  Heidelberg.
-
-}
+\references{\bibshow{*}}
 \examples{
   J <- 6
   K <- 3

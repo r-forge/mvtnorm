@@ -254,6 +254,6 @@ in \textsf{R}. We hope that this is helpful to users / programmers who
 deal with multiple testing problems.
 
 \bibliographystyle{plainnat}
-\bibliography{litdb}
+\bibliography{\Sexpr{gsub("\\.bib", "", system.file("REFERENCES.bib", package = "mvtnorm"))}}
 
 \end{document}

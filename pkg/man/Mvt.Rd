@@ -65,8 +65,8 @@ dmvt(x, delta = rep(0, p), sigma = diag(p), df = 1, log = TRUE,
   the correlation matrix corresponding to the scale matrix
   \eqn{\Sigma}{Sigma} (which can be computed with
   \code{\link{cov2cor}()}). Note that the scale matrix is sometimes
-  referred to as \dQuote{dispersion matrix};
-  see McNeil, Frey, Embrechts (2005, p. 74).
+  referred to as \dQuote{dispersion matrix}; 
+  see \bibcitet{mvtnorm::McNeil+Frey+Embrechts:2005}, p. 74.
 
   For \code{type = "shifted"} the density
   \deqn{c(1+(x-\delta)'S^{-1}(x-\delta)/\nu)^{-(\nu+m)/2}}
@@ -85,11 +85,7 @@ dmvt(x, delta = rep(0, p), sigma = diag(p), df = 1, log = TRUE,
   Note that \code{dmvt()} has default \code{log = TRUE}, whereas
   \code{\link{dmvnorm}()} has default \code{log = FALSE}.
 }
-\references{
-  McNeil, A. J., Frey, R., and Embrechts, P. (2005).
-  \emph{Quantitative Risk Management: Concepts, Techniques, Tools}.
-  Princeton University Press.
-}
+\references{\bibshow{*}}
 \seealso{\code{\link{pmvt}()} and \code{\link{qmvt}()}}
 \examples{
 ## basic evaluation
