@@ -28,14 +28,14 @@ dmvt(x, delta = rep(0, p), sigma = diag(p), df = 1, log = TRUE,
   \item{log}{\code{\link{logical}} indicating whether densities \eqn{d}
     are given as \eqn{\log(d)}{log(d)}.}
   \item{type}{type of the noncentral multivariate \eqn{t} distribution.
-    \code{type = "Kshirsagar"} corresponds
-    to formula (1.4) in Genz and Bretz (2009) (see also
-    Chapter 5.1 in Kotz and Nadarajah (2004)). This is the
-    noncentral t-distribution  needed for calculating
-    the power of multiple contrast tests under a normality
-    assumption. \code{type = "shifted"} corresponds to the
-    formula right before formula (1.4) in Genz and Bretz (2009)
-    (see also formula (1.1) in Kotz and Nadarajah (2004)). It
+              The choice \code{type = "Kshirsagar"} corresponds
+              to formula (1.4) in \bibcitet{mvtnorm::Genz_Bretz_2009}, see also
+              Chapter 5.1 in \bibcitet{mvtnorm::Kotz+Nadarajah:2004}. This is the
+              noncentral t-distribution needed for calculating
+              the power of multiple contrast tests under a normality
+              assumption. \code{type = "shifted"} corresponds to the
+               formula right before formula (1.4) in \bibcitet{mvtnorm::Genz_Bretz_2009}
+              \bibcitep{see also formula (1.1) in|mvtnorm::Kotz+Nadarajah:2004|}.  It
     is a location shifted version of the central t-distribution.
     This noncentral multivariate \eqn{t} distribution appears for
     example as the Bayesian posterior distribution

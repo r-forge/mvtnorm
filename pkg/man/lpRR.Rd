@@ -40,7 +40,7 @@ recycled to length of \code{lower} and \code{upper}).
 }
 \details{
   Evaluates the multivariate normal log-likelihood defined by \code{means},
-  \code{B} and \code{D} when the covariance is \eqn{Sigma = B B^\top + D} 
+  \code{B} and \code{D} when the covariance is \eqn{\Sigma = B B^\top + D} 
   over boxes defined by \code{lower} and \code{upper}. Details are given
   in \bibcitet{mvtnorm::Genz_Bretz_2009}, Chapter 2.3.1.
   

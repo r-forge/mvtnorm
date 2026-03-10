@@ -44,11 +44,13 @@ qmvt(p, interval = NULL, tail = c("lower.tail", "upper.tail", "both.tails"),
                     hyper parameters of this algorithm.}
   \item{type}{type of the noncentral multivariate t distribution
               to be computed. The choice \code{type = "Kshirsagar"} corresponds
-              to formula (1.4) in Genz and Bretz (2009) (see also
-	      Chapter 5.1 in Kotz and Nadarajah (2004)) and
-	      \code{type = "shifted"} corresponds to the formula before
-	      formula (1.4) in Genz and Bretz (2009)
-	      (see also formula (1.1) in Kotz and Nadarajah (2004)). }
+              to formula (1.4) in \bibcitet{mvtnorm::Genz_Bretz_2009}, see also
+              Chapter 5.1 in \bibcitet{mvtnorm::Kotz+Nadarajah:2004}. This is the
+              noncentral t-distribution needed for calculating
+              the power of multiple contrast tests under a normality
+              assumption. \code{type = "shifted"} corresponds to the
+               formula right before formula (1.4) in \bibcitet{mvtnorm::Genz_Bretz_2009}
+              \bibcitep{see also formula (1.1) in|mvtnorm::Kotz+Nadarajah:2004|}.}
   \item{ptol, maxiter, trace}{Parameters passed to the stochastic root-finding
     algorithm. Iteration stops when the 95\% confidence interval
     for the predicted quantile is inside [p-ptol, p+ptol]. \code{maxiter} is the
