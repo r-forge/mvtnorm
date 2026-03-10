@@ -12,6 +12,9 @@
 %\VignetteKeywords{multivariate normal distribution}
 %\VignettePackage{mvtnorm}
 
+%% hyperlinked dois in jss refstyle
+\newcommand{\doi}[1]{\href{https://doi.org/#1}{\normalfont\texttt{\@@doi{#1}}}}
+
 
 \usepackage[utf8]{inputenc}
 
@@ -6828,7 +6831,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 %
 %@u
 
-\bibliographystyle{plainnat}
+\bibliographystyle{jss}
 \bibliography{\Sexpr{gsub("\\.bib", "", system.file("REFERENCES.bib", package = "mvtnorm"))}}
 
 \end{document}
