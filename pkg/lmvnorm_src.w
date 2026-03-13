@@ -3042,7 +3042,7 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         }
         ret <- list(obs = sobs, invchol = ret)
         if (logLik) 
-            ret$logLik <- ldmvnorm(obs = obs, mean = mean, 
+            ret$logLik <- ldmvnorm(obs = obs,
                                    invchol = invchol, logLik = FALSE)
         return(ret)
     }
@@ -4249,8 +4249,11 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL,
     ll <- log(pmax(ret[1L,], tol)) - log(M)
     intsum <- ret[1L,]
     m <- matrix(intsum, nrow = nrow(ret) - 1, ncol = ncol(ret), byrow = TRUE)
-    ret <- ret[-1L,,drop = FALSE] / m ### NOTE: division by zero MAY happen,
-                                      ### catch outside
+    ret <- ret[-1L,,drop = FALSE] / m
+    ### NOTE: division by zero may have happened for observations with
+    ### probability < tol; the log-lik is constant in these cases
+    ### and thus the derivative = 0
+    ret[m < tol] <- 0
 
     @<post differentiate mean score@>
     @<post differentiate lower score@>
@@ -6324,12 +6327,15 @@ Before we start, we check if the gradient, evaluated at the sample
 maximum-likelihood estimates, is actually zero.
 
 <<iris-ML>>=
-start <- c(c(iris_mvn$mean), Lower_tri(iris_mvn$scale, diag = TRUE))
+### don't start at the solution
+start <- round(c(c(iris_mvn$mean), 
+                 Lower_tri(iris_mvn$scale, diag = TRUE)), 2)
 llim <- rep(-Inf, J + J * (J + 1) / 2)
-llim[J + c(diagonals(ltMatrices(seq_len(J * (J + 1) / 2), diag = TRUE)))] <-
-1e-4
+llim[J + c(diagonals(ltMatrices(seq_len(J * (J + 1) / 2), diag = TRUE)))] <- 1e-4
 op <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = FALSE))
+            lower = llim, 
+            control = list(trace = FALSE, 
+                           factr = 1e-6)) ### noLD machines
 Chat <- ltMatrices(op$par[-(1:J)], diag = TRUE, names = vars)
 ML <- mvnorm(mean = op$par[1:J], chol = Chat)
 @@
@@ -6364,11 +6370,16 @@ sc <- function(parm) {
 ### note: This is a convex problem now, so (here incorrect) 
 ### starting values shouldn't matter
 opL <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-            lower = llim, control = list(trace = FALSE, maxit = 500))
+            lower = llim, control = list(trace = FALSE, factr = 1e-6))
 MLL <- ll(opL$par, logLik = FALSE)
 @@
 
 where the comparison to the analytic estimates is
+
+<<echo = FALSE>>=
+## slightly different results on noLD machines
+cat("> ## IGNORE_RDIFF_BEGIN\n")
+@@
 
 <<iris-ML-hat-nu>>=
 ### log-likelihood
@@ -6419,23 +6430,24 @@ ll <- function(parm, logLik = TRUE) {
     L <- ltMatrices(parm[-(1:J)], diag = TRUE, names = vars)
     x <- mvnorm(invcholmean = parm[1:J], invchol = L)
     if (!logLik) return(x)
-    -logLik(object = x, obs = obs, lower = lower, upper = upper)
+    -logLik(object = x, obs = obs, lower = lower, upper = upper, 
+            tol = 1e-6) ### probs < tol are considered 0
 }
 sc <- function(parm) {
     x <- ll(parm, logLik = FALSE)
-    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper)
-    ret$invcholmean[!is.finite(ret$invcholmean)] <- NA
+    ret <- lLgrad(object = x, obs = obs, lower = lower, upper = upper, 
+                  tol = 1e-6) ### probs < tol are considered 0
     -c(rowSums(ret$invcholmean, na.rm = TRUE), 
        rowSums(Lower_tri(ret$scale, diag = TRUE), na.rm = TRUE))
 }
 @@
 
 <<iris-MLi-opt>>=
-start <- opL$par
+start <- round(opL$par, 2)
 if (require("numDeriv", quietly = TRUE))
     chk(grad(ll, start), sc(start), check.attributes = FALSE)
 opi <- optim(start, fn = ll, gr = sc, method = "L-BFGS-B", 
-             lower = llim, control = list(trace = FALSE))
+             lower = llim, control = list(trace = FALSE, factr = 1e-6))
 MLi <- ll(opi$par, logLik = FALSE)
 @@
 
@@ -6486,6 +6498,12 @@ cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
 cdstr$mean - ML$mean["Petal.Width",]
 ### residual variance
 c(1 / cdstr$scale^2)
+@@
+
+
+<<echo = FALSE>>=
+## slightly different results on noLD machines
+cat("> ## IGNORE_RDIFF_END\n")
 @@
 
 The log-likelihood and score function automagically marginalise over
