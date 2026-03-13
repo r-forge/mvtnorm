@@ -6205,28 +6205,11 @@ return(ret)
 @}
 
 The steps are essentially the same when $\mL$ was given, but we have to
-post-differentiate $\mC = \mL^{-1}$ with respect to $\mL$
+post-differentiate $\mC = \mL^{-1}$ with respect to $\mL$. We start with
+marginalisation
 
-@d lLgrad invchol
+@d lLgrad invchol marginalisation
 @{
-names(args)[names(args) == "scale"] <- "invchol"
-si <- args$invchol
-if (standardize)
-    args$invchol <- si <- standardize(invchol = args$invchol)
-if (!is.null(perm)) {
-    if (!attr(args$invchol, "diag")) {
-        diagonals(args$invchol) <- 1
-        si <- args$invchol
-    }
-    args$invchol <- pi <- aperm(as.invchol(args$invchol), perm = perm)
-    if (length(nm) < length(no))
-        args$invchol <- marg_mvnorm(invchol = args$invchol,
-                                    which = nm)$invchol
-    args$mean <- args$mean[nm,,drop = FALSE]
-}
-ret <- do.call("sldpmvnorm", args)
-### sldmvnorm returns mean score as -obs
-if (is.null(ret$mean)) ret$mean <- - ret$obs
 om <- length(no) - length(nm)
 if (om > 0) {
     am <- matrix(0, nrow = om, ncol = ncol(ret$mean))
@@ -6245,21 +6228,12 @@ if (om > 0) {
                               names = perm)
     ret$invchol <- ltMatrices(ret$invchol, byrow = byrow_orig)
 }
-if (!is.null(perm))
-    ret$invchol <- deperma(invchol = si, permuted_invchol = pi, 
-                           perm = match(perm, no), 
-                           score_schol = -vectrick(pi, ret$invchol))
-if (standardize)
-    ret$invchol <- destandardize(invchol = object$scale, 
-                                 score_schol = -vectrick(si, ret$invchol))
-if (!attr(si, "diag"))
-    ret$invchol <- ltMatrices(Lower_tri(ret$invchol, diag = FALSE),
-                              diag = FALSE, 
-                              byrow = attr(ret$invchol, "byrow"), 
-                              names = dimnames(ret$invchol)[[2L]])
-ret$scale <- ret$invchol
-ret$invchol <- NULL
-ret$mean <- ret$mean[no,,drop = FALSE]
+@}
+
+turn to post-processing
+
+@d lLgrad invchol post
+@{
 if (!is.null(object$invcholmean)) {
     J <- dim(si)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
@@ -6282,6 +6256,49 @@ if (!is.null(object$invcholmean)) {
     ret$invcholmean <- solve(si, X, transpose = TRUE)
     ret$mean <- FALSE
 }
+@}
+
+and finally put everything together
+
+@d lLgrad invchol
+@{
+names(args)[names(args) == "scale"] <- "invchol"
+si <- args$invchol
+if (standardize)
+    args$invchol <- si <- standardize(invchol = args$invchol)
+if (!is.null(perm)) {
+    if (!attr(args$invchol, "diag")) {
+        diagonals(args$invchol) <- 1
+        si <- args$invchol
+    }
+    args$invchol <- pi <- aperm(as.invchol(args$invchol), perm = perm)
+    if (length(nm) < length(no))
+        args$invchol <- marg_mvnorm(invchol = args$invchol,
+                                    which = nm)$invchol
+    args$mean <- args$mean[nm,,drop = FALSE]
+}
+ret <- do.call("sldpmvnorm", args)
+### sldmvnorm returns mean score as -obs
+if (is.null(ret$mean)) ret$mean <- - ret$obs
+
+@<lLgrad invchol marginalisation@>
+
+if (!is.null(perm))
+    ret$invchol <- deperma(invchol = si, permuted_invchol = pi, 
+                           perm = match(perm, no), 
+                           score_schol = -vectrick(pi, ret$invchol))
+if (standardize)
+    ret$invchol <- destandardize(invchol = object$scale, 
+                                 score_schol = -vectrick(si, ret$invchol))
+if (!attr(si, "diag"))
+    ret$invchol <- ltMatrices(Lower_tri(ret$invchol, diag = FALSE),
+                              diag = FALSE, 
+                              byrow = attr(ret$invchol, "byrow"), 
+                              names = dimnames(ret$invchol)[[2L]])
+ret$scale <- ret$invchol
+ret$invchol <- NULL
+ret$mean <- ret$mean[no,,drop = FALSE]
+@<lLgrad invchol post@>
 return(ret)
 @}
 
