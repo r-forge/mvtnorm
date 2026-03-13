@@ -3816,7 +3816,7 @@ int Jp = iJ * (iJ + 1) / 2;
 @<mean scores@>
 @<lower scores@>
 @<upper scores@>
-double dtmp, etmp, Wtmp, ytmp, xx;
+double dtmp, ndtmp, etmp, netmp, Wtmp, ytmp, xx;
 
 PROTECT(ans = allocMatrix(REALSXP, Jp + 1 + 3 * iJ, iN));
 dans = REAL(ans);
@@ -3942,16 +3942,18 @@ The scores with respect to $c^{(i)}_{j\jmath}, \jmath = 1, \dots, j - 1$ are
 @d score wrt new chol off-diagonals
 @{
 dtmp = dnorm(da[j], x, 1.0, 0L);
+ndtmp = dtmp * (-1.0);
 etmp = dnorm(db[j], x, 1.0, 0L);
+netmp = etmp * (-1.0);
 
 for (k = 0; k < j; k++) {
     idx = start + j + k;
     if (LENGTH(center)) {    
-        dp_c[idx] = dtmp * (-1.0) * (y[k] - dcenter[k]);
-        ep_c[idx] = etmp * (-1.0) * (y[k] - dcenter[k]);
+        dp_c[idx] = ndtmp * (y[k] - dcenter[k]);
+        ep_c[idx] = netmp * (y[k] - dcenter[k]);
     } else {
-        dp_c[idx] = dtmp * (-1.0) * y[k];
-        ep_c[idx] = etmp * (-1.0) * y[k];
+        dp_c[idx] = ndtmp * y[k];
+        ep_c[idx] = netmp * y[k];
     }
     fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f;
 }
@@ -3991,12 +3993,13 @@ We next update scores for parameters introduced for smaller $j$
 @d update score for chol
 @{
 for (idx = 0; idx < j * (j + 1) / 2; idx++) {
+    idxJ1 = idx * (iJ - 1);
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yp_c[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_c[idxJ1 + k];
 
-    dp_c[idx] = dtmp * (-1.0) * xx;
-    ep_c[idx] = etmp * (-1.0) * xx;
+    dp_c[idx] = ndtmp * xx;
+    ep_c[idx] = netmp * xx;
     fp_c[idx] = (ep_c[idx] - dp_c[idx]) * f + emd * fp_c[idx];
 }
 @}
@@ -4004,32 +4007,29 @@ for (idx = 0; idx < j * (j + 1) / 2; idx++) {
 @d update score means, lower and upper
 @{
 for (idx = 0; idx < j; idx++) {
+    idxJ1 = idx * (iJ - 1);
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yp_m[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_m[idxJ1 + k];
 
-    dp_m[idx] = dtmp * (-1.0) * xx;
-    ep_m[idx] = etmp * (-1.0) * xx;
+    dp_m[idx] = ndtmp * xx;
+    ep_m[idx] = netmp * xx;
     fp_m[idx] = (ep_m[idx] - dp_m[idx]) * f + emd * fp_m[idx];
-}
 
-for (idx = 0; idx < j; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yp_l[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_l[idxJ1 + k];
 
-    dp_l[idx] = dtmp * (-1.0) * xx;
-    dp_u[idx] = etmp * (-1.0) * xx;
+    dp_l[idx] = ndtmp * xx;
+    dp_u[idx] = netmp * xx;
     fp_l[idx] = (dp_u[idx] - dp_l[idx]) * f + emd * fp_l[idx];
-}
 
-for (idx = 0; idx < j; idx++) {
     xx = 0.0;
     for (k = 0; k < j; k++)
-        xx += dC[start + k] * yp_u[idx * (iJ - 1) + k];
+        xx += dC[start + k] * yp_u[idxJ1 + k];
 
-    ep_l[idx] = dtmp * (-1.0) * xx;
-    ep_u[idx] = etmp * (-1.0) * xx;
+    ep_l[idx] = ndtmp * xx;
+    ep_u[idx] = netmp * xx;
     fp_u[idx] = (ep_u[idx] - ep_l[idx]) * f + emd * fp_u[idx];
 }
 @}
@@ -4103,7 +4103,7 @@ SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W,
 
     @<R slpmvnorm variables@>
     double intsum;
-    int p, idx;
+    int p, idx, idxJ1;
     @<dimensions@>
     @<pnorm@>
     @<W length@>
