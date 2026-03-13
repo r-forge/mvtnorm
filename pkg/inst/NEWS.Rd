@@ -2,6 +2,14 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.3-7 (2026-03-xx)}{
+  \subsection{Features}{
+    \itemize{
+      \item Minor performance improvements in \code{sldmvnorm}.
+    }
+  }
+}
+
 \section{Changes in Version 1.3-6 (2026-03-12)}{
   \subsection{Bugfixes}{
     \itemize{
