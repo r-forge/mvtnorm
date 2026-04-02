@@ -18,8 +18,8 @@ lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE,
          M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 slpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
           M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-ldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
-sldmvnorm(obs, mean = 0, chol, invchol, logLik = TRUE) 
+ldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
+sldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
 ldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
 sldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
 }
@@ -32,6 +32,10 @@ sldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...)
 }
   \item{mean}{matrix of means (one column for each observation, length is
 recycled to length of \code{obs}, \code{lower} and \code{upper}).
+}
+  \item{invcholmean}{matrix of means left-multiplied with inverse Cholesky factor 
+  (\code{invchol \%*\% mean}, one column for each observation, length is
+  recycled to length of \code{obs}, \code{lower} and \code{upper}).
 }
   \item{center}{matrix of negative rescaled means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}) as returned by

@@ -22,6 +22,20 @@
 ###
 ###    Edit 'lmvnorm_src.w' and run 'nuweb -r lmvnorm_src.w'
 
+# .lt
+
+.lt <- function(J, diag = FALSE) {
+    j <- seq_len(J)
+    j1 <- rep(c(TRUE, FALSE), J)[- 2 * J]
+    j2 <- c(rbind(rev(j), j))[- 2 * J]
+    ret <- matrix(rep(j1, j2), nrow = J)
+    if (!diag) diag(ret) <- FALSE
+    ret
+}
+.ut <- function(J, diag = FALSE) {
+    !.lt(J = J, diag = !diag)
+}
+
 # ltMatrices
 
 ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
@@ -63,9 +77,9 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
         L2 <- matrix(names, nrow = J, ncol = J, byrow = TRUE)
         L <- matrix(paste(L1, L2, sep = "."), nrow = J, ncol = J)
         if (byrow)
-            rownames(object) <- t(L)[upper.tri(L, diag = diag)]
+            rownames(object) <- t(L)[.ut(J, diag = diag)]
         else
-            rownames(object) <- L[lower.tri(L, diag = diag)]
+            rownames(object) <- L[.lt(J, diag = diag)]
     } # else {      ### add later
         # warning("ltMatrices objects should be properly named")
     # }
@@ -166,13 +180,13 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
     if (byrow) {
-        L[upper.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+        L[.ut(J, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
         L <- t(L)
     } else {
-        L[lower.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+        L[.lt(J, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
     }
     if (symmetric) {
-        L[upper.tri(L)] <- 0L
+        L[.ut(J)] <- 0L
         dg <- diag(L)
         L <- L + t(L)
         diag(L) <- dg
@@ -200,7 +214,8 @@ print.syMatrices <- function(x, ...)
 
 .reorder <- function(x, byrow = FALSE) {
 
-    stopifnot(is.ltMatrices(x))
+    ### only we call this function
+    ### stopifnot(is.ltMatrices(x))
     if (attr(x, "byrow") == byrow) return(x)
 
     # extract slots
@@ -215,13 +230,17 @@ print.syMatrices <- function(x, ...)
     x <- unclass(x)
 
     rL <- cL <- diag(0, nrow = J)
-    rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)
-    cL <- t(cL)
-    if (byrow) ### row -> col order
-        return(ltMatrices(x[cL[lower.tri(cL, diag = diag)], , drop = FALSE], 
+    lt <- .lt(J, diag = diag)
+    ut <- !lt
+    diag(ut) <- !diag(ut)
+    if (byrow) { ### row -> col order
+        cL[ut] <- seq_len(nrow(x))
+        return(ltMatrices(x[t(cL)[lt], , drop = FALSE], 
                           diag = diag, byrow = FALSE, names = dn[[2L]]))
+    }
     ### col -> row order
-    return(ltMatrices(x[t(rL)[upper.tri(rL, diag = diag)], , drop = FALSE], 
+    rL[lt] <- seq_len(nrow(x))
+    return(ltMatrices(x[t(rL)[ut], , drop = FALSE], 
                       diag = diag, byrow = TRUE, names = dn[[2L]]))
 }
 
@@ -259,19 +278,19 @@ print.syMatrices <- function(x, ...)
                               byrow = byrow, names = dn[[2L]][j]))
         }
         L <- diag(0L, nrow = J)
-        Jp <- sum(upper.tri(L, diag = diag))
+        Jp <- sum(.ut(J, diag = diag))
         if (byrow) {
-            L[upper.tri(L, diag = diag)] <- 1:Jp
+            L[.ut(J, diag = diag)] <- 1:Jp
             L <- L + t(L)
             diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
-            L <- L[upper.tri(L, diag = diag)]
+            L <- L[.ut(nrow(L), diag = diag)]
         } else {
-            L[lower.tri(L, diag = diag)] <- 1:Jp
+            L[.lt(J, diag = diag)] <- 1:Jp
             L <- L + t(L)
             diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
-            L <- L[lower.tri(L, diag = diag)]
+            L <- L[.lt(nrow(L), diag = diag)]
         }
         if (missing(i)) {
             return(ltMatrices(x[c(L), , drop = FALSE], diag = diag, 
@@ -637,7 +656,8 @@ chol.syMatrices <- function(x, ...) {
 
 .adddiag <- function(x) {
 
-    stopifnot(is.ltMatrices(x))
+    ### only we call this function
+    # stopifnot(is.ltMatrices(x))
 
     if (attr(x, "diag")) return(x)
 
@@ -649,14 +669,15 @@ chol.syMatrices <- function(x, ...) {
     J <- dim(x)[2L]
     nm <- dimnames(x)[[2L]]
 
-    L <- diag(J)
-    L[lower.tri(L, diag = TRUE)] <- 1:(J * (J + 1) / 2)
+    L <- D <- diag(J)
+    lt <- .lt(J, diag = TRUE)
+    L[lt] <- seq_len(J * (J + 1) / 2)
 
-    D <- diag(J)
-    ret <- matrix(D[lower.tri(D, diag = TRUE)], 
-                  nrow = J * (J + 1) / 2, ncol = N)
+    ### by default new diagonal elements are 1
+    ret <- matrix(D[lt], nrow = J * (J + 1) / 2, ncol = N)
     colnames(ret) <- dimnames(x)[[1L]]
-    ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)
+    diag(lt) <- FALSE
+    ret[L[lt],] <- unclass(x)
 
     ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = nm)
     ret <- ltMatrices(ret, byrow = byrow_orig)
@@ -802,7 +823,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     if (!SltM) return(matrix(c(ret), ncol = N))
 
     L <- matrix(1:(J^2), nrow = J)
-    ret <- ltMatrices(ret[L[lower.tri(L, diag = TRUE)],,drop = FALSE], 
+    ret <- ltMatrices(ret[L[.lt(J, diag = TRUE)],,drop = FALSE], 
                       diag = TRUE, byrow = FALSE, names = nm)
     ret <- ltMatrices(ret, byrow = C_byrow_orig)
     return(ret)
@@ -1137,7 +1158,7 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
 # check obs
 
-.check_obs <- function(obs, mean, J, N) {
+.check_obs_mean <- function(obs, mean, J, N) {
 
     nr <- nrow(obs)
     nc <- ncol(obs)
@@ -1155,6 +1176,25 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     if (ncol(mean) != nc)
         stop("obs and mean have non-conforming size")
     return(obs - mean)
+}
+.check_obs_invcholmean <- function(obs, invcholmean, J, N) {
+
+    nr <- nrow(obs)
+    nc <- ncol(obs)
+    if (nc != N)
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("obs and (inv)chol have non-conforming size")
+    if (identical(unique(invcholmean), 0)) return(TRUE)
+    if (length(invcholmean) == J) 
+        return(TRUE)
+    if (!is.matrix(invcholmean))
+        stop("obs and invcholmean have non-conforming size")
+    if (nrow(invcholmean) != nr)
+        stop("obs and invcholmean have non-conforming size")
+    if (ncol(invcholmean) != nc)
+        stop("obs and invcholmean have non-conforming size")
+    return(TRUE)
 }
 
 # colSumsdnorm ltMatrices

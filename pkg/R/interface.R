@@ -25,6 +25,8 @@ mvnorm <- function(mean, invcholmean, chol, invchol) {
   
   if (!missing(invcholmean)) {
       stopifnot(missing(mean))
+      ### note: this is not really necessary once all ls functions
+      ### are able to deal with invcholmean
       ret$invcholmean <- invcholmean
       if (!missing(invchol)) mean <- solve(invchol, invcholmean)
       if (!missing(chol)) mean <- Mult(chol, invcholmean)
@@ -393,7 +395,7 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
         if (!is.null(object$invcholmean)) {
             J <- dim(sc)[2L]
             M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-            idx <- M[lower.tri(M, diag = TRUE)]
+            idx <- M[.lt(J, diag = TRUE)]
 
             X <- ret$mean
             Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))
@@ -478,7 +480,7 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     if (!is.null(object$invcholmean)) {
         J <- dim(si)[2L]
         M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-        idx <- M[lower.tri(M, diag = TRUE)]
+        idx <- M[.lt(J, diag = TRUE)]
 
         X <- ret$mean
         Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))

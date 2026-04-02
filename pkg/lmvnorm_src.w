@@ -213,6 +213,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @o ltMatrices.R -cp
 @{
 @<R Header@>
+@<.lt@>
 @<ltMatrices@>
 @<syMatrices@>
 @<dim ltMatrices@>
@@ -321,6 +322,24 @@ if (nrow(object) != J * (J - 1) / 2 + diag * J)
           triangular part of a square matrix")
 @}
 
+Before we begin assigning names, we set-up an internal shortcut for
+\code{lower.tri}, which is a bit more memory and speed efficient
+
+@d .lt
+@{
+.lt <- function(J, diag = FALSE) {
+    j <- seq_len(J)
+    j1 <- rep(c(TRUE, FALSE), J)[- 2 * J]
+    j2 <- c(rbind(rev(j), j))[- 2 * J]
+    ret <- matrix(rep(j1, j2), nrow = J)
+    if (!diag) diag(ret) <- FALSE
+    ret
+}
+.ut <- function(J, diag = FALSE) {
+    !.lt(J = J, diag = !diag)
+}
+@}
+
 Typically the $\J$ dimensions are associated with names, and we therefore
 compute identifiers for the vector elements in either column- or row-major
 order on request (for later printing)
@@ -343,9 +362,9 @@ if (!nonames) {
     L2 <- matrix(names, nrow = J, ncol = J, byrow = TRUE)
     L <- matrix(paste(L1, L2, sep = "."), nrow = J, ncol = J)
     if (byrow)
-        rownames(object) <- t(L)[upper.tri(L, diag = diag)]
+        rownames(object) <- t(L)[.ut(J, diag = diag)]
     else
-        rownames(object) <- L[lower.tri(L, diag = diag)]
+        rownames(object) <- L[.lt(J, diag = diag)]
 } # else {	### add later
     # warning("ltMatrices objects should be properly named")
 # }
@@ -524,13 +543,13 @@ as.array.ltMatrices <- function(x, symmetric = FALSE, ...) {
     L <- matrix(1L, nrow = J, ncol = J)
     diag(L) <- 2L
     if (byrow) {
-        L[upper.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+        L[.ut(J, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
         L <- t(L)
     } else {
-        L[lower.tri(L, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
+        L[.lt(J, diag = diag)] <- floor(2L + 1:(J * (J - 1) / 2L + diag * J))
     }
     if (symmetric) {
-        L[upper.tri(L)] <- 0L
+        L[.ut(J)] <- 0L
         dg <- diag(L)
         L <- L + t(L)
         diag(L) <- dg
@@ -569,7 +588,8 @@ between the two forms
 @{
 .reorder <- function(x, byrow = FALSE) {
 
-    stopifnot(is.ltMatrices(x))
+    ### only we call this function
+    ### stopifnot(is.ltMatrices(x))
     if (attr(x, "byrow") == byrow) return(x)
 
     @<extract slots@>
@@ -577,13 +597,17 @@ between the two forms
     x <- unclass(x)
 
     rL <- cL <- diag(0, nrow = J)
-    rL[lower.tri(rL, diag = diag)] <- cL[upper.tri(cL, diag = diag)] <- 1:nrow(x)
-    cL <- t(cL)
-    if (byrow) ### row -> col order
-        return(ltMatrices(x[cL[lower.tri(cL, diag = diag)], , drop = FALSE], 
+    lt <- .lt(J, diag = diag)
+    ut <- !lt
+    diag(ut) <- !diag(ut)
+    if (byrow) { ### row -> col order
+        cL[ut] <- seq_len(nrow(x))
+        return(ltMatrices(x[t(cL)[lt], , drop = FALSE], 
                           diag = diag, byrow = FALSE, names = dn[[2L]]))
+    }
     ### col -> row order
-    return(ltMatrices(x[t(rL)[upper.tri(rL, diag = diag)], , drop = FALSE], 
+    rL[lt] <- seq_len(nrow(x))
+    return(ltMatrices(x[t(rL)[ut], , drop = FALSE], 
                       diag = diag, byrow = TRUE, names = dn[[2L]]))
 }
 @}
@@ -644,19 +668,19 @@ rows/columns $j \in \{1, \dots, \J\}$ of the corresponding matrices $\mC_i$.
                               byrow = byrow, names = dn[[2L]][j]))
         }
         L <- diag(0L, nrow = J)
-        Jp <- sum(upper.tri(L, diag = diag))
+        Jp <- sum(.ut(J, diag = diag))
         if (byrow) {
-            L[upper.tri(L, diag = diag)] <- 1:Jp
+            L[.ut(J, diag = diag)] <- 1:Jp
             L <- L + t(L)
             diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
-            L <- L[upper.tri(L, diag = diag)]
+            L <- L[.ut(nrow(L), diag = diag)]
         } else {
-            L[lower.tri(L, diag = diag)] <- 1:Jp
+            L[.lt(J, diag = diag)] <- 1:Jp
             L <- L + t(L)
             diag(L) <- diag(L) / 2
             L <- L[j, j, drop = FALSE]
-            L <- L[lower.tri(L, diag = diag)]
+            L <- L[.lt(nrow(L), diag = diag)]
         }
         if (missing(i)) {
             return(ltMatrices(x[c(L), , drop = FALSE], diag = diag, 
@@ -873,7 +897,8 @@ which was set-up with constant $c_{jj} = 1$ diagonal elements.
 @{
 .adddiag <- function(x) {
 
-    stopifnot(is.ltMatrices(x))
+    ### only we call this function
+    # stopifnot(is.ltMatrices(x))
 
     if (attr(x, "diag")) return(x)
 
@@ -885,14 +910,15 @@ which was set-up with constant $c_{jj} = 1$ diagonal elements.
     J <- dim(x)[2L]
     nm <- dimnames(x)[[2L]]
 
-    L <- diag(J)
-    L[lower.tri(L, diag = TRUE)] <- 1:(J * (J + 1) / 2)
+    L <- D <- diag(J)
+    lt <- .lt(J, diag = TRUE)
+    L[lt] <- seq_len(J * (J + 1) / 2)
 
-    D <- diag(J)
-    ret <- matrix(D[lower.tri(D, diag = TRUE)], 
-                  nrow = J * (J + 1) / 2, ncol = N)
+    ### by default new diagonal elements are 1
+    ret <- matrix(D[lt], nrow = J * (J + 1) / 2, ncol = N)
     colnames(ret) <- dimnames(x)[[1L]]
-    ret[L[lower.tri(L, diag = FALSE)],] <- unclass(x)
+    diag(lt) <- FALSE
+    ret[L[lt],] <- unclass(x)
 
     ret <- ltMatrices(ret, diag = TRUE, byrow = FALSE, names = nm)
     ret <- ltMatrices(ret, byrow = byrow_orig)
@@ -2151,7 +2177,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     if (!SltM) return(matrix(c(ret), ncol = N))
 
     L <- matrix(1:(J^2), nrow = J)
-    ret <- ltMatrices(ret[L[lower.tri(L, diag = TRUE)],,drop = FALSE], 
+    ret <- ltMatrices(ret[L[.lt(J, diag = TRUE)],,drop = FALSE], 
                       diag = TRUE, byrow = FALSE, names = nm)
     ret <- ltMatrices(ret, byrow = C_byrow_orig)
     return(ret)
@@ -2826,9 +2852,11 @@ function called \code{ldmvnorm}
 
 @d ldmvnorm
 @{
-ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
+ldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
 
     stopifnot(xor(missing(chol), missing(invchol)))
+    if (missing(mean) && missing(invcholmean)) invcholmean <- 0
+    stopifnot(xor(missing(mean), missing(invcholmean)))
     if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)
     p <- ncol(obs)
 
@@ -2847,10 +2875,12 @@ ldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
 We first check if the observations $\yvec_1, \dots, \yvec_N$ are given in an
 $\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
 \muvec_N$ in \code{means} and return the mean-centered observations.
+Alternatively, when the scaled mean $\nuvec_i = \mL_i \muvec_i$ (\code{invcholmean}) is
+given, we only check the dimensions.
 
 @d check obs
 @{
-.check_obs <- function(obs, mean, J, N) {
+.check_obs_mean <- function(obs, mean, J, N) {
 
     nr <- nrow(obs)
     nc <- ncol(obs)
@@ -2869,6 +2899,25 @@ $\J \times N$ matrix \code{obs} with corresponding means $\muvec_1, \dots,
         stop("obs and mean have non-conforming size")
     return(obs - mean)
 }
+.check_obs_invcholmean <- function(obs, invcholmean, J, N) {
+
+    nr <- nrow(obs)
+    nc <- ncol(obs)
+    if (nc != N)
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("obs and (inv)chol have non-conforming size")
+    if (identical(unique(invcholmean), 0)) return(TRUE)
+    if (length(invcholmean) == J) 
+        return(TRUE)
+    if (!is.matrix(invcholmean))
+        stop("obs and invcholmean have non-conforming size")
+    if (nrow(invcholmean) != nr)
+        stop("obs and invcholmean have non-conforming size")
+    if (ncol(invcholmean) != nc)
+        stop("obs and invcholmean have non-conforming size")
+    return(TRUE)
+}
 @}
 
 With $\mSigma_i
@@ -2882,6 +2931,12 @@ Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \m
 \begin{eqnarray} \label{ll_mC}
 \ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
 (\yvec_i - \muvec_i)^\top \mC_i^{-\top} \mC_i^{-1} (\yvec - \muvec_i).
+\end{eqnarray}
+
+With $\nuvec_i = \mC_i^{-1} \muvec_i$ (argument \code{invcholmean}) given, we get
+\begin{eqnarray} \label{ll_mC_d}
+\ell_i(\nuvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
+(\mC_i^{-1} \yvec - \nuvec_i)^\top (\mC_i^{-1} \yvec - \nuvec_i).
 \end{eqnarray}
 
 We need to compute \code{colSums(dnorm(z, log = TRUE))} quite often. This
@@ -2940,9 +2995,15 @@ if (!is.ltMatrices(chol))	### NOTE: replace with is.chol
 N <- dim(chol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(chol)[2L]
-## NOTE: obs is now mean-centered
-obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-z <- solve(chol, obs)
+if (missing(invcholmean)) {
+    ## NOTE: obs is now mean-centered
+    obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
+    z <- solve(chol, obs)
+} else {
+    stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                     J = J, N = N))
+    z <- solve(chol, obs) - c(invcholmean)
+}
 logretval <- .colSumsdnorm(z)
 if (attr(chol, "diag"))
     logretval <- logretval - logdet(chol)
@@ -2965,10 +3026,15 @@ if (!is.ltMatrices(invchol)) 	### NOTE: replace with is.invchol
 N <- dim(invchol)[1L]
 N <- ifelse(N == 1, p, N)
 J <- dim(invchol)[2L]
-obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-## NOTE: obs is (J x N) and mean-centered
-## dnorm takes rather long
-z <- Mult(invchol, obs)
+if (missing(invcholmean)) {
+    ## NOTE: obs is now mean-centered
+    obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
+    z <- Mult(invchol, obs)
+} else {
+    chk <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                  J = J, N = N)
+    z <- Mult(invchol, obs) - c(invcholmean)
+}
 logretval <- .colSumsdnorm(z)
 ## note that the second summand gets recycled the correct number
 ## of times in case dim(invchol)[1L] == 1 but ncol(obs) > 1
@@ -2978,7 +3044,11 @@ if (attr(invchol, "diag"))
 
 The score function with respect to \code{obs} is
 \begin{eqnarray*}
-\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i (\yvec_i - \muvec_i)
+\frac{\partial \ell_i(\muvec_i, \mL_i)}{\partial \yvec_i} = - \mL_i^\top \mL_i (\yvec_i - \muvec_i),
+\end{eqnarray*}
+with respect to the scaled mean $\nuvec_i$ we get
+\begin{eqnarray*}
+\frac{\partial \ell_i(\nuvec_i, \mL_i)}{\partial \nuvec_i} = \mL_i \yvec_i - \nuvec_i,
 \end{eqnarray*}
 and with respect to \code{invchol} we have
 \begin{eqnarray*}
@@ -3006,9 +3076,11 @@ the above relationship to compute the score with respect to $\mC_i$.
 
 @d sldmvnorm
 @{
-sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
+sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
 
     stopifnot(xor(missing(chol), missing(invchol)))
+    if (missing(mean) && missing(invcholmean)) invcholmean <- 0
+    stopifnot(xor(missing(mean), missing(invcholmean)))
     if (!is.matrix(obs)) obs <- matrix(obs, ncol = 1L)
 
     if (!missing(invchol)) {
@@ -3016,17 +3088,22 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         N <- dim(invchol)[1L]
         N <- ifelse(N == 1, ncol(obs), N)
         J <- dim(invchol)[2L]
-        obs <- .check_obs(obs = obs, mean = mean, J = J, N = N)
-        ## NOTE: obs is mean-centered now 
-
-        Mix <- Mult(invchol, obs)
+        if (missing(invcholmean)) {
+            obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
+            ## NOTE: obs is mean-centered now 
+           Mix <- Mult(invchol, obs)
+        } else {
+            stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                             J = J, N = N))
+           Mix <- Mult(invchol, obs) - c(invcholmean)
+        }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
         Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
         ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
 
         M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
-        ret <- ret[M[lower.tri(M, diag = attr(invchol, "diag"))],,drop = FALSE]
+        ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]
         if (!is.null(dimnames(invchol)[[1L]]))
             colnames(ret) <- dimnames(invchol)[[1]]
         ret <- ltMatrices(ret,
@@ -3040,15 +3117,21 @@ sldmvnorm <- function(obs, mean = 0, chol, invchol, logLik = TRUE) {
         } else {
             diagonals(ret) <- 0
         }
-        ret <- list(obs = sobs, invchol = ret)
+        if (missing(invcholmean)) {
+            ret <- list(obs = sobs, invchol = ret)
+        } else {
+            ret <- list(obs = sobs, invcholmean = Mix, invchol = ret)
+        }
         if (logLik) 
-            ret$logLik <- ldmvnorm(obs = obs,
+            ### note: obs is obs - mean if mean was present
+            ret$logLik <- ldmvnorm(obs = obs, invcholmean = invcholmean,
                                    invchol = invchol, logLik = FALSE)
         return(ret)
     }
 
     invchol <- solve(chol)
-    ret <- sldmvnorm(obs = obs, mean = mean, invchol = invchol)
+    ret <- sldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean, 
+                     invchol = invchol)
     ### this means: ret$chol <- - vectrick(invchol, ret$invchol, invchol)
     ret$chol <- as.chol(- vectrick(invchol, ret$invchol))
     ret$invchol <- NULL
@@ -4891,15 +4974,15 @@ Jp <- nrow(unclass(invchol))
 diag <- attr(invchol, "diag")
 M <- as.array(ltMatrices(1:Jp, diag = diag, byrow = TRUE))[,,1]
 ret <- matrix(0, nrow = Jp, ncol = ncol(obs))
-M1 <- M[1:cJ, 1:cJ]
-idx <- t(M1)[upper.tri(M1, diag = diag)]
+M1 <- M[1:cJ, 1:cJ, drop = FALSE]
+idx <- t(M1)[.ut(cJ, diag = diag)]
 ret[idx,] <- Lower_tri(cs$invchol, diag = diag)
 
 idx <- c(t(M[-(1:cJ), 1:cJ]))
 ret[idx,] <- tmp
 
-M3 <- M[-(1:cJ), -(1:cJ)]
-idx <- t(M3)[upper.tri(M3, diag = diag)]
+M3 <- M[-(1:cJ), -(1:cJ), drop = FALSE]
+idx <- t(M3)[.ut(nrow(M3), diag = diag)]
 ret[idx,] <- Lower_tri(ds$invchol, diag = diag)
 
 ret <- ltMatrices(ret, diag = diag, byrow = TRUE)
@@ -4930,7 +5013,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
                        logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
-        return(slpmvnorm(lower = lower, upper = upper, mean = mean,
+        return(slpmvnorm(lower = lower, upper = upper, mean = mean, 
                          chol = chol, invchol = invchol, logLik = logLik, ...))
     if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
         return(sldmvnorm(obs = obs, mean = mean,
@@ -5150,7 +5233,7 @@ permutation matrix $\Pi$
 @{
 idx <- matrix(1:J^2, nrow = J, ncol = J)	### assuming byrow = TRUE
 tidx <- c(t(idx))
-ltT <- idx[lower.tri(idx, diag = TRUE)]
+ltT <- idx[.lt(J, diag = TRUE)]
 P <- matrix(0, nrow = J, ncol = J)
 P[cbind(1:J, perm)] <- 1
 ID <- diag(J)
@@ -5378,7 +5461,7 @@ destandardize <- function(chol = solve(invchol), invchol, score_schol)
         ### this means: ret <- - vectrick(chol, ret, chol)
         ret <- - vectrick(chol, ret)
     }
-    ret <- ret[M[lower.tri(M)],,drop = FALSE]
+    ret <- ret[M[.lt(J, diag = FALSE)],,drop = FALSE]
     if (!is.null(dimnames(chol)[[1L]]))
         colnames(ret) <- dimnames(chol)[[1L]]
     ret <- ltMatrices(ret,
@@ -5499,7 +5582,9 @@ probabilities of log-concave densities are again log-concave
 \citep{Prekopa_1973}.
 
 The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
-\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
+\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$ (FIXME:
+\code{ldmvnorm/sldmvnorm} now directly work with $\nuvec$, but the other
+procedures still need adaptation). With
 $\muvec_i = \mL_i^{-1} \nuvec$ it is simple to rewrite the log-likelihood
 contribution as a concave function of both parameters as
 \begin{eqnarray*}
@@ -5516,7 +5601,7 @@ m <- rnorm(J)
 L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 Y <- solve(L, Z) + m
-### scaled mean
+### scaled mean; FIXME: update example using invcholmean args
 d <- L %*% m
 
 nll <- function(parm) {
@@ -5773,6 +5858,8 @@ mvnorm <- function(mean, invcholmean, chol, invchol) {
   @<mvnorm chol invchol@>
   if (!missing(invcholmean)) {
       stopifnot(missing(mean))
+      ### note: this is not really necessary once all ls functions
+      ### are able to deal with invcholmean
       ret$invcholmean <- invcholmean
       if (!missing(invchol)) mean <- solve(invchol, invcholmean)
       if (!missing(chol)) mean <- Mult(chol, invcholmean)
@@ -6183,7 +6270,7 @@ ret$mean <- ret$mean[no,,drop = FALSE]
 if (!is.null(object$invcholmean)) {
     J <- dim(sc)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-    idx <- M[lower.tri(M, diag = TRUE)]
+    idx <- M[.lt(J, diag = TRUE)]
 
     X <- ret$mean
     Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))
@@ -6237,7 +6324,7 @@ turn to post-processing
 if (!is.null(object$invcholmean)) {
     J <- dim(si)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
-    idx <- M[lower.tri(M, diag = TRUE)]
+    idx <- M[.lt(J, diag = TRUE)]
 
     X <- ret$mean
     Y <- matrix(object$invcholmean, nrow = nrow(X), ncol = ncol(X))
