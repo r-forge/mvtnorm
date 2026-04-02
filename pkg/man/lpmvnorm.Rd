@@ -14,9 +14,9 @@
     normal distributions and evaluates corresponding score functions.
 }
 \usage{
-lpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+lpmvnorm(lower, upper, mean, invcholmean, center = NULL, chol, invchol, logLik = TRUE, 
          M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
-slpmvnorm(lower, upper, mean = 0, center = NULL, chol, invchol, logLik = TRUE, 
+slpmvnorm(lower, upper, mean, invcholmean, center = NULL, chol, invchol, logLik = TRUE, 
           M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 ldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
 sldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
@@ -39,7 +39,7 @@ recycled to length of \code{obs}, \code{lower} and \code{upper}).
 }
   \item{center}{matrix of negative rescaled means (one column for each observation, length is
 recycled to length of \code{lower} and \code{upper}) as returned by
-\code{cond_mvnorm(..., center = TRUE)}. 
+\code{cond_mvnorm(..., center = TRUE).}. 
 }
   \item{chol}{Cholesky factors of covariance matrices as
     \code{\link{ltMatrices}} object, length is recylced to length of

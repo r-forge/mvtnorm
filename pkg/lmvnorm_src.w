@@ -3211,9 +3211,13 @@ function, so a prototype might look like
 
 @d lpmvnormR
 @{
-lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
+lpmvnormR <- function(lower, upper, mean, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
 
     @<input checks@>
+
+    ### not implemented currently
+    stopifnot(missing(mean))
+    stopifnot(missing(invcholmean))
 
     sigma <- Tcrossprod(chol)
     S <- as.array(sigma)
@@ -3334,14 +3338,16 @@ J <- d[2L]
 
 stopifnot(nrow(lower) == J && ncol(lower) == N)
 stopifnot(nrow(upper) == J && ncol(upper) == N)
-if (is.matrix(mean)) {
-    if (ncol(mean) == 1L) 
-        mean <- mean[,rep(1, N),drop = FALSE]
-    stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+if (!missing(mean)) {
+    lower <- .check_obs_mean(lower, mean, J = J, N = N)
+    upper <- .check_obs_mean(upper, mean, J = J, N = N)
 }
 
-lower <- lower - mean
-upper <- upper - mean
+if (!missing(invcholmean)) {
+    stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))
+    center <- - invcholmean
+}
 
 if (!is.null(center)) {
     if (!is.matrix(center)) center <- matrix(center, ncol = 1)
@@ -3762,9 +3768,12 @@ stopifnot(xor(missing(chol), missing(invchol)))
 if (missing(chol)) chol <- solve(invchol)
 @}
 
+FIXME: \code{center} is obsolate as \code{center = x} gives the same result
+as \code{invcholmean = - x}. Also in \code{slpmvnorm}.
+
 @d lpmvnorm
 @{
-lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, 
+lpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL, chol, invchol, 
                      logLik = TRUE, M = NULL, w = NULL, seed = NULL, 
                      tol = .Machine$double.eps, fast = FALSE) {
 
@@ -4311,11 +4320,20 @@ ret <- ltMatrices(ret, diag = TRUE, byrow = TRUE,
                   names = dimnames(chol)[[2L]])
 @}
 
+If the model was parameterised in terms of $\nuvec_i = \mC_i^{-1} \muvec_i$,
+we compute the score for $\nuvec_i$ based on the score for $\muvec_i$
+
+@d invcholmean score
+@{
+if (!missing(invcholmean))
+    sinvcholmean <- Mult(chol, smean, transpose = TRUE)
+@}
+
 We can now finally put everything together in a single score function.
 
 @d slpmvnorm
 @{
-slpmvnorm <- function(lower, upper, mean = 0, center = NULL, 
+slpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL, 
                       chol, invchol, logLik = TRUE, M = NULL, 
                       w = NULL, seed = NULL, tol = .Machine$double.eps, 
                       fast = FALSE) {
@@ -4347,6 +4365,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL,
     @<post differentiate chol score@>
     @<post differentiate invchol score@>
     @<post process score@>
+    @<invcholmean score@>
 
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
@@ -4360,6 +4379,7 @@ slpmvnorm <- function(lower, upper, mean = 0, center = NULL,
                     upper = supper,
                     chol = ret)
         if (!missing(invchol)) names(ret)[names(ret) == "chol"] <- "invchol"
+        if (!missing(invcholmean)) ret$invcholmean <- sinvcholmean
         return(ret)
     }
     

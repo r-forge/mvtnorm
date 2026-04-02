@@ -7406,7 +7406,9 @@ probabilities of log-concave densities are again log-concave
 \citep{Prekopa_1973}.
 
 The package implements the log-likelihood contributions as $\ell_i(\muvec_i,
-\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$. With
+\mL_i)$ and derives the scores with respect to $\muvec_i$ and $\mL_i$ (FIXME:
+\code{ldmvnorm/sldmvnorm} now directly work with $\nuvec$, but the other
+procedures still need adaptation). With
 $\muvec_i = \mL_i^{-1} \nuvec$ it is simple to rewrite the log-likelihood
 contribution as a concave function of both parameters as
 \begin{eqnarray*}
@@ -7423,7 +7425,7 @@ m <- rnorm(J)
 L <- ltMatrices(prm <- runif(J * (J + 1) / 2), diag = TRUE)
 Z <- matrix(rnorm(N * J), nrow = J)
 Y <- solve(L, Z) + m
-### scaled mean
+### scaled mean; FIXME: update example using invcholmean args
 d <- L %*% m
 
 nll <- function(parm) {
