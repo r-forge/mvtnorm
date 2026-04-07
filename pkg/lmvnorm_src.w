@@ -2647,20 +2647,15 @@ else                ### invcol is L = Cholesky of precision
 
 Pw <- P[, -which]
 chol <- solve(base::chol(Pw))
-Pa <- as.array(P)
-Sa <- as.array(S <- Crossprod(chol))
-if (dim(chol)[1L] == 1L) {
-   Pa <- Pa[,,1]
-   Sa <- Sa[,,1]
-   mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
-} else {
-   if (ncol(given) == N) {
-       mean <- sapply(1:N, function(i) 
-           -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
-   } else {  ### compare to Mult() with ncol(y) !%in% (1, N)
-       mean <- sapply(1:N, function(i) 
-           -Sa[,,i] %*% Pa[-which,which,i] %*% given)
-   }
+S <- Crossprod(chol)
+g0 <- matrix(0, nrow = J, ncol = NCOL(given))
+g0[which,] <- given
+S <- Crossprod(chol) ### P^{-1}_jj
+if (ncol(g0) %in% c(1L, N)) {
+    mean <- - S %*% (P %*% g0)[-which,,drop = FALSE]
+} else { ### compare to Mult() with ncol(y) !%in% (1, N)
+    mean <- sapply(seq_len(N), function(i)
+        - S[i,] %*% (P[i,] %*% g0)[-which,,drop = FALSE])
 }
 @}
 
@@ -2791,6 +2786,7 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -2804,6 +2800,7 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -2821,6 +2818,7 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -2834,6 +2832,7 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -3211,13 +3210,15 @@ function, so a prototype might look like
 
 @d lpmvnormR
 @{
-lpmvnormR <- function(lower, upper, mean, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
-
-    @<input checks@>
+lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
 
     ### not implemented currently
-    stopifnot(missing(mean))
     stopifnot(missing(invcholmean))
+
+    ### get access to internal mvtnorm functions
+    .check_obs_mean <- mvtnorm:::.check_obs_mean
+
+    @<input checks@>
 
     sigma <- Tcrossprod(chol)
     S <- as.array(sigma)
@@ -4922,7 +4923,7 @@ is simply the sum of the two corresponding log-likelihoods.
 
 @d ldpmvnorm
 @{
-ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
@@ -4933,6 +4934,8 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
                         chol = chol, invchol = invchol, logLik = logLik))
 
     @<dp input checks@>    
+
+    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         J <- dim(invchol)[2L]
@@ -5029,8 +5032,10 @@ post-differentiate using the vec-trick
 
 @d sldpmvnorm
 @{
-sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+sldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
                        logLik = TRUE, ...) {
+
+    stopifnot(missing(invcholmean))
 
     if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean, 
