@@ -1,0 +1,193 @@
+
+library("mvtnorm")
+
+set.seed(29)
+
+chk <- function(...) stopifnot(isTRUE(all.equal(..., check.attributes = FALSE)))
+chk <- function(...) print(all.equal(..., check.attributes = FALSE))
+
+### N samples with N different covariance matrices
+
+N <- 10
+J <- 8
+
+prm <- runif(N * J * (J + 1) / 2) + 1
+m <- matrix(rnorm(N * J), nrow = J)
+Z <- matrix(rnorm(N * J), ncol = N)
+W <- matrix(runif((J - 1) * 100), nrow = J - 1)
+
+thischeck <- expression({
+  lt <- ltMatrices(matrix(prm[1: (N * J * (J + c(-1, 1)[dg + 1L]) / 2)], ncol = N), 
+                   diag = dg)
+  lt <- ltMatrices(lt, diag = dg, byrow = br)
+  d <- Mult(lt, m)
+  Y <- solve(lt, Z) + m
+  obs <- Y[idx1,]
+  lower <- Y[idx2,] - 2
+  upper <- Y[idx2,] + 2
+  w <- W[seq_len(length(idx2) - 1),,drop = FALSE]
+
+  l3 <- ldpmvnorm(obs = obs, lower = lower, upper = upper, 
+                  mean = m, invchol = lt, logLik = FALSE, w = w)
+  l4 <- ldpmvnorm(obs = obs, lower = lower, upper = upper,
+                  mean = m, chol = solve(lt), logLik = FALSE, w = w)
+
+  chk(l3, l4)
+
+  l3d <- ldpmvnorm(obs = obs, lower = lower, upper = upper,
+                  invcholmean = d, invchol = lt, logLik = FALSE, w = w)
+  l4d <- ldpmvnorm(obs = obs, lower = lower, upper = upper,
+                  invcholmean = d, chol = solve(lt), logLik = FALSE, w = w)
+
+  chk(l3, l3d)
+  chk(l4, l4d)
+
+  ### check scores
+  if (require("numDeriv", quietly = TRUE)) {
+
+    f <- function(L) {
+      L <- ltMatrices(L, diag = dg, byrow = br)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = L, w = w)
+    }
+
+    s0 <- grad(f, unclass(lt))
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
+        Lower_tri(s1$invchol, diag = dg))
+
+    f <- function(L) {
+      L <- ltMatrices(L, diag = dg, byrow = br)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, 
+ invcholmean = d, 
+                invchol = L, w = w)
+    }
+
+    s0 <- grad(f, unclass(lt))
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
+ invcholmean = d, 
+                     invchol = lt, w = w)
+
+    chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
+        Lower_tri(s1$invchol, diag = dg))
+
+    f <- function(L) {
+      L <- ltMatrices(L, diag = dg, byrow = br)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, chol = L, w = w)
+    }
+
+    s0 <- grad(f, unclass(lt))
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, chol = lt, w = w)
+
+    chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
+        Lower_tri(s1$chol, diag = dg))
+
+    f <- function(L) {
+      L <- ltMatrices(L, diag = dg, byrow = br)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, 
+# invcholmean = d, 
+                chol = L, w = w)
+    }
+
+    s0 <- grad(f, unclass(lt))
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
+# invcholmean = d, 
+                     chol = lt, w = w)
+
+    chk(Lower_tri(ltMatrices(matrix(s0, ncol = N), diag = dg, byrow = br), diag = dg), 
+        Lower_tri(s1$chol, diag = dg))
+
+    f <- function(x)
+      ldpmvnorm(obs = x, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    s0 <- grad(f, obs)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$obs)
+
+    f <- function(x)
+      ldpmvnorm(obs = x, lower = lower, upper = upper, 
+# invcholmean = d, 
+                invchol = lt, w = w)
+
+    s0 <- grad(f, obs)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, 
+# invcholmean = d, 
+                     invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$obs)
+
+    f <- function(lwr)
+      ldpmvnorm(obs = obs, lower = lwr, upper = upper, mean = m, invchol = lt, w = w)
+
+    s0 <- grad(f, lower)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$lower)
+
+    f <- function(upr)
+      ldpmvnorm(obs = obs, lower = lower, upper = upr, mean = m, invchol = lt, w = w)
+
+    s0 <- grad(f, upper)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$upper)
+
+    f <- function(m)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    s0 <- grad(f, m)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$mean)
+
+    f <- function(d)
+      ldpmvnorm(obs = obs, lower = lower, upper = upper, invcholmean = d, invchol = lt, w = w)
+
+    s0 <- grad(f, d)
+    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, invcholmean = d, invchol = lt, w = w)
+
+    chk(matrix(s0, ncol = N), s1$invcholmean)
+  }
+})
+
+
+idx <- seq_len(J)
+idx1 <- idx[1:4]
+idx2 <- idx[-(1:4)]
+
+dg <- TRUE
+br <- FALSE
+eval(thischeck)
+
+dg <- FALSE
+br <- FALSE
+eval(thischeck)
+
+dg <- FALSE
+br <- TRUE
+eval(thischeck)
+
+dg <- FALSE
+br <- FALSE
+eval(thischeck)
+
+idx1 <- idx[-(1:4)]
+idx2 <- idx[1:4]
+
+dg <- TRUE
+br <- FALSE
+eval(thischeck)
+
+dg <- FALSE
+br <- FALSE
+eval(thischeck)
+
+dg <- FALSE
+br <- TRUE
+eval(thischeck)
+
+dg <- FALSE
+br <- FALSE
+eval(thischeck)
+

@@ -962,6 +962,8 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 > cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
 +     j]) %*% y
 
+> colnames(cm) <- dimnames(lxd)[[1]][1]
+
 > cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
 +     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
 
@@ -980,6 +982,8 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
 +     j]) %*% y
+
+> colnames(cm) <- dimnames(lxd)[[1]][1]
 
 > cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
 +     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
@@ -1001,6 +1005,8 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 > cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
 +     j]) %*% y
 
+> colnames(cm) <- dimnames(lxd)[[1]][1]
+
 > cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
 +     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
 
@@ -1019,6 +1025,8 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > cm <- Sigma[-j, j, drop = FALSE] %*% solve(Sigma[j, 
 +     j]) %*% y
+
+> colnames(cm) <- dimnames(lxd)[[1]][1]
 
 > cS <- Sigma[-j, -j] - Sigma[-j, j, drop = FALSE] %*% 
 +     solve(Sigma[j, j]) %*% Sigma[j, -j, drop = FALSE]
@@ -1071,10 +1079,10 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 
 > set.seed(270312)
 
-> lpmvnormR <- function(lower, upper, mean = 0, center = NULL, 
-+     chol, logLik = TRUE, ...) {
-+     if (!is.matrix(lower)) 
-+         lower <- mat .... [TRUNCATED] 
+> lpmvnormR <- function(lower, upper, mean = 0, invcholmean, 
++     center = NULL, chol, logLik = TRUE, ...) {
++     stopifnot(missing(invcholmean))
++ .... [TRUNCATED] 
 
 > J <- 5
 
@@ -2301,4 +2309,4 @@ Petal.Width -0.1381 0.1942 0.4937
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.980   0.247  16.231 
+ 27.156   0.235  27.399 

@@ -3444,20 +3444,15 @@ We can implement this as
 \mbox{}\verb@@\\
 \mbox{}\verb@Pw <- P[, -which]@\\
 \mbox{}\verb@chol <- solve(base::chol(Pw))@\\
-\mbox{}\verb@Pa <- as.array(P)@\\
-\mbox{}\verb@Sa <- as.array(S <- Crossprod(chol))@\\
-\mbox{}\verb@if (dim(chol)[1L] == 1L) {@\\
-\mbox{}\verb@   Pa <- Pa[,,1]@\\
-\mbox{}\verb@   Sa <- Sa[,,1]@\\
-\mbox{}\verb@   mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given@\\
-\mbox{}\verb@} else {@\\
-\mbox{}\verb@   if (ncol(given) == N) {@\\
-\mbox{}\verb@       mean <- sapply(1:N, function(i) @\\
-\mbox{}\verb@           -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])@\\
-\mbox{}\verb@   } else {  ### compare to Mult() with ncol(y) !%in% (1, N)@\\
-\mbox{}\verb@       mean <- sapply(1:N, function(i) @\\
-\mbox{}\verb@           -Sa[,,i] %*% Pa[-which,which,i] %*% given)@\\
-\mbox{}\verb@   }@\\
+\mbox{}\verb@S <- Crossprod(chol)@\\
+\mbox{}\verb@g0 <- matrix(0, nrow = J, ncol = NCOL(given))@\\
+\mbox{}\verb@g0[which,] <- given@\\
+\mbox{}\verb@S <- Crossprod(chol) ### P^{-1}_jj@\\
+\mbox{}\verb@if (ncol(g0) %in% c(1L, N)) {@\\
+\mbox{}\verb@    mean <- - S %*% (P %*% g0)[-which,,drop = FALSE]@\\
+\mbox{}\verb@} else { ### compare to Mult() with ncol(y) !%in% (1, N)@\\
+\mbox{}\verb@    mean <- sapply(seq_len(N), function(i)@\\
+\mbox{}\verb@        - S[i,] %*% (P[i,] %*% g0)[-which,,drop = FALSE])@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
@@ -3623,6 +3618,7 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -3636,6 +3632,7 @@ j <- 2:4
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -3653,6 +3650,7 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -3666,6 +3664,7 @@ j <- 1:3
 y <- matrix(c(-1, 2, 1), nrow = 3)
 
 cm <- Sigma[-j, j,drop = FALSE] %*% solve(Sigma[j,j]) %*%  y
+colnames(cm) <- dimnames(lxd)[[1L]][1L]
 cS <- Sigma[-j, -j] - Sigma[-j,j,drop = FALSE] %*% 
       solve(Sigma[j,j]) %*% Sigma[j,-j,drop = FALSE]
 
@@ -4138,7 +4137,13 @@ function, so a prototype might look like
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {@\\
+\mbox{}\verb@lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ### not implemented currently@\\
+\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ### get access to internal mvtnorm functions@\\
+\mbox{}\verb@    .check_obs_mean <- mvtnorm:::.check_obs_mean@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape input checks}\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
@@ -4173,7 +4178,13 @@ function, so a prototype might look like
 \end{flushleft}
 <<fct-lpmvnormR, echo = FALSE>>=
 
-lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE, ...) {
+lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
+
+    ### not implemented currently
+    stopifnot(missing(invcholmean))
+
+    ### get access to internal mvtnorm functions
+    .check_obs_mean <- mvtnorm:::.check_obs_mean
 
     
     if (!is.matrix(lower)) lower <- matrix(lower, ncol = 1)
@@ -4190,14 +4201,16 @@ lpmvnormR <- function(lower, upper, mean = 0, center = NULL, chol, logLik = TRUE
 
     stopifnot(nrow(lower) == J && ncol(lower) == N)
     stopifnot(nrow(upper) == J && ncol(upper) == N)
-    if (is.matrix(mean)) {
-        if (ncol(mean) == 1L) 
-            mean <- mean[,rep(1, N),drop = FALSE]
-        stopifnot(nrow(mean) == J && ncol(mean) == N)
+
+    if (!missing(mean)) {
+        lower <- .check_obs_mean(lower, mean, J = J, N = N)
+        upper <- .check_obs_mean(upper, mean, J = J, N = N)
     }
 
-    lower <- lower - mean
-    upper <- upper - mean
+    if (!missing(invcholmean)) {
+        stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))
+        center <- - invcholmean
+    }
 
     if (!is.null(center)) {
         if (!is.matrix(center)) center <- matrix(center, ncol = 1)
@@ -4349,14 +4362,16 @@ For each $i = 1, \dots, N$, do
 \mbox{}\verb@@\\
 \mbox{}\verb@stopifnot(nrow(lower) == J && ncol(lower) == N)@\\
 \mbox{}\verb@stopifnot(nrow(upper) == J && ncol(upper) == N)@\\
-\mbox{}\verb@if (is.matrix(mean)) {@\\
-\mbox{}\verb@    if (ncol(mean) == 1L) @\\
-\mbox{}\verb@        mean <- mean[,rep(1, N),drop = FALSE]@\\
-\mbox{}\verb@    stopifnot(nrow(mean) == J && ncol(mean) == N)@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(mean)) {@\\
+\mbox{}\verb@    lower <- .check_obs_mean(lower, mean, J = J, N = N)@\\
+\mbox{}\verb@    upper <- .check_obs_mean(upper, mean, J = J, N = N)@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@lower <- lower - mean@\\
-\mbox{}\verb@upper <- upper - mean@\\
+\mbox{}\verb@if (!missing(invcholmean)) {@\\
+\mbox{}\verb@    stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))@\\
+\mbox{}\verb@    center <- - invcholmean@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@if (!is.null(center)) {@\\
 \mbox{}\verb@    if (!is.matrix(center)) center <- matrix(center, ncol = 1)@\\
@@ -5095,13 +5110,16 @@ triangular, so this is fast).
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
+FIXME: \code{center} is obsolate as \code{center = x} gives the same result
+as \code{invcholmean = - x}. Also in \code{slpmvnorm}.
+
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap99}\raggedright\small
 \NWtarget{nuweb78}{} $\langle\,${\itshape lpmvnorm}\nobreak\ {\footnotesize {78}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@lpmvnorm <- function(lower, upper, mean = 0, center = NULL, chol, invchol, @\\
+\mbox{}\verb@lpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL, chol, invchol, @\\
 \mbox{}\verb@                     logLik = TRUE, M = NULL, w = NULL, seed = NULL, @\\
 \mbox{}\verb@                     tol = .Machine$double.eps, fast = FALSE) {@\\
 \mbox{}\verb@@\\
@@ -5979,15 +5997,37 @@ triangular elements such that the scores match the input)
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
-We can now finally put everything together in a single score function.
+If the model was parameterised in terms of $\nuvec_i = \mC_i^{-1} \muvec_i$,
+we compute the score for $\nuvec_i$ based on the score for $\muvec_i$
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap125}\raggedright\small
+\NWtarget{nuweb89c}{} $\langle\,${\itshape invcholmean score}\nobreak\ {\footnotesize {89c}}$\,\rangle\equiv$
+\vspace{-1ex}
+\begin{list}{}{} \item
+\mbox{}\verb@@\\
+\mbox{}\verb@if (!missing(invcholmean))@\\
+\mbox{}\verb@    sinvcholmean <- Mult(chol, smean, transpose = TRUE)@\\
+\mbox{}\verb@@{\NWsep}
+\end{list}
+\vspace{-1.5ex}
+\footnotesize
+\begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
+\item \NWtxtMacroRefIn\ \NWlink{nuweb90}{90}.
+
+\item{}
+\end{list}
+\end{minipage}\vspace{4ex}
+\end{flushleft}
+We can now finally put everything together in a single score function.
+
+\begin{flushleft} \small
+\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
 \NWtarget{nuweb90}{} $\langle\,${\itshape slpmvnorm}\nobreak\ {\footnotesize {90}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@slpmvnorm <- function(lower, upper, mean = 0, center = NULL, @\\
+\mbox{}\verb@slpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL, @\\
 \mbox{}\verb@                      chol, invchol, logLik = TRUE, M = NULL, @\\
 \mbox{}\verb@                      w = NULL, seed = NULL, tol = .Machine$double.eps, @\\
 \mbox{}\verb@                      fast = FALSE) {@\\
@@ -6019,6 +6059,7 @@ We can now finally put everything together in a single score function.
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate chol score}\nobreak\ {\footnotesize \NWlink{nuweb88d}{88d}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape post differentiate invchol score}\nobreak\ {\footnotesize \NWlink{nuweb89a}{89a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape post process score}\nobreak\ {\footnotesize \NWlink{nuweb89b}{89b}}$\,\rangle$}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape invcholmean score}\nobreak\ {\footnotesize \NWlink{nuweb89c}{89c}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ret <- ltMatrices(ret, byrow = byrow_orig)@\\
 \mbox{}\verb@@\\
@@ -6032,6 +6073,7 @@ We can now finally put everything together in a single score function.
 \mbox{}\verb@                    upper = supper,@\\
 \mbox{}\verb@                    chol = ret)@\\
 \mbox{}\verb@        if (!missing(invchol)) names(ret)[names(ret) == "chol"] <- "invchol"@\\
+\mbox{}\verb@        if (!missing(invcholmean)) ret$invcholmean <- sinvcholmean@\\
 \mbox{}\verb@        return(ret)@\\
 \mbox{}\verb@    }@\\
 \mbox{}\verb@    @\\
@@ -6557,7 +6599,7 @@ $\rX_i$ given $\rY_i = \yvec_i$.
 We first check the data
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap126}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
 \NWtarget{nuweb101}{} $\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize {101}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6595,7 +6637,7 @@ marginal and the conditional normal distributions and the joint log-likelihood
 is simply the sum of the two corresponding log-likelihoods.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap127}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap128}\raggedright\small
 \NWtarget{nuweb102}{} $\langle\,${\itshape ldpmvnorm}\nobreak\ {\footnotesize {102}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6656,7 +6698,7 @@ The score function requires a little extra work. We start with the case when
 \code{invchol} is given
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap128}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap129}\raggedright\small
 \NWtarget{nuweb103}{} $\langle\,${\itshape sldpmvnorm invchol}\nobreak\ {\footnotesize {103}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6728,7 +6770,7 @@ For \code{chol}, we compute the above code for its inverse and
 post-differentiate using the vec-trick
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap129}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap130}\raggedright\small
 \NWtarget{nuweb104}{} $\langle\,${\itshape sldpmvnorm}\nobreak\ {\footnotesize {104}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6914,7 +6956,7 @@ require lower triangular matrix objects as inputs, with diagonal elements,
 and check if the dimensions match
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap130}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap131}\raggedright\small
 \NWtarget{nuweb107a}{} $\langle\,${\itshape deperma input checks chol}\nobreak\ {\footnotesize {107a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6942,7 +6984,7 @@ and check if the dimensions match
 Regarding \code{perm}, we check if this is an actual permutation 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap131}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap132}\raggedright\small
 \NWtarget{nuweb107b}{} $\langle\,${\itshape deperma input checks perm}\nobreak\ {\footnotesize {107b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -6970,7 +7012,7 @@ the user's responsibility to provide this quantity (even when \code{invchol}
 is given).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap132}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap133}\raggedright\small
 \NWtarget{nuweb108a}{} $\langle\,${\itshape deperma input checks schol}\nobreak\ {\footnotesize {108a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7002,7 +7044,7 @@ about row or column storage order. We set-up indices matrices and the
 permutation matrix $\Pi$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap133}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap134}\raggedright\small
 \NWtarget{nuweb108b}{} $\langle\,${\itshape deperma indices}\nobreak\ {\footnotesize {108b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7030,7 +7072,7 @@ and are now ready for the main course. We are gentle and also allow
 the very end in this case.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap134}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap135}\raggedright\small
 \NWtarget{nuweb109}{} $\langle\,${\itshape deperma}\nobreak\ {\footnotesize {109}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7137,7 +7179,7 @@ $\diag(\mC \mC^\top)^{-\nicefrac{1}{2}}$ ensures that $\diag(\mSigma)
 \equiv 1$, that is, unconstained optimisation can be applied.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap135}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap136}\raggedright\small
 \NWtarget{nuweb111}{} $\langle\,${\itshape standardize}\nobreak\ {\footnotesize {111}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7230,7 +7272,7 @@ respect to $\mC$, and it is the user's responsibility to provide this
 quantity).
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap136}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap137}\raggedright\small
 \NWtarget{nuweb113}{} $\langle\,${\itshape destandardize}\nobreak\ {\footnotesize {113}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7571,7 +7613,7 @@ chk(unname(nsc(start)), grad(nll, start))
 \chapter{User Interface} \label{inter}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap137}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap138}\raggedright\small
 \NWtarget{nuweb120a}{} \verb@"interface.R"@\nobreak\ {\footnotesize {120a}}$\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7607,7 +7649,7 @@ We start with the conversion of a lower triangular matrix \code{x} to an
 \code{ltMatrices} object
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap138}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap139}\raggedright\small
 \NWtarget{nuweb120b}{} $\langle\,${\itshape as.ltMatrices}\nobreak\ {\footnotesize {120b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7645,7 +7687,7 @@ factor $\mC$. The same is done when $\mL$ is given as \code{invchol}
 argument. Of course, only one of these arguments must be specified.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap139}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap140}\raggedright\small
 \NWtarget{nuweb121a}{} $\langle\,${\itshape mvnorm chol invchol}\nobreak\ {\footnotesize {121a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7682,7 +7724,7 @@ matrix, and we check if dimensions and, possibly, names are in line with
 what was specified as \code{chol} or \code{invchol}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap140}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap141}\raggedright\small
 \NWtarget{nuweb121b}{} $\langle\,${\itshape mvnorm mean}\nobreak\ {\footnotesize {121b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7726,7 +7768,7 @@ Cholesky factor or inverse thereof). We also allow the specification of the
 scaled mean $\nuvec = \mL \muvec$ as argument \code{invcholmean}:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap141}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap142}\raggedright\small
 \NWtarget{nuweb122a}{} $\langle\,${\itshape mvnorm}\nobreak\ {\footnotesize {122a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7761,7 +7803,7 @@ scaled mean $\nuvec = \mL \muvec$ as argument \code{invcholmean}:
 After updating the object, it might be necessary to update $\nuvec$ as well:
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap142}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap143}\raggedright\small
 \NWtarget{nuweb122b}{} $\langle\,${\itshape mean2invcholmean}\nobreak\ {\footnotesize {122b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7788,7 +7830,7 @@ We add a \code{names} and \code{aperm} method. The latter returns a
 multivariate normal distribution with permuted order of the variables
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap143}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap144}\raggedright\small
 \NWtarget{nuweb123a}{} $\langle\,${\itshape mvnorm methods}\nobreak\ {\footnotesize {123a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7825,7 +7867,7 @@ format. If a classical \code{data.frame} is preferred, \code{as.data.frame =
 TRUE} we provide one
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap144}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap145}\raggedright\small
 \NWtarget{nuweb123b}{} $\langle\,${\itshape mvnorm simulate}\nobreak\ {\footnotesize {123b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7887,7 +7929,7 @@ Marginal and conditional distributions might be of interest, the
 \code{marg\_mvnorm} and \code{cond\_mvnorm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap145}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap146}\raggedright\small
 \NWtarget{nuweb124}{} $\langle\,${\itshape mvnorm margDist}\nobreak\ {\footnotesize {124}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7923,7 +7965,7 @@ Marginal and conditional distributions might be of interest, the
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap146}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap147}\raggedright\small
 \NWtarget{nuweb125}{} $\langle\,${\itshape mvnorm condDist}\nobreak\ {\footnotesize {125}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -7999,7 +8041,7 @@ essentially a wrapper for \code{ldpmvnorm}, handling permutations,
 marginalisation, and standardisation. We begin with some sanity checks
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap147}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap148}\raggedright\small
 \NWtarget{nuweb127}{} $\langle\,${\itshape argchecks}\nobreak\ {\footnotesize {127}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8060,7 +8102,7 @@ marginalisation, and standardisation. We begin with some sanity checks
 and proceed with the workhorse when $\mC$ was given
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap148}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap149}\raggedright\small
 \NWtarget{nuweb128a}{} $\langle\,${\itshape logLik chol}\nobreak\ {\footnotesize {128a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8090,7 +8132,7 @@ and proceed with the workhorse when $\mC$ was given
 For inverse Cholesky factors $\mL$, the code is very similar, just the argument names change
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap149}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap150}\raggedright\small
 \NWtarget{nuweb128b}{} $\langle\,${\itshape logLik invchol}\nobreak\ {\footnotesize {128b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8120,7 +8162,7 @@ For inverse Cholesky factors $\mL$, the code is very similar, just the argument 
 Putting everything together in a corresponding \code{logLik} method
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap150}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap151}\raggedright\small
 \NWtarget{nuweb128c}{} $\langle\,${\itshape mvnorm logLik}\nobreak\ {\footnotesize {128c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8171,7 +8213,7 @@ the score function \code{sldpmvnorm} instead of the log-likelihood function
 \code{ldpmvnorm}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap151}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap152}\raggedright\small
 \NWtarget{nuweb129a}{} $\langle\,${\itshape lLgrad chol}\nobreak\ {\footnotesize {129a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8213,7 +8255,7 @@ with respect to the original arguments of \code{logLik} are obtained. We
 start with the gradient with respect to $\muvec$, in case it was not given
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap152}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap153}\raggedright\small
 \NWtarget{nuweb129b}{} $\langle\,${\itshape lLgrad mean}\nobreak\ {\footnotesize {129b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8235,7 +8277,7 @@ In case we marginalised over some variables, we have to set the omitted
 parameters to zero
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap153}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap154}\raggedright\small
 \NWtarget{nuweb130a}{} $\langle\,${\itshape lLgrad marginalisation}\nobreak\ {\footnotesize {130a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8273,7 +8315,7 @@ If the order of the variables was permuted, we compute the scores for the
 original ordering of the variables, as explained in Chapter~\ref{cdl}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap154}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap155}\raggedright\small
 \NWtarget{nuweb130b}{} $\langle\,${\itshape lLgrad deperma}\nobreak\ {\footnotesize {130b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8297,7 +8339,7 @@ The effect of standardization can be removed as discussed in
 Chapter~\ref{copula}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap155}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap156}\raggedright\small
 \NWtarget{nuweb130c}{} $\langle\,${\itshape lLgrad destandarized}\nobreak\ {\footnotesize {130c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8319,7 +8361,7 @@ Chapter~\ref{copula}
 and it remains to remove fix diagonal elements
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap156}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap157}\raggedright\small
 \NWtarget{nuweb131a}{} $\langle\,${\itshape lLgrad diagonals}\nobreak\ {\footnotesize {131a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8346,7 +8388,7 @@ Chapter~\ref{ch:joint} when the scaled mean $\nuvec = \mL \muvec$ was
 specified
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap157}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap158}\raggedright\small
 \NWtarget{nuweb131b}{} $\langle\,${\itshape lLgrad return}\nobreak\ {\footnotesize {131b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8392,7 +8434,7 @@ post-differentiate $\mC = \mL^{-1}$ with respect to $\mL$. We start with
 marginalisation
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap158}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap159}\raggedright\small
 \NWtarget{nuweb132a}{} $\langle\,${\itshape lLgrad invchol marginalisation}\nobreak\ {\footnotesize {132a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8429,7 +8471,7 @@ marginalisation
 turn to post-processing
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap159}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap160}\raggedright\small
 \NWtarget{nuweb132b}{} $\langle\,${\itshape lLgrad invchol post}\nobreak\ {\footnotesize {132b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8470,7 +8512,7 @@ turn to post-processing
 and finally put everything together
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap160}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap161}\raggedright\small
 \NWtarget{nuweb133}{} $\langle\,${\itshape lLgrad invchol}\nobreak\ {\footnotesize {133}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8527,7 +8569,7 @@ and finally put everything together
 We can now provide the log-likelihood gradients
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap161}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap162}\raggedright\small
 \NWtarget{nuweb134}{} $\langle\,${\itshape mvnorm lLgrad}\nobreak\ {\footnotesize {134}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8845,7 +8887,7 @@ We start implementing low-level functionality for computing log-probabilities fo
 keeping
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap162}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap163}\raggedright\small
 \NWtarget{nuweb141a}{} $\langle\,${\itshape RR input B D}\nobreak\ {\footnotesize {141a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8871,7 +8913,7 @@ We use $Z = \Phi^{-1}(w)$ and optional weights and compute the products $\mB_{jk
 elements of $\mD$.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap163}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap164}\raggedright\small
 \NWtarget{nuweb141b}{} $\langle\,${\itshape RR input Z, weights}\nobreak\ {\footnotesize {141b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8893,7 +8935,7 @@ elements of $\mD$.
 The limits $\avec$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap164}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
 \NWtarget{nuweb142a}{} $\langle\,${\itshape RR input lower}\nobreak\ {\footnotesize {142a}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8920,7 +8962,7 @@ The limits $\avec$
 and $\bvec$
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap166}\raggedright\small
 \NWtarget{nuweb142b}{} $\langle\,${\itshape RR input upper}\nobreak\ {\footnotesize {142b}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8952,7 +8994,7 @@ summation, such that sparse grids (for example from add-on package \pkg{SparseGr
 can be utilised.
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap166}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap167}\raggedright\small
 \NWtarget{nuweb142c}{} $\langle\,${\itshape RR inner}\nobreak\ {\footnotesize {142c}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -8975,7 +9017,7 @@ can be utilised.
 Finally, we wrap everything up in a function called \code{lpRR}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap167}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap168}\raggedright\small
 \NWtarget{nuweb143}{} $\langle\,${\itshape lpRR}\nobreak\ {\footnotesize {143}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -9028,7 +9070,7 @@ lpRR(lower = a, upper = b, B = B, D = D, Z = Z)
 The score function with respect to $\avec$, $\bvec$, $\mB$, and $\mD$ is 
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap168}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap169}\raggedright\small
 \NWtarget{nuweb144}{} $\langle\,${\itshape slpRR}\nobreak\ {\footnotesize {144}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -9107,7 +9149,7 @@ chk(gupr, c(sRR$upper))
 \chapter{Package Infrastructure}
 
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap169}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap170}\raggedright\small
 \NWtarget{nuweb146}{} $\langle\,${\itshape R Header}\nobreak\ {\footnotesize {146}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -9144,7 +9186,7 @@ chk(gupr, c(sRR$upper))
 \end{minipage}\vspace{4ex}
 \end{flushleft}
 \begin{flushleft} \small
-\begin{minipage}{\linewidth}\label{scrap170}\raggedright\small
+\begin{minipage}{\linewidth}\label{scrap171}\raggedright\small
 \NWtarget{nuweb147}{} $\langle\,${\itshape C Header}\nobreak\ {\footnotesize {147}}$\,\rangle\equiv$
 \vspace{-1ex}
 \begin{list}{}{} \item
@@ -9294,6 +9336,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$inner score loop\nobreak\ {\footnotesize \NWlink{nuweb86a}{86a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb87}{87}.}
 \item $\langle\,$input checks\nobreak\ {\footnotesize \NWlink{nuweb69}{69}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb66}{66}\NWlink{nuweb78}{, 78}\NWlink{nuweb90}{, 90}.
 }
+\item $\langle\,$invcholmean score\nobreak\ {\footnotesize \NWlink{nuweb89c}{89c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb90}{90}.}
 \item $\langle\,$is.ltMatrices\nobreak\ {\footnotesize \NWlink{nuweb7c}{7c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$kronecker vec trick\nobreak\ {\footnotesize \NWlink{nuweb46}{46}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb2}{2}.}
 \item $\langle\,$L times D\nobreak\ {\footnotesize \NWlink{nuweb49}{49}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb50}{50}.}

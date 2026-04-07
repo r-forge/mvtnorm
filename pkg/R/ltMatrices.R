@@ -1132,20 +1132,15 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
     Pw <- P[, -which]
     chol <- solve(base::chol(Pw))
-    Pa <- as.array(P)
-    Sa <- as.array(S <- Crossprod(chol))
-    if (dim(chol)[1L] == 1L) {
-       Pa <- Pa[,,1]
-       Sa <- Sa[,,1]
-       mean <- -Sa %*% Pa[-which, which, drop = FALSE] %*% given
-    } else {
-       if (ncol(given) == N) {
-           mean <- sapply(1:N, function(i) 
-               -Sa[,,i] %*% Pa[-which,which,i] %*% given[,i,drop = FALSE])
-       } else {  ### compare to Mult() with ncol(y) !%in% (1, N)
-           mean <- sapply(1:N, function(i) 
-               -Sa[,,i] %*% Pa[-which,which,i] %*% given)
-       }
+    S <- Crossprod(chol)
+    g0 <- matrix(0, nrow = J, ncol = NCOL(given))
+    g0[which,] <- given
+    S <- Crossprod(chol) ### P^{-1}_jj
+    if (ncol(g0) %in% c(1L, N)) {
+        mean <- - S %*% (P %*% g0)[-which,,drop = FALSE]
+    } else { ### compare to Mult() with ncol(y) !%in% (1, N)
+        mean <- sapply(seq_len(N), function(i)
+            - S[i,] %*% (P[i,] %*% g0)[-which,,drop = FALSE])
     }
     
 
