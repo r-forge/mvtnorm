@@ -7,15 +7,18 @@ chk <- function(...) stopifnot(isTRUE(all.equal(..., check.attributes = FALSE)))
 
 ### N samples with N different covariance matrices
 
+N <- 10
+J <- 5
+prm <- runif(N * J * (J + 1) / 2) + 1
+m <- matrix(rnorm(N * J), nrow = J)
+Z <- matrix(rnorm(N * J), ncol = N)
+W <- matrix(runif((J - 1) * 100), nrow = J - 1)
+
 thischeck <- expression({
-  N <- 10
-  J <- 5
-  lt <- ltMatrices(matrix(runif(N * J * (J + c(-1, 1)[dg + 1L]) / 2) + 1, ncol = N), 
+  lt <- ltMatrices(matrix(prm[1: (N * J * (J + c(-1, 1)[dg + 1L]) / 2)], ncol = N), 
                    diag = dg)
   lt <- ltMatrices(lt, diag = dg, byrow = br)
-  m <- matrix(rnorm(N * J), nrow = J)
   d <- Mult(lt, m)
-  Z <- matrix(rnorm(N * J), ncol = N)
   Y <- solve(lt, Z) + m
   ll1 <- sum(dnorm(Mult(lt, Y - m), log = TRUE)) + sum(log(diagonals(lt)))
 
