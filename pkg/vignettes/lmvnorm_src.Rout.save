@@ -1932,11 +1932,6 @@ $mean
 Petal.Length 3.758
 Petal.Width  1.199
 
-$invcholmean
-               [,1]
-Petal.Length  2.136
-Petal.Width  -1.770
-
 attr(,"class")
 [1] "mvnorm"
 
@@ -1946,10 +1941,10 @@ attr(,"class")
 +     given = gm)
 
 > logLik(object = iris_cmvn, obs = t(iris[, vars[-j]]))
-[1] -4782
+[1] -223.5
 
 > logLik(object = iris_cmvn, obs = t(iris[, rev(vars[-j])]))
-[1] -4782
+[1] -223.5
 
 > J <- length(vars)
 
@@ -1997,7 +1992,7 @@ Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
 Petal.Length      1.26582    -0.32746       3.0955      1.2870
 Petal.Width       0.51283    -0.12083       1.2870      0.5771
 
-> ML$mean[, , drop = TRUE]
+> mean(ML)[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.843        3.057        3.758        1.199 
 
@@ -2019,16 +2014,13 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
 
 > MLL <- ll(opL$par, logLik = FALSE)
 
-> cat("> ## IGNORE_RDIFF_BEGIN\n")
-> ## IGNORE_RDIFF_BEGIN
-
 > op$value
 [1] 379.9
 
 > opL$value
 [1] 385.4
 
-> invchol2cov(MLL$scale)
+> vcov(MLL)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2045,7 +2037,7 @@ Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
 Petal.Length      1.26582    -0.32746       3.0955      1.2870
 Petal.Width       0.51283    -0.12083       1.2870      0.5771
 
-> MLL$mean[, , drop = TRUE]
+> mean(MLL)[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.848        3.054        3.786        1.215 
 
@@ -2088,7 +2080,7 @@ Levels: (-Inf,5] (5,5.6] (5.6,6.1] (6.1,6.52] (6.52, Inf]
 
 > MLi <- ll(opi$par, logLik = FALSE)
 
-> invchol2cov(MLi$scale)
+> vcov(MLi)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2098,7 +2090,7 @@ Petal.Length      1.26064    -0.32698        3.079      1.2794
 Petal.Width       0.51668    -0.12107        1.279      0.5739
 
 
-> invchol2cov(MLL$scale)
+> vcov(MLL)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2108,7 +2100,7 @@ Petal.Length      1.13949    -0.42213       2.9581      1.2070
 Petal.Width       0.44105    -0.16399       1.2070      0.5330
 
 
-> chol2cov(ML$scale)
+> vcov(ML)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
@@ -2118,55 +2110,46 @@ Petal.Length      1.26582    -0.32746       3.0955      1.2870
 Petal.Width       0.51283    -0.12083       1.2870      0.5771
 
 
-> MLi$mean[, , drop = TRUE]
+> mean(MLi)[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.760        3.058        3.759        1.200 
 
-> MLL$mean[, , drop = TRUE]
+> mean(MLL)[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.848        3.054        3.786        1.215 
 
-> ML$mean[, , drop = TRUE]
+> mean(ML)[, , drop = TRUE]
 Sepal.Length  Sepal.Width Petal.Length  Petal.Width 
        5.843        3.057        3.758        1.199 
-
-> cdstr <- condDist(ML, which_given = vars[1:3], given = diag(3))
 
 > coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + 
 +     Petal.Length, data = iris))
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
      -0.2403      -0.2073       0.2228       0.5241 
 
-> cdstr$mean - ML$mean["Petal.Width", ]
-               [,1]   [,2]   [,3]
-Petal.Width -0.2073 0.2228 0.5241
+> summary(irislm)$sigma
+[1] 0.192
 
-> summary(irislm)$sigma^2
-[1] 0.03685
+> coef(ML, which = "Petal.Width")
+ (Intercept) Sepal.Length  Sepal.Width Petal.Length 
+     -0.2403      -0.2073       0.2228       0.5241 
+attr(,"sigma")
+Petal.Width 
+     0.1894 
 
-> c(cdstr$scale^2)
-[1] 0.03587
+> coef(MLL, which = "Petal.Width")
+ (Intercept) Sepal.Length  Sepal.Width Petal.Length 
+    -0.08668     -0.24639      0.23314      0.53622 
+attr(,"sigma")
+Petal.Width 
+     0.1808 
 
-> cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
-
-> cdstr$mean - ML$mean["Petal.Width", ]
-              [,1]   [,2]   [,3]
-Petal.Width -0.231 0.2485 0.5516
-
-> c(1/cdstr$scale^2)
-[1] 0.0327
-
-> cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
-
-> cdstr$mean - ML$mean["Petal.Width", ]
-               [,1]   [,2]   [,3]
-Petal.Width -0.1381 0.1942 0.4937
-
-> c(1/cdstr$scale^2)
-[1] 0.03844
-
-> cat("> ## IGNORE_RDIFF_END\n")
-> ## IGNORE_RDIFF_END
+> coef(MLi, which = "Petal.Width")
+ (Intercept) Sepal.Length  Sepal.Width Petal.Length 
+     -0.4445      -0.1389       0.1935       0.4930 
+attr(,"sigma")
+Petal.Width 
+     0.1961 
 
 > N <- 3
 
@@ -2309,4 +2292,4 @@ Petal.Width -0.1381 0.1942 0.4937
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 27.156   0.235  27.399 
+ 15.417   0.239  15.654 

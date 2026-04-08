@@ -27,36 +27,74 @@ mvnorm <- function(mean, invcholmean, chol, invchol) {
       stopifnot(missing(mean))
       ### note: this is not really necessary once all ls functions
       ### are able to deal with invcholmean
-      ret$invcholmean <- invcholmean
-      if (!missing(invchol)) mean <- solve(invchol, invcholmean)
-      if (!missing(chol)) mean <- Mult(chol, invcholmean)
-  }
-  # mvnorm mean
-  
-  if (!missing(mean)) {
-      stopifnot(is.numeric(mean))
-      stopifnot(NROW(mean) == dim(scale)[2L])
-      if (!is.matrix(mean)) {
-          mean <- matrix(mean, nrow = NROW(mean))
-          rownames(mean) <- names(mean)
+      # mvnorm invcholmean
+      
+      if (!missing(invcholmean)) {
+          stopifnot(is.numeric(invcholmean))
+          stopifnot(NROW(invcholmean) == dim(scale)[2L])
+          if (!is.matrix(invcholmean)) {
+              invcholmean <- matrix(invcholmean, nrow = NROW(invcholmean))
+              rownames(invcholmean) <- names(invcholmean)
+          }
+          nm <- dimnames(scale)[[2L]]
+          if (is.null(rownames(invcholmean)))
+              rownames(invcholmean) <- nm
+          if (!isTRUE(all.equal(rownames(invcholmean), nm)))
+              stop("rownames of invcholmean do not match")        
+          nm <- dimnames(scale)[[1L]]
+          if (!is.null(nm) && dim(scale)[[2L]] == ncol(invcholmean)) {
+              if (is.null(colnames(invcholmean)))
+                  colnames(invcholmean) <- nm
+              if (!isTRUE(all.equal(colnames(invcholmean), nm)))
+                  stop("colnames of invcholmean do not match")        
+          }
+          ret$invcholmean <- invcholmean
       }
-      nm <- dimnames(scale)[[2L]]
-      if (is.null(rownames(mean)))
-          rownames(mean) <- nm
-      if (!isTRUE(all.equal(rownames(mean), nm)))
-          stop("rownames of mean do not match")        
-      nm <- dimnames(scale)[[1L]]
-      if (!is.null(nm) && dim(scale)[[2L]] == ncol(mean)) {
-          if (is.null(colnames(mean)))
-              colnames(mean) <- nm
-          if (!isTRUE(all.equal(colnames(mean), nm)))
-              stop("colnames of mean do not match")        
+      
+  } else {
+      # mvnorm mean
+      
+      if (!missing(mean)) {
+          stopifnot(is.numeric(mean))
+          stopifnot(NROW(mean) == dim(scale)[2L])
+          if (!is.matrix(mean)) {
+              mean <- matrix(mean, nrow = NROW(mean))
+              rownames(mean) <- names(mean)
+          }
+          nm <- dimnames(scale)[[2L]]
+          if (is.null(rownames(mean)))
+              rownames(mean) <- nm
+          if (!isTRUE(all.equal(rownames(mean), nm)))
+              stop("rownames of mean do not match")        
+          nm <- dimnames(scale)[[1L]]
+          if (!is.null(nm) && dim(scale)[[2L]] == ncol(mean)) {
+              if (is.null(colnames(mean)))
+                  colnames(mean) <- nm
+              if (!isTRUE(all.equal(colnames(mean), nm)))
+                  stop("colnames of mean do not match")        
+          }
+          ret$mean <- mean
       }
-      ret$mean <- mean
+      
   }
-  
   class(ret) <- "mvnorm"
   return(ret)
+}
+
+# mean2invcholmean
+
+.m2i <- function(object) {
+    if (is.chol(object$scale))
+        return(solve(object$scale, object$mean))
+    return(object$scale %*% object$mean)
+}
+
+# invcholmean2mean
+
+.i2m <- function(object) {
+    if (is.chol(object$scale))
+        return(object$scale %*% object$invcholmean)
+    return(solve(object$scale, object$invcholmean))
 }
 
 # mvnorm methods
@@ -66,19 +104,14 @@ names.mvnorm <- function(x)
 
 aperm.mvnorm <- function(a, perm, ...) {
 
+    if (!is.null(a$invcholmean))
+        a$mean <- .i2m(a)
     ret <- list(scale = aperm(a$scale, perm = perm, ...))
-    if (!is.null(a$mean)) {
+    if (!is.null(a$mean))
         ret$mean <- a$mean[perm,,drop = FALSE]
-        # mean2invcholmean
-        
-        if (!is.null(ret$mean)) {
-            if (is.chol(ret$scale)) {
-                ret$invcholmean <- solve(ret$scale, ret$mean)
-            } else {
-                ret$invcholmean <- Mult(ret$scale, ret$mean)
-            }
-        }
-        
+    if (!is.null(a$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
     class(ret) <- "mvnorm"
     ret
@@ -101,6 +134,8 @@ simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL,
         }
     }
     Z <- matrix(rnorm(nsim * J), nrow = J)
+    if (!is.null(object$invcholmean))
+        Z <- Z + c(object$invcholmean)
     if (is.chol(object$scale)) {
         Y <- Mult(object$scale, Z)
     } else {
@@ -129,19 +164,16 @@ margDist.mvnorm <- function(object, which, ...) {
         ret <- list(scale = as.invchol(marg_mvnorm(invchol = object$scale, 
                                                    which = which)$invchol))
     }
-    if (!is.null(object$mean)) {
+
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
+    if (!is.null(object$mean))
         ret$mean <- object$mean[which,,drop = FALSE]
-        # mean2invcholmean
-        
-        if (!is.null(ret$mean)) {
-            if (is.chol(ret$scale)) {
-                ret$invcholmean <- solve(ret$scale, ret$mean)
-            } else {
-                ret$invcholmean <- Mult(ret$scale, ret$mean)
-            }
-        }
-        
+    if (!is.null(object$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
+
     class(ret) <- "mvnorm"
     return(ret)
 }
@@ -152,6 +184,16 @@ condDist <- function(object, which_given, given, ...)
     UseMethod("condDist")
 
 condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
+
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
+    if (!is.null(object$mean)) {
+        if (ncol(object$mean) == 1L && NCOL(given) > 1L) {
+            given <- given - object$mean[which_given,,drop = TRUE]
+        } else {
+            given <- c(given) - object$mean[which_given,,drop = FALSE]
+        }
+    }
 
     if (is.chol(object$scale)) {
         ret <- cond_mvnorm(chol = object$scale, which_given = which_given, 
@@ -164,6 +206,8 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         ret$scale <- as.invchol(ret$invchol)
         ret$invchol <- NULL
     }
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
@@ -174,16 +218,10 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         } else {
             ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
         }
-        # mean2invcholmean
-        
-        if (!is.null(ret$mean)) {
-            if (is.chol(ret$scale)) {
-                ret$invcholmean <- solve(ret$scale, ret$mean)
-            } else {
-                ret$invcholmean <- Mult(ret$scale, ret$mean)
-            }
-        }
-        
+    }
+    if (!is.null(object$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
     class(ret) <- "mvnorm"
     return(ret)
@@ -196,8 +234,11 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     # argchecks
     
     args <- c(object, list(...))
-    ### mean is always there
-    args$invcholmean <- NULL
+    ### <FIXME> always base likelihood on mean
+    if (!is.null(args$invcholmean)) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 
@@ -280,8 +321,11 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     # argchecks
     
     args <- c(object, list(...))
-    ### mean is always there
-    args$invcholmean <- NULL
+    ### <FIXME> always base likelihood on mean
+    if (!is.null(args$invcholmean)) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 
@@ -502,5 +546,62 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     
     return(ret)
     
+}
+
+# mvnorm marginal means
+
+mean.mvnorm <- function(x, ...) {
+    if (!is.null(x$mean)) return(x$mean)
+    if (!is.null(x$invcholmean)) return(.i2m(x))
+    return(0)
+}
+
+# mvnorm vcov
+
+vcov.mvnorm <- function(object, ...) {
+    if (is.invchol(object$scale)) return(invchol2cov(object$scale))
+    return(chol2cov(object$scale))
+}
+
+# mvnorm regression coefs
+
+coef.mvnorm <- function(object, which = dim(object$scale)[2L], ...) {
+
+    if (dim(object$scale)[[2L]] == 1) {
+        if (!is.invchol(object$scale)) object$scale <- chol2invchol(object$scale)
+        if (!is.null(object$invcholmean)) object$mean <- mean(object)
+        if (is.null(object$mean)) return(NULL)
+        ret <- object$mean
+        attr(ret, "sigma") <- 1 / c(unclass(object$scale))
+        return(ret)
+    }
+
+    if (is.character(which)) 
+        which <- which(dimnames(object$scale)[[2L]] == which)
+
+    stopifnot((length(which) == 1L) && 
+              (which > 1) && 
+              (which <= dim(object$scale)[2L]))
+
+    if (!is.invchol(object$scale)) object$scale <- chol2invchol(object$scale)
+
+    diag <- attr(object$scale, "diag")
+    j <- which - 1L
+    start <- j * (j + 1) / 2
+    idx <- start + seq_len(which)
+    ret <- Lower_tri(ltMatrices(object$scale, byrow = TRUE, diag = diag), 
+                     diag = diag)[idx,,drop = FALSE]
+    rownames(ret) <- dimnames(object$scale)[[2L]][seq_len(which)]
+    if (!is.null(nm <- dimnames(object$scale)[[1L]]))
+        colnames(ret) <- nm
+    dg <- ret[nrow(ret),]
+    cf <- - ret[-nrow(ret),,drop = FALSE]
+    if (!is.null(object$mean)) object$invcholmean <- .m2i(object)
+    if (!is.null(object$invcholmean))
+        cf <- rbind("(Intercept)" = object$invcholmean[which,,drop = TRUE], cf)
+    cf <- cf / matrix(dg, nrow = nrow(cf), ncol = ncol(cf), byrow = TRUE)
+    cf <- cf[,,drop = TRUE]
+    attr(cf, "sigma") <- 1 / dg
+    return(cf)
 }
 
