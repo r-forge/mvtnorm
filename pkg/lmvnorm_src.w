@@ -6130,6 +6130,8 @@ TRUE} we provide one
 simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL, 
                             standardize = FALSE, as.data.frame = FALSE, ...) {
 
+    @<init random seed, reset on exit@>
+
     J <- dim(object$scale)[2L]
     N <- dim(object$scale)[1L]
     if (N > 1)
@@ -6689,8 +6691,8 @@ Quite unsurprisingly, the results are practically equivalent to the
 analytically available maximum-likelihood estimators in this case
 
 <<iris-ML-hat>>=
-### covariance
-chol2cov(ML$scale)
+### covariance (noLD brings up small differences)
+round(vcov(ML), 3)
 V
 ### mean
 mean(ML)[,,drop = TRUE]
@@ -6731,7 +6733,7 @@ where the comparison to the analytic estimates is
 op$value
 opL$value
 ### covariance
-vcov(MLL)
+round(vcov(MLL), 3)
 V
 ### mean
 mean(MLL)[,,drop = TRUE]
@@ -6804,9 +6806,9 @@ close in our case)
 
 <<iris-MLi-hat>>=
 ### covariance
-vcov(MLi)
-vcov(MLL)
-vcov(ML)
+round(vcov(MLi), 3)
+round(vcov(MLL), 3)
+round(vcov(ML), 3)
 ### mean
 mean(MLi)[,,drop = TRUE]
 mean(MLL)[,,drop = TRUE]
@@ -6822,7 +6824,7 @@ coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + Petal.Length,
 ### residual standard deviation
 summary(irislm)$sigma
 ### compare with 
-coef(ML, which = "Petal.Width")
+round(coef(ML, which = "Petal.Width"), 3)
 @@
 The regression coefficients and the residual variance are almost identical with
 those obtained from \code{lm()}. The same exericise, now with the 
@@ -6831,9 +6833,9 @@ observations, gives slightly different results for the latter,
 due to censoring:
 <<iris-lm-iL>>=
 ### nu, L for exact observations
-coef(MLL, which = "Petal.Width")
+round(coef(MLL, which = "Petal.Width"), 3)
 ### nu, L for censored observations
-coef(MLi, which = "Petal.Width")
+round(coef(MLi, which = "Petal.Width"), 3)
 @@
 
 
