@@ -2561,15 +2561,118 @@ aperm.syMatrices <- function(a, perm, ...)
     return(a[,perm])
 @}
 
-\section{Marginal and Conditional Normal Distributions} \label{sec:margcond}
+\chapter{Marginal and Conditional Normal Distributions} \label{sec:margcond}
 
 Marginal and conditional distributions from distributions $\rY_i \sim
-\ND_\J(\muvec_i, \mC_i \mC_i^\top)$
+\ND_\J\left(\muvec_i, \mC_i \mC_i^\top\right)$
 (\code{chol} argument for $\mC_i$ for $i = 1, \dots, N$) or $\rY_i \sim
-\ND_\J(\muvec_i, \mL_i^{-1} \mL_i^{-\top})$
+\ND_\J\left(\muvec_i, \mL_i^{-1} \mL_i^{-\top}\right)$
 (\code{invchol} argument for $\mL_i$ for $i = 1, \dots, N$) shall be
-computed.
+computed, where $\muvec_i$ is either the mean vector or is given by 
+$\muvec_i = \mL_i^{-1} \nuvec_i = \mC_i \nuvec_i$.
 
+The different parameterisations are useful in different contexts. Dropping
+the subscript $i$ for notational convenience, we can write the marginal mean
+vector and the covariance matrix as
+\begin{eqnarray*}
+\E(\rY) & = & \muvec \\
+\V(\rY) & = & \mSigma = \mC \mC^\top = \mL^{-1} \mL^{-\top}.
+\end{eqnarray*}
+Of course, $Y_j \sim \ND_1\left(\mu_j, \sigma_j^2\right)$, where $\sigma_j^2$ is the
+$j$th diagonal element of $\mSigma$. In contrast to this ``marginal
+parameterisation'' where parameters have a direct interpretation in terms of
+univariate marginal distributions, a ``conditional parameterisation'' in
+terms of $\nuvec$ and $\mL$ is helpful when one is interested in the
+conditional distributions
+\begin{eqnarray*}
+Y_j \mid Y_1 = y_1, \dots, Y_{j-1} = y_{j-1} \sim 
+    \ND_1\left(\mL_{jj}^{-1} \nu_j - \sum_{\jmath = 1}^{j - 1} \mL_{jj}^{-1} \mL_{j\jmath} y_\jmath, 
+               \mL_{jj}^{-2}\right)
+\end{eqnarray*}
+for each $j = 2, \dots, J$, for a proof see (\ref{fm:cdistr}). Here, the intercept is given by $\mL_{jj}^{-1} \nu_j$
+and the regression coefficients by $\mL_{jj}^{-1} \mL_{j\jmath}$. Based on
+these parameters, the joint density is given as
+\begin{eqnarray} \label{fm:jd}
+f(\yvec \mid \nuvec, \mL) & = & (2 \pi)^{-\frac{J}{2}} \det(\mL) \exp\left(-\frac{1}{2} \| \mL \yvec - \nuvec \|_2^2\right)
+\\ \nonumber
+& = & (2 \pi)^{-\frac{J}{2}} \prod_{j = 1}^J \mL_{jj} \exp\left(-\frac{1}{2} \| \mL \yvec - \nuvec \|_2^2\right)
+\\
+& = & f(y_1 \mid \nu_1, \mL_{11}) \times f(y_2 | y_1, \nu_2, \mL_{2\cdot})
+\times \cdots \times f(y_J \mid y_1, \dots, y_{J - 1}, \nu_J, \mL_{J\cdot})
+\nonumber
+\end{eqnarray}
+which nicely decomposes into a product of conditional densities.
+
+Before we begin, we implement three convenience functions for extracting
+marginal means from any parameterisation using infrastructure later to be 
+developed in Chapter~\ref{inter}. We start with marginal means
+
+@d mvnorm marginal means
+@{
+mean.mvnorm <- function(x, ...) {
+    if (!is.null(x$mean)) return(x$mean)
+    if (!is.null(x$invcholmean)) return(.i2m(x))
+    return(0)
+}
+@}
+
+and covariances
+
+@d mvnorm vcov
+@{
+vcov.mvnorm <- function(object, ...) {
+    if (is.invchol(object$scale)) return(invchol2cov(object$scale))
+    return(chol2cov(object$scale))
+}
+@}
+
+and also add a function for computing intercepts, regression coefficients and
+residual standard errors 
+
+@d mvnorm regression coefs
+@{
+coef.mvnorm <- function(object, which = dim(object$scale)[2L], ...) {
+
+    if (dim(object$scale)[[2L]] == 1) {
+        if (!is.invchol(object$scale)) object$scale <- chol2invchol(object$scale)
+        if (!is.null(object$invcholmean)) object$mean <- mean(object)
+        if (is.null(object$mean)) return(NULL)
+        ret <- object$mean
+        attr(ret, "sigma") <- 1 / c(unclass(object$scale))
+        return(ret)
+    }
+
+    if (is.character(which)) 
+        which <- which(dimnames(object$scale)[[2L]] == which)
+
+    stopifnot((length(which) == 1L) && 
+              (which > 1) && 
+              (which <= dim(object$scale)[2L]))
+
+    if (!is.invchol(object$scale)) object$scale <- chol2invchol(object$scale)
+
+    diag <- attr(object$scale, "diag")
+    j <- which - 1L
+    start <- j * (j + 1) / 2
+    idx <- start + seq_len(which)
+    ret <- Lower_tri(ltMatrices(object$scale, byrow = TRUE, diag = diag), 
+                     diag = diag)[idx,,drop = FALSE]
+    rownames(ret) <- dimnames(object$scale)[[2L]][seq_len(which)]
+    if (!is.null(nm <- dimnames(object$scale)[[1L]]))
+        colnames(ret) <- nm
+    dg <- ret[nrow(ret),]
+    cf <- - ret[-nrow(ret),,drop = FALSE]
+    if (!is.null(object$mean)) object$invcholmean <- .m2i(object)
+    if (!is.null(object$invcholmean))
+        cf <- rbind("(Intercept)" = object$invcholmean[which,,drop = TRUE], cf)
+    cf <- cf / matrix(dg, nrow = nrow(cf), ncol = ncol(cf), byrow = TRUE)
+    cf <- cf[,,drop = TRUE]
+    attr(cf, "sigma") <- 1 / dg
+    return(cf)
+}
+@}
+
+We begin computations for marginal and conditional distributions with some simple argument checks
 
 @d mc input checks
 @{
@@ -2660,6 +2763,13 @@ if (ncol(g0) %in% c(1L, N)) {
 @}
 
 If $\jvec = \{1, \dots, j < \J \}$ and $\mL$ is given, computations simplify a lot because
+with the partitioned matrix
+\begin{eqnarray*}
+\mL = & = & \begin{pmatrix}
+ \mL_{\jvec,\jvec} & 0 \\
+ \mL_{-\jvec,\jvec} & \mL_{-\jvec,-\jvec} 
+ \end{pmatrix} 
+\end{eqnarray*}
 the conditional precision matrix is
 \begin{eqnarray*}
 \mP_{-\jvec, -\jvec} = (\mL^\top \mL)_{-\jvec, -\jvec} = \mL^\top_{-\jvec, -\jvec} \mL_{-\jvec, -\jvec}
@@ -2679,6 +2789,39 @@ We sometimes, for example when scores with respect to $\mL^{-1}_{-\jvec,
 \mL_{-\jvec, \jvec} (\yvec_{\jvec} - \muvec_{\jvec})
 \end{eqnarray} and the \code{center = TRUE} argument triggers this values to
 be returned.
+
+An alternative derivation of this result is based on (\ref{fm:jd}), the
+ratio of which and the density of the marginal distribution of $\rY_\jvec \sim
+\ND_j\left(\mL_\jvec^{-1} \nuvec_\jvec, \mL_\jvec^{-1}\mL_\jvec^{-\top}\right)$ is
+\begin{eqnarray*}
+f(\yvec_{-\jvec} \mid \yvec_{\jvec}, \nuvec, \mL) = 
+    \frac{f(\yvec \mid \nuvec, \mL)}
+         {f(\yvec_{\jvec} \mid \nuvec_\jvec, \mL_{\jvec,\jvec})} 
+& = & \frac{(2 \pi)^{-\frac{J}{2}} \prod_{j = 1}^J \mL_{jj} \exp\left(-\frac{1}{2} \| \mL \yvec - \nuvec \|_2^2\right)}
+         {(2 \pi)^{-\frac{j}{2}} \prod_{\jmath = 1}^j \mL_{\jmath\jmath} \exp\left(-\frac{1}{2} \| \mL_\jvec \yvec_\jvec - \nuvec_\jvec \|_2^2\right)} \\
+& = &       (2 \pi)^{-\frac{J - j}{2}} \prod_{\jmath = j + 1}^J \mL_{\jmath\jmath}
+              \exp\left(-\frac{1}{2} ( \| \mL \yvec - \nuvec \|_2^2 - \| \mL_\jvec \yvec_\jvec - \nuvec_\jvec\|_2^2)\right) \\
+& = & (2 \pi)^{-\frac{J - j}{2}} \prod_{\jmath = j + 1}^J
+\mL_{\jmath\jmath}\exp\left( \| \mL_{-\jvec,-\jvec} \yvec_{-\jvec} - (\nuvec_{-\jvec} - \mL_{-\jvec, \jvec} \yvec_\jvec) \|_2^2\right)
+\end{eqnarray*}
+which corresponds to the distribution 
+\begin{eqnarray} \label{fm:cdistr}
+\rY_{-\jvec} \mid \yvec_{\jvec} \sim \ND_{J - j}\left(\mL^{-1}_{-\jvec,-\jvec}(\nuvec_{-\jvec} - \mL_{-\jvec, \jvec}
+\yvec_\jvec), \mL^{-1}_{-\jvec,-\jvec} \mL^{-\top}_{-\jvec,-\jvec}\right).
+\end{eqnarray}
+Noting that $\nuvec = \mL \muvec$ and thus $\nuvec_{-\jvec} = \mL_{-\jvec,-\jvec}
+\muvec_\jvec + \mL_{-\jvec, \jvec} \muvec_{-\jvec}$, we obtain for the
+conditional mean
+\begin{eqnarray*}
+& & \mL^{-1}_{-\jvec,-\jvec}(\nuvec_{-\jvec} - \mL_{-\jvec, \jvec} \yvec_\jvec) \\
+& = & \mL^{-1}_{-\jvec,-\jvec}(\mL_{-\jvec,-\jvec} \muvec_\jvec + \mL_{-\jvec, \jvec} \muvec_{-\jvec} - 
+                \mL_{-\jvec, \jvec} \yvec_\jvec) \\
+& = & \muvec_\jvec + \mL^{-1}_{-\jvec,-\jvec} \mL_{-\jvec, \jvec} \muvec_{-\jvec}
+    - \mL^{-1}_{-\jvec,-\jvec} \mL_{-\jvec, \jvec} \yvec_\jvec \\
+& = & \muvec_\jvec - \mL^{-1}_{-\jvec,-\jvec}\mL_{-\jvec, \jvec} (\yvec_\jvec - \muvec_\jvec)
+\end{eqnarray*}
+
+
 
 The implementation reads
 
@@ -2922,21 +3065,30 @@ given, we only check the dimensions.
 With $\mSigma_i
 = \mC_i \mC_i^\top$ the log-likelihood function for $\rY_i = \yvec_i$ is
 \begin{eqnarray*}
-\ell_i(\muvec_i, \mC_i) = -\frac{k}{2} \log(2\pi) - \frac{1}{2} \log \mid
+\ell_i(\muvec_i, \mC_i) = -\frac{J}{2} \log(2\pi) - \frac{1}{2} \log \mid
 \mSigma_i \mid - \frac{1}{2} (\yvec_i - \muvec_i)^\top \mSigma^{-1}_i (\yvec_i - \muvec_i)
 \end{eqnarray*}
 Because $\log \mid \mSigma_i \mid =  \log \mid \mC_i \mC_i^\top \mid = 2 \log \mid
 \mC_i \mid = 2 \sum_{j = 1}^\J \log \diag(\mC_i)_j$ we get the simpler expression
 \begin{eqnarray} \label{ll_mC}
-\ell_i(\muvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
-(\yvec_i - \muvec_i)^\top \mC_i^{-\top} \mC_i^{-1} (\yvec - \muvec_i).
+\ell_i(\muvec_i, \mC_i) & = & -\frac{J}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mC_i^{-\top} \mC_i^{-1} (\yvec_i - \muvec_i).
 \end{eqnarray}
 
 With $\nuvec_i = \mC_i^{-1} \muvec_i$ (argument \code{invcholmean}) given, we get
 \begin{eqnarray} \label{ll_mC_d}
-\ell_i(\nuvec_i, \mC_i) & = & -\frac{k}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
-(\mC_i^{-1} \yvec - \nuvec_i)^\top (\mC_i^{-1} \yvec - \nuvec_i).
+\ell_i(\nuvec_i, \mC_i) & = & -\frac{J}{2} \log(2\pi) - \sum_{j = 1}^\J \log \diag(\mC_i)_j - \frac{1}{2}
+(\mC_i^{-1} \yvec_i - \nuvec_i)^\top (\mC_i^{-1} \yvec_i - \nuvec_i).
 \end{eqnarray}
+
+The most attractive expression however is based on the parameterisation
+using $\mL_i = \mC_i^{-1}$ and $\nuvec_i$ because we get
+\begin{eqnarray} \label{ll_mL_d}
+\ell_i(\nuvec_i, \mL_i) & = & -\frac{J}{2} \log(2\pi) + \sum_{j = 1}^\J \log
+\diag(\mL_i)_j - \frac{1}{2} (\mL_i \yvec_i - \nuvec_i)^\top (\mL_i \yvec_i - \nuvec_i)
+\end{eqnarray}
+which is simultaneously log-concave in both parameters
+\citep{Barrathh_Boyd_2023}.
 
 We need to compute \code{colSums(dnorm(z, log = TRUE))} quite often. This
 turns out to be time-consuming and memory intensive, so we provide a small
@@ -3013,8 +3165,8 @@ where we can use the efficient implementations of \code{solve} and
 
 If $\mL_i = \mC_i^{-1}$ is given, we obtain
 \begin{eqnarray*}
-\ell_i(\muvec_i, \mL_i) & = & -\frac{k}{2} \log(2\pi) + \sum_{j = 1}^\J \log \diag(\mL_i)_j - \frac{1}{2}
-(\yvec_i - \muvec_i)^\top \mL_i^\top \mL_i (\yvec - \muvec_i).
+\ell_i(\muvec_i, \mL_i) & = & -\frac{J}{2} \log(2\pi) + \sum_{j = 1}^\J \log \diag(\mL_i)_j - \frac{1}{2}
+(\yvec_i - \muvec_i)^\top \mL_i^\top \mL_i (\yvec_i - \muvec_i).
 \end{eqnarray*}
 
 @d ldmvnorm invchol
@@ -5770,12 +5922,17 @@ chk(unname(nsc(start)), grad(nll, start))
 @o interface.R -cp
 @{
 @<mvnorm@>
+@<mean2invcholmean@>
+@<invcholmean2mean@>
 @<mvnorm methods@>
 @<mvnorm simulate@>
 @<mvnorm margDist@>
 @<mvnorm condDist@>
 @<mvnorm logLik@>
 @<mvnorm lLgrad@>
+@<mvnorm marginal means@>
+@<mvnorm vcov@>
+@<mvnorm regression coefs@>
 @}
 
 The tools provided in the previous chapters are rather low-level, so we will
@@ -5865,6 +6022,32 @@ if (!missing(mean)) {
 }
 @}
 
+@d mvnorm invcholmean
+@{
+if (!missing(invcholmean)) {
+    stopifnot(is.numeric(invcholmean))
+    stopifnot(NROW(invcholmean) == dim(scale)[2L])
+    if (!is.matrix(invcholmean)) {
+        invcholmean <- matrix(invcholmean, nrow = NROW(invcholmean))
+        rownames(invcholmean) <- names(invcholmean)
+    }
+    nm <- dimnames(scale)[[2L]]
+    if (is.null(rownames(invcholmean)))
+        rownames(invcholmean) <- nm
+    if (!isTRUE(all.equal(rownames(invcholmean), nm)))
+        stop("rownames of invcholmean do not match")        
+    nm <- dimnames(scale)[[1L]]
+    if (!is.null(nm) && dim(scale)[[2L]] == ncol(invcholmean)) {
+        if (is.null(colnames(invcholmean)))
+            colnames(invcholmean) <- nm
+        if (!isTRUE(all.equal(colnames(invcholmean), nm)))
+            stop("colnames of invcholmean do not match")        
+    }
+    ret$invcholmean <- invcholmean
+}
+@}
+
+
 Finally, we put everything together and return an object of class
 \code{mvnorm}, featuring \code{mean} and \code{scale}. The class of the
 latter slot carries the information how this object is to be interpreted (as
@@ -5881,26 +6064,33 @@ mvnorm <- function(mean, invcholmean, chol, invchol) {
       stopifnot(missing(mean))
       ### note: this is not really necessary once all ls functions
       ### are able to deal with invcholmean
-      ret$invcholmean <- invcholmean
-      if (!missing(invchol)) mean <- solve(invchol, invcholmean)
-      if (!missing(chol)) mean <- Mult(chol, invcholmean)
+      @<mvnorm invcholmean@>
+  } else {
+      @<mvnorm mean@>
   }
-  @<mvnorm mean@>
   class(ret) <- "mvnorm"
   return(ret)
 }
 @}
 
-After updating the object, it might be necessary to update $\nuvec$ as well:
+After updating the object, it might be necessary to update $\nuvec$ or
+$\muvec$ as well:
 
 @d mean2invcholmean
 @{
-if (!is.null(ret$mean)) {
-    if (is.chol(ret$scale)) {
-        ret$invcholmean <- solve(ret$scale, ret$mean)
-    } else {
-        ret$invcholmean <- Mult(ret$scale, ret$mean)
-    }
+.m2i <- function(object) {
+    if (is.chol(object$scale))
+        return(solve(object$scale, object$mean))
+    return(object$scale %*% object$mean)
+}
+@}
+
+@d invcholmean2mean
+@{
+.i2m <- function(object) {
+    if (is.chol(object$scale))
+        return(object$scale %*% object$invcholmean)
+    return(solve(object$scale, object$invcholmean))
 }
 @}
 
@@ -5914,10 +6104,14 @@ names.mvnorm <- function(x)
 
 aperm.mvnorm <- function(a, perm, ...) {
 
+    if (!is.null(a$invcholmean))
+        a$mean <- .i2m(a)
     ret <- list(scale = aperm(a$scale, perm = perm, ...))
-    if (!is.null(a$mean)) {
+    if (!is.null(a$mean))
         ret$mean <- a$mean[perm,,drop = FALSE]
-        @<mean2invcholmean@>
+    if (!is.null(a$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
     class(ret) <- "mvnorm"
     ret
@@ -5948,6 +6142,8 @@ simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL,
         }
     }
     Z <- matrix(rnorm(nsim * J), nrow = J)
+    if (!is.null(object$invcholmean))
+        Z <- Z + c(object$invcholmean)
     if (is.chol(object$scale)) {
         Y <- Mult(object$scale, Z)
     } else {
@@ -5994,10 +6190,16 @@ margDist.mvnorm <- function(object, which, ...) {
         ret <- list(scale = as.invchol(marg_mvnorm(invchol = object$scale, 
                                                    which = which)$invchol))
     }
-    if (!is.null(object$mean)) {
+
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
+    if (!is.null(object$mean))
         ret$mean <- object$mean[which,,drop = FALSE]
-        @<mean2invcholmean@>
+    if (!is.null(object$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
+
     class(ret) <- "mvnorm"
     return(ret)
 }
@@ -6010,6 +6212,16 @@ condDist <- function(object, which_given, given, ...)
 
 condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
 
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
+    if (!is.null(object$mean)) {
+        if (ncol(object$mean) == 1L && NCOL(given) > 1L) {
+            given <- given - object$mean[which_given,,drop = TRUE]
+        } else {
+            given <- c(given) - object$mean[which_given,,drop = FALSE]
+        }
+    }
+
     if (is.chol(object$scale)) {
         ret <- cond_mvnorm(chol = object$scale, which_given = which_given, 
                            given = given, ...)
@@ -6021,6 +6233,8 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         ret$scale <- as.invchol(ret$invchol)
         ret$invchol <- NULL
     }
+    if (!is.null(object$invcholmean))
+        object$mean <- .i2m(object)
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
@@ -6031,7 +6245,10 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         } else {
             ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
         }
-        @<mean2invcholmean@>
+    }
+    if (!is.null(object$invcholmean)) {
+        ret$invcholmean <- .m2i(ret)
+        ret$mean <- NULL
     }
     class(ret) <- "mvnorm"
     return(ret)
@@ -6069,8 +6286,11 @@ marginalisation, and standardisation. We begin with some sanity checks
 @d argchecks
 @{
 args <- c(object, list(...))
-### mean is always there
-args$invcholmean <- NULL
+### <FIXME> always base likelihood on mean
+if (!is.null(args$invcholmean)) {
+    args$mean <- .i2m(object)
+    args$invcholmean <- NULL
+}
 nargs <- missing(obs) + missing(lower) + missing(upper)
 stopifnot(nargs < 3L)
 
@@ -6473,7 +6693,7 @@ analytically available maximum-likelihood estimators in this case
 chol2cov(ML$scale)
 V
 ### mean
-ML$mean[,,drop = TRUE]
+mean(ML)[,,drop = TRUE]
 m
 @@
 
@@ -6503,7 +6723,7 @@ where the comparison to the analytic estimates is
 
 <<echo = FALSE>>=
 ## slightly different results on noLD machines
-cat("> ## IGNORE_RDIFF_BEGIN\n")
+# cat("> ## IGNORE_RDIFF_BEGIN\n")
 @@
 
 <<iris-ML-hat-nu>>=
@@ -6511,10 +6731,10 @@ cat("> ## IGNORE_RDIFF_BEGIN\n")
 op$value
 opL$value
 ### covariance
-invchol2cov(MLL$scale)
+vcov(MLL)
 V
 ### mean
-MLL$mean[,,drop = TRUE]
+mean(MLL)[,,drop = TRUE]
 m
 @@
 
@@ -6584,26 +6804,25 @@ close in our case)
 
 <<iris-MLi-hat>>=
 ### covariance
-invchol2cov(MLi$scale)
-invchol2cov(MLL$scale)
-chol2cov(ML$scale)
+vcov(MLi)
+vcov(MLL)
+vcov(ML)
 ### mean
-MLi$mean[,,drop = TRUE]
-MLL$mean[,,drop = TRUE]
-ML$mean[,,drop = TRUE]
+mean(MLi)[,,drop = TRUE]
+mean(MLL)[,,drop = TRUE]
+mean(ML)[,,drop = TRUE]
 @@
 
 Again, we can extract the regression coefficients from these multivariate
 normal distributions. We start with the $\muvec$ and $\mC$ parameterisation:
 <<iris-lm>>=
-cdstr <- condDist(ML, which_given = vars[1:3], given = diag(3))
 ### least-squares coefficients
 coef(irislm <- lm(Petal.Width ~ Sepal.Length + Sepal.Width + Petal.Length, 
                   data = iris))
-cdstr$mean - ML$mean["Petal.Width",]
-### residual variance
-summary(irislm)$sigma^2
-c(cdstr$scale^2) ### note: "chol" defines the distribution
+### residual standard deviation
+summary(irislm)$sigma
+### compare with 
+coef(ML, which = "Petal.Width")
 @@
 The regression coefficients and the residual variance are almost identical with
 those obtained from \code{lm()}. The same exericise, now with the 
@@ -6612,23 +6831,15 @@ observations, gives slightly different results for the latter,
 due to censoring:
 <<iris-lm-iL>>=
 ### nu, L for exact observations
-cdstr <- condDist(MLL, which_given = vars[1:3], given = diag(3))
-### least-squares coefficients
-cdstr$mean - ML$mean["Petal.Width",]
-### residual variance
-c(1 / cdstr$scale^2) ### note: "invchol" defines the distribution
+coef(MLL, which = "Petal.Width")
 ### nu, L for censored observations
-cdstr <- condDist(MLi, which_given = vars[1:3], given = diag(3))
-### least-squares coefficients
-cdstr$mean - ML$mean["Petal.Width",]
-### residual variance
-c(1 / cdstr$scale^2)
+coef(MLi, which = "Petal.Width")
 @@
 
 
 <<echo = FALSE>>=
 ## slightly different results on noLD machines
-cat("> ## IGNORE_RDIFF_END\n")
+# cat("> ## IGNORE_RDIFF_END\n")
 @@
 
 The log-likelihood and score function automagically marginalise over
