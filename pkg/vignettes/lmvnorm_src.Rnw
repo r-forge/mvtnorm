@@ -3443,16 +3443,16 @@ We can implement this as
 \mbox{}\verb@    P <- Crossprod(invchol)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@Pw <- P[, -which]@\\
-\mbox{}\verb@chol <- solve(base::chol(Pw))@\\
-\mbox{}\verb@S <- Crossprod(chol)@\\
+\mbox{}\verb@chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top@\\
 \mbox{}\verb@g0 <- matrix(0, nrow = J, ncol = NCOL(given))@\\
 \mbox{}\verb@g0[which,] <- given@\\
-\mbox{}\verb@S <- Crossprod(chol) ### P^{-1}_jj@\\
+\mbox{}\verb@S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1@\\
 \mbox{}\verb@if (ncol(g0) %in% c(1L, N)) {@\\
 \mbox{}\verb@    mean <- - S %*% (P %*% g0)[-which,,drop = FALSE]@\\
 \mbox{}\verb@} else { ### compare to Mult() with ncol(y) !%in% (1, N)@\\
-\mbox{}\verb@    mean <- sapply(seq_len(N), function(i)@\\
-\mbox{}\verb@        - S[i,] %*% (P[i,] %*% g0)[-which,,drop = FALSE])@\\
+\mbox{}\verb@    ### <FIXME> check dimension and if t() is needed@\\
+\mbox{}\verb@    mean <- t(sapply(seq_len(ncol(g0)), function(i)@\\
+\mbox{}\verb@        - S %*% (P %*% g0[,i])[-which,,drop = FALSE]))@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
@@ -3576,7 +3576,7 @@ gives
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape cond general}\nobreak\ {\footnotesize \NWlink{nuweb55}{55}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    chol <- base::chol(S)@\\
+\mbox{}\verb@    chol <- base::chol(S) ### we need S = C C^\top@\\
 \mbox{}\verb@    if (missing(invchol)) @\\
 \mbox{}\verb@        return(list(mean = mean, chol = chol))@\\
 \mbox{}\verb@@\\
@@ -6642,7 +6642,7 @@ is simply the sum of the two corresponding log-likelihoods.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
+\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, @\\
 \mbox{}\verb@                      logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
@@ -6653,6 +6653,8 @@ is simply the sum of the two corresponding log-likelihoods.
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb101}{101}}$\,\rangle$}\verb@    @\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(invchol)) {@\\
 \mbox{}\verb@        J <- dim(invchol)[2L]@\\
@@ -6775,8 +6777,10 @@ post-differentiate using the vec-trick
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
+\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, @\\
 \mbox{}\verb@                       logLik = TRUE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
 \mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, mean = mean, @\\

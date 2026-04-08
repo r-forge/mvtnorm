@@ -2646,16 +2646,16 @@ else                ### invcol is L = Cholesky of precision
     P <- Crossprod(invchol)
 
 Pw <- P[, -which]
-chol <- solve(base::chol(Pw))
-S <- Crossprod(chol)
+chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
 g0 <- matrix(0, nrow = J, ncol = NCOL(given))
 g0[which,] <- given
-S <- Crossprod(chol) ### P^{-1}_jj
+S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1
 if (ncol(g0) %in% c(1L, N)) {
     mean <- - S %*% (P %*% g0)[-which,,drop = FALSE]
 } else { ### compare to Mult() with ncol(y) !%in% (1, N)
-    mean <- sapply(seq_len(N), function(i)
-        - S[i,] %*% (P[i,] %*% g0)[-which,,drop = FALSE])
+    ### <FIXME> check dimension and if t() is needed
+    mean <- t(sapply(seq_len(ncol(g0)), function(i)
+        - S %*% (P %*% g0[,i])[-which,,drop = FALSE]))
 }
 @}
 
@@ -2753,7 +2753,7 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
     @<cond general@>
 
-    chol <- base::chol(S)
+    chol <- base::chol(S) ### we need S = C C^\top
     if (missing(invchol)) 
         return(list(mean = mean, chol = chol))
 
