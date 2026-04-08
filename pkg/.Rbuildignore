@@ -3,4 +3,3 @@ Makefile
 inst/article
 inst/paper
 inst/todo
-tests/dpmvnorm-Ex.R
