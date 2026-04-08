@@ -1975,14 +1975,14 @@ attr(,"class")
 
 > ML <- mvnorm(mean = op$par[1:J], chol = Chat)
 
-> chol2cov(ML$scale)
+> round(vcov(ML), 3)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
-Sepal.Length      0.68112    -0.04215       1.2658      0.5128
-Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
-Petal.Length      1.26582    -0.32746       3.0955      1.2870
-Petal.Width       0.51283    -0.12083       1.2870      0.5771
+Sepal.Length        0.681      -0.042        1.266       0.513
+Sepal.Width        -0.042       0.189       -0.327      -0.121
+Petal.Length        1.266      -0.327        3.096       1.287
+Petal.Width         0.513      -0.121        1.287       0.577
 
 
 > V
@@ -2020,14 +2020,14 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
 > opL$value
 [1] 385.4
 
-> vcov(MLL)
+> round(vcov(MLL), 3)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
-Sepal.Length      0.64644    -0.04582       1.1395      0.4411
-Sepal.Width      -0.04582     0.21906      -0.4221     -0.1640
-Petal.Length      1.13949    -0.42213       2.9581      1.2070
-Petal.Width       0.44105    -0.16399       1.2070      0.5330
+Sepal.Length        0.646      -0.046        1.139       0.441
+Sepal.Width        -0.046       0.219       -0.422      -0.164
+Petal.Length        1.139      -0.422        2.958       1.207
+Petal.Width         0.441      -0.164        1.207       0.533
 
 
 > V
@@ -2080,34 +2080,34 @@ Levels: (-Inf,5] (5,5.6] (5.6,6.1] (6.1,6.52] (6.52, Inf]
 
 > MLi <- ll(opi$par, logLik = FALSE)
 
-> vcov(MLi)
+> round(vcov(MLi), 3)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
-Sepal.Length      0.71817    -0.02607        1.261      0.5167
-Sepal.Width      -0.02607     0.18862       -0.327     -0.1211
-Petal.Length      1.26064    -0.32698        3.079      1.2794
-Petal.Width       0.51668    -0.12107        1.279      0.5739
+Sepal.Length        0.718      -0.026        1.261       0.517
+Sepal.Width        -0.026       0.189       -0.327      -0.121
+Petal.Length        1.261      -0.327        3.079       1.279
+Petal.Width         0.517      -0.121        1.279       0.574
 
 
-> vcov(MLL)
+> round(vcov(MLL), 3)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
-Sepal.Length      0.64644    -0.04582       1.1395      0.4411
-Sepal.Width      -0.04582     0.21906      -0.4221     -0.1640
-Petal.Length      1.13949    -0.42213       2.9581      1.2070
-Petal.Width       0.44105    -0.16399       1.2070      0.5330
+Sepal.Length        0.646      -0.046        1.139       0.441
+Sepal.Width        -0.046       0.219       -0.422      -0.164
+Petal.Length        1.139      -0.422        2.958       1.207
+Petal.Width         0.441      -0.164        1.207       0.533
 
 
-> vcov(ML)
+> round(vcov(ML), 3)
 , , 1
 
              Sepal.Length Sepal.Width Petal.Length Petal.Width
-Sepal.Length      0.68112    -0.04215       1.2658      0.5128
-Sepal.Width      -0.04215     0.18871      -0.3275     -0.1208
-Petal.Length      1.26582    -0.32746       3.0955      1.2870
-Petal.Width       0.51283    -0.12083       1.2870      0.5771
+Sepal.Length        0.681      -0.042        1.266       0.513
+Sepal.Width        -0.042       0.189       -0.327      -0.121
+Petal.Length        1.266      -0.327        3.096       1.287
+Petal.Width         0.513      -0.121        1.287       0.577
 
 
 > mean(MLi)[, , drop = TRUE]
@@ -2130,23 +2130,23 @@ Sepal.Length  Sepal.Width Petal.Length  Petal.Width
 > summary(irislm)$sigma
 [1] 0.192
 
-> coef(ML, which = "Petal.Width")
+> round(coef(ML, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-     -0.2403      -0.2073       0.2228       0.5241 
+      -0.240       -0.207        0.223        0.524 
 attr(,"sigma")
 Petal.Width 
      0.1894 
 
-> coef(MLL, which = "Petal.Width")
+> round(coef(MLL, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-    -0.08668     -0.24639      0.23314      0.53622 
+      -0.087       -0.246        0.233        0.536 
 attr(,"sigma")
 Petal.Width 
      0.1808 
 
-> coef(MLi, which = "Petal.Width")
+> round(coef(MLi, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-     -0.4445      -0.1389       0.1935       0.4930 
+      -0.444       -0.139        0.193        0.493 
 attr(,"sigma")
 Petal.Width 
      0.1961 
@@ -2292,4 +2292,4 @@ Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.417   0.239  15.654 
+ 15.415   0.288  15.712 

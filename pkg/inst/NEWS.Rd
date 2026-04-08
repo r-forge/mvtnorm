@@ -11,6 +11,11 @@
             distributions.
     }
   }
+  \subsection{Bugfixes}{
+    \itemize{
+      \item \code{simulate} ignored its \code{seed} argument.
+    }
+  }
 }
 
 \section{Changes in Version 1.3-6 (2026-03-12)}{

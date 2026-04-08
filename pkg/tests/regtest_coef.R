@@ -5,6 +5,8 @@ options(digits = 4)
 
 J <- 5
 
+set.seed(290875)
+
 lxd <- ltMatrices(runif(J * (J + 1) / 2) + 1, diag = TRUE, names = LETTERS[seq_len(J)])
 m <- matrix(1:J, ncol = 1)
 d <- Mult(lxd, m)
