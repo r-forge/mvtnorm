@@ -20,8 +20,8 @@ slpmvnorm(lower, upper, mean, invcholmean, center = NULL, chol, invchol, logLik 
           M = NULL, w = NULL, seed = NULL, tol = .Machine$double.eps, fast = FALSE)
 ldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
 sldmvnorm(obs, mean, invcholmean, chol, invchol, logLik = TRUE) 
-ldpmvnorm(obs, lower, upper, mean = 0, invcholmean, chol, invchol, logLik = TRUE, ...) 
-sldpmvnorm(obs, lower, upper, mean = 0, invcholmean, chol, invchol, logLik = TRUE, ...) 
+ldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
+sldpmvnorm(obs, lower, upper, mean = 0, chol, invchol, logLik = TRUE, ...) 
 }
 \arguments{
   \item{lower}{matrix of lower limits (one column for each observation, \eqn{J} rows).

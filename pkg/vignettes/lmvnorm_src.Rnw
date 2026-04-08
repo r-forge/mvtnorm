@@ -4139,7 +4139,7 @@ function, so a prototype might look like
 \mbox{}\verb@@\\
 \mbox{}\verb@lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    ### not implemented currently@\\
+\mbox{}\verb@    ### only needed for input checks@\\
 \mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    ### get access to internal mvtnorm functions@\\
@@ -4180,7 +4180,7 @@ function, so a prototype might look like
 
 lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
 
-    ### not implemented currently
+    ### only needed for input checks
     stopifnot(missing(invcholmean))
 
     ### get access to internal mvtnorm functions
@@ -6642,7 +6642,7 @@ is simply the sum of the two corresponding log-likelihoods.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, @\\
+\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
 \mbox{}\verb@                      logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
@@ -6653,8 +6653,6 @@ is simply the sum of the two corresponding log-likelihoods.
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb101}{101}}$\,\rangle$}\verb@    @\\
-\mbox{}\verb@@\\
-\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(invchol)) {@\\
 \mbox{}\verb@        J <- dim(invchol)[2L]@\\
@@ -6777,10 +6775,8 @@ post-differentiate using the vec-trick
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, @\\
+\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
 \mbox{}\verb@                       logLik = TRUE, ...) {@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
 \mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, mean = mean, @\\

@@ -3212,7 +3212,7 @@ function, so a prototype might look like
 @{
 lpmvnormR <- function(lower, upper, mean = 0, invcholmean, center = NULL, chol, logLik = TRUE, ...) {
 
-    ### not implemented currently
+    ### only needed for input checks
     stopifnot(missing(invcholmean))
 
     ### get access to internal mvtnorm functions
@@ -4923,7 +4923,7 @@ is simply the sum of the two corresponding log-likelihoods.
 
 @d ldpmvnorm
 @{
-ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
+ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
@@ -4934,8 +4934,6 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol,
                         chol = chol, invchol = invchol, logLik = logLik))
 
     @<dp input checks@>    
-
-    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         J <- dim(invchol)[2L]
@@ -5032,10 +5030,8 @@ post-differentiate using the vec-trick
 
 @d sldpmvnorm
 @{
-sldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
+sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                        logLik = TRUE, ...) {
-
-    stopifnot(missing(invcholmean))
 
     if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean, 

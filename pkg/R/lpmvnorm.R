@@ -442,7 +442,7 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
 
 # ldpmvnorm
 
-ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
+ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
@@ -472,8 +472,6 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol,
         dmean <- mean[-(1:cJ),, drop = FALSE]
     }
         
-
-    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         J <- dim(invchol)[2L]
@@ -507,10 +505,8 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol,
 
 # sldpmvnorm
 
-sldpmvnorm <- function(obs, lower, upper, mean = 0, invcholmean, chol, invchol, 
+sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
                        logLik = TRUE, ...) {
-
-    stopifnot(missing(invcholmean))
 
     if (missing(obs) || is.null(obs))
         return(slpmvnorm(lower = lower, upper = upper, mean = mean, 
