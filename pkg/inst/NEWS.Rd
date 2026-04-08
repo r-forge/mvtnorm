@@ -2,10 +2,13 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-7 (2026-03-xx)}{
+\section{Changes in Version 1.3-7 (2026-04-08)}{
   \subsection{Features}{
     \itemize{
       \item Minor performance improvements in \code{sldmvnorm}.
+      \item Add \code{invcholmean} argument where possible.
+      \item Improve documentation regarding marginal and conditional
+            distributions.
     }
   }
 }
@@ -14,7 +17,7 @@
   \subsection{Bugfixes}{
     \itemize{
       \item \code{sldmvnorm} returned an incorrect log-likelihood
-            in the precence of means.
+            in the presence of means.
       \item Observations with very small log-probabilities
             are now treated the same in \code{lpmvnorm} and 
             \code{slpmvnorm}.
