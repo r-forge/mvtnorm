@@ -5059,7 +5059,7 @@ dJ <- nrow(lower)
 N <- ncol(obs)
 stopifnot(N == ncol(lower))
 stopifnot(N == ncol(upper))
-if (all(mean == 0)) {
+if (missing(mean)) {
     cmean <- 0
     dmean <- 0
 } else {
@@ -5078,17 +5078,20 @@ is simply the sum of the two corresponding log-likelihoods.
 
 @d ldpmvnorm
 @{
-ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+ldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, 
                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
-        return(lpmvnorm(lower = lower, upper = upper, mean = mean,
+        return(lpmvnorm(lower = lower, upper = upper, 
+                        mean = mean, invcholmean = invcholmean,
                         chol = chol, invchol = invchol, logLik = logLik, ...))
     if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
-        return(ldmvnorm(obs = obs, mean = mean,
+        return(ldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,
                         chol = chol, invchol = invchol, logLik = logLik))
 
     @<dp input checks@>    
+
+    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         J <- dim(invchol)[2L]
@@ -5185,17 +5188,21 @@ post-differentiate using the vec-trick
 
 @d sldpmvnorm
 @{
-sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+sldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, 
                        logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
-        return(slpmvnorm(lower = lower, upper = upper, mean = mean, 
+        return(slpmvnorm(lower = lower, upper = upper, 
+                         mean = mean, invcholmean = invcholmean, 
                          chol = chol, invchol = invchol, logLik = logLik, ...))
     if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
-        return(sldmvnorm(obs = obs, mean = mean,
+        return(sldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,
                          chol = chol, invchol = invchol, logLik = logLik))
 
     @<dp input checks@>    
+
+    ### for mixed data we cannot deal with invcholmean at the moment
+    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         @<sldpmvnorm invchol@>
@@ -6291,11 +6298,6 @@ marginalisation, and standardisation. We begin with some sanity checks
 @d argchecks
 @{
 args <- c(object, list(...))
-### <FIXME> always base likelihood on mean
-if (!is.null(args$invcholmean)) {
-    args$mean <- .i2m(object)
-    args$invcholmean <- NULL
-}
 nargs <- missing(obs) + missing(lower) + missing(upper)
 stopifnot(nargs < 3L)
 
@@ -6331,6 +6333,16 @@ stopifnot(nm %in% no)
 perm <- NULL
 if (!isTRUE(all.equal(nm, no)))
     perm <- c(nm, no[!no %in% nm])
+
+### base likelihood on mean when necessary
+### note that post processing the mean score is time consuming
+if (!is.null(args$invcholmean) &&
+    (!is.null(perm) || 	### permutations	
+     (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
+    )) {
+    args$mean <- .i2m(object)
+    args$invcholmean <- NULL
+}
 
 if (!missing(obs)) args$obs <- obs
 if (!missing(lower)) args$lower <- lower
@@ -6506,14 +6518,16 @@ if (!attr(sc, "diag"))
 and to return the results, with mean scores in the correct ordering.
 Eventually, we have to perform the post-processing steps explained in
 Chapter~\ref{ch:joint} when the scaled mean $\nuvec = \mL \muvec$ was
-specified
+specified and the score is not already available from the score workhorse
+function \code{sldpmvnorm}
 
 @d lLgrad return
 @{
 ret$scale <- ret$chol
 ret$chol <- NULL
-ret$mean <- ret$mean[no,,drop = FALSE]
-if (!is.null(object$invcholmean)) {
+if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]
+### sldpmvnorm for mixed data returns mean score only
+if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {
     J <- dim(sc)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
     idx <- M[.lt(J, diag = TRUE)]
@@ -6563,11 +6577,12 @@ if (om > 0) {
 }
 @}
 
-turn to post-processing
+turn to post-processing if necessary
 
 @d lLgrad invchol post
 @{
-if (!is.null(object$invcholmean)) {
+### sldpmvnorm for mixed data returns mean score only
+if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {
     J <- dim(si)[2L]
     M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
     idx <- M[.lt(J, diag = TRUE)]
@@ -6612,7 +6627,9 @@ if (!is.null(perm)) {
 }
 ret <- do.call("sldpmvnorm", args)
 ### sldmvnorm returns mean score as -obs
-if (is.null(ret$mean)) ret$mean <- - ret$obs
+### return only if object had mean specified
+if (is.null(ret$mean) && !is.null(args$mean)) 
+    ret$mean <- - ret$obs
 
 @<lLgrad invchol marginalisation@>
 
@@ -6630,7 +6647,7 @@ if (!attr(si, "diag"))
                               names = dimnames(ret$invchol)[[2L]])
 ret$scale <- ret$invchol
 ret$invchol <- NULL
-ret$mean <- ret$mean[no,,drop = FALSE]
+if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]
 @<lLgrad invchol post@>
 return(ret)
 @}

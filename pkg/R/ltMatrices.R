@@ -761,7 +761,7 @@ vectrick <- function(C, S, A, transpose = c(TRUE, TRUE)) {
     nm <- attr(C, "rcnames")
     N <- dC[1L]
     J <- dC[2L]
-    class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(c)
+    class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(C)
     if (!is.double(C)) storage.mode(C) <- "double"
     
     # check S argument

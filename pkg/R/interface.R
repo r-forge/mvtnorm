@@ -249,11 +249,6 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     # argchecks
     
     args <- c(object, list(...))
-    ### <FIXME> always base likelihood on mean
-    if (!is.null(args$invcholmean)) {
-        args$mean <- .i2m(object)
-        args$invcholmean <- NULL
-    }
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 
@@ -289,6 +284,16 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     perm <- NULL
     if (!isTRUE(all.equal(nm, no)))
         perm <- c(nm, no[!no %in% nm])
+
+    ### base likelihood on mean when necessary
+    ### note that post processing the mean score is time consuming
+    if (!is.null(args$invcholmean) &&
+        (!is.null(perm) ||  ### permutations        
+         (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
+        )) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
 
     if (!missing(obs)) args$obs <- obs
     if (!missing(lower)) args$lower <- lower
@@ -336,11 +341,6 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     # argchecks
     
     args <- c(object, list(...))
-    ### <FIXME> always base likelihood on mean
-    if (!is.null(args$invcholmean)) {
-        args$mean <- .i2m(object)
-        args$invcholmean <- NULL
-    }
     nargs <- missing(obs) + missing(lower) + missing(upper)
     stopifnot(nargs < 3L)
 
@@ -376,6 +376,16 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     perm <- NULL
     if (!isTRUE(all.equal(nm, no)))
         perm <- c(nm, no[!no %in% nm])
+
+    ### base likelihood on mean when necessary
+    ### note that post processing the mean score is time consuming
+    if (!is.null(args$invcholmean) &&
+        (!is.null(perm) ||  ### permutations        
+         (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
+        )) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
 
     if (!missing(obs)) args$obs <- obs
     if (!missing(lower)) args$lower <- lower
@@ -450,8 +460,9 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
 
         ret$scale <- ret$chol
         ret$chol <- NULL
-        ret$mean <- ret$mean[no,,drop = FALSE]
-        if (!is.null(object$invcholmean)) {
+        if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]
+        ### sldpmvnorm for mixed data returns mean score only
+        if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {
             J <- dim(sc)[2L]
             M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
             idx <- M[.lt(J, diag = TRUE)]
@@ -495,7 +506,9 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     }
     ret <- do.call("sldpmvnorm", args)
     ### sldmvnorm returns mean score as -obs
-    if (is.null(ret$mean)) ret$mean <- - ret$obs
+    ### return only if object had mean specified
+    if (is.null(ret$mean) && !is.null(args$mean)) 
+        ret$mean <- - ret$obs
 
     # lLgrad invchol marginalisation
 
@@ -533,10 +546,11 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
                                   names = dimnames(ret$invchol)[[2L]])
     ret$scale <- ret$invchol
     ret$invchol <- NULL
-    ret$mean <- ret$mean[no,,drop = FALSE]
+    if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]
     # lLgrad invchol post
 
-    if (!is.null(object$invcholmean)) {
+    ### sldpmvnorm for mixed data returns mean score only
+    if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {
         J <- dim(si)[2L]
         M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)
         idx <- M[.lt(J, diag = TRUE)]

@@ -2721,7 +2721,7 @@ object
 \mbox{}\verb@nm <- attr(C, "rcnames")@\\
 \mbox{}\verb@N <- dC[1L]@\\
 \mbox{}\verb@J <- dC[2L]@\\
-\mbox{}\verb@class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(c)@\\
+\mbox{}\verb@class(C) <- class(C)[-1L]   ### works because of as.ltMatrices(C)@\\
 \mbox{}\verb@if (!is.double(C)) storage.mode(C) <- "double"@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
@@ -4203,11 +4203,14 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@        }@\\
 \mbox{}\verb@        sobs <- - Mult(invchol, Mix, transpose = TRUE)@\\
 \mbox{}\verb@@\\
+\mbox{}\verb@        ### <SPEED>@\\
 \mbox{}\verb@        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)@\\
 \mbox{}\verb@        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)@\\
 \mbox{}\verb@        ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]@\\
+\mbox{}\verb@        ### </SPEED>@\\
+\mbox{}\verb@@\\
 \mbox{}\verb@        if (!is.null(dimnames(invchol)[[1L]]))@\\
 \mbox{}\verb@            colnames(ret) <- dimnames(invchol)[[1]]@\\
 \mbox{}\verb@        ret <- ltMatrices(ret,@\\
@@ -6801,7 +6804,7 @@ We first check the data
 \mbox{}\verb@N <- ncol(obs)@\\
 \mbox{}\verb@stopifnot(N == ncol(lower))@\\
 \mbox{}\verb@stopifnot(N == ncol(upper))@\\
-\mbox{}\verb@if (all(mean == 0)) {@\\
+\mbox{}\verb@if (missing(mean)) {@\\
 \mbox{}\verb@    cmean <- 0@\\
 \mbox{}\verb@    dmean <- 0@\\
 \mbox{}\verb@} else {@\\
@@ -6833,17 +6836,20 @@ is simply the sum of the two corresponding log-likelihoods.
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
+\mbox{}\verb@ldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, @\\
 \mbox{}\verb@                      logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
-\mbox{}\verb@        return(lpmvnorm(lower = lower, upper = upper, mean = mean,@\\
+\mbox{}\verb@        return(lpmvnorm(lower = lower, upper = upper, @\\
+\mbox{}\verb@                        mean = mean, invcholmean = invcholmean,@\\
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik, ...))@\\
 \mbox{}\verb@    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))@\\
-\mbox{}\verb@        return(ldmvnorm(obs = obs, mean = mean,@\\
+\mbox{}\verb@        return(ldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,@\\
 \mbox{}\verb@                        chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb105}{105}}$\,\rangle$}\verb@    @\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(invchol)) {@\\
 \mbox{}\verb@        J <- dim(invchol)[2L]@\\
@@ -6966,17 +6972,21 @@ post-differentiate using the vec-trick
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, @\\
+\mbox{}\verb@sldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, @\\
 \mbox{}\verb@                       logLik = TRUE, ...) {@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(obs) || is.null(obs))@\\
-\mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, mean = mean, @\\
+\mbox{}\verb@        return(slpmvnorm(lower = lower, upper = upper, @\\
+\mbox{}\verb@                         mean = mean, invcholmean = invcholmean, @\\
 \mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik, ...))@\\
 \mbox{}\verb@    if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))@\\
-\mbox{}\verb@        return(sldmvnorm(obs = obs, mean = mean,@\\
+\mbox{}\verb@        return(sldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,@\\
 \mbox{}\verb@                         chol = chol, invchol = invchol, logLik = logLik))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape dp input checks}\nobreak\ {\footnotesize \NWlink{nuweb105}{105}}$\,\rangle$}\verb@    @\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    ### for mixed data we cannot deal with invcholmean at the moment@\\
+\mbox{}\verb@    stopifnot(missing(invcholmean))@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (!missing(invchol)) {@\\
 \mbox{}\verb@        @\hbox{$\langle\,${\itshape sldpmvnorm invchol}\nobreak\ {\footnotesize \NWlink{nuweb107}{107}}$\,\rangle$}\verb@@\\
@@ -8330,11 +8340,6 @@ marginalisation, and standardisation. We begin with some sanity checks
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
 \mbox{}\verb@args <- c(object, list(...))@\\
-\mbox{}\verb@### <FIXME> always base likelihood on mean@\\
-\mbox{}\verb@if (!is.null(args$invcholmean)) {@\\
-\mbox{}\verb@    args$mean <- .i2m(object)@\\
-\mbox{}\verb@    args$invcholmean <- NULL@\\
-\mbox{}\verb@}@\\
 \mbox{}\verb@nargs <- missing(obs) + missing(lower) + missing(upper)@\\
 \mbox{}\verb@stopifnot(nargs < 3L)@\\
 \mbox{}\verb@@\\
@@ -8370,6 +8375,16 @@ marginalisation, and standardisation. We begin with some sanity checks
 \mbox{}\verb@perm <- NULL@\\
 \mbox{}\verb@if (!isTRUE(all.equal(nm, no)))@\\
 \mbox{}\verb@    perm <- c(nm, no[!no %in% nm])@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@### base likelihood on mean when necessary@\\
+\mbox{}\verb@### note that post processing the mean score is time consuming@\\
+\mbox{}\verb@if (!is.null(args$invcholmean) &&@\\
+\mbox{}\verb@    (!is.null(perm) ||  ### permutations        @\\
+\mbox{}\verb@     (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data@\\
+\mbox{}\verb@    )) {@\\
+\mbox{}\verb@    args$mean <- .i2m(object)@\\
+\mbox{}\verb@    args$invcholmean <- NULL@\\
+\mbox{}\verb@}@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@if (!missing(obs)) args$obs <- obs@\\
 \mbox{}\verb@if (!missing(lower)) args$lower <- lower@\\
@@ -8671,7 +8686,8 @@ and it remains to remove fix diagonal elements
 and to return the results, with mean scores in the correct ordering.
 Eventually, we have to perform the post-processing steps explained in
 Chapter~\ref{ch:joint} when the scaled mean $\nuvec = \mL \muvec$ was
-specified
+specified and the score is not already available from the score workhorse
+function \code{sldpmvnorm}
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap163}\raggedright\small
@@ -8681,8 +8697,9 @@ specified
 \mbox{}\verb@@\\
 \mbox{}\verb@ret$scale <- ret$chol@\\
 \mbox{}\verb@ret$chol <- NULL@\\
-\mbox{}\verb@ret$mean <- ret$mean[no,,drop = FALSE]@\\
-\mbox{}\verb@if (!is.null(object$invcholmean)) {@\\
+\mbox{}\verb@if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]@\\
+\mbox{}\verb@### sldpmvnorm for mixed data returns mean score only@\\
+\mbox{}\verb@if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {@\\
 \mbox{}\verb@    J <- dim(sc)[2L]@\\
 \mbox{}\verb@    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)@\\
 \mbox{}\verb@    idx <- M[.lt(J, diag = TRUE)]@\\
@@ -8754,7 +8771,7 @@ marginalisation
 \end{list}
 \end{minipage}\vspace{4ex}
 \end{flushleft}
-turn to post-processing
+turn to post-processing if necessary
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap165}\raggedright\small
@@ -8762,7 +8779,8 @@ turn to post-processing
 \vspace{-1ex}
 \begin{list}{}{} \item
 \mbox{}\verb@@\\
-\mbox{}\verb@if (!is.null(object$invcholmean)) {@\\
+\mbox{}\verb@### sldpmvnorm for mixed data returns mean score only@\\
+\mbox{}\verb@if (!is.null(object$invcholmean) && is.null(ret$invcholmean)) {@\\
 \mbox{}\verb@    J <- dim(si)[2L]@\\
 \mbox{}\verb@    M <- matrix(seq_len(J^2), nrow = J, byrow = FALSE)@\\
 \mbox{}\verb@    idx <- M[.lt(J, diag = TRUE)]@\\
@@ -8820,7 +8838,9 @@ and finally put everything together
 \mbox{}\verb@}@\\
 \mbox{}\verb@ret <- do.call("sldpmvnorm", args)@\\
 \mbox{}\verb@### sldmvnorm returns mean score as -obs@\\
-\mbox{}\verb@if (is.null(ret$mean)) ret$mean <- - ret$obs@\\
+\mbox{}\verb@### return only if object had mean specified@\\
+\mbox{}\verb@if (is.null(ret$mean) && !is.null(args$mean)) @\\
+\mbox{}\verb@    ret$mean <- - ret$obs@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lLgrad invchol marginalisation}\nobreak\ {\footnotesize \NWlink{nuweb137a}{137a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
@@ -8838,7 +8858,7 @@ and finally put everything together
 \mbox{}\verb@                              names = dimnames(ret$invchol)[[2L]])@\\
 \mbox{}\verb@ret$scale <- ret$invchol@\\
 \mbox{}\verb@ret$invchol <- NULL@\\
-\mbox{}\verb@ret$mean <- ret$mean[no,,drop = FALSE]@\\
+\mbox{}\verb@if (!is.null(ret$mean)) ret$mean <- ret$mean[no,, drop = FALSE]@\\
 \mbox{}\verb@@\hbox{$\langle\,${\itshape lLgrad invchol post}\nobreak\ {\footnotesize \NWlink{nuweb137b}{137b}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@return(ret)@\\
 \mbox{}\verb@@{\NWsep}

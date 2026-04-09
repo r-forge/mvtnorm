@@ -401,11 +401,14 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
+        ### <SPEED>
         Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
         ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
 
         M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
         ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]
+        ### </SPEED>
+
         if (!is.null(dimnames(invchol)[[1L]]))
             colnames(ret) <- dimnames(invchol)[[1]]
         ret <- ltMatrices(ret,
@@ -442,14 +445,15 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
 
 # ldpmvnorm
 
-ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+ldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, 
                       logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
-        return(lpmvnorm(lower = lower, upper = upper, mean = mean,
+        return(lpmvnorm(lower = lower, upper = upper, 
+                        mean = mean, invcholmean = invcholmean,
                         chol = chol, invchol = invchol, logLik = logLik, ...))
     if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
-        return(ldmvnorm(obs = obs, mean = mean,
+        return(ldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,
                         chol = chol, invchol = invchol, logLik = logLik))
 
     # dp input checks
@@ -460,7 +464,7 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
     N <- ncol(obs)
     stopifnot(N == ncol(lower))
     stopifnot(N == ncol(upper))
-    if (all(mean == 0)) {
+    if (missing(mean)) {
         cmean <- 0
         dmean <- 0
     } else {
@@ -472,6 +476,8 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
         dmean <- mean[-(1:cJ),, drop = FALSE]
     }
         
+
+    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         J <- dim(invchol)[2L]
@@ -505,14 +511,15 @@ ldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
 
 # sldpmvnorm
 
-sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol, 
+sldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol, 
                        logLik = TRUE, ...) {
 
     if (missing(obs) || is.null(obs))
-        return(slpmvnorm(lower = lower, upper = upper, mean = mean, 
+        return(slpmvnorm(lower = lower, upper = upper, 
+                         mean = mean, invcholmean = invcholmean, 
                          chol = chol, invchol = invchol, logLik = logLik, ...))
     if (missing(lower) && missing(upper) || is.null(lower) && is.null(upper))
-        return(sldmvnorm(obs = obs, mean = mean,
+        return(sldmvnorm(obs = obs, mean = mean, invcholmean = invcholmean,
                          chol = chol, invchol = invchol, logLik = logLik))
 
     # dp input checks
@@ -523,7 +530,7 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
     N <- ncol(obs)
     stopifnot(N == ncol(lower))
     stopifnot(N == ncol(upper))
-    if (all(mean == 0)) {
+    if (missing(mean)) {
         cmean <- 0
         dmean <- 0
     } else {
@@ -535,6 +542,9 @@ sldpmvnorm <- function(obs, lower, upper, mean = 0, chol, invchol,
         dmean <- mean[-(1:cJ),, drop = FALSE]
     }
         
+
+    ### for mixed data we cannot deal with invcholmean at the moment
+    stopifnot(missing(invcholmean))
 
     if (!missing(invchol)) {
         # sldpmvnorm invchol
