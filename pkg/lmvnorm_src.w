@@ -3242,11 +3242,11 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
         if (missing(invcholmean)) {
             obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
             ## NOTE: obs is mean-centered now 
-           Mix <- Mult(invchol, obs)
+            Mix <- Mult(invchol, obs)
         } else {
             stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
                                              J = J, N = N))
-           Mix <- Mult(invchol, obs) - c(invcholmean)
+            Mix <- Mult(invchol, obs) - c(invcholmean)
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
