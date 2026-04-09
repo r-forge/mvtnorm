@@ -153,8 +153,8 @@ as.ltMatrices.default <- function(x) {
     if (!is.matrix(x)) x <- matrix(x)    
     DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps
     DIAG <- DIAG & (nrow(x) > 1)
-    lt <- x[lower.tri(x, diag = DIAG)]
-    up <- x[upper.tri(x, diag = FALSE)]
+    lt <- x[.lt(nrow(x), diag = DIAG)]
+    up <- x[.ut(nrow(x), diag = FALSE)]
     stopifnot(max(abs(up)) < .Machine$double.eps)
     nm <- rownames(x)
     if (!is.null(nm))

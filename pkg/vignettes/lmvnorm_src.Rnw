@@ -5240,7 +5240,7 @@ case we want a new set of weights for each observation.
 \vspace{-1.5ex}
 \footnotesize
 \begin{list}{}{\setlength{\itemsep}{-\parsep}\setlength{\itemindent}{-\leftmargin}}
-\item \NWtxtMacroRefIn\ \NWlink{nuweb82}{82}\NWlink{nuweb94}{, 94}.
+\item \NWtxtMacroRefIn\ \NWlink{nuweb82}{82}\NWlink{nuweb94}{, 94}\NWlink{nuweb128}{, 128}.
 
 \item{}
 \end{list}
@@ -7855,8 +7855,8 @@ We start with the conversion of a lower triangular matrix \code{x} to an
 \mbox{}\verb@    if (!is.matrix(x)) x <- matrix(x)    @\\
 \mbox{}\verb@    DIAG <- max(abs(diag(x) - 1)) > .Machine$double.eps@\\
 \mbox{}\verb@    DIAG <- DIAG & (nrow(x) > 1)@\\
-\mbox{}\verb@    lt <- x[lower.tri(x, diag = DIAG)]@\\
-\mbox{}\verb@    up <- x[upper.tri(x, diag = FALSE)]@\\
+\mbox{}\verb@    lt <- x[.lt(nrow(x), diag = DIAG)]@\\
+\mbox{}\verb@    up <- x[.ut(nrow(x), diag = FALSE)]@\\
 \mbox{}\verb@    stopifnot(max(abs(up)) < .Machine$double.eps)@\\
 \mbox{}\verb@    nm <- rownames(x)@\\
 \mbox{}\verb@    if (!is.null(nm))@\\
@@ -8132,6 +8132,8 @@ TRUE} we provide one
 \mbox{}\verb@@\\
 \mbox{}\verb@simulate.mvnorm <- function(object, nsim = dim(object$scale)[1L], seed = NULL, @\\
 \mbox{}\verb@                            standardize = FALSE, as.data.frame = FALSE, ...) {@\\
+\mbox{}\verb@@\\
+\mbox{}\verb@    @\hbox{$\langle\,${\itshape init random seed, reset on exit}\nobreak\ {\footnotesize \NWlink{nuweb81a}{81a}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    J <- dim(object$scale)[2L]@\\
 \mbox{}\verb@    N <- dim(object$scale)[1L]@\\
@@ -9602,7 +9604,7 @@ and the ``vec-trick'' $\vecop(\rX)^\top (\mB \otimes \mA^\top) = \vecop(\mA
 \item $\langle\,$init dans\nobreak\ {\footnotesize \NWlink{nuweb90c}{90c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb91}{91}.}
 \item $\langle\,$init logLik loop\nobreak\ {\footnotesize \NWlink{nuweb74c}{74c}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb80}{80}\NWlink{nuweb86b}{, 86b}.
 }
-\item $\langle\,$init random seed, reset on exit\nobreak\ {\footnotesize \NWlink{nuweb81a}{81a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb82}{82}\NWlink{nuweb94}{, 94}.
+\item $\langle\,$init random seed, reset on exit\nobreak\ {\footnotesize \NWlink{nuweb81a}{81a}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb82}{82}\NWlink{nuweb94}{, 94}\NWlink{nuweb128}{, 128}.
 }
 \item $\langle\,$init score loop\nobreak\ {\footnotesize \NWlink{nuweb86b}{86b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb91}{91}.}
 \item $\langle\,$initialisation\nobreak\ {\footnotesize \NWlink{nuweb74b}{74b}}$\,\rangle$ {\footnotesize {\NWtxtRefIn} \NWlink{nuweb80}{80}\NWlink{nuweb91}{, 91}.
