@@ -146,11 +146,13 @@ thischeck <- expression({
 
     chk(matrix(s0, ncol = N), s1$upper)
 
-    f <- function(m)
-      ldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+    f <- function(m) {
+      obj <- mvnorm(mean = m, invchol = lt)
+      logLik(obj, obs = obs, lower = lower, upper = upper, w = w)
+    }
 
     s0 <- grad(f, m)
-    s1 <- sldpmvnorm(obs = obs, lower = lower, upper = upper, mean = m, invchol = lt, w = w)
+    s1 <- lLgrad(objmL, obs = obs, lower = lower, upper = upper, w = w)
 
     chk(matrix(s0, ncol = N), s1$mean)
 

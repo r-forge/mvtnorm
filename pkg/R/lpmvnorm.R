@@ -483,6 +483,16 @@ ldpmvnorm <- function(obs, lower, upper, mean, invcholmean, chol, invchol,
         J <- dim(invchol)[2L]
         stopifnot(cJ + dJ == J)
 
+        ### check if 1:cJ corresponds to obs
+        nm <- dimnames(invchol)[[2L]]
+        rno <- rownames(obs)
+        rnl <- rownames(lower)
+        rnu <- rownames(upper)
+        if (!is.null(rnl) && !is.null(rnu))
+            stopifnot(isTRUE(all.equal(rnl, rnu)))
+        if (!is.null(rnl) && !is.null(rno) && !is.null(nm))
+            stopifnot(isTRUE(all.equal(c(rno, rnl), nm)))
+
         md <- marg_mvnorm(invchol = invchol, which = 1:cJ)
         ret <- ldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, 
                         logLik = logLik)

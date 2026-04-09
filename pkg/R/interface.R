@@ -221,8 +221,6 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
         ret$scale <- as.invchol(ret$invchol)
         ret$invchol <- NULL
     }
-    if (!is.null(object$invcholmean))
-        object$mean <- .i2m(object)
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
