@@ -3250,11 +3250,14 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
+        ### <SPEED>
         Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
         ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
 
         M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
         ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]
+        ### </SPEED>
+
         if (!is.null(dimnames(invchol)[[1L]]))
             colnames(ret) <- dimnames(invchol)[[1]]
         ret <- ltMatrices(ret,
