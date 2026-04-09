@@ -393,21 +393,20 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
         if (missing(invcholmean)) {
             obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
             ## NOTE: obs is mean-centered now 
-           Mix <- Mult(invchol, obs)
+            Mix <- Mult(invchol, obs)
         } else {
             stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
                                              J = J, N = N))
-           Mix <- Mult(invchol, obs) - c(invcholmean)
+            Mix <- Mult(invchol, obs) - c(invcholmean)
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
-        ### <SPEED>
-        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)
-        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)
-
-        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)
-        ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]
-        ### </SPEED>
+        ### score wrt invchol
+        idx <- matrix(1:J, nrow = J, ncol = J)
+        idx <- idx[.lt(J, diag  = attr(invchol, "diag"))]
+        j <- seq_len(J - !(attr(invchol, "diag") + 0L))
+        idx2 <- rep(j, rev(j))
+        ret <- - obs[idx2,,drop = FALSE] * Mix[idx,,drop = FALSE]
 
         if (!is.null(dimnames(invchol)[[1L]]))
             colnames(ret) <- dimnames(invchol)[[1]]

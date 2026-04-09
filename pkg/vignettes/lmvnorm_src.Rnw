@@ -4195,21 +4195,20 @@ the above relationship to compute the score with respect to $\mC_i$.
 \mbox{}\verb@        if (missing(invcholmean)) {@\\
 \mbox{}\verb@            obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)@\\
 \mbox{}\verb@            ## NOTE: obs is mean-centered now @\\
-\mbox{}\verb@           Mix <- Mult(invchol, obs)@\\
+\mbox{}\verb@            Mix <- Mult(invchol, obs)@\\
 \mbox{}\verb@        } else {@\\
 \mbox{}\verb@            stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, @\\
 \mbox{}\verb@                                             J = J, N = N))@\\
-\mbox{}\verb@           Mix <- Mult(invchol, obs) - c(invcholmean)@\\
+\mbox{}\verb@            Mix <- Mult(invchol, obs) - c(invcholmean)@\\
 \mbox{}\verb@        }@\\
 \mbox{}\verb@        sobs <- - Mult(invchol, Mix, transpose = TRUE)@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@        ### <SPEED>@\\
-\mbox{}\verb@        Y <- matrix(obs, byrow = TRUE, nrow = J, ncol = N * J)@\\
-\mbox{}\verb@        ret <- - matrix(Mix[, rep(1:N, each = J)] * Y, ncol = N)@\\
-\mbox{}\verb@@\\
-\mbox{}\verb@        M <- matrix(1:(J^2), nrow = J, byrow = FALSE)@\\
-\mbox{}\verb@        ret <- ret[M[.lt(J, diag = attr(invchol, "diag"))],,drop = FALSE]@\\
-\mbox{}\verb@        ### </SPEED>@\\
+\mbox{}\verb@        ### score wrt invchol@\\
+\mbox{}\verb@        idx <- matrix(1:J, nrow = J, ncol = J)@\\
+\mbox{}\verb@        idx <- idx[.lt(J, diag  = attr(invchol, "diag"))]@\\
+\mbox{}\verb@        j <- seq_len(J - !(attr(invchol, "diag") + 0L))@\\
+\mbox{}\verb@        idx2 <- rep(j, rev(j))@\\
+\mbox{}\verb@        ret <- - obs[idx2,,drop = FALSE] * Mix[idx,,drop = FALSE]@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@        if (!is.null(dimnames(invchol)[[1L]]))@\\
 \mbox{}\verb@            colnames(ret) <- dimnames(invchol)[[1]]@\\
@@ -6855,6 +6854,16 @@ is simply the sum of the two corresponding log-likelihoods.
 \mbox{}\verb@        J <- dim(invchol)[2L]@\\
 \mbox{}\verb@        stopifnot(cJ + dJ == J)@\\
 \mbox{}\verb@@\\
+\mbox{}\verb@        ### check if 1:cJ corresponds to obs@\\
+\mbox{}\verb@        nm <- dimnames(invchol)[[2L]]@\\
+\mbox{}\verb@        rno <- rownames(obs)@\\
+\mbox{}\verb@        rnl <- rownames(lower)@\\
+\mbox{}\verb@        rnu <- rownames(upper)@\\
+\mbox{}\verb@        if (!is.null(rnl) && !is.null(rnu))@\\
+\mbox{}\verb@            stopifnot(isTRUE(all.equal(rnl, rnu)))@\\
+\mbox{}\verb@        if (!is.null(rnl) && !is.null(rno) && !is.null(nm))@\\
+\mbox{}\verb@            stopifnot(isTRUE(all.equal(c(rno, rnl), nm)))@\\
+\mbox{}\verb@@\\
 \mbox{}\verb@        md <- marg_mvnorm(invchol = invchol, which = 1:cJ)@\\
 \mbox{}\verb@        ret <- ldmvnorm(obs = obs, mean = cmean, invchol = md$invchol, @\\
 \mbox{}\verb@                        logLik = logLik)@\\
@@ -8274,8 +8283,6 @@ Marginal and conditional distributions might be of interest, the
 \mbox{}\verb@        ret$scale <- as.invchol(ret$invchol)@\\
 \mbox{}\verb@        ret$invchol <- NULL@\\
 \mbox{}\verb@    }@\\
-\mbox{}\verb@    if (!is.null(object$invcholmean))@\\
-\mbox{}\verb@        object$mean <- .i2m(object)@\\
 \mbox{}\verb@    if (!is.null(object$mean)) {@\\
 \mbox{}\verb@        if (is.character(which_given)) @\\
 \mbox{}\verb@            which_given <- match(which_given, dimnames(object$scale)[[2L]])@\\
