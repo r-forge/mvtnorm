@@ -2146,7 +2146,7 @@ Petal.Width
 
 > round(coef(MLi, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-      -0.444       -0.139        0.193        0.493 
+      -0.445       -0.139        0.193        0.493 
 attr(,"sigma")
 Petal.Width 
      0.1961 
@@ -2292,4 +2292,4 @@ Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.415   0.288  15.712 
+ 15.566   0.228  15.816 

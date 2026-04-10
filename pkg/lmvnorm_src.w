@@ -6257,9 +6257,9 @@ condDist.mvnorm <- function(object, which_given = 1L, given, ...) {
     if (!is.null(object$mean)) {
         if (is.character(which_given)) 
             which_given <- match(which_given, dimnames(object$scale)[[2L]])
-        if (ncol(object$mean) > 1L && ncol(ret$mean) > 1)
-            stop("dimensions do not match")
-        if (ncol(object$mean) == 1L && ncol(ret$mean) > 1L) {
+        if (ncol(object$mean) > 1L && ncol(ret$mean) > 1) {
+            ret$mean <- object$mean[-which_given,,drop = FALSE] + ret$mean
+        } else if (ncol(object$mean) == 1L && ncol(ret$mean) > 1L) {
             ret$mean <- object$mean[-which_given,,drop = TRUE] + ret$mean
         } else {
             ret$mean <- object$mean[-which_given,,drop = FALSE] + c(ret$mean)
@@ -6336,71 +6336,83 @@ if (!missing(upper)) {
 
 nm <- c(nmobs, nmlu)
 no <- names(object)
-stopifnot(nm %in% no)
+### we allow dimensions w/o data
+stopifnot(all(nm %in% no))
 perm <- NULL
 if (!isTRUE(all.equal(nm, no)))
     perm <- c(nm, no[!no %in% nm])
-
-### base likelihood on mean when necessary
-### note that post processing the mean score is time consuming
-if (!is.null(args$invcholmean) &&
-    (!is.null(perm) || 	### permutations	
-     (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
-    )) {
-    args$mean <- .i2m(object)
-    args$invcholmean <- NULL
-}
 
 if (!missing(obs)) args$obs <- obs
 if (!missing(lower)) args$lower <- lower
 if (!missing(upper)) args$upper <- upper
 @}
 
-and proceed with the workhorse when $\mC$ was given
+and handle standardization for the two possible parameterisations, first
+when $\mC$ was given and second when the inverse Cholesky factors $\mL$ was
+given
 
-@d logLik chol
+@d logLik standardize
 @{
-names(args)[names(args) == "scale"] <- "chol"
-
-if (standardize)
-    args$chol <- standardize(chol = args$chol)
-if (!is.null(perm)) {
-    args$chol <- aperm(as.chol(args$chol), perm = perm)
-    if (length(nm) < length(no))
-        args$chol <- marg_mvnorm(chol = args$chol, which = nm)$chol
-    args$mean <- args$mean[nm,,drop = FALSE]
+if (is.chol(object$scale)) {
+    names(args)[names(args) == "scale"] <- "chol"
+    if (standardize)
+       args$chol <- object$scale <- standardize(chol = args$chol)
+} else {
+    names(args)[names(args) == "scale"] <- "invchol"
+    if (standardize)
+        args$invchol <- object$scale <- standardize(invchol = args$invchol)
 }
-return(do.call("ldpmvnorm", args))
 @}
 
-For inverse Cholesky factors $\mL$, the code is very similar, just the argument names change
+Putting everything together in a corresponding \code{logLik} method finally
+calls \code{ldpmvnorm} when there are (i) only continuous observations for
+all dimensions, (ii) only intervals for all dimensions, (iii) continuous
+observations for at least the first (maybe more) dimension followed by
+intervals for the remaining dimensions. If this is not the case, \code{perm}
+is not \code{NULL} and the appropriate marginal (for continuous) and conditional
+distributions (intervals given continuous) distributions are computed first.
+This also handles the case when data is missing for some observations.
 
-@d logLik invchol
-@{
-names(args)[names(args) == "scale"] <- "invchol"
-if (standardize)
-    args$invchol <- standardize(invchol = args$invchol)
-if (!is.null(perm)) {
-    args$invchol <- aperm(as.invchol(args$invchol), perm = perm)
-    if (length(nm) < length(no))
-        args$invchol <- marg_mvnorm(invchol = args$invchol, 
-                                    which = nm)$invchol
-    args$mean <- args$mean[nm,,drop = FALSE]
-}
-return(do.call("ldpmvnorm", args))
-@}
-
-Putting everything together in a corresponding \code{logLik} method
+In contrast to \code{lLgrad.mvnorm}, which first permutes the dimensions via
+\code{aperm} and thus requires a Cholesky decomposition of the permuted $\J
+\times \J$ covariance matrix, Cholesky decompositions of lower dimensional
+matrices are required when computing the log-likelihood. However, it is best
+to avoid this reshuffeling by using an appropriate order of the dimensions
+(continuous first, intervals second, no missing data).
 
 @d mvnorm logLik
 @{
 logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE, 
                           ...) {
     @<argchecks@>
-    if (is.chol(object$scale)) {
-        @<logLik chol@>
+
+    @<logLik standardize@>
+
+    if (!is.null(perm)) {
+        ll <- if (!is.null(args$logLik)) args$logLik else TRUE
+        ret <- 0
+        ### integrate out dimensions w/o data
+        if (length(nm) < length(no) && !is.null(nmlu))
+            object <- margDist(object, which = nm)
+        ### continuous
+        if (!is.null(nmobs)) 
+            ret <- ret + logLik(margDist(object, which = nmobs), 
+                                obs = obs, logLik = ll) 
+        ### interval given continuous
+        if (!is.null(nmlu))
+            ret <- ret + logLik(condDist(object, which_given = nmobs, given = obs),
+                                lower = lower, upper = upper, ...)
+        return(ret)
     }
-    @<logLik invchol@>
+
+    ### base likelihood on mean for mixed data
+    if (!is.null(args$invcholmean) &&
+        (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
+        ) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
+    return(do.call("ldpmvnorm", args))
 }
 @}
 
@@ -6669,6 +6681,17 @@ lLgrad <- function(object, ...)
 lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE, 
                           ...) {
     @<argchecks@>
+
+    ### base likelihood on mean when necessary
+    ### note that post processing the mean score is time consuming
+    if (!is.null(args$invcholmean) &&
+        (!is.null(perm) || 	### permutations	
+         (!missing(obs)) + (!missing(lower) || !missing(upper)) == 2L  ### mixed data
+        )) {
+        args$mean <- .i2m(object)
+        args$invcholmean <- NULL
+    }
+
     if (is.chol(object$scale)) {
         @<lLgrad chol@>
     }
