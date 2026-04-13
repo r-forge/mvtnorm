@@ -409,6 +409,13 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
             args$mean <- args$mean[nm,,drop = FALSE]
         }
         ret <- do.call("sldpmvnorm", args)
+
+        if (dim(args$chol)[1L] == 1L)
+            ret$chol <- ltMatrices(rowSums(unclass(ret$chol)), 
+                                   byrow = attr(ret$chol, "byrow"), 
+                                   diag = attr(ret$chol, "diag"), 
+                                   names = dimnames(ret$chol)[[2L]])
+
         # lLgrad mean
 
         ### sldmvnorm returns mean score as -obs
@@ -505,6 +512,14 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
         args$mean <- args$mean[nm,,drop = FALSE]
     }
     ret <- do.call("sldpmvnorm", args)
+
+    if (dim(args$invchol)[1L] == 1L && 
+        is.null(object$invcholmean))
+        ret$invchol <- ltMatrices(rowSums(unclass(ret$invchol)), 
+                                  byrow = attr(ret$invchol, "byrow"), 
+                                  diag = attr(ret$invchol, "diag"), 
+                                  names = dimnames(ret$invchol)[[2L]])
+
     ### sldmvnorm returns mean score as -obs
     ### return only if object had mean specified
     if (is.null(ret$mean) && !is.null(args$mean)) 
