@@ -8517,7 +8517,11 @@ transformations in \code{logLik.mvnorm}, that is, by standardisation,
 permutation, and marginalisation. We start with the case when $\mC$ was
 given. First, we repeat all the steps performed in \code{logLik}, but call 
 the score function \code{sldpmvnorm} instead of the log-likelihood function
-\code{ldpmvnorm}
+\code{ldpmvnorm}. A downside of the approach taken here is that
+post-processing of the scores takes place on the level of observations, as
+we do not compute the score function but the score contributions. If one is
+only interested in the former, major speedups could be achieved by summing
+over observations before post-processing.
 
 \begin{flushleft} \small
 \begin{minipage}{\linewidth}\label{scrap156}\raggedright\small
