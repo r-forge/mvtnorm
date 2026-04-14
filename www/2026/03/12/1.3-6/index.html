@@ -69,10 +69,13 @@ hljs.initHighlightingOnLoad();
   <article class="post-content">
   <h2>Bugfixes</h2>
 <ul>
-<li> sldmvnorm returned an incorrect log-likelihood in the precence
+<li> sldmvnorm returned an incorrect log-likelihood in the presence
 of means. </li>
 <li> Observations with very small log-probabilities are now treated
 the same in lpmvnorm and slpmvnorm. </li>
+<li> This reduced differences observed on machines w/o long doubles
+considerably; still there were minor diffs in the package
+vignette which we now prevent from showing up. </li>
 </ul>
 
   </article>
@@ -94,7 +97,7 @@ the same in lpmvnorm and slpmvnorm. </li>
 
     <A class="page-link" HREF=http://CRAN.R-project.org/web/packages/mvtnorm/mvtnorm.pdf>Manual</A>
     
-    <A class="page-link" HREF=http://CRAN.R-project.org/src/contrib/mvtnorm_1.3-6.tar.gz>Source</A>
+    <A class="page-link" HREF=http://CRAN.R-project.org/src/contrib/mvtnorm_1.3-7.tar.gz>Source</A>
 
     <A class="page-link" HREF=https://r-forge.r-project.org/projects/mvtnorm>Development</A>
 
