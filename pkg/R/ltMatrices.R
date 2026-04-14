@@ -73,16 +73,17 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
     }
 
     if (!nonames) {
-        L1 <- matrix(names, nrow = J, ncol = J)
-        L2 <- matrix(names, nrow = J, ncol = J, byrow = TRUE)
-        L <- matrix(paste(L1, L2, sep = "."), nrow = J, ncol = J)
+        idx <- matrix(1:J, nrow = J, ncol = J)
+        idx <- idx[.lt(J, diag  = diag)]
+        j <- seq_len(J - !(diag + 0L))
+        idx2 <- rep(j, rev(j))
+        rn <- paste(names[idx], names[idx2], sep = ".")
         if (byrow)
-            rownames(object) <- t(L)[.ut(J, diag = diag)]
-        else
-            rownames(object) <- L[.lt(J, diag = diag)]
-    } # else {      ### add later
-        # warning("ltMatrices objects should be properly named")
-    # }
+           rn <- rn[.c2r(J, diag = diag)]
+        rownames(object) <- rn
+    } else {        ### add later
+        warning("ltMatrices objects should be properly named")
+    }
     
 
     attr(object, "J")       <- J
@@ -212,6 +213,28 @@ print.syMatrices <- function(x, ...)
 
 # reorder ltMatrices
 
+.r2c <- function(J, diag = FALSE) {
+
+    rL <- cL <- diag(0L, nrow = J)
+    lt <- .lt(J, diag = diag)
+    ut <- !lt
+    diag(ut) <- !diag(ut)
+    x <- seq_len(J * (J + c(-1, 1)[diag + 1L]) / 2)
+    cL[ut] <- seq_len(length(x))
+    x[t(cL)[lt]]
+}
+
+.c2r <- function(J, diag = FALSE) {
+
+    rL <- cL <- diag(0L, nrow = J)
+    lt <- .lt(J, diag = diag)
+    ut <- !lt
+    diag(ut) <- !diag(ut)
+    x <- seq_len(J * (J + c(-1, 1)[diag + 1L]) / 2)
+    rL[lt] <- seq_len(length(x))
+    x[t(rL)[ut]]
+}
+
 .reorder <- function(x, byrow = FALSE) {
 
     ### only we call this function
@@ -229,18 +252,11 @@ print.syMatrices <- function(x, ...)
 
     x <- unclass(x)
 
-    rL <- cL <- diag(0, nrow = J)
-    lt <- .lt(J, diag = diag)
-    ut <- !lt
-    diag(ut) <- !diag(ut)
     if (byrow) { ### row -> col order
-        cL[ut] <- seq_len(nrow(x))
-        return(ltMatrices(x[t(cL)[lt], , drop = FALSE], 
+        return(ltMatrices(x[.r2c(J, diag = diag), , drop = FALSE], 
                           diag = diag, byrow = FALSE, names = dn[[2L]]))
     }
-    ### col -> row order
-    rL[lt] <- seq_len(nrow(x))
-    return(ltMatrices(x[t(rL)[ut], , drop = FALSE], 
+    return(ltMatrices(x[.c2r(J, diag = diag), , drop = FALSE], 
                       diag = diag, byrow = TRUE, names = dn[[2L]]))
 }
 

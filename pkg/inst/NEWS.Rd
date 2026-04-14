@@ -2,10 +2,11 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-7 (2026-04-08)}{
+\section{Changes in Version 1.3-7 (2026-04-14)}{
   \subsection{Features}{
     \itemize{
       \item Minor performance improvements in \code{sldmvnorm}.
+      \item Speed-up switching from row- to column major order and vice versa.
       \item Add \code{invcholmean} argument where possible.
       \item Improve documentation regarding marginal and conditional
             distributions.
