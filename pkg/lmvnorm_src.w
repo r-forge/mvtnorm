@@ -6793,10 +6793,6 @@ MLL <- ll(opL$par, logLik = FALSE)
 
 where the comparison to the analytic estimates is
 
-<<echo = FALSE>>=
-## slightly different results on noLD machines
-# cat("> ## IGNORE_RDIFF_BEGIN\n")
-@@
 
 <<iris-ML-hat-nu>>=
 ### log-likelihood
@@ -6901,17 +6897,19 @@ those obtained from \code{lm()}. The same exericise, now with the
 $\nuvec$ and $\mL$ parameterisation for exact and interval-censored
 observations, gives slightly different results for the latter, 
 due to censoring:
+<<echo = FALSE>>=
+# slightly different results on noLD machines
+cat("> ## IGNORE_RDIFF_BEGIN\n")
+@@
 <<iris-lm-iL>>=
 ### nu, L for exact observations
 round(coef(MLL, which = "Petal.Width"), 3)
 ### nu, L for censored observations
 round(coef(MLi, which = "Petal.Width"), 3)
 @@
-
-
 <<echo = FALSE>>=
 ## slightly different results on noLD machines
-# cat("> ## IGNORE_RDIFF_END\n")
+cat("> ## IGNORE_RDIFF_END\n")
 @@
 
 The log-likelihood and score function automagically marginalise over
