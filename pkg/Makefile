@@ -7,6 +7,7 @@ lmvnorm_src.Rnw:	lmvnorm_src.w
 	cp ltMatrices.c src
 	cp lpmvnorm.c src
 	cp lpmvnorm.R R
+	cp lmvnorm_src.w inst/nuweb
 
 lmvnorm_src.R: lmvnorm_src.Rnw
 	Stangle lmvnorm_src.Rnw

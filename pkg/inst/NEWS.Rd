@@ -10,6 +10,7 @@
       \item Add \code{invcholmean} argument where possible.
       \item Improve documentation regarding marginal and conditional
             distributions.
+      \item Ship nuweb source file in \code{inst/nuweb}
     }
   }
   \subsection{Bugfixes}{
