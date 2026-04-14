@@ -2137,6 +2137,9 @@ attr(,"sigma")
 Petal.Width 
      0.1894 
 
+> cat("> ## IGNORE_RDIFF_BEGIN\n")
+> ## IGNORE_RDIFF_BEGIN
+
 > round(coef(MLL, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
       -0.087       -0.246        0.233        0.536 
@@ -2146,10 +2149,13 @@ Petal.Width
 
 > round(coef(MLi, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-      -0.445       -0.139        0.193        0.493 
+      -0.444       -0.139        0.193        0.493 
 attr(,"sigma")
 Petal.Width 
      0.1961 
+
+> cat("> ## IGNORE_RDIFF_END\n")
+> ## IGNORE_RDIFF_END
 
 > N <- 3
 
@@ -2292,4 +2298,4 @@ Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.566   0.228  15.816 
+ 15.611   0.283  15.895 
