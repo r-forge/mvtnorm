@@ -1,4 +1,7 @@
 
+### Windows CRAN needs too much time
+if (.Platform$OS.type != "unix") quit()
+
 library("mvtnorm")
 
 set.seed(29)

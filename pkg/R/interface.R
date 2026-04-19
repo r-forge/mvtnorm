@@ -309,13 +309,16 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
         if (length(nm) < length(no) && !is.null(nmlu))
             object <- margDist(object, which = nm)
         ### continuous
-        if (!is.null(nmobs)) 
+        if (!is.null(nmobs)) {
             ret <- ret + logLik(margDist(object, which = nmobs), 
                                 obs = obs, logLik = ll) 
+            ### set-up conditional distribution if there are any intervals
+            if (!is.null(nmlu))
+                object <- condDist(object, which_given = nmobs, given = obs)
+        }
         ### interval given continuous
         if (!is.null(nmlu))
-            ret <- ret + logLik(condDist(object, which_given = nmobs, given = obs),
-                                lower = lower, upper = upper, ...)
+            ret <- ret + logLik(object, lower = lower, upper = upper, ...)
         return(ret)
     }
 

@@ -2,6 +2,20 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.3-8 (2026-04-19)}{
+  \subsection{Features}{
+    \itemize{
+      \item 
+    }
+  }
+  \subsection{Bugfixes}{
+    \itemize{
+      \item \code{logLik} wasn't able to handle missing, continuous, and
+            interval-censored observations at once
+    }
+  }
+}
+
 \section{Changes in Version 1.3-7 (2026-04-14)}{
   \subsection{Features}{
     \itemize{
