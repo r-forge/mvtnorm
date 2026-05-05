@@ -3065,16 +3065,24 @@ given, we only check the dimensions.
         stop("obs and (inv)chol have non-conforming size")
     if (nr != J)
         stop("obs and (inv)chol have non-conforming size")
-    if (identical(unique(invcholmean), 0)) return(TRUE)
-    if (length(invcholmean) == J) 
-        return(TRUE)
+
+    if (is.null(invcholmean)) 
+        return(matrix(0, nrow = J, ncol = N))
+    if (identical(unique(invcholmean), 0)) 
+        return(matrix(0, nrow = J, ncol = N))
+
     if (!is.matrix(invcholmean))
-        stop("obs and invcholmean have non-conforming size")
-    if (nrow(invcholmean) != nr)
-        stop("obs and invcholmean have non-conforming size")
-    if (ncol(invcholmean) != nc)
-        stop("obs and invcholmean have non-conforming size")
-    return(TRUE)
+        invcholmean <- matrix(invcholmean, nrow = J)
+    nr <- nrow(invcholmean)
+    nc <- ncol(invcholmean)
+    if (!(nc %in% c(1L, N)))
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("invcholmean and (inv)chol have non-conforming size")
+
+    if (ncol(invcholmean) == N) 
+        return(invcholmean)
+    return(matrix(invcholmean, nrow = J, ncol = N))
 }
 @}
 
@@ -3167,9 +3175,9 @@ if (missing(invcholmean)) {
     obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
     z <- solve(chol, obs)
 } else {
-    stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                     J = J, N = N))
-    z <- solve(chol, obs) - c(invcholmean)
+    invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                          J = J, N = N)
+    z <- solve(chol, obs) - invcholmean
 }
 logretval <- .colSumsdnorm(z)
 if (attr(chol, "diag"))
@@ -3198,9 +3206,9 @@ if (missing(invcholmean)) {
     obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
     z <- Mult(invchol, obs)
 } else {
-    chk <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                  J = J, N = N)
-    z <- Mult(invchol, obs) - c(invcholmean)
+    invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                          J = J, N = N)
+    z <- Mult(invchol, obs) - invcholmean
 }
 logretval <- .colSumsdnorm(z)
 ## note that the second summand gets recycled the correct number
@@ -3260,9 +3268,9 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
             ## NOTE: obs is mean-centered now 
             Mix <- Mult(invchol, obs)
         } else {
-            stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                             J = J, N = N))
-            Mix <- Mult(invchol, obs) - c(invcholmean)
+            invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                                  J = J, N = N)
+            Mix <- Mult(invchol, obs) - invcholmean
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 
@@ -3516,13 +3524,13 @@ if (!missing(mean)) {
 }
 
 if (!missing(invcholmean)) {
-    stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))
+    invcholmean <- .check_obs_invcholmean(lower, invcholmean, J = J, N = N)
     center <- - invcholmean
 }
 
 if (!is.null(center)) {
-    if (!is.matrix(center)) center <- matrix(center, ncol = 1)
-    stopifnot(nrow(center) == J && ncol(center == N))
+    if (!is.matrix(center)) center <- matrix(center, nrow = J, ncol = N)
+    stopifnot(nrow(center) == J && ncol(center) == N)
 }
 @}
 
@@ -6328,6 +6336,7 @@ nmobs <- NULL
 if (!missing(obs)) {
     if (!is.null(obs)) {
         stopifnot(is.matrix(obs))
+        stopifnot(!is.null(rownames(obs)))
         nmobs <- rownames(obs)
     }
 }
@@ -6335,12 +6344,14 @@ nmlower <- nmupper <- nmlu <- NULL
 if (!missing(lower)) {
     if (!is.null(lower)) {
         stopifnot(is.matrix(lower))
+        stopifnot(!is.null(rownames(lower)))
         nmlu <- nmlower <- rownames(lower)
     }
 }
 if (!missing(upper)) {
     if (!is.null(lower)) {
         stopifnot(is.matrix(upper))
+        stopifnot(!is.null(rownames(upper)))
         nmupper <- rownames(upper)
         if (!missing(lower)) {
             stopifnot(isTRUE(all.equal(nmlower, nmupper)))
