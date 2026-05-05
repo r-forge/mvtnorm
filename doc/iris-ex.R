@@ -55,14 +55,18 @@ nsc <- function(parm, ...) {
     - c(rowSums(ret$invcholmean),
         rowSums(Lower_tri(ret$scale, diag = TRUE)))
 }
-    
+
+### construct starting values from conditional distributions    
 X <- cbind(1, Y)
 XtX <- crossprod(X)    
 
 cf <- lapply(j, function(i) {
     si <- seq_len(i)
+    ### Y_j = cf[1] * Y_1 + ... + cf[j-1] * Y_{j - 1} + sigma eps
     cf <- solve(XtX[si,si], XtX[si,i+1])
+    ### sigma
     sde <- mean((X[,i+1] - X %*% c(cf, rep(0, J + 1 - i)))^2)
+    ### negative standardized coefficients
     return(c(-cf, 1) / sqrt(sde))
 })
 
@@ -82,7 +86,47 @@ lower[-(J + diagonals(ltMatrices(seq_len(Jd), diag = TRUE)))] <- -Inf
              method = "L-BFGS-B", obs = t(Y), control = list(maxit = 1000)))
 nll(op0$par, object = TRUE)
 
-Z <- t(d <- qnorm(do.call("cbind", lapply(iris[1:J], rank, ties.method = "max")) / 
+### theory is correct
+chk(start, op0$par)
+
+### interval censoring
+idx <- lapply(iris[j], factor)
+suy <- lapply(iris[j], function(y) sort(unique(y)))
+
+l <- lapply(j, function(i) c(-Inf, suy[[i]])[idx[[i]]])
+u <- lapply(j, function(i) c(suy[[i]], Inf)[unclass(idx[[i]]) + 1L])
+
+lm <- t(do.call("cbind", l))
+um <- t(do.call("cbind", u))
+rownames(lm) <- rownames(um) <- vn
+
+M <- 1000
+### Monte-Carlo
+W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
+system.time(lp1 <- - nll(start, lower = lm, upper = um, M = M, w = W, logLik = FALSE))
+
+mY <- colMeans(Y)
+sY <- var(Y) * (N - 1) / N
+a <- GenzBretz(maxpts = M, abseps = 0, releps = 0)
+system.time(prb <- sapply(seq_len(ncol(lm)), function(i)
+    pmvnorm(lower = lm[,i], upper = um[,i], mean = mY, sigma = sY, algorithm = a)))
+
+lp2 <- log(prb)
+all.equal(lp1, lp2)
+
+-sum(lp1)
+-sum(lp2)
+
+# however
+nll(start, lower = lm, upper = um, M = M, w = W)
+system.time(gr1 <- grad(nll, start, lower = lm, upper = um, M = M, w = W))
+system.time(gr2 <- nsc(start, lower = lm, upper = um, M = M, w = W))
+
+all.equal(gr1, gr2)
+
+
+### two-step copula via log-density
+Z <- t(d <- qnorm(do.call("cbind", lapply(iris[j], rank, ties.method = "max")) / 
        (N + 1)))
 d <- as.data.frame(d)
 
@@ -114,10 +158,9 @@ cor(x1)
 
 invchol2cov(standardize(invchol = nll(op1$par, object = TRUE)$scale))
 
-
-
-lwr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "min")) - 1L
-upr <- do.call("cbind", lapply(iris[1:J], rank, ties.method = "max"))
+### two-step copula via log-probabilities
+lwr <- do.call("cbind", lapply(iris[j], rank, ties.method = "min")) - 1L
+upr <- do.call("cbind", lapply(iris[j], rank, ties.method = "max"))
 lwr <- t(qnorm(lwr / N))
 upr <- t(qnorm(upr / N))
 
@@ -154,8 +197,8 @@ invchol2cov(standardize(invchol = nll(op2a$par, object = TRUE)$scale))
 
 
 
-idx <- lapply(iris[1:J], function(x)
-    factor(rank(x, ties.method = "max")))
+### simultaneous copula
+idx <- lapply(iris[j], factor)
 
 h <- function(x)
     qnorm(cumsum(prop.table(table(x))[-nlevels(x)]))
