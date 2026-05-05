@@ -2,16 +2,18 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
-\section{Changes in Version 1.3-8 (2026-04-19)}{
+\section{Changes in Version 1.3-8 (2026-05-05)}{
   \subsection{Features}{
     \itemize{
-      \item 
+      \item More careful checks of inputs.
     }
   }
   \subsection{Bugfixes}{
     \itemize{
       \item \code{logLik} wasn't able to handle missing, continuous, and
-            interval-censored observations at once
+            interval-censored observations at once.
+      \item \code{lpmvnorm} failed when a non-missing \code{invcholmean} wasn't a matrix
+            with the same dimensions as \code{lower} and \code{upper}.
     }
   }
 }

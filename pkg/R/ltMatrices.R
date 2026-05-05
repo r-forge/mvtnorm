@@ -1196,16 +1196,24 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
         stop("obs and (inv)chol have non-conforming size")
     if (nr != J)
         stop("obs and (inv)chol have non-conforming size")
-    if (identical(unique(invcholmean), 0)) return(TRUE)
-    if (length(invcholmean) == J) 
-        return(TRUE)
+
+    if (is.null(invcholmean)) 
+        return(matrix(0, nrow = J, ncol = N))
+    if (identical(unique(invcholmean), 0)) 
+        return(matrix(0, nrow = J, ncol = N))
+
     if (!is.matrix(invcholmean))
-        stop("obs and invcholmean have non-conforming size")
-    if (nrow(invcholmean) != nr)
-        stop("obs and invcholmean have non-conforming size")
-    if (ncol(invcholmean) != nc)
-        stop("obs and invcholmean have non-conforming size")
-    return(TRUE)
+        invcholmean <- matrix(invcholmean, nrow = J)
+    nr <- nrow(invcholmean)
+    nc <- ncol(invcholmean)
+    if (!(nc %in% c(1L, N)))
+        stop("obs and (inv)chol have non-conforming size")
+    if (nr != J)
+        stop("invcholmean and (inv)chol have non-conforming size")
+
+    if (ncol(invcholmean) == N) 
+        return(invcholmean)
+    return(matrix(invcholmean, nrow = J, ncol = N))
 }
 
 # colSumsdnorm ltMatrices

@@ -1,5 +1,5 @@
-lmvnorm_src.w
-Makefile
+./lmvnorm_src.w
+./Makefile
 inst/article
 inst/paper
 inst/todo

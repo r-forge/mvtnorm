@@ -70,13 +70,13 @@ lpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL, chol, invch
     }
 
     if (!missing(invcholmean)) {
-        stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))
+        invcholmean <- .check_obs_invcholmean(lower, invcholmean, J = J, N = N)
         center <- - invcholmean
     }
 
     if (!is.null(center)) {
-        if (!is.matrix(center)) center <- matrix(center, ncol = 1)
-        stopifnot(nrow(center) == J && ncol(center == N))
+        if (!is.matrix(center)) center <- matrix(center, nrow = J, ncol = N)
+        stopifnot(nrow(center) == J && ncol(center) == N)
     }
     
     # standardise
@@ -174,13 +174,13 @@ slpmvnorm <- function(lower, upper, mean, invcholmean, center = NULL,
     }
 
     if (!missing(invcholmean)) {
-        stopifnot(.check_obs_invcholmean(lower, invcholmean, J = J, N = N))
+        invcholmean <- .check_obs_invcholmean(lower, invcholmean, J = J, N = N)
         center <- - invcholmean
     }
 
     if (!is.null(center)) {
-        if (!is.matrix(center)) center <- matrix(center, ncol = 1)
-        stopifnot(nrow(center) == J && ncol(center == N))
+        if (!is.matrix(center)) center <- matrix(center, nrow = J, ncol = N)
+        stopifnot(nrow(center) == J && ncol(center) == N)
     }
     
     # standardise
@@ -337,9 +337,9 @@ ldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
              obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
              z <- solve(chol, obs)
          } else {
-             stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                              J = J, N = N))
-             z <- solve(chol, obs) - c(invcholmean)
+             invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                                   J = J, N = N)
+             z <- solve(chol, obs) - invcholmean
          }
          logretval <- .colSumsdnorm(z)
          if (attr(chol, "diag"))
@@ -359,9 +359,9 @@ ldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
              obs <- .check_obs_mean(obs = obs, mean = mean, J = J, N = N)
              z <- Mult(invchol, obs)
          } else {
-             chk <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                           J = J, N = N)
-             z <- Mult(invchol, obs) - c(invcholmean)
+             invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                                   J = J, N = N)
+             z <- Mult(invchol, obs) - invcholmean
          }
          logretval <- .colSumsdnorm(z)
          ## note that the second summand gets recycled the correct number
@@ -395,9 +395,9 @@ sldmvnorm <- function(obs, mean, invcholmean, chol, invchol, logLik = TRUE) {
             ## NOTE: obs is mean-centered now 
             Mix <- Mult(invchol, obs)
         } else {
-            stopifnot(.check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
-                                             J = J, N = N))
-            Mix <- Mult(invchol, obs) - c(invcholmean)
+            invcholmean <- .check_obs_invcholmean(obs = obs, invcholmean = invcholmean, 
+                                                  J = J, N = N)
+            Mix <- Mult(invchol, obs) - invcholmean
         }
         sobs <- - Mult(invchol, Mix, transpose = TRUE)
 

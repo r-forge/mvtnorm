@@ -254,6 +254,7 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     if (!missing(obs)) {
         if (!is.null(obs)) {
             stopifnot(is.matrix(obs))
+            stopifnot(!is.null(rownames(obs)))
             nmobs <- rownames(obs)
         }
     }
@@ -261,12 +262,14 @@ logLik.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     if (!missing(lower)) {
         if (!is.null(lower)) {
             stopifnot(is.matrix(lower))
+            stopifnot(!is.null(rownames(lower)))
             nmlu <- nmlower <- rownames(lower)
         }
     }
     if (!missing(upper)) {
         if (!is.null(lower)) {
             stopifnot(is.matrix(upper))
+            stopifnot(!is.null(rownames(upper)))
             nmupper <- rownames(upper)
             if (!missing(lower)) {
                 stopifnot(isTRUE(all.equal(nmlower, nmupper)))
@@ -349,6 +352,7 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     if (!missing(obs)) {
         if (!is.null(obs)) {
             stopifnot(is.matrix(obs))
+            stopifnot(!is.null(rownames(obs)))
             nmobs <- rownames(obs)
         }
     }
@@ -356,12 +360,14 @@ lLgrad.mvnorm <- function(object, obs, lower, upper, standardize = FALSE,
     if (!missing(lower)) {
         if (!is.null(lower)) {
             stopifnot(is.matrix(lower))
+            stopifnot(!is.null(rownames(lower)))
             nmlu <- nmlower <- rownames(lower)
         }
     }
     if (!missing(upper)) {
         if (!is.null(lower)) {
             stopifnot(is.matrix(upper))
+            stopifnot(!is.null(rownames(upper)))
             nmupper <- rownames(upper)
             if (!missing(lower)) {
                 stopifnot(isTRUE(all.equal(nmlower, nmupper)))
