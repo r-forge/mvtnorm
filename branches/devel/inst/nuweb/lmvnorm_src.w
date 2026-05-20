@@ -2052,10 +2052,10 @@ invchol.syMatrices <- function(x, ...) {
 void C_invchol (int J, double* ans, int* info) {
 
     int i, j, k;
-    int start = 1;
+    int start = 1, str;
     int end = 0;
     double sd = 0.0;
-    double* sigma;
+    double *sigma, *x;
 
     info[0] = 0;
 
@@ -2065,10 +2065,10 @@ void C_invchol (int J, double* ans, int* info) {
         sigma = ans + start;
         sd = 0.0;
         for (i = j - 1; i >= 0; i--) {
-            sigma[i] = ans[end] * sigma[i];
+            sigma[i] *= ans[end];
             for (k = 1; k <= i; k++)
                 sigma[i] += ans[end - k] * sigma[i - k];
-            sd += sigma[i] * sigma[i];
+            sd += pow(sigma[i], 2);
             end -= i + 1;
         }
         sd = sigma[j] - sd;
@@ -2077,10 +2077,15 @@ void C_invchol (int J, double* ans, int* info) {
             break;
         }
         sd = sqrt(sd);
+        str = 0;
         for (i = 0; i < j; i++) {
-            sigma[i] = ans[(i + 1) * (i + 2) / 2 - 1] * sigma[i];
-            for (k = i + 1; k < j; k++)
-                sigma[i] += ans[k * (k + 1) / 2 + i] * sigma[k];
+            x = ans + str + i;
+            sigma[i] *= x[0]; 
+            for (k = i + 1; k < j; k++) {
+                x += k;
+                sigma[i] += x[0] * sigma[k];
+            }
+            str += i + 1;
         }
         for (i = 0; i < j; i++)
             sigma[i] = - sigma[i] / sd;
@@ -2107,8 +2112,6 @@ SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
 
         /* copy data */
         Memcpy(dans, dSigma, pJ);
-//        for (j = 0; j < pJ; j++)
-//            dans[j] = dSigma[j];
 
         C_invchol(iJ, dans, &info);
 
