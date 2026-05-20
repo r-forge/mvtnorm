@@ -584,14 +584,11 @@ SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
     int iN = INTEGER(N)[0];
     int i, j, info = 0;
 
-    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    ans = PROTECT(isReal(Sigma) ? duplicate(Sigma): coerceVector(Sigma, REALSXP));
     dans = REAL(ans);
     dSigma = REAL(Sigma);
 
     for (i = 0; i < iN; i++) {
-
-        /* copy data */
-        Memcpy(dans, dSigma, pJ);
 
         C_invchol(iJ, dans, &info);
 

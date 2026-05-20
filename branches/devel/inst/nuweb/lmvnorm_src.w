@@ -2028,18 +2028,17 @@ invchol.syMatrices <- function(x, ...) {
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, 
-                    byrow = byrow_orig, names = dnm[[2L]])
+    class(x) <- class(x)[-1]
     x <- ltMatrices(x, byrow = TRUE)
-    # class(x) <- class(x)[-1]
+
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    colnames(ret) <- dnm[[1L]]
+    # colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE,
-                      byrow = TRUE, names = dnm[[2L]])
+    # ret <- ltMatrices(ret, diag = TRUE,
+    #                   byrow = TRUE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -2104,14 +2103,11 @@ SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
     int iN = INTEGER(N)[0];
     int i, j, info = 0;
 
-    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    ans = PROTECT(isReal(Sigma) ? duplicate(Sigma): coerceVector(Sigma, REALSXP));
     dans = REAL(ans);
     dSigma = REAL(Sigma);
 
     for (i = 0; i < iN; i++) {
-
-        /* copy data */
-        Memcpy(dans, dSigma, pJ);
 
         C_invchol(iJ, dans, &info);
 
