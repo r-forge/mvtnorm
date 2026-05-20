@@ -541,13 +541,19 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     ret <- .Call(mvtnorm_R_ltMatrices_solve_C, x, 
                  as.integer(d[1L]), as.integer(J), as.logical(diag),
                  as.logical(FALSE))
-    colnames(ret) <- dn[[1L]]
+    ### chol = solve(invchol); invchol = solve(chol)
+    if (is.chol(ret)) {
+        class(ret) <- gsub("chol", "invchol", class(ret))
+    } else if (is.invchol(ret)) {
+        class(ret) <- gsub("invchol", "chol", class(ret))
+    }
 
-    if (!diag)
+    if (!diag) {
         ### ret always includes diagonal elements, remove here
-        ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
+        ret <- Lower_tri(ret, diag = FALSE)
+        ret <- ltMatrices(ret, diag = FALSE, byrow = FALSE, names = dn[[2L]])
+    }
 
-    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, names = dn[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
@@ -645,24 +651,19 @@ tcrossprod.syMatrices <- tcrossprod.ltMatrices
 chol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, 
-                    byrow = byrow_orig, names = dnm[[2L]])
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))    
     x <- ltMatrices(x, byrow = FALSE)
-    # class(x) <- class(x)[-1]
+
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE,
-                      byrow = FALSE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -673,23 +674,19 @@ chol.syMatrices <- function(x, ...) {
 invchol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    class(x) <- class(x)[-1]
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))
     x <- ltMatrices(x, byrow = TRUE)
 
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    # colnames(ret) <- dnm[[1L]]
 
-    # ret <- ltMatrices(ret, diag = TRUE,
-    #                   byrow = TRUE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)

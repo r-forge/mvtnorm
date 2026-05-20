@@ -1354,7 +1354,7 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
 {
 
     SEXP ans;
-    double *dans, *dy;
+    double *dans;
     int i, ONE = 1;
 
     @<RC input@>
@@ -1374,10 +1374,8 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
         tr = 'N';
     }
 
-    dy = REAL(y);
-    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
+    PROTECT(ans = duplicate(y));
     dans = REAL(ans);
-    memcpy(dans, dy, iJ * iN * sizeof(double));
     
     /* loop over matrices, ie columns of C  / y */    
     for (i = 0; i < iN; i++) {
@@ -1409,9 +1407,8 @@ SEXP R_ltMatrices_solve_C (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP transpose)
     if (!Rdiag) len += iJ;
     @<lapack options@>
 
-    PROTECT(ans = allocMatrix(REALSXP, len, iN));
+    PROTECT(ans = duplicate(C));
     dans = REAL(ans);
-    memcpy(dans, dC, iN * len * sizeof(double));
     
     /* loop over matrices, ie columns of C  / y */    
     for (i = 0; i < iN; i++) {
@@ -1469,13 +1466,19 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     ret <- .Call(mvtnorm_R_ltMatrices_solve_C, x, 
                  as.integer(d[1L]), as.integer(J), as.logical(diag),
                  as.logical(FALSE))
-    colnames(ret) <- dn[[1L]]
+    ### chol = solve(invchol); invchol = solve(chol)
+    if (is.chol(ret)) {
+        class(ret) <- gsub("chol", "invchol", class(ret))
+    } else if (is.invchol(ret)) {
+        class(ret) <- gsub("invchol", "chol", class(ret))
+    }
 
-    if (!diag)
+    if (!diag) {
         ### ret always includes diagonal elements, remove here
-        ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
+        ret <- Lower_tri(ret, diag = FALSE)
+        ret <- ltMatrices(ret, diag = FALSE, byrow = FALSE, names = dn[[2L]])
+    }
 
-    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, names = dn[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
@@ -1934,24 +1937,19 @@ in class \code{syMatrices}.
 chol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, 
-                    byrow = byrow_orig, names = dnm[[2L]])
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))    
     x <- ltMatrices(x, byrow = FALSE)
-    # class(x) <- class(x)[-1]
+
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE,
-                      byrow = FALSE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -1967,22 +1965,18 @@ so we swiftly loop over $i = 1, \dots, N$ in \proglang{C} and hand over to
 SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
 
     SEXP ans;
-    double *dans, *dSigma;
+    double *dans;
     int iJ = INTEGER(J)[0];
     int pJ = iJ * (iJ + 1) / 2;
     int iN = INTEGER(N)[0];
-    int i, j, info = 0;
+    int i, info = 0;
     char lo = 'L';
 
-    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    /* duplicate preserves classes, so ltMatrices is returned */
+    ans = PROTECT(duplicate(Sigma));
     dans = REAL(ans);
-    dSigma = REAL(Sigma);
 
     for (i = 0; i < iN; i++) {
-
-        /* copy data */
-        for (j = 0; j < pJ; j++)
-            dans[j] = dSigma[j];
 
         F77_CALL(dpptrf)(&lo, &iJ, dans, &info FCONE);
 
@@ -1994,7 +1988,6 @@ SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
                   -info, "dpptrf");
         }
 
-        dSigma += pJ;
         dans += pJ;
     }
     UNPROTECT(1);
@@ -2022,23 +2015,19 @@ in class \code{syMatrices}.
 invchol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    class(x) <- class(x)[-1]
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))
     x <- ltMatrices(x, byrow = TRUE)
 
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    # colnames(ret) <- dnm[[1L]]
 
-    # ret <- ltMatrices(ret, diag = TRUE,
-    #                   byrow = TRUE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -2097,15 +2086,14 @@ void C_invchol (int J, double* ans, int* info) {
 SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
 
     SEXP ans;
-    double *dans, *dSigma;
+    double *dans;
     int iJ = INTEGER(J)[0];
     int pJ = iJ * (iJ + 1) / 2;
     int iN = INTEGER(N)[0];
-    int i, j, info = 0;
+    int i, info = 0;
 
-    ans = PROTECT(isReal(Sigma) ? duplicate(Sigma): coerceVector(Sigma, REALSXP));
+    ans = PROTECT(duplicate(Sigma));
     dans = REAL(ans);
-    dSigma = REAL(Sigma);
 
     for (i = 0; i < iN; i++) {
 
@@ -2117,7 +2105,6 @@ SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
                       info);
         }
 
-        dSigma += pJ;
         dans += pJ;
     }
     UNPROTECT(1);
