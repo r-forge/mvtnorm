@@ -344,8 +344,12 @@ E 0.4913541 0.2849 0.005961 0.8901458 1.000000
 
 > ltM <- ltMatrices(xn, byrow = FALSE, names = nm)
 
-> try(ltM[i, j])
-Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
+> print(try(ltM[i, j], silent = TRUE))
+[1] "Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j\n"
+attr(,"class")
+[1] "try-error"
+attr(,"condition")
+<simpleError in `[.ltMatrices`(ltM, i, j): invalid subset argument j>
 
 > ltM <- as.syMatrices(ltM)
 
@@ -736,6 +740,50 @@ Error in `[.ltMatrices`(ltM, i, j) : invalid subset argument j
 > Sigma <- tcrossprod(lxn)
 
 > chk(as.array(chol(Sigma)), as.array(lxn))
+
+> x <- matrix(runif(21), ncol = 7)
+
+> S <- crossprod(x)
+
+> print(try(chol(S), silent = TRUE))
+[1] "Error in chol.default(S) : the leading minor of order 5 is not positive\n"
+attr(,"class")
+[1] "try-error"
+attr(,"condition")
+<simpleError in chol.default(S): the leading minor of order 5 is not positive>
+
+> print(try(chol(as.syMatrices(S)), silent = TRUE))
+[1] "Error in chol.syMatrices(as.syMatrices(S)) : \n  the leading minor of order 5 is not positive definite\n"
+attr(,"class")
+[1] "try-error"
+attr(,"condition")
+<simpleError in chol.syMatrices(as.syMatrices(S)): the leading minor of order 5 is not positive definite>
+
+> Sigma <- tcrossprod(lxd)
+
+> chk(invchol(Sigma), solve(lxd))
+
+> Sigma <- tcrossprod(lxn)
+
+> chk(as.array(invchol(Sigma)), as.array(solve(lxn)))
+
+> x <- matrix(runif(21), ncol = 7)
+
+> S <- crossprod(x)
+
+> print(try(solve(S), silent = TRUE))
+[1] "Error in solve.default(S) : \n  system is computationally singular: reciprocal condition number = 2.87717e-18\n"
+attr(,"class")
+[1] "try-error"
+attr(,"condition")
+<simpleError in solve.default(S): system is computationally singular: reciprocal condition number = 2.87717e-18>
+
+> print(try(invchol(S), silent = TRUE))
+[1] "Error in invchol.syMatrices(as.syMatrices(as.matrix(x))) : \n  the leading minor of order 3 is not positive definite\n"
+attr(,"class")
+[1] "try-error"
+attr(,"condition")
+<simpleError in invchol.syMatrices(as.syMatrices(as.matrix(x))): the leading minor of order 3 is not positive definite>
 
 > J <- 10
 
@@ -2149,7 +2197,7 @@ Petal.Width
 
 > round(coef(MLi, which = "Petal.Width"), 3)
  (Intercept) Sepal.Length  Sepal.Width Petal.Length 
-      -0.444       -0.139        0.193        0.493 
+      -0.445       -0.139        0.193        0.493 
 attr(,"sigma")
 Petal.Width 
      0.1961 
@@ -2298,4 +2346,4 @@ Petal.Width
  *** Run successfully completed ***
 > proc.time()
    user  system elapsed 
- 15.611   0.283  15.895 
+ 17.655   0.211  17.867 

@@ -270,6 +270,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<mult@>
 @<mult transpose@>
 @<chol@>
+@<invchol workhorse@>
 @<invchol@>
 @<vec trick@>
 @}
@@ -419,14 +420,18 @@ multiple symmetric matrices
 as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
-    x <- as.ltMatrices(x)	### make sure "ltMatrices"
-                                ### is first class
-    class(x)[1L] <- "syMatrices"
-    return(x)
+    if (is.ltMatrices(x)) {
+        class(x) <- gsub("ltMatrices", "syMatrices", class(x))
+        return(x)
+    }
+    as.syMatrices(as.ltMatrices(x * .lt(nrow(x), diag = TRUE)))
 }
-syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
+    if (inherits(object, "syMatrices"))
+        class(object) <- gsub("syMatrices", "ltMatrices", class(object))
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
                              names = names))
+}
 @}
 
 The dimensions of such an object are always $N \times \J \times \J$ and are given by
@@ -809,7 +814,7 @@ triangular matrices, only for symmetric matrices)
 ## subset
 j <- nm[sample(1:J)]
 ltM <- ltMatrices(xn, byrow = FALSE, names = nm)
-try(ltM[i, j])
+print(try(ltM[i, j], silent = TRUE))
 ltM <- as.syMatrices(ltM)
 a <- as.array(ltM[i, j])
 b <- as.array(ltM)[j, j, i]
@@ -2004,14 +2009,27 @@ chk(chol(Sigma), lxd)
 Sigma <- tcrossprod(lxn)
 ## Sigma and chol(Sigma) always have diagonal, lxn doesn't
 chk(as.array(chol(Sigma)), as.array(lxn))
+### check singular matrices
+x <- matrix(runif(21), ncol = 7)
+S <- crossprod(x)
+print(try(chol(S), silent = TRUE))
+print(try(chol(as.syMatrices(S)), silent = TRUE))
 @@
 
 Alternatively, we might want to compute the decomposition $\mSigma_i =
 \mL_i^{-1} \mL_i^{-\top}$ for multiple symmetric matrices $\mSigma_i$, stored as a matrix
-in class \code{syMatrices}.
+in class \code{syMatrices}. We begin, in analogy to \code{chol}, setting up
+a new generic \code{invchol} with methods for \code{syMatrices} and also a
+default method handling matrices.
 
 @d invchol syMatrices
 @{
+invchol <- function(x, ...)
+    UseMethod("invchol")
+
+invchol.default <- function(x, ...)
+    invchol(as.syMatrices(as.matrix(x)))
+
 invchol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
@@ -2034,55 +2052,10 @@ invchol.syMatrices <- function(x, ...) {
 }
 @}
 
+The heavy lifting requires some \proglang{C} code
 
 @d invchol
 @{
-void C_invchol (int J, double* ans, int* info) {
-
-    int i, j, k;
-    int start = 1, str;
-    int end = 0;
-    double sd = 0.0;
-    double *sigma, *x;
-
-    info[0] = 0;
-
-    ans[0] = 1 / sqrt(ans[0]);
-
-    for (j = 1; j < J; j++) {
-        sigma = ans + start;
-        sd = 0.0;
-        for (i = j - 1; i >= 0; i--) {
-            sigma[i] *= ans[end];
-            for (k = 1; k <= i; k++)
-                sigma[i] += ans[end - k] * sigma[i - k];
-            sd += pow(sigma[i], 2);
-            end -= i + 1;
-        }
-        sd = sigma[j] - sd;
-        if (sd < 1e-10) {
-            info[0] = j;
-            break;
-        }
-        sd = sqrt(sd);
-        str = 0;
-        for (i = 0; i < j; i++) {
-            x = ans + str + i;
-            sigma[i] *= x[0]; 
-            for (k = i + 1; k < j; k++) {
-                x += k;
-                sigma[i] += x[0] * sigma[k];
-            }
-            str += i + 1;
-        }
-        for (i = 0; i < j; i++)
-            sigma[i] = - sigma[i] / sd;
-        sigma[j] = 1 / sd;
-        start += j + 1;
-        end = start - 1;
-    }
-}
-
 SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
 
     SEXP ans;
@@ -2111,6 +2084,68 @@ SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
     return(ans);
 }
 @}
+
+@d invchol workhorse
+@{
+void C_invchol (int J, double* ans, int* info) {
+	
+    int i, j, k;
+    int start = 1, str;
+    int end = 0;
+    double sd = 0.0;
+    double *sigma, *x;
+
+    info[0] = 0;
+
+    ans[0] = 1 / sqrt(ans[0]);
+
+    for (j = 1; j < J; j++) {
+        sigma = ans + start;
+        sd = 0.0;
+        for (i = j - 1; i >= 0; i--) {
+            sigma[i] *= ans[end];
+            for (k = 1; k <= i; k++)
+                sigma[i] += ans[end - k] * sigma[i - k];
+            sd += pow(sigma[i], 2);
+            end -= i + 1;
+        }
+        sd = sigma[j] - sd;
+        if (sd < DBL_EPSILON) {
+            info[0] = j;
+            break;
+        }
+        sd = sqrt(sd);
+        str = 0;
+        for (i = 0; i < j; i++) {
+            x = ans + str + i;
+            sigma[i] *= x[0]; 
+            for (k = i + 1; k < j; k++) {
+                x += k;
+                sigma[i] += x[0] * sigma[k];
+            }
+            str += i + 1;
+        }
+        for (i = 0; i < j; i++)
+            sigma[i] = - sigma[i] / sd;
+        sigma[j] = 1 / sd;
+        start += j + 1;
+        end = start - 1;
+    }
+}
+@}
+
+<<invchol>>=
+Sigma <- tcrossprod(lxd)
+chk(invchol(Sigma), solve(lxd))
+Sigma <- tcrossprod(lxn)
+## Sigma and chol(Sigma) always have diagonal, lxn doesn't
+chk(as.array(invchol(Sigma)), as.array(solve(lxn)))
+### check singular matrices
+x <- matrix(runif(21), ncol = 7)
+S <- crossprod(x)
+print(try(solve(S), silent = TRUE))
+print(try(invchol(S), silent = TRUE))
+@@
 
 
 \section{Kronecker Products} \label{sec:vectrick}
@@ -2474,6 +2509,10 @@ and now the convenience functions are one-liners:
 chol2cov <- function(x)
     Tcrossprod(x)
 
+### Sigma -> C
+cov2chol <- function(x)
+    as.chol(chol(x))
+
 ### L -> C
 invchol2chol <- function(x)
     as.chol(solve(x))
@@ -2485,6 +2524,10 @@ chol2invchol <- function(x)
 ### L -> Sigma
 invchol2cov <- function(x)
     chol2cov(invchol2chol(x))
+
+### Sigma -> L
+cov2invchol <- function(x)
+    as.invchol(invchol(x))
 
 ### L -> Precision
 invchol2pre <- function(x)

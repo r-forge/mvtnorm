@@ -519,10 +519,10 @@ SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
     return(ans);
 }
 
-/* invchol */
+/* invchol workhorse */
 
 void C_invchol (int J, double* ans, int* info) {
-
+        
     int i, j, k;
     int start = 1, str;
     int end = 0;
@@ -544,7 +544,7 @@ void C_invchol (int J, double* ans, int* info) {
             end -= i + 1;
         }
         sd = sigma[j] - sd;
-        if (sd < 1e-10) {
+        if (sd < DBL_EPSILON) {
             info[0] = j;
             break;
         }
@@ -566,6 +566,8 @@ void C_invchol (int J, double* ans, int* info) {
         end = start - 1;
     }
 }
+
+/* invchol */
 
 SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
 

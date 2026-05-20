@@ -100,14 +100,18 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
-    x <- as.ltMatrices(x)       ### make sure "ltMatrices"
-                                ### is first class
-    class(x)[1L] <- "syMatrices"
-    return(x)
+    if (is.ltMatrices(x)) {
+        class(x) <- gsub("ltMatrices", "syMatrices", class(x))
+        return(x)
+    }
+    as.syMatrices(as.ltMatrices(x * .lt(nrow(x), diag = TRUE)))
 }
-syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
+    if (inherits(object, "syMatrices"))
+        class(object) <- gsub("syMatrices", "ltMatrices", class(object))
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
                              names = names))
+}
 
 # dim ltMatrices
 
@@ -671,6 +675,12 @@ chol.syMatrices <- function(x, ...) {
 
 # invchol syMatrices
 
+invchol <- function(x, ...)
+    UseMethod("invchol")
+
+invchol.default <- function(x, ...)
+    invchol(as.syMatrices(as.matrix(x)))
+
 invchol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
@@ -958,6 +968,10 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
 chol2cov <- function(x)
     Tcrossprod(x)
 
+### Sigma -> C
+cov2chol <- function(x)
+    as.chol(chol(x))
+
 ### L -> C
 invchol2chol <- function(x)
     as.chol(solve(x))
@@ -969,6 +983,10 @@ chol2invchol <- function(x)
 ### L -> Sigma
 invchol2cov <- function(x)
     chol2cov(invchol2chol(x))
+
+### Sigma -> L
+cov2invchol <- function(x)
+    as.invchol(invchol(x))
 
 ### L -> Precision
 invchol2pre <- function(x)
