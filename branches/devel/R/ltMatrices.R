@@ -668,6 +668,34 @@ chol.syMatrices <- function(x, ...) {
     return(ret)
 }
 
+# invchol syMatrices
+
+invchol.syMatrices <- function(x, ...) {
+
+    byrow_orig <- attr(x, "byrow")
+    dnm <- dimnames(x)
+    stopifnot(attr(x, "diag"))
+    d <- dim(x)
+
+    ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
+    ### second
+    x <- ltMatrices(unclass(x), diag = TRUE, 
+                    byrow = byrow_orig, names = dnm[[2L]])
+    x <- ltMatrices(x, byrow = TRUE)
+    # class(x) <- class(x)[-1]
+    if (!is.double(x)) storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
+                 as.integer(d[1L]), as.integer(d[2L]))
+    colnames(ret) <- dnm[[1L]]
+
+    ret <- ltMatrices(ret, diag = TRUE,
+                      byrow = TRUE, names = dnm[[2L]])
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+
+    return(ret)
+}
+
 # add diagonal elements
 
 .adddiag <- function(x) {

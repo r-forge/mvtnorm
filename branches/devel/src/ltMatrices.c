@@ -527,6 +527,82 @@ SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
     return(ans);
 }
 
+/* invchol */
+
+void C_invchol (int J, double* ans, int* info) {
+
+    int i, j, k, start, end;
+    double sd = 0.0;
+    double* sigma;
+
+    info[0] = 0;
+
+    ans[0] = 1 / sqrt(ans[0]);
+
+    for (j = 1; j < J; j++) {
+        start = j * (j + 1) / 2;
+        end = start - 1;
+        sigma = ans + start;
+        sd = 0.0;
+        for (i = j - 1; i >= 0; i--) {
+            sigma[i] = ans[end] * sigma[i];
+            for (k = 1; k <= i; k++)
+                sigma[i] += ans[end - k] * sigma[i - k];
+            sd += sigma[i] * sigma[i];
+            end -= i + 1;
+        }
+        sd = sigma[j] - sd;
+        if (sd < 1e-10) {
+            info[0] = j;
+            break;
+        }
+        sd = sqrt(sd);
+        for (i = 0; i < j; i++) {
+            sigma[i] = ans[(i + 1) * (i + 2) / 2 - 1] * sigma[i];
+            for (k = i + 1; k < j; k++)
+                sigma[i] += ans[k * (k + 1) / 2 + i] * sigma[k];
+        }
+        for (i = 0; i < j; i++)
+            sigma[i] = - sigma[i] / sd;
+        sigma[j] = 1 / sd;
+    }
+}
+
+SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
+
+    SEXP ans;
+    double *dans, *dSigma;
+    int iJ = INTEGER(J)[0];
+    int pJ = iJ * (iJ + 1) / 2;
+    int iN = INTEGER(N)[0];
+    int i, j, info = 0;
+
+    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    dans = REAL(ans);
+    dSigma = REAL(Sigma);
+
+    for (i = 0; i < iN; i++) {
+
+        /* copy data */
+        Memcpy(dans, dSigma, pJ);
+//        for (j = 0; j < pJ; j++)
+//            dans[j] = dSigma[j];
+
+        C_invchol(iJ, dans, &info);
+
+        if (info != 0) {
+            if (info > 0)
+                error("the leading minor of order %d is not positive definite",
+                      info);
+        }
+
+        dSigma += pJ;
+        dans += pJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+
 /* vec trick */
 
 

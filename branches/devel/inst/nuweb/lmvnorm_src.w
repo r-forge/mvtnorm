@@ -235,6 +235,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<crossprod ltMatrices@>
 @<crossprod tcrossprod methods@>
 @<chol syMatrices@>
+@<invchol syMatrices@>
 @<add diagonal elements@>
 @<assign diagonal elements@>
 @<kronecker vec trick@>
@@ -269,6 +270,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<mult@>
 @<mult transpose@>
 @<chol@>
+@<invchol@>
 @<vec trick@>
 @}
 
@@ -2010,6 +2012,118 @@ Sigma <- tcrossprod(lxn)
 ## Sigma and chol(Sigma) always have diagonal, lxn doesn't
 chk(as.array(chol(Sigma)), as.array(lxn))
 @@
+
+Alternatively, we might want to compute the decomposition $\mSigma_i =
+\mL_i^{-1} \mL_i^{-\top}$ for multiple symmetric matrices $\mSigma_i$, stored as a matrix
+in class \code{syMatrices}.
+
+@d invchol syMatrices
+@{
+invchol.syMatrices <- function(x, ...) {
+
+    byrow_orig <- attr(x, "byrow")
+    dnm <- dimnames(x)
+    stopifnot(attr(x, "diag"))
+    d <- dim(x)
+
+    ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
+    ### second
+    x <- ltMatrices(unclass(x), diag = TRUE, 
+                    byrow = byrow_orig, names = dnm[[2L]])
+    x <- ltMatrices(x, byrow = TRUE)
+    # class(x) <- class(x)[-1]
+    if (!is.double(x)) storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
+                 as.integer(d[1L]), as.integer(d[2L]))
+    colnames(ret) <- dnm[[1L]]
+
+    ret <- ltMatrices(ret, diag = TRUE,
+                      byrow = TRUE, names = dnm[[2L]])
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+
+    return(ret)
+}
+@}
+
+
+@d invchol
+@{
+void C_invchol (int J, double* ans, int* info) {
+
+    int i, j, k, start, end;
+    double sd = 0.0;
+    double* sigma;
+
+    info[0] = 0;
+
+    ans[0] = 1 / sqrt(ans[0]);
+
+    for (j = 1; j < J; j++) {
+        start = j * (j + 1) / 2;
+        end = start - 1;
+        sigma = ans + start;
+        sd = 0.0;
+        for (i = j - 1; i >= 0; i--) {
+            sigma[i] = ans[end] * sigma[i];
+            for (k = 1; k <= i; k++)
+                sigma[i] += ans[end - k] * sigma[i - k];
+            sd += sigma[i] * sigma[i];
+            end -= i + 1;
+        }
+        sd = sigma[j] - sd;
+        if (sd < 1e-10) {
+            info[0] = j;
+            break;
+        }
+        sd = sqrt(sd);
+        for (i = 0; i < j; i++) {
+            sigma[i] = ans[(i + 1) * (i + 2) / 2 - 1] * sigma[i];
+            for (k = i + 1; k < j; k++)
+                sigma[i] += ans[k * (k + 1) / 2 + i] * sigma[k];
+        }
+        for (i = 0; i < j; i++)
+            sigma[i] = - sigma[i] / sd;
+        sigma[j] = 1 / sd;
+    }
+}
+
+SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
+
+    SEXP ans;
+    double *dans, *dSigma;
+    int iJ = INTEGER(J)[0];
+    int pJ = iJ * (iJ + 1) / 2;
+    int iN = INTEGER(N)[0];
+    int i, j, info = 0;
+
+    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    dans = REAL(ans);
+    dSigma = REAL(Sigma);
+
+    for (i = 0; i < iN; i++) {
+
+        /* copy data */
+        Memcpy(dans, dSigma, pJ);
+//        for (j = 0; j < pJ; j++)
+//            dans[j] = dSigma[j];
+
+        C_invchol(iJ, dans, &info);
+
+        if (info != 0) {
+            if (info > 0)
+                error("the leading minor of order %d is not positive definite",
+                      info);
+        }
+
+        dSigma += pJ;
+        dans += pJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
 
 \section{Kronecker Products} \label{sec:vectrick}
 
