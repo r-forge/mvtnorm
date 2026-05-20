@@ -531,7 +531,9 @@ SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
 
 void C_invchol (int J, double* ans, int* info) {
 
-    int i, j, k, start, end;
+    int i, j, k;
+    int start = 1;
+    int end = 0;
     double sd = 0.0;
     double* sigma;
 
@@ -540,8 +542,6 @@ void C_invchol (int J, double* ans, int* info) {
     ans[0] = 1 / sqrt(ans[0]);
 
     for (j = 1; j < J; j++) {
-        start = j * (j + 1) / 2;
-        end = start - 1;
         sigma = ans + start;
         sd = 0.0;
         for (i = j - 1; i >= 0; i--) {
@@ -565,6 +565,8 @@ void C_invchol (int J, double* ans, int* info) {
         for (i = 0; i < j; i++)
             sigma[i] = - sigma[i] / sd;
         sigma[j] = 1 / sd;
+        start += j + 1;
+        end = start - 1;
     }
 }
 
