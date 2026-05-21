@@ -31,16 +31,22 @@ set.seed(290875)
 ### code chunk number 88: gc-classical
 ###################################################
 data("iris", package = "datasets")
-N <- nrow(iris)
+N <- table(iris$Species)
+
+### unconditional models for one species 
+setosa <- subset(iris, Species == "setosa")
+
 J <- 4
 Jd <- J * (J + 1) / 2
 Jo <- J * (J - 1) / 2
 j <- seq_len(J)
 (vn <- colnames(iris)[j])
-Y <- as.matrix(iris[, vn])
+Y <- as.matrix(setosa[, vn])
+mY <- colMeans(Y)
+sY <- var(Y) * (N["setosa"] - 1) / N["setosa"]
 
 ## Y ~ N(mu, Sigma)
--sum(dmvnorm(Y, mean = colMeans(Y), sigma = var(Y) * (N - 1) / N, log = TRUE))
+-sum(dmvnorm(Y, mean = mY, sigma = sY, log = TRUE))
 
 nll <- function(parm, object = FALSE, ...) {
     L <- ltMatrices(parm[-j], names = vn, diag = TRUE)
@@ -90,8 +96,8 @@ nll(op0$par, object = TRUE)
 chk(start, op0$par)
 
 ### interval censoring
-idx <- lapply(iris[j], factor)
-suy <- lapply(iris[j], function(y) sort(unique(y)))
+idx <- lapply(setosa[j], factor)
+suy <- lapply(setosa[j], function(y) sort(unique(y)))
 
 l <- lapply(j, function(i) c(-Inf, suy[[i]])[idx[[i]]])
 u <- lapply(j, function(i) c(suy[[i]], Inf)[unclass(idx[[i]]) + 1L])
@@ -100,13 +106,18 @@ lm <- t(do.call("cbind", l))
 um <- t(do.call("cbind", u))
 rownames(lm) <- rownames(um) <- vn
 
-M <- 1000
-### Monte-Carlo
-W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
+
+M <- 1000 
+if (require("qrng", quietly = TRUE)) {
+    ### quasi-Monte-Carlo
+    W <- t(ghalton(M, d = J - 1))
+} else {
+    ### Monte-Carlo
+    W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
+}
+
 system.time(lp1 <- - nll(start, lower = lm, upper = um, M = M, w = W, logLik = FALSE))
 
-mY <- colMeans(Y)
-sY <- var(Y) * (N - 1) / N
 a <- GenzBretz(maxpts = M, abseps = 0, releps = 0)
 system.time(prb <- sapply(seq_len(ncol(lm)), function(i)
     pmvnorm(lower = lm[,i], upper = um[,i], mean = mY, sigma = sY, algorithm = a)))
@@ -126,8 +137,8 @@ all.equal(gr1, gr2)
 
 
 ### two-step copula via log-density
-Z <- t(d <- qnorm(do.call("cbind", lapply(iris[j], rank, ties.method = "max")) / 
-       (N + 1)))
+Z <- t(d <- qnorm(do.call("cbind", lapply(setosa[j], rank, ties.method = "max")) / 
+       (N["setosa"] + 1)))
 d <- as.data.frame(d)
 
 (op1 <- optim(par = start, fn = nll, gr = nsc, lower = lower, 
@@ -159,19 +170,10 @@ cor(x1)
 invchol2cov(standardize(invchol = nll(op1$par, object = TRUE)$scale))
 
 ### two-step copula via log-probabilities
-lwr <- do.call("cbind", lapply(iris[j], rank, ties.method = "min")) - 1L
-upr <- do.call("cbind", lapply(iris[j], rank, ties.method = "max"))
-lwr <- t(qnorm(lwr / N))
-upr <- t(qnorm(upr / N))
-
-M <- 500 
-if (require("qrng", quietly = TRUE)) {
-    ### quasi-Monte-Carlo
-    W <- t(ghalton(M, d = J - 1))
-} else {
-    ### Monte-Carlo
-    W <- matrix(runif(M * (J - 1)), nrow = J - 1, byrow = TRUE)
-}
+upr <- do.call("cbind", lapply(setosa[j], rank, ties.method = "max"))
+lwr <- upr - 1L
+lwr <- t(qnorm(lwr / N["setosa"]))
+upr <- t(qnorm(upr / N["setosa"]))
 
 x2 <- cbind(grad(nll, start, lower = lwr, upper = upr, M = M, w = W), 
             nsc(start, lower = lwr, upper = upr, M = M, w = W))
@@ -198,7 +200,7 @@ invchol2cov(standardize(invchol = nll(op2a$par, object = TRUE)$scale))
 
 
 ### simultaneous copula
-idx <- lapply(iris[j], factor)
+idx <- lapply(setosa[j], factor)
 
 h <- function(x)
     qnorm(cumsum(prop.table(table(x))[-nlevels(x)]))
@@ -256,6 +258,14 @@ op3 <- optim(start,
              method = "BFGS")
 
 ### with marginal effects
+idx <- lapply(iris[j], factor)
+
+h <- function(x)
+    qnorm(cumsum(prop.table(table(x))[-nlevels(x)]))
+
+start0 <- do.call("c", lapply(idx, h))
+start <- c(start0, op2$par)
+
 i <- rep(gl(J + 2L, 1, labels = c(vn, "shift", "Lambda")), 
          times = c(sapply(idx, nlevels) - 1L, 2L * J, Jo))
 
