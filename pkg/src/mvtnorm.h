@@ -33,3 +33,4 @@ extern SEXP R_lpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP
 extern SEXP R_slpmvnorm(SEXP a, SEXP b, SEXP C, SEXP center, SEXP N, SEXP J, SEXP W, SEXP M, SEXP tol, SEXP fast);
 extern SEXP R_vectrick(SEXP C, SEXP N, SEXP J, SEXP S, SEXP D, SEXP diag, SEXP trans);
 extern SEXP R_syMatrices_chol(SEXP Sigma, SEXP N, SEXP J);
+extern SEXP R_syMatrices_invchol(SEXP Sigma, SEXP N, SEXP J);

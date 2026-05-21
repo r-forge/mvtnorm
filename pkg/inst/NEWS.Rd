@@ -2,6 +2,21 @@
 \name{NEWS}
 \title{NEWS file for the \pkg{mvtnorm} package}
 
+\section{Changes in Version 1.4-0 (2026-05-20)}{
+  \subsection{Features}{
+    \itemize{
+      \item Add \code{invchol.syMatrices}, \code{cov2invchol}, and
+            \code{cov2chol}.
+    }
+  }
+  \subsection{Bugfixes}{
+    \itemize{
+      \item Cleaned up the class structure and corrected constructors for
+            \code{syMatrices}.
+    }
+  }
+}
+
 \section{Changes in Version 1.3-8 (2026-05-05)}{
   \subsection{Features}{
     \itemize{

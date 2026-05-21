@@ -58,6 +58,7 @@ static const R_CallMethodDef callMethods[] = {
     {"R_slpmvnorm", (DL_FUNC) &R_slpmvnorm, 10},
     {"R_vectrick", (DL_FUNC) &R_vectrick, 7},
     {"R_syMatrices_chol", (DL_FUNC) &R_syMatrices_chol, 3},
+    {"R_syMatrices_invchol", (DL_FUNC) &R_syMatrices_invchol, 3},
     {NULL, NULL, 0}
 };
 
@@ -79,4 +80,5 @@ void attribute_visible R_init_mvtnorm(DllInfo *dll)
     R_RegisterCCallable("mvtnorm", "R_slpmvnorm", (DL_FUNC) &R_slpmvnorm);
     R_RegisterCCallable("mvtnorm", "R_vectrick", (DL_FUNC) &R_vectrick);
     R_RegisterCCallable("mvtnorm", "R_syMatrices_chol", (DL_FUNC) &R_syMatrices_chol);
+    R_RegisterCCallable("mvtnorm", "R_syMatrices_invchol", (DL_FUNC) &R_syMatrices_invchol);
 }

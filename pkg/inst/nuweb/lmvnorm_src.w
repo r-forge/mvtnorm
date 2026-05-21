@@ -235,6 +235,7 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<crossprod ltMatrices@>
 @<crossprod tcrossprod methods@>
 @<chol syMatrices@>
+@<invchol syMatrices@>
 @<add diagonal elements@>
 @<assign diagonal elements@>
 @<kronecker vec trick@>
@@ -269,6 +270,8 @@ nonparanormal models are discussed in \cite{Hothorn_2024}.
 @<mult@>
 @<mult transpose@>
 @<chol@>
+@<invchol workhorse@>
+@<invchol@>
 @<vec trick@>
 @}
 
@@ -417,14 +420,18 @@ multiple symmetric matrices
 as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
-    x <- as.ltMatrices(x)	### make sure "ltMatrices"
-                                ### is first class
-    class(x)[1L] <- "syMatrices"
-    return(x)
+    if (is.ltMatrices(x)) {
+        class(x) <- gsub("ltMatrices", "syMatrices", class(x))
+        return(x)
+    }
+    as.syMatrices(as.ltMatrices(x * .lt(nrow(x), diag = TRUE)))
 }
-syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
+    if (inherits(object, "syMatrices"))
+        class(object) <- gsub("syMatrices", "ltMatrices", class(object))
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
                              names = names))
+}
 @}
 
 The dimensions of such an object are always $N \times \J \times \J$ and are given by
@@ -807,7 +814,7 @@ triangular matrices, only for symmetric matrices)
 ## subset
 j <- nm[sample(1:J)]
 ltM <- ltMatrices(xn, byrow = FALSE, names = nm)
-try(ltM[i, j])
+print(try(ltM[i, j], silent = TRUE))
 ltM <- as.syMatrices(ltM)
 a <- as.array(ltM[i, j])
 b <- as.array(ltM)[j, j, i]
@@ -1352,7 +1359,7 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
 {
 
     SEXP ans;
-    double *dans, *dy;
+    double *dans;
     int i, ONE = 1;
 
     @<RC input@>
@@ -1372,10 +1379,8 @@ SEXP R_ltMatrices_solve (SEXP C, SEXP y, SEXP N, SEXP J, SEXP diag, SEXP transpo
         tr = 'N';
     }
 
-    dy = REAL(y);
-    PROTECT(ans = allocMatrix(REALSXP, iJ, iN));
+    PROTECT(ans = duplicate(y));
     dans = REAL(ans);
-    memcpy(dans, dy, iJ * iN * sizeof(double));
     
     /* loop over matrices, ie columns of C  / y */    
     for (i = 0; i < iN; i++) {
@@ -1407,9 +1412,8 @@ SEXP R_ltMatrices_solve_C (SEXP C, SEXP N, SEXP J, SEXP diag, SEXP transpose)
     if (!Rdiag) len += iJ;
     @<lapack options@>
 
-    PROTECT(ans = allocMatrix(REALSXP, len, iN));
+    PROTECT(ans = duplicate(C));
     dans = REAL(ans);
-    memcpy(dans, dC, iN * len * sizeof(double));
     
     /* loop over matrices, ie columns of C  / y */    
     for (i = 0; i < iN; i++) {
@@ -1467,13 +1471,19 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     ret <- .Call(mvtnorm_R_ltMatrices_solve_C, x, 
                  as.integer(d[1L]), as.integer(J), as.logical(diag),
                  as.logical(FALSE))
-    colnames(ret) <- dn[[1L]]
+    ### chol = solve(invchol); invchol = solve(chol)
+    if (is.chol(ret)) {
+        class(ret) <- gsub("chol", "invchol", class(ret))
+    } else if (is.invchol(ret)) {
+        class(ret) <- gsub("invchol", "chol", class(ret))
+    }
 
-    if (!diag)
+    if (!diag) {
         ### ret always includes diagonal elements, remove here
-        ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
+        ret <- Lower_tri(ret, diag = FALSE)
+        ret <- ltMatrices(ret, diag = FALSE, byrow = FALSE, names = dn[[2L]])
+    }
 
-    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, names = dn[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
@@ -1932,24 +1942,19 @@ in class \code{syMatrices}.
 chol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, 
-                    byrow = byrow_orig, names = dnm[[2L]])
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))    
     x <- ltMatrices(x, byrow = FALSE)
-    # class(x) <- class(x)[-1]
+
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE,
-                      byrow = FALSE, names = dnm[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -1965,22 +1970,18 @@ so we swiftly loop over $i = 1, \dots, N$ in \proglang{C} and hand over to
 SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
 
     SEXP ans;
-    double *dans, *dSigma;
+    double *dans;
     int iJ = INTEGER(J)[0];
     int pJ = iJ * (iJ + 1) / 2;
     int iN = INTEGER(N)[0];
-    int i, j, info = 0;
+    int i, info = 0;
     char lo = 'L';
 
-    PROTECT(ans = allocMatrix(REALSXP, pJ, iN));
+    /* duplicate preserves classes, so ltMatrices is returned */
+    ans = PROTECT(duplicate(Sigma));
     dans = REAL(ans);
-    dSigma = REAL(Sigma);
 
     for (i = 0; i < iN; i++) {
-
-        /* copy data */
-        for (j = 0; j < pJ; j++)
-            dans[j] = dSigma[j];
 
         F77_CALL(dpptrf)(&lo, &iJ, dans, &info FCONE);
 
@@ -1992,7 +1993,6 @@ SEXP R_syMatrices_chol (SEXP Sigma, SEXP N, SEXP J) {
                   -info, "dpptrf");
         }
 
-        dSigma += pJ;
         dans += pJ;
     }
     UNPROTECT(1);
@@ -2009,7 +2009,144 @@ chk(chol(Sigma), lxd)
 Sigma <- tcrossprod(lxn)
 ## Sigma and chol(Sigma) always have diagonal, lxn doesn't
 chk(as.array(chol(Sigma)), as.array(lxn))
+### check singular matrices
+x <- matrix(runif(21), ncol = 7)
+S <- crossprod(x)
+print(try(chol(S), silent = TRUE))
+print(try(chol(as.syMatrices(S)), silent = TRUE))
 @@
+
+Alternatively, we might want to compute the decomposition $\mSigma_i =
+\mL_i^{-1} \mL_i^{-\top}$ for multiple symmetric matrices $\mSigma_i$, stored as a matrix
+in class \code{syMatrices}. We begin, in analogy to \code{chol}, setting up
+a new generic \code{invchol} with methods for \code{syMatrices} and also a
+default method handling matrices.
+
+@d invchol syMatrices
+@{
+invchol <- function(x, ...)
+    UseMethod("invchol")
+
+invchol.default <- function(x, ...)
+    invchol(as.syMatrices(as.matrix(x)))
+
+invchol.syMatrices <- function(x, ...) {
+
+    byrow_orig <- attr(x, "byrow")
+    stopifnot(attr(x, "diag"))
+    d <- dim(x)
+
+    ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
+    ### second
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))
+    x <- ltMatrices(x, byrow = TRUE)
+
+    if (!is.double(x)) storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
+                 as.integer(d[1L]), as.integer(d[2L]))
+
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+
+    return(ret)
+}
+@}
+
+The heavy lifting requires some \proglang{C} code
+
+@d invchol
+@{
+SEXP R_syMatrices_invchol (SEXP Sigma, SEXP N, SEXP J) {
+
+    SEXP ans;
+    double *dans;
+    int iJ = INTEGER(J)[0];
+    int pJ = iJ * (iJ + 1) / 2;
+    int iN = INTEGER(N)[0];
+    int i, info = 0;
+
+    ans = PROTECT(duplicate(Sigma));
+    dans = REAL(ans);
+
+    for (i = 0; i < iN; i++) {
+
+        C_invchol(iJ, dans, &info);
+
+        if (info != 0) {
+            if (info > 0)
+                error("the leading minor of order %d is not positive definite",
+                      info);
+        }
+
+        dans += pJ;
+    }
+    UNPROTECT(1);
+    return(ans);
+}
+@}
+
+@d invchol workhorse
+@{
+void C_invchol (int J, double* ans, int* info) {
+	
+    int i, j, k;
+    int start = 1, str;
+    int end = 0;
+    double sd = 0.0;
+    double *sigma, *x;
+
+    info[0] = 0;
+
+    ans[0] = 1 / sqrt(ans[0]);
+
+    for (j = 1; j < J; j++) {
+        sigma = ans + start;
+        sd = 0.0;
+        for (i = j - 1; i >= 0; i--) {
+            sigma[i] *= ans[end];
+            for (k = 1; k <= i; k++)
+                sigma[i] += ans[end - k] * sigma[i - k];
+            sd += pow(sigma[i], 2);
+            end -= i + 1;
+        }
+        sd = sigma[j] - sd;
+        if (sd < DBL_EPSILON) {
+            info[0] = j;
+            break;
+        }
+        sd = sqrt(sd);
+        str = 0;
+        for (i = 0; i < j; i++) {
+            x = ans + str + i;
+            sigma[i] *= x[0]; 
+            for (k = i + 1; k < j; k++) {
+                x += k;
+                sigma[i] += x[0] * sigma[k];
+            }
+            str += i + 1;
+        }
+        for (i = 0; i < j; i++)
+            sigma[i] = - sigma[i] / sd;
+        sigma[j] = 1 / sd;
+        start += j + 1;
+        end = start - 1;
+    }
+}
+@}
+
+<<invchol>>=
+Sigma <- tcrossprod(lxd)
+chk(invchol(Sigma), solve(lxd))
+Sigma <- tcrossprod(lxn)
+## Sigma and chol(Sigma) always have diagonal, lxn doesn't
+chk(as.array(invchol(Sigma)), as.array(solve(lxn)))
+### check singular matrices
+x <- matrix(runif(21), ncol = 7)
+S <- crossprod(x)
+print(try(solve(S), silent = TRUE))
+print(try(invchol(S), silent = TRUE))
+@@
+
 
 \section{Kronecker Products} \label{sec:vectrick}
 
@@ -2372,6 +2509,10 @@ and now the convenience functions are one-liners:
 chol2cov <- function(x)
     Tcrossprod(x)
 
+### Sigma -> C
+cov2chol <- function(x)
+    as.chol(chol(x))
+
 ### L -> C
 invchol2chol <- function(x)
     as.chol(solve(x))
@@ -2383,6 +2524,10 @@ chol2invchol <- function(x)
 ### L -> Sigma
 invchol2cov <- function(x)
     chol2cov(invchol2chol(x))
+
+### Sigma -> L
+cov2invchol <- function(x)
+    as.invchol(invchol(x))
 
 ### L -> Precision
 invchol2pre <- function(x)
@@ -2547,7 +2692,7 @@ aperm.invchol <- function(a, perm, ...) {
 
     @<aperm checks@>
 
-    return(chol2invchol(chol(invchol2cov(a)[,perm])))
+    return(as.invchol(invchol(invchol2cov(a)[,perm])))
 }
 @}
 
@@ -2723,12 +2868,13 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        if (missing(chol)) x <- invchol2chol(x)
-        ### note: aperm would work but computes
-        ### Cholesky of J^2, here only length(which)^2
-        ### is needed
-        tmp <- base::chol(chol2cov(x)[,which])
-        if (missing(chol)) tmp <- chol2invchol(tmp)
+        if (missing(chol)) { 
+            cv <- invchol2cov(x)
+            tmp <- cov2invchol(cv[,which])
+        } else {
+            cv <- chol2cov(x)
+            tmp <- cov2chol(cv[,which])
+        }
     }
 
     if (missing(chol))
@@ -2765,7 +2911,10 @@ else                ### invcol is L = Cholesky of precision
     P <- Crossprod(invchol)
 
 Pw <- P[, -which]
-chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+# chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+### arg invchol is missing, masking mvtnorm::invchol
+### which we can not access bc R CMD check is not happy about it
+chol <- getFromNamespace("invchol", "mvtnorm")(Pw) ### Pw = A A^\top
 g0 <- matrix(0, nrow = J, ncol = NCOL(given))
 g0[which,] <- given
 S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1
@@ -2912,11 +3061,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
 
     @<cond general@>
 
-    chol <- base::chol(S) ### we need S = C C^\top
     if (missing(invchol)) 
-        return(list(mean = mean, chol = chol))
+        return(list(mean = mean, chol = base::chol(S)))
 
-    return(list(mean = mean, invchol = solve(chol)))
+    return(list(mean = mean, invchol = invchol(S)))
 }
 @}
 

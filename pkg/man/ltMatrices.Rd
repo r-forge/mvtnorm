@@ -52,6 +52,10 @@
 \alias{invchol2cor}
 \alias{invchol2pc}
 \alias{chol2pc}
+\alias{cov2chol}
+\alias{cov2invchol}
+\alias{invchol}
+\alias{invchol.syMatrices}
 \alias{vectrick}
 \alias{standardize}
 \alias{destandardize}
@@ -113,6 +117,10 @@ chol2cor(x)
 invchol2cor(x)
 chol2pc(x)
 invchol2pc(x)
+cov2invchol(x)
+cov2chol(x)
+invchol(x, ...)
+\S3method{invchol}{syMatrices}(x, ...)
 vectrick(C, S, A, transpose = c(TRUE, TRUE))
 standardize(chol, invchol)
 destandardize(chol = solve(invchol), invchol, score_schol)

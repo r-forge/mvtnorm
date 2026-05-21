@@ -100,14 +100,18 @@ ltMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
 as.syMatrices <- function(x) {
     if (is.syMatrices(x))
         return(x)
-    x <- as.ltMatrices(x)       ### make sure "ltMatrices"
-                                ### is first class
-    class(x)[1L] <- "syMatrices"
-    return(x)
+    if (is.ltMatrices(x)) {
+        class(x) <- gsub("ltMatrices", "syMatrices", class(x))
+        return(x)
+    }
+    as.syMatrices(as.ltMatrices(x * .lt(nrow(x), diag = TRUE)))
 }
-syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE)
+syMatrices <- function(object, diag = FALSE, byrow = FALSE, names = TRUE) {
+    if (inherits(object, "syMatrices"))
+        class(object) <- gsub("syMatrices", "ltMatrices", class(object))
     as.syMatrices(ltMatrices(object = object, diag = diag, byrow = byrow, 
                              names = names))
+}
 
 # dim ltMatrices
 
@@ -541,13 +545,19 @@ solve.ltMatrices <- function(a, b, transpose = FALSE, ...) {
     ret <- .Call(mvtnorm_R_ltMatrices_solve_C, x, 
                  as.integer(d[1L]), as.integer(J), as.logical(diag),
                  as.logical(FALSE))
-    colnames(ret) <- dn[[1L]]
+    ### chol = solve(invchol); invchol = solve(chol)
+    if (is.chol(ret)) {
+        class(ret) <- gsub("chol", "invchol", class(ret))
+    } else if (is.invchol(ret)) {
+        class(ret) <- gsub("invchol", "chol", class(ret))
+    }
 
-    if (!diag)
+    if (!diag) {
         ### ret always includes diagonal elements, remove here
-        ret <- ret[- cumsum(c(1, J:2)), , drop = FALSE]
+        ret <- Lower_tri(ret, diag = FALSE)
+        ret <- ltMatrices(ret, diag = FALSE, byrow = FALSE, names = dn[[2L]])
+    }
 
-    ret <- ltMatrices(ret, diag = diag, byrow = FALSE, names = dn[[2L]])
     ret <- ltMatrices(ret, byrow = byrow_orig)
     return(ret)
 }
@@ -645,24 +655,48 @@ tcrossprod.syMatrices <- tcrossprod.ltMatrices
 chol.syMatrices <- function(x, ...) {
 
     byrow_orig <- attr(x, "byrow")
-    dnm <- dimnames(x)
     stopifnot(attr(x, "diag"))
     d <- dim(x)
 
     ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
     ### second
-    x <- ltMatrices(unclass(x), diag = TRUE, 
-                    byrow = byrow_orig, names = dnm[[2L]])
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))    
     x <- ltMatrices(x, byrow = FALSE)
-    # class(x) <- class(x)[-1]
+
     if (!is.double(x)) storage.mode(x) <- "double"
 
     ret <- .Call(mvtnorm_R_syMatrices_chol, x, 
                  as.integer(d[1L]), as.integer(d[2L]))
-    colnames(ret) <- dnm[[1L]]
 
-    ret <- ltMatrices(ret, diag = TRUE,
-                      byrow = FALSE, names = dnm[[2L]])
+    ret <- ltMatrices(ret, byrow = byrow_orig)
+
+    return(ret)
+}
+
+# invchol syMatrices
+
+invchol <- function(x, ...)
+    UseMethod("invchol")
+
+invchol.default <- function(x, ...)
+    invchol(as.syMatrices(as.matrix(x)))
+
+invchol.syMatrices <- function(x, ...) {
+
+    byrow_orig <- attr(x, "byrow")
+    stopifnot(attr(x, "diag"))
+    d <- dim(x)
+
+    ### x is of class syMatrices, coerse to ltMatrices first and re-arrange
+    ### second
+    class(x) <- gsub("syMatrices", "ltMatrices", class(x))
+    x <- ltMatrices(x, byrow = TRUE)
+
+    if (!is.double(x)) storage.mode(x) <- "double"
+
+    ret <- .Call(mvtnorm_R_syMatrices_invchol, x, 
+                 as.integer(d[1L]), as.integer(d[2L]))
+
     ret <- ltMatrices(ret, byrow = byrow_orig)
 
     return(ret)
@@ -934,6 +968,10 @@ invcholD <- function(x, D = sqrt(Tcrossprod(solve(x), diag_only = TRUE))) {
 chol2cov <- function(x)
     Tcrossprod(x)
 
+### Sigma -> C
+cov2chol <- function(x)
+    as.chol(chol(x))
+
 ### L -> C
 invchol2chol <- function(x)
     as.chol(solve(x))
@@ -945,6 +983,10 @@ chol2invchol <- function(x)
 ### L -> Sigma
 invchol2cov <- function(x)
     chol2cov(invchol2chol(x))
+
+### Sigma -> L
+cov2invchol <- function(x)
+    as.invchol(invchol(x))
 
 ### L -> Precision
 invchol2pre <- function(x)
@@ -1013,7 +1055,7 @@ aperm.invchol <- function(a, perm, ...) {
         warning("Additional arguments", names(args), "ignored")
     
 
-    return(chol2invchol(chol(invchol2cov(a)[,perm])))
+    return(as.invchol(invchol(invchol2cov(a)[,perm])))
 }
 
 aperm.ltMatrices <- function(a, perm, ...)
@@ -1048,12 +1090,13 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        if (missing(chol)) x <- invchol2chol(x)
-        ### note: aperm would work but computes
-        ### Cholesky of J^2, here only length(which)^2
-        ### is needed
-        tmp <- base::chol(chol2cov(x)[,which])
-        if (missing(chol)) tmp <- chol2invchol(tmp)
+        if (missing(chol)) { 
+            cv <- invchol2cov(x)
+            tmp <- cov2invchol(cv[,which])
+        } else {
+            cv <- chol2cov(x)
+            tmp <- cov2chol(cv[,which])
+        }
     }
 
     if (missing(chol))
@@ -1147,7 +1190,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
         P <- Crossprod(invchol)
 
     Pw <- P[, -which]
-    chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+    # chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+    ### arg invchol is missing, masking mvtnorm::invchol
+    ### which we can not access bc R CMD check is not happy about it
+    chol <- getFromNamespace("invchol", "mvtnorm")(Pw) ### Pw = A A^\top
     g0 <- matrix(0, nrow = J, ncol = NCOL(given))
     g0[which,] <- given
     S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1
@@ -1160,11 +1206,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     }
     
 
-    chol <- base::chol(S) ### we need S = C C^\top
     if (missing(invchol)) 
-        return(list(mean = mean, chol = chol))
+        return(list(mean = mean, chol = base::chol(S)))
 
-    return(list(mean = mean, invchol = solve(chol)))
+    return(list(mean = mean, invchol = invchol(S)))
 }
 
 # check obs
