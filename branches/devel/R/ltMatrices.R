@@ -1055,7 +1055,7 @@ aperm.invchol <- function(a, perm, ...) {
         warning("Additional arguments", names(args), "ignored")
     
 
-    return(chol2invchol(chol(invchol2cov(a)[,perm])))
+    return(as.invchol(invchol(invchol2cov(a)[,perm])))
 }
 
 aperm.ltMatrices <- function(a, perm, ...)
@@ -1090,12 +1090,13 @@ marg_mvnorm <- function(chol, invchol, which = 1L) {
         ### which is 1:j
         tmp <- x[,which]
     } else {
-        if (missing(chol)) x <- invchol2chol(x)
-        ### note: aperm would work but computes
-        ### Cholesky of J^2, here only length(which)^2
-        ### is needed
-        tmp <- base::chol(chol2cov(x)[,which])
-        if (missing(chol)) tmp <- chol2invchol(tmp)
+        if (missing(chol)) { 
+            cv <- invchol2cov(x)
+            tmp <- cov2invchol(cv[,which])
+        } else {
+            cv <- chol2cov(x)
+            tmp <- cov2chol(cv[,which])
+        }
     }
 
     if (missing(chol))
@@ -1189,7 +1190,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
         P <- Crossprod(invchol)
 
     Pw <- P[, -which]
-    chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+    # chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top
+    ### arg invchol is missing, masking mvtnorm::invchol
+    ### which we can not access bc R CMD check is not happy about it
+    chol <- getFromNamespace("invchol", "mvtnorm")(Pw) ### Pw = A A^\top
     g0 <- matrix(0, nrow = J, ncol = NCOL(given))
     g0[which,] <- given
     S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1
@@ -1202,11 +1206,10 @@ cond_mvnorm <- function(chol, invchol, which_given = 1L, given, center = FALSE) 
     }
     
 
-    chol <- base::chol(S) ### we need S = C C^\top
     if (missing(invchol)) 
-        return(list(mean = mean, chol = chol))
+        return(list(mean = mean, chol = base::chol(S)))
 
-    return(list(mean = mean, invchol = solve(chol)))
+    return(list(mean = mean, invchol = invchol(S)))
 }
 
 # check obs

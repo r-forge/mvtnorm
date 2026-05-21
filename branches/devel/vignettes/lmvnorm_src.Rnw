@@ -3474,7 +3474,7 @@ and then implement the two methods
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape aperm checks}\nobreak\ {\footnotesize \NWlink{nuweb57}{57}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    return(chol2invchol(chol(invchol2cov(a)[,perm])))@\\
+\mbox{}\verb@    return(as.invchol(invchol(invchol2cov(a)[,perm])))@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}
@@ -3730,12 +3730,13 @@ on).
 \mbox{}\verb@        ### which is 1:j@\\
 \mbox{}\verb@        tmp <- x[,which]@\\
 \mbox{}\verb@    } else {@\\
-\mbox{}\verb@        if (missing(chol)) x <- invchol2chol(x)@\\
-\mbox{}\verb@        ### note: aperm would work but computes@\\
-\mbox{}\verb@        ### Cholesky of J^2, here only length(which)^2@\\
-\mbox{}\verb@        ### is needed@\\
-\mbox{}\verb@        tmp <- base::chol(chol2cov(x)[,which])@\\
-\mbox{}\verb@        if (missing(chol)) tmp <- chol2invchol(tmp)@\\
+\mbox{}\verb@        if (missing(chol)) { @\\
+\mbox{}\verb@            cv <- invchol2cov(x)@\\
+\mbox{}\verb@            tmp <- cov2invchol(cv[,which])@\\
+\mbox{}\verb@        } else {@\\
+\mbox{}\verb@            cv <- chol2cov(x)@\\
+\mbox{}\verb@            tmp <- cov2chol(cv[,which])@\\
+\mbox{}\verb@        }@\\
 \mbox{}\verb@    }@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@    if (missing(chol))@\\
@@ -3785,7 +3786,10 @@ We can implement this as
 \mbox{}\verb@    P <- Crossprod(invchol)@\\
 \mbox{}\verb@@\\
 \mbox{}\verb@Pw <- P[, -which]@\\
-\mbox{}\verb@chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top@\\
+\mbox{}\verb@# chol <- solve(A <- base::chol(Pw)) ### Pw = A A^\top@\\
+\mbox{}\verb@### arg invchol is missing, masking mvtnorm::invchol@\\
+\mbox{}\verb@### which we can not access bc R CMD check is not happy about it@\\
+\mbox{}\verb@chol <- getFromNamespace("invchol", "mvtnorm")(Pw) ### Pw = A A^\top@\\
 \mbox{}\verb@g0 <- matrix(0, nrow = J, ncol = NCOL(given))@\\
 \mbox{}\verb@g0[which,] <- given@\\
 \mbox{}\verb@S <- Crossprod(chol) ### P^{-1}_jj = A^-top A^-1@\\
@@ -3958,11 +3962,10 @@ gives
 \mbox{}\verb@@\\
 \mbox{}\verb@    @\hbox{$\langle\,${\itshape cond general}\nobreak\ {\footnotesize \NWlink{nuweb63}{63}}$\,\rangle$}\verb@@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    chol <- base::chol(S) ### we need S = C C^\top@\\
 \mbox{}\verb@    if (missing(invchol)) @\\
-\mbox{}\verb@        return(list(mean = mean, chol = chol))@\\
+\mbox{}\verb@        return(list(mean = mean, chol = base::chol(S)))@\\
 \mbox{}\verb@@\\
-\mbox{}\verb@    return(list(mean = mean, invchol = solve(chol)))@\\
+\mbox{}\verb@    return(list(mean = mean, invchol = invchol(S)))@\\
 \mbox{}\verb@}@\\
 \mbox{}\verb@@{\NWsep}
 \end{list}

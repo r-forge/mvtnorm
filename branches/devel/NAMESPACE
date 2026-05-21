@@ -7,6 +7,8 @@ importFrom("stats",
 	   rchisq, uniroot, simulate,
 	   cov2cor, optim, coef, glm, pcauchy, qcauchy, predict, quasi, logLik)
 
+importFrom("utils", "getFromNamespace")
+
 export(rmvnorm, dmvnorm, pmvnorm, pmvt, rmvt, qmvnorm, qmvt, dmvt,
        GenzBretz, Miwa, TVPACK, ltMatrices, syMatrices, as.syMatrices, Tcrossprod, Crossprod, diagonals, 
        is.ltMatrices, is.syMatrices, as.ltMatrices, is.chol, is.invchol, as.chol, as.invchol,
